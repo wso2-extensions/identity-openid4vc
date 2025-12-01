@@ -26,4 +26,58 @@ public class Constants {
     public static final String SEGMENT_CREDENTIAL = "credential";
     public static final String SEGMENT_OAUTH2 = "oauth2";
     public static final String SEGMENT_TOKEN = "token";
+    public static final String VC_CLAIM = "vc";
+    public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
+
+    /**
+     * W3C Verifiable Credential Data Model related constants.
+     * These constants are specific to the W3C Verifiable Credentials Data Model specification.
+     *
+     * @see <a href="https://www.w3.org/TR/vc-data-model/">W3C Verifiable Credentials Data Model</a>
+     */
+    public static class W3CVCDataModel {
+        public static final String CONTEXT = "@context";
+        public static final String ID = "id";
+        public static final String TYPE = "type";
+        public static final String ISSUER = "issuer";
+        public static final String VALID_FROM = "validFrom";
+        public static final String VALID_UNTIL = "validUntil";
+        public static final String CREDENTIAL_SUBJECT = "credentialSubject";
+
+        public static final String W3C_CREDENTIALS_V2_CONTEXT = "https://www.w3.org/ns/credentials/v2";
+        public static final String VERIFIABLE_CREDENTIAL_TYPE = "VerifiableCredential";
+    }
+
+    /**
+     * OpenID4VCI Credential Issuer Metadata related constants.
+     * These constants are specific to the OpenID for Verifiable Credential Issuance specification.
+     *
+     */
+    public static class CredentialIssuerMetadata {
+        public static final String CREDENTIAL_ISSUER = "credential_issuer";
+        public static final String CREDENTIAL_ENDPOINT = "credential_endpoint";
+        public static final String AUTHORIZATION_SERVERS = "authorization_servers";
+        public static final String CREDENTIAL_CONFIGURATIONS_SUPPORTED = "credential_configurations_supported";
+
+        public static final String FORMAT = "format";
+        public static final String SCOPE = "scope";
+        public static final String CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED = "credential_signing_alg_values_supported";
+        public static final String CREDENTIAL_METADATA = "credential_metadata";
+        public static final String DISPLAY = "display";
+        public static final String CLAIMS = "claims";
+        public static final String PATH = "path";
+    }
+
+    /**
+     * OpenID4VCI Credential Offer related constants.
+     * These constants are specific to the OpenID for Verifiable Credential Issuance credential offer structure.
+     *
+     */
+    public static class CredentialOffer {
+        public static final String CREDENTIAL_ISSUER = "credential_issuer";
+        public static final String CREDENTIAL_CONFIGURATION_IDS = "credential_configuration_ids";
+        public static final String GRANTS = "grants";
+        public static final String AUTHORIZATION_CODE = "authorization_code";
+        public static final String AUTHORIZATION_SERVER = "authorization_server";
+    }
 }

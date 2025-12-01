@@ -26,6 +26,7 @@ import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vci.endpoint.offer.factories.CredentialOfferServiceFactory;
 import org.wso2.carbon.identity.openid4vci.offer.CredentialOfferProcessor;
+import org.wso2.carbon.identity.openid4vci.offer.exception.CredentialOfferClientException;
 import org.wso2.carbon.identity.openid4vci.offer.exception.CredentialOfferException;
 import org.wso2.carbon.identity.openid4vci.offer.response.CredentialOfferResponse;
 
@@ -66,10 +67,15 @@ public class OfferEndpoint {
             CredentialOfferResponse offerResponse = processor.generateOffer(offerId, tenantDomain);
             String responsePayload = GSON.toJson(offerResponse.getOffer());
             return Response.ok(responsePayload, MediaType.APPLICATION_JSON).build();
+        } catch (CredentialOfferClientException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity("{\"error\":\"offer_not_found\"," +
+                            "\"error_description\":\"" + e.getMessage() + "\"}")
+                    .build();
         } catch (CredentialOfferException e) {
-            log.error(String.format("Error while generating credential offer for tenant: %s", tenantDomain), e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity("{\"error\":\"server_error\",\"error_description\":\"" + e.getMessage() + "\"}")
+                    .entity("{\"error\":\"server_error\"," +
+                            "\"error_description\":\"" + e.getMessage() + "\"}")
                     .build();
         }
     }

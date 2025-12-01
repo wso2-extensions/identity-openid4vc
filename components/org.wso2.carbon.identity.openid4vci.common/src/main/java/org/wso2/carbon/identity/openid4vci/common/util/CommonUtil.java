@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.core.URLBuilderException;
 /**
  * Utility class for OID4VCI component.
  */
-public class Util {
+public class CommonUtil {
 
     public static ServiceURL buildServiceUrl(String tenantDomain, String... pathSegments) throws URLBuilderException {
 

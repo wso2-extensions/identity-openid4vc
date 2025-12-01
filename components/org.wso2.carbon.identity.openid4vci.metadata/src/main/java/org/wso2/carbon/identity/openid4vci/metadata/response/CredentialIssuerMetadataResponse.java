@@ -18,14 +18,18 @@
 
 package org.wso2.carbon.identity.openid4vci.metadata.response;
 
+import com.google.gson.Gson;
+
 import java.util.Collections;
 import java.util.Map;
 
 /**
  * Response wrapper containing credential issuer metadata values.
+ * This class handles both the metadata structure and its JSON serialization.
  */
 public class CredentialIssuerMetadataResponse {
 
+    private static final Gson GSON = new Gson();
     private final Map<String, Object> metadata;
 
     public CredentialIssuerMetadataResponse(Map<String, Object> metadata) {
@@ -36,5 +40,15 @@ public class CredentialIssuerMetadataResponse {
     public Map<String, Object> getMetadata() {
 
         return Collections.unmodifiableMap(metadata);
+    }
+
+    /**
+     * Serialize the metadata to JSON string.
+     * This method replaces the need for a separate ResponseBuilder.
+     *
+     * @return JSON representation of the metadata
+     */
+    public String toJson() {
+        return GSON.toJson(metadata);
     }
 }

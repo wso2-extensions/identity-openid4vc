@@ -27,11 +27,11 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
-import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.openid4vci.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vci.credential.issuer.handlers.format.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vci.credential.issuer.handlers.format.impl.JwtVcJsonFormatHandler;
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 /**
  * Service component for credential issuance operations.
@@ -111,7 +111,7 @@ public class CredentialIssuanceServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("Setting token provider.");
         }
-        OAuth2ServiceComponentHolder.getInstance().setTokenProvider(tokenProvider);
+        CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
     }
 
     protected void unsetTokenProvider(TokenProvider tokenProvider) {
@@ -119,6 +119,29 @@ public class CredentialIssuanceServiceComponent {
         if (log.isDebugEnabled()) {
             log.debug("Unset token provider.");
         }
-        OAuth2ServiceComponentHolder.getInstance().setTokenProvider(null);
+        CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
+    }
+
+    @Reference(
+            name = "user.realmservice.default",
+            service = RealmService.class,
+            cardinality = ReferenceCardinality.MANDATORY,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetRealmService"
+    )
+    protected void setRealmService(RealmService realmService) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Adding the Realm Service");
+        }
+        CredentialIssuanceDataHolder.getInstance().setRealmService(realmService);
+    }
+
+    protected void unsetRealmService(RealmService realmService) {
+
+        if (log.isDebugEnabled()) {
+            log.debug("Removing the Realm Service");
+        }
+        CredentialIssuanceDataHolder.getInstance().setRealmService(null);
     }
 }

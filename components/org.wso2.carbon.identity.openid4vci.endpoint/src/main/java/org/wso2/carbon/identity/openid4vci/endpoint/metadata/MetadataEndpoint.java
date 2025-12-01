@@ -23,12 +23,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.openid4vci.endpoint.metadata.factories.CredentialIssuerMetadataResponseBuilderFactory;
 import org.wso2.carbon.identity.openid4vci.endpoint.metadata.factories.CredentialIssuerMetadataServiceFactory;
 import org.wso2.carbon.identity.openid4vci.metadata.CredentialIssuerMetadataProcessor;
 import org.wso2.carbon.identity.openid4vci.metadata.exception.CredentialIssuerMetadataException;
 import org.wso2.carbon.identity.openid4vci.metadata.response.CredentialIssuerMetadataResponse;
-import org.wso2.carbon.identity.openid4vci.metadata.response.builder.CredentialIssuerMetadataResponseBuilder;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -54,11 +52,9 @@ public class MetadataEndpoint {
         try {
             CredentialIssuerMetadataProcessor processor =
                     CredentialIssuerMetadataServiceFactory.getMetadataProcessor();
-            CredentialIssuerMetadataResponseBuilder responseBuilder =
-                    CredentialIssuerMetadataResponseBuilderFactory.getResponseBuilder();
             CredentialIssuerMetadataResponse metadataResponse =
                     processor.getMetadataResponse(tenantDomain);
-            String responsePayload = responseBuilder.build(metadataResponse);
+            String responsePayload = metadataResponse.toJson();
             return Response.ok(responsePayload, MediaType.APPLICATION_JSON).build();
         } catch (CredentialIssuerMetadataException e) {
             log.error(String.format("Error while resolving OpenID4VCI metadata for tenant: %s", tenantDomain), e);

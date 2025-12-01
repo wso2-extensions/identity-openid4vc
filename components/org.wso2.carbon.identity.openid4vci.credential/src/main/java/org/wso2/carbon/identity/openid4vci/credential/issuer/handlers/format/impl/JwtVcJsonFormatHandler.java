@@ -31,23 +31,23 @@ import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
-import org.wso2.carbon.identity.openid4vci.common.util.Util;
+import org.wso2.carbon.identity.openid4vci.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vci.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vci.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vci.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vci.credential.issuer.model.W3CVCDataModelBuilder;
 import org.wso2.carbon.identity.openid4vci.credential.util.CredentialIssuanceUtil;
 
 import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import static org.wso2.carbon.identity.openid4vci.common.constant.Constants.CONTEXT_OPENID4VCI;
+import static org.wso2.carbon.identity.openid4vci.common.constant.Constants.JWT_VC_JSON_FORMAT;
+import static org.wso2.carbon.identity.openid4vci.common.constant.Constants.VC_CLAIM;
 
 /**
  * Handler for JWT VC JSON format credentials.
@@ -55,7 +55,7 @@ import static org.wso2.carbon.identity.openid4vci.common.constant.Constants.CONT
 public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
 
     private static final Log log = LogFactory.getLog(JwtVcJsonFormatHandler.class);
-    private static final String FORMAT = "jwt_vc_json";
+    private static final String FORMAT = JWT_VC_JSON_FORMAT;
 
     @Override
     public String getFormat() {
@@ -77,7 +77,6 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
     private JWTClaimsSet createJWTClaimSet(CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 
-        // Build issuer URL
         String issuerUrl;
         try {
             issuerUrl = buildCredentialIssuerUrl(credentialIssuerContext.getTenantDomain());
@@ -85,86 +84,60 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
             throw new CredentialIssuanceException("Error building credential issuer URL", e);
         }
 
-        // Set issuance and expiration times
         Instant now = Instant.now();
 
-        // Calculate validUntil using expiryInSeconds from VCCredentialConfiguration
         int expiryIn = credentialIssuerContext.getCredentialConfiguration().getExpiresIn();
         Instant validUntil = now.plusSeconds(expiryIn);
 
-        // Build Verifiable Credential structure as the JWT payload directly
-        Map<String, Object> vcStructure = buildVerifiableCredential(credentialIssuerContext, issuerUrl, now,
+        String id = UUID.randomUUID().toString();
+
+        Map<String, Object> vcStructure = buildVerifiableCredential(credentialIssuerContext, id, issuerUrl, now,
                 validUntil);
 
-        // Create JWT claims with standard JWT claims and VC structure under "vc" claim
         JWTClaimsSet.Builder jwtClaimsSetBuilder = new JWTClaimsSet.Builder();
 
         // Standard JWT claims
         jwtClaimsSetBuilder.issuer(issuerUrl);
-        jwtClaimsSetBuilder.jwtID(UUID.randomUUID().toString());
+        jwtClaimsSetBuilder.jwtID(id);
         jwtClaimsSetBuilder.issueTime(java.util.Date.from(now));
         jwtClaimsSetBuilder.notBeforeTime(java.util.Date.from(now));
         jwtClaimsSetBuilder.expirationTime(java.util.Date.from(validUntil));
 
-        // VC structure as a claim
-        jwtClaimsSetBuilder.claim("vc", vcStructure);
+        // VC claim
+        jwtClaimsSetBuilder.claim(VC_CLAIM, vcStructure);
 
         return jwtClaimsSetBuilder.build();
     }
 
     /**
-     * Builds the Verifiable Credential structure according to W3C VC Data Model.
+     * Builds the W3C Verifiable Credential structure according to W3C VC Data Model v2.
      *
      * @param credentialIssuerContext the credential issuer context
      * @param issuerUrl the issuer URL
      * @param validFrom the valid from instant
      * @param validUntil the valid until instant
-     * @return the VC claim map
+     * @return the W3C VC claim map
      */
-    private Map<String, Object> buildVerifiableCredential(CredentialIssuerContext credentialIssuerContext,
+    private Map<String, Object> buildVerifiableCredential(CredentialIssuerContext credentialIssuerContext, String id,
                                                           String issuerUrl, Instant validFrom, Instant validUntil) {
 
-        Map<String, Object> vc = new LinkedHashMap<>();
-
-        // @context array
-        List<String> context = new ArrayList<>();
-        context.add("https://www.w3.org/ns/credentials/v2");
-
-        // Add credential type from credential definition if available
         String credentialType = credentialIssuerContext.getCredentialConfiguration().getType();
-        if (credentialType != null && !credentialType.isEmpty()) {
-            context.add(credentialType);
-        }
-        vc.put("@context", context);
-
-        // id - unique identifier for this credential
-        vc.put("id", UUID.randomUUID().toString());
-
-        // type array
-        List<String> types = new ArrayList<>();
-        types.add("VerifiableCredential");
-        if (credentialType != null && !credentialType.isEmpty()) {
-            types.add(credentialType);
-        }
-        vc.put("type", types);
-
-        // issuer as URL string
-        vc.put("issuer", issuerUrl);
-
-        // validFrom and validUntil (ISO 8601 format)
-        vc.put("validFrom", validFrom.toString());
-        vc.put("validUntil", validUntil.toString());
-
         Map<String, String> claims = credentialIssuerContext.getClaims();
-        if (claims != null && !claims.isEmpty()) {
-            vc.put("credentialSubject", claims);
-        }
-        return vc;
+
+        return new W3CVCDataModelBuilder()
+                .id(id)
+                .addContext(credentialType)
+                .addType(credentialType)
+                .issuer(issuerUrl)
+                .validFrom(validFrom)
+                .validUntil(validUntil)
+                .credentialSubject(claims)
+                .build();
     }
 
     private String buildCredentialIssuerUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, CONTEXT_OPENID4VCI).getAbsolutePublicURL();
+        return CommonUtil.buildServiceUrl(tenantDomain, CONTEXT_OPENID4VCI).getAbsolutePublicURL();
     }
 
     private String signJWT(JWTClaimsSet jwtClaimsSet, CredentialIssuerContext credentialIssuerContext)

@@ -22,7 +22,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.openid4vci.common.constant.Constants;
-import org.wso2.carbon.identity.openid4vci.common.util.Util;
+import org.wso2.carbon.identity.openid4vci.common.util.CommonUtil;
+import org.wso2.carbon.identity.openid4vci.offer.exception.CredentialOfferClientException;
 import org.wso2.carbon.identity.openid4vci.offer.exception.CredentialOfferException;
 import org.wso2.carbon.identity.openid4vci.offer.internal.CredentialOfferDataHolder;
 import org.wso2.carbon.identity.openid4vci.offer.response.CredentialOfferResponse;
@@ -65,45 +66,61 @@ public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor
             Map<String, Object> offer = new LinkedHashMap<>();
 
             // Set credential issuer URL
-            offer.put("credential_issuer", buildCredentialIssuerUrl(tenantDomain));
+            offer.put(Constants.CredentialOffer.CREDENTIAL_ISSUER, buildCredentialIssuerUrl(tenantDomain));
 
             List<String> credentialConfigurationIdentifiers = getCredentialConfigurationIdentifiers(offerId,
                     tenantDomain);
 
-            // Set credential configuration IDs
-            offer.put("credential_configuration_ids", credentialConfigurationIdentifiers);
+            offer.put(Constants.CredentialOffer.CREDENTIAL_CONFIGURATION_IDS, credentialConfigurationIdentifiers);
 
-            // Build grants structure
             Map<String, Object> grants = new LinkedHashMap<>();
             Map<String, Object> authCodeGrant = new LinkedHashMap<>();
 
-            // Set authorization server URL
-            authCodeGrant.put("authorization_server", buildAuthorizationServerUrl(tenantDomain));
+            authCodeGrant.put(Constants.CredentialOffer.AUTHORIZATION_SERVER,
+                    buildAuthorizationServerUrl(tenantDomain));
 
-            grants.put("authorization_code", authCodeGrant);
-            offer.put("grants", grants);
+            grants.put(Constants.CredentialOffer.AUTHORIZATION_CODE, authCodeGrant);
+            offer.put(Constants.CredentialOffer.GRANTS, grants);
 
             return new CredentialOfferResponse(offer);
         } catch (URLBuilderException e) {
             throw new CredentialOfferException("Error while constructing credential offer URLs", e);
-        } catch (VCConfigMgtException e) {
-            throw new CredentialOfferException("Error while retrieving VC offer", e);
         }
     }
 
     private static List<String> getCredentialConfigurationIdentifiers(String offerId, String tenantDomain)
-            throws VCConfigMgtException {
+            throws CredentialOfferException {
 
         VCOfferManager vcOfferManager = CredentialOfferDataHolder.getInstance().getVCOfferManager();
-        VCOffer vcOffer = vcOfferManager.get(offerId, tenantDomain);
+        VCOffer vcOffer;
+        try {
+            vcOffer = vcOfferManager.get(offerId, tenantDomain);
+        } catch (VCConfigMgtException e) {
+            throw new CredentialOfferException("Error while retrieving VC offer for offer ID: " + offerId, e);
+        }
+
+        if (vcOffer == null) {
+            throw new CredentialOfferClientException("Credential offer not found: " + offerId);
+        }
+
+        return getCredentialConfigurationIdentifiers(tenantDomain, vcOffer);
+    }
+
+    private static List<String> getCredentialConfigurationIdentifiers(String tenantDomain, VCOffer vcOffer)
+            throws CredentialOfferException {
 
         VCCredentialConfigManager vcCredentialConfigManager = CredentialOfferDataHolder.getInstance()
                 .getVcCredentialConfigManager();
 
-        // Get identifiers from VCCredentialConfig for each credential configuration ID
         List<String> credentialConfigurationIdentifiers = new ArrayList<>();
         for (String credentialConfigId : vcOffer.getCredentialConfigurationIds()) {
-            String identifier = vcCredentialConfigManager.get(credentialConfigId, tenantDomain).getIdentifier();
+            String identifier;
+            try {
+                identifier = vcCredentialConfigManager.get(credentialConfigId, tenantDomain).getIdentifier();
+            } catch (VCConfigMgtException e) {
+                throw new CredentialOfferException("Error while retrieving VC credential configuration for ID: " +
+                        credentialConfigId, e);
+            }
             credentialConfigurationIdentifiers.add(identifier);
         }
         return credentialConfigurationIdentifiers;
@@ -111,12 +128,12 @@ public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor
 
     private String buildCredentialIssuerUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI).getAbsolutePublicURL();
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI).getAbsolutePublicURL();
     }
 
     private String buildAuthorizationServerUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_TOKEN)
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_TOKEN)
                 .getAbsolutePublicURL();
     }
 }

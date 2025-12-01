@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.base.IdentityException;
-import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.openid4vci.credential.dto.CredentialIssuanceReqDTO;
@@ -34,9 +33,10 @@ import org.wso2.carbon.identity.openid4vci.credential.issuer.CredentialIssuerCon
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
 import org.wso2.carbon.identity.vc.config.management.exception.VCConfigMgtException;
 import org.wso2.carbon.identity.vc.config.management.model.VCCredentialConfiguration;
-import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
+import org.wso2.carbon.user.core.UserRealm;
+import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.Map;
 
@@ -80,15 +80,18 @@ public class CredentialIssuanceService {
             VCCredentialConfiguration credentialConfiguration = configManager
                     .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
 
+            if (credentialConfiguration == null) {
+                throw new CredentialIssuanceException("No credential configuration found for identifier: "
+                        + reqDTO.getCredentialConfigurationId() + " in tenant: " + reqDTO.getTenantDomain());
+            }
+
             // Validate scope - check if the required scope exists in JWT token
             validateScope(scopes, credentialConfiguration.getScope());
 
 
-            UserRealm realm = IdentityTenantUtil.getRealm(reqDTO.getTenantDomain(),
-                    authenticatedUser.toFullQualifiedUsername());
-
-            Map<String, String> claims = realm.getUserStoreManager().getUserClaimValues(MultitenantUtils
-                            .getTenantAwareUsername(authenticatedUser.toFullQualifiedUsername()),
+            UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
+            AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
+            Map<String, String> claims =  userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
                     credentialConfiguration.getClaims().toArray(new String[0]), null);
             claims.put("id", authenticatedUser.getUserId());
 
@@ -136,5 +139,31 @@ public class CredentialIssuanceService {
 
         throw new CredentialIssuanceException("Access token does not contain the required scope: "
                 + requiredScope);
+    }
+
+    private UserRealm getUserRealm(String tenantDomain) throws CredentialIssuanceException {
+        UserRealm realm;
+        try {
+            RealmService realmService = CredentialIssuanceDataHolder.getInstance().getRealmService();
+            int tenantId = realmService.getTenantManager().getTenantId(tenantDomain);
+
+            realm = (org.wso2.carbon.user.core.UserRealm) realmService.getTenantUserRealm(tenantId);
+        } catch (UserStoreException e) {
+            throw new CredentialIssuanceException("Error occurred while retrieving the Realm for " +
+                    tenantDomain + " to handle local claims", e);
+        }
+        return realm;
+    }
+
+    private AbstractUserStoreManager getUserStoreManager(String tenantDomain, UserRealm realm) throws
+            CredentialIssuanceException {
+        AbstractUserStoreManager userStore;
+        try {
+            userStore = (AbstractUserStoreManager) realm.getUserStoreManager();
+        } catch (UserStoreException e) {
+            throw new CredentialIssuanceException("Error occurred while retrieving the UserStoreManager " +
+                    "from Realm for " + tenantDomain + " to handle local claims", e);
+        }
+        return userStore;
     }
 }

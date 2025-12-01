@@ -25,20 +25,19 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.openid4vci.common.constant.Constants;
-import org.wso2.carbon.identity.openid4vci.common.util.Util;
+import org.wso2.carbon.identity.openid4vci.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vci.metadata.exception.CredentialIssuerMetadataException;
 import org.wso2.carbon.identity.openid4vci.metadata.internal.CredentialIssuerMetadataDataHolder;
+import org.wso2.carbon.identity.openid4vci.metadata.model.CredentialConfigurationMetadataBuilder;
 import org.wso2.carbon.identity.openid4vci.metadata.response.CredentialIssuerMetadataResponse;
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
 import org.wso2.carbon.identity.vc.config.management.exception.VCConfigMgtException;
 import org.wso2.carbon.identity.vc.config.management.model.VCCredentialConfiguration;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 /**
@@ -70,12 +69,15 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
         String effectiveTenant = resolveTenant(tenantDomain);
         try {
             Map<String, Object> metadata = new LinkedHashMap<>();
-            metadata.put("credential_issuer", buildCredentialIssuerUrl(effectiveTenant));
-            metadata.put("credential_endpoint", buildCredentialEndpointUrl(effectiveTenant));
-            metadata.put("authorization_servers",
+            metadata.put(Constants.CredentialIssuerMetadata.CREDENTIAL_ISSUER,
+                    buildCredentialIssuerUrl(effectiveTenant));
+            metadata.put(Constants.CredentialIssuerMetadata.CREDENTIAL_ENDPOINT,
+                    buildCredentialEndpointUrl(effectiveTenant));
+            metadata.put(Constants.CredentialIssuerMetadata.AUTHORIZATION_SERVERS,
                     Collections.singletonList(buildAuthorizationServerUrl(effectiveTenant)));
             Map<String, Object> credentialConfigurations = getCredentialConfigurations(effectiveTenant);
-            metadata.put("credential_configurations_supported", credentialConfigurations);
+            metadata.put(Constants.CredentialIssuerMetadata.CREDENTIAL_CONFIGURATIONS_SUPPORTED,
+                    credentialConfigurations);
 
             return new CredentialIssuerMetadataResponse(metadata);
         } catch (URLBuilderException e) {
@@ -93,18 +95,18 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
 
     private String buildCredentialIssuerUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI).getAbsolutePublicURL();
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI).getAbsolutePublicURL();
     }
 
     private String buildCredentialEndpointUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_CREDENTIAL)
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_CREDENTIAL)
                 .getAbsolutePublicURL();
     }
 
     private String buildAuthorizationServerUrl(String tenantDomain) throws URLBuilderException {
 
-        return Util.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_TOKEN)
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_TOKEN)
                 .getAbsolutePublicURL();
     }
 
@@ -122,29 +124,18 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
             }
 
             for (VCCredentialConfiguration cfg : configurations) {
-                VCCredentialConfiguration configuration = configManager.get(cfg.getId(),
-                        tenantDomain);
-                Map<String, Object> cfgMap = new LinkedHashMap<>();
+                VCCredentialConfiguration configuration = configManager.get(cfg.getId(), tenantDomain);
 
-                // Basic fields
-                cfgMap.put("id", configuration.getIdentifier());
-                cfgMap.put("format", configuration.getFormat());
-                cfgMap.put("scope", configuration.getScope());
+                // Use builder pattern for clean construction
+                CredentialConfigurationMetadataBuilder builder = new CredentialConfigurationMetadataBuilder()
+                        .id(configuration.getIdentifier())
+                        .format(configuration.getFormat())
+                        .scope(configuration.getScope())
+                        .signingAlgorithm(configuration.getSigningAlgorithm())
+                        .display(buildDisplay(configuration.getMetadata()))
+                        .claims(configuration.getClaims());
 
-                // Signing algorithms
-                List<String> algValues = new ArrayList<>();
-                if (configuration.getSigningAlgorithm() != null) {
-                    algValues.add(configuration.getSigningAlgorithm());
-                }
-                cfgMap.put("credential_signing_alg_values_supported", algValues);
-
-                // credential_metadata: display and claims in the expected structure
-                Map<String, Object> credentialMetadata = new LinkedHashMap<>();
-                VCCredentialConfiguration.Metadata meta = configuration.getMetadata();
-                credentialMetadata.put("display", buildDisplay(meta));
-                credentialMetadata.put("claims", buildClaimsList(configuration.getClaims()));
-                cfgMap.put("credential_metadata", credentialMetadata);
-                configurationsMap.put(configuration.getIdentifier(), cfgMap);
+                configurationsMap.put(configuration.getIdentifier(), builder.build());
             }
 
             return configurationsMap;
@@ -168,17 +159,5 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
             }
             return Collections.emptyList();
         }
-    }
-
-    private List<Map<String, Object>> buildClaimsList(List<String> claims) {
-
-        if (claims == null) {
-            return Collections.emptyList();
-        }
-        return claims.stream().map(claim -> {
-                    Map<String, Object> claimMap = new LinkedHashMap<>();
-                    claimMap.put("path", Collections.singletonList(claim));
-                    return claimMap;
-                }).collect(Collectors.toList());
     }
 }

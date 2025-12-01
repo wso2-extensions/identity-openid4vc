@@ -22,6 +22,7 @@ import org.wso2.carbon.identity.oauth.tokenprocessor.DefaultTokenProvider;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.openid4vci.credential.issuer.handlers.format.CredentialFormatHandler;
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,6 +36,7 @@ public class CredentialIssuanceDataHolder {
     private VCCredentialConfigManager vcCredentialConfigManager;
     private final List<CredentialFormatHandler> credentialFormatHandlers = new ArrayList<>();
     private TokenProvider tokenProvider;
+    private RealmService realmService;
 
     private CredentialIssuanceDataHolder() {
 
@@ -81,5 +83,13 @@ public class CredentialIssuanceDataHolder {
     public void setTokenProvider(TokenProvider tokenProvider) {
 
         this.tokenProvider = tokenProvider;
+    }
+
+    public RealmService getRealmService() {
+        return realmService;
+    }
+
+    public void setRealmService(RealmService realmService) {
+        this.realmService = realmService;
     }
 }
