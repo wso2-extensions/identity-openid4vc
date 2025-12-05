@@ -103,13 +103,19 @@ public class CredentialConfigurationMetadataBuilder {
     }
 
     /**
-     * Set the display metadata (parsed from JSON).
+     * Set the display.
      *
-     * @param display the display object
+     * @param displayName the display name
      * @return this builder
      */
-    public CredentialConfigurationMetadataBuilder display(Object display) {
-        this.display = display != null ? display : Collections.emptyList();
+    public CredentialConfigurationMetadataBuilder display(String displayName) {
+        if (displayName != null && !displayName.isEmpty()) {
+            Map<String, Object> displayObject = new LinkedHashMap<>();
+            displayObject.put(Constants.CredentialIssuerMetadata.NAME, displayName);
+            this.display = Collections.singletonList(displayObject);
+        } else {
+            this.display = Collections.emptyList();
+        }
         return this;
     }
 
@@ -182,5 +188,7 @@ public class CredentialConfigurationMetadataBuilder {
             return claimMap;
         }).collect(Collectors.toList());
     }
+
+
 }
 

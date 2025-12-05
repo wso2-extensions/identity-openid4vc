@@ -19,7 +19,6 @@
 package org.wso2.carbon.identity.openid4vci.offer.internal;
 
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.vc.config.management.VCOfferManager;
 
 /**
  * Data holder for OID4VCI Credential Offer.
@@ -28,19 +27,10 @@ public class CredentialOfferDataHolder {
 
     private static final CredentialOfferDataHolder instance = new CredentialOfferDataHolder();
 
-    private VCOfferManager vcOfferManager;
     private VCCredentialConfigManager vcCredentialConfigManager;
 
     public static CredentialOfferDataHolder getInstance() {
         return instance;
-    }
-
-    public void setVCOfferManager(VCOfferManager vcOfferManager) {
-        this.vcOfferManager = vcOfferManager;
-    }
-
-    public VCOfferManager getVCOfferManager() {
-        return vcOfferManager;
     }
 
     public VCCredentialConfigManager getVcCredentialConfigManager() {

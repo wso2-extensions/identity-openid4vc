@@ -29,7 +29,6 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.openid4vci.offer.CredentialOfferProcessor;
 import org.wso2.carbon.identity.openid4vci.offer.DefaultCredentialOfferProcessor;
 import org.wso2.carbon.identity.vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.vc.config.management.VCOfferManager;
 
 /**
  * Service component for OID4VCI Credential Offer.
@@ -54,23 +53,6 @@ public class CredentialOfferServiceComponent {
         } catch (Throwable e) {
             log.error("Error while activating CredentialOfferServiceComponent", e);
         }
-    }
-
-    @Reference(
-            name = "vc.config.offer.mgt.service.component",
-            service = VCOfferManager.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetVCOfferManager"
-    )
-    protected void setVCOfferManager(VCOfferManager vcOfferManager) {
-
-        CredentialOfferDataHolder.getInstance().setVCOfferManager(vcOfferManager);
-    }
-
-    protected void unsetVCOfferManager(VCOfferManager vcOfferManager) {
-
-        CredentialOfferDataHolder.getInstance().setVCOfferManager(null);
     }
 
     @Reference(

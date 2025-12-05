@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vci.metadata;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
@@ -133,7 +131,7 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                         .scope(configuration.getScope())
                         .signingAlgorithm(configuration.getSigningAlgorithm())
                         .type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
-                        .display(buildDisplay(configuration.getMetadata()))
+                        .display(configuration.getDisplayName())
                         .claims(configuration.getClaims());
 
                 // Add the specific credential type if available
@@ -148,22 +146,6 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
         } catch (VCConfigMgtException e) {
             throw new CredentialIssuerMetadataException("Error while retrieving VC credential configurations " +
                     "for tenant: " + tenantDomain, e);
-        }
-    }
-
-    private Object buildDisplay(VCCredentialConfiguration.Metadata meta) {
-
-        if (meta == null || meta.getDisplay() == null) {
-            return Collections.emptyList();
-        }
-        try {
-            return new Gson().fromJson(meta.getDisplay(), Object.class);
-        } catch (JsonSyntaxException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Invalid JSON in credential metadata display; returning empty list. JSON: "
-                        + meta.getDisplay(), e);
-            }
-            return Collections.emptyList();
         }
     }
 }

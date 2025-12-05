@@ -180,10 +180,7 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         config.setScope("employee_badge");
         config.setSigningAlgorithm("RS256");
         config.setClaims(Arrays.asList("email", "name", "employee_id"));
-
-        VCCredentialConfiguration.Metadata metadata = new VCCredentialConfiguration.Metadata();
-        metadata.setDisplay("[]");
-        config.setMetadata(metadata);
+        config.setDisplayName("Employee Badge Credential");
 
         return config;
     }

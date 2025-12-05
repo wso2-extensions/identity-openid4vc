@@ -66,6 +66,7 @@ public class Constants {
         public static final String CREDENTIAL_METADATA = "credential_metadata";
         public static final String DISPLAY = "display";
         public static final String CLAIMS = "claims";
+        public static final String NAME = "name";
         public static final String PATH = "path";
     }
 
