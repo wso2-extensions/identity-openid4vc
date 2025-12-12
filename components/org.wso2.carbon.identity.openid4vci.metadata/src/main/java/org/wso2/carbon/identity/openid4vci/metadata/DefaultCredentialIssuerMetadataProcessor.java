@@ -128,16 +128,12 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                 CredentialConfigurationMetadataBuilder builder = new CredentialConfigurationMetadataBuilder()
                         .id(configuration.getIdentifier())
                         .format(configuration.getFormat())
-                        .scope(configuration.getScope())
+                        .scope(configuration.getIdentifier())
                         .signingAlgorithm(configuration.getSigningAlgorithm())
                         .type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
                         .display(configuration.getDisplayName())
+                        .type(configuration.getIdentifier())
                         .claims(configuration.getClaims());
-
-                // Add the specific credential type if available
-                if (configuration.getType() != null && !configuration.getType().isEmpty()) {
-                    builder.type(configuration.getType());
-                }
 
                 configurationsMap.put(configuration.getIdentifier(), builder.build());
             }

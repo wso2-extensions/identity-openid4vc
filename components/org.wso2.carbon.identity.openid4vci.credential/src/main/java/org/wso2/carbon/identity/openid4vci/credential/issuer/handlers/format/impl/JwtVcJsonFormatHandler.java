@@ -121,7 +121,7 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
     private Map<String, Object> buildVerifiableCredential(CredentialIssuerContext credentialIssuerContext, String id,
                                                           String issuerUrl, Instant validFrom, Instant validUntil) {
 
-        String credentialType = credentialIssuerContext.getCredentialConfiguration().getType();
+        String credentialType = credentialIssuerContext.getCredentialConfiguration().getIdentifier();
         Map<String, String> claims = credentialIssuerContext.getClaims();
 
         return new W3CVCDataModelBuilder()

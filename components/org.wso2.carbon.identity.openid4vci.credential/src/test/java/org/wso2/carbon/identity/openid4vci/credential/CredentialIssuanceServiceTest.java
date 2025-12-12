@@ -293,9 +293,7 @@ public class CredentialIssuanceServiceTest {
         config.setId("config-id-123");
         config.setIdentifier(TEST_CONFIG_ID);
         config.setDisplayName("Test Credential");
-        config.setType("TestCredential");
         config.setFormat("jwt_vc_json");
-        config.setScope(TEST_SCOPE);
         config.setExpiresIn(3600);
         config.setSigningAlgorithm("RS256");
 

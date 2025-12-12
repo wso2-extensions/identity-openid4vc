@@ -122,8 +122,6 @@ public class CredentialIssuerTest {
         config.setId(TEST_CONFIG_ID);
         config.setIdentifier("test-identifier");
         config.setFormat(format);
-        config.setType("TestCredential");
-        config.setScope("test_scope");
         config.setExpiresIn(3600);
         config.setClaims(Arrays.asList("email", "name"));
         return config;

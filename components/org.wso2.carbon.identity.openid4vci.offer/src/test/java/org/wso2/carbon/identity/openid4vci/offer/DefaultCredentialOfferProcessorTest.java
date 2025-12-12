@@ -165,7 +165,6 @@ public class DefaultCredentialOfferProcessorTest {
         config.setIdentifier(DefaultCredentialOfferProcessorTest.TEST_IDENTIFIER);
         config.setDisplayName("Test Config " + DefaultCredentialOfferProcessorTest.TEST_CONFIG_ID);
         config.setFormat("jwt_vc_json");
-        config.setScope(DefaultCredentialOfferProcessorTest.TEST_IDENTIFIER);
         config.setOfferId(DefaultCredentialOfferProcessorTest.TEST_OFFER_ID);
         return config;
     }

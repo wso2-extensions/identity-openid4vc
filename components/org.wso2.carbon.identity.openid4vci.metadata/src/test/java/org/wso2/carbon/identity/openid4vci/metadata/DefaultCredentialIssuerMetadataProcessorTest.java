@@ -177,7 +177,6 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         config.setId("config-123");
         config.setIdentifier("employee_badge");
         config.setFormat("jwt_vc_json");
-        config.setScope("employee_badge");
         config.setSigningAlgorithm("RS256");
         config.setClaims(Arrays.asList("email", "name", "employee_id"));
         config.setDisplayName("Employee Badge Credential");

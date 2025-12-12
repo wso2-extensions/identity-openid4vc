@@ -86,7 +86,7 @@ public class CredentialIssuanceService {
             }
 
             // Validate scope - check if the required scope exists in JWT token
-            validateScope(scopes, credentialConfiguration.getScope());
+            validateScope(scopes, credentialConfiguration.getIdentifier());
 
 
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
