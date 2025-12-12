@@ -1,0 +1,9 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+<suite name="DefaultCredentialOfferProcessor-Test-Suite">
+    <test name="offer-tests" preserve-order="true">
+        <classes>
+            <class name="org.wso2.carbon.identity.openid4vc.issuance.offer.DefaultCredentialOfferProcessorTest"/>
+        </classes>
+    </test>
+</suite>
+
