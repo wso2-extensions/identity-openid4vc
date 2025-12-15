@@ -348,6 +348,11 @@ public class VCCredentialConfigManagerImpl implements VCCredentialConfigManager 
 
             APIResource apiResource = VCConfigManagementServiceDataHolder.getInstance().getAPIResourceManager()
                     .getAPIResourceByIdentifier(configuration.getIdentifier(), tenantDomain);
+            if (apiResource == null) {
+                LOG.error("VC API resource for VC configuration: " + configuration.getIdentifier() +
+                        " not found in tenant: " + tenantDomain);
+                return;
+            }
             VCConfigManagementServiceDataHolder.getInstance().getAPIResourceManager()
                     .deleteAPIResourceById(apiResource.getId(), tenantDomain);
         } catch (APIResourceMgtException e) {
