@@ -31,14 +31,14 @@ import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -62,7 +62,7 @@ import static org.mockito.Mockito.when;
 public class CredentialIssuanceServiceTest {
 
     private static final String TENANT_DOMAIN = "carbon.super";
-    private static final String TEST_CONFIG_ID = "test-config-123";
+    private static final String TEST_TEMPLATE_ID = "test-template-123";
     private static final String TEST_TOKEN = "test-access-token";
     private static final String TEST_USER_ID = "user-123";
     private static final String TEST_USERNAME = "testuser@carbon.super";
@@ -74,7 +74,7 @@ public class CredentialIssuanceServiceTest {
     private static final TenantManager tenantManager = mock(TenantManager.class);
     private static final UserRealm userRealm = mock(UserRealm.class);
     private static final AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
-    private static final VCCredentialConfigManager credentialConfigManager = mock(VCCredentialConfigManager.class);
+    private static final VCTemplateManager vcTemplateManager = mock(VCTemplateManager.class);
 
     @BeforeClass
     public void setUpClass() {
@@ -97,7 +97,7 @@ public class CredentialIssuanceServiceTest {
         }
 
         // Clear DataHolder state to prevent test pollution
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(null);
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(null);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
         CredentialIssuanceDataHolder.getInstance().setRealmService(null);
 
@@ -126,13 +126,13 @@ public class CredentialIssuanceServiceTest {
 
         // Prepare test data
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
-        VCCredentialConfiguration credentialConfig = createTestCredentialConfiguration();
+        VCTemplate vcTemplate = createTestVCTemplate();
         Map<String, String> userClaims = createTestUserClaims();
 
-        // Mock credential configuration manager
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(credentialConfigManager);
-        when(credentialConfigManager.getByIdentifier(TEST_CONFIG_ID, TENANT_DOMAIN))
-                .thenReturn(credentialConfig);
+        // Mock template manager
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+        when(vcTemplateManager.getByIdentifier(TEST_TEMPLATE_ID, TENANT_DOMAIN))
+                .thenReturn(vcTemplate);
 
         // Mock credential format handler
         CredentialFormatHandler mockFormatHandler = mock(CredentialFormatHandler.class);
@@ -145,7 +145,7 @@ public class CredentialIssuanceServiceTest {
         TokenProvider tokenProvider = mock(TokenProvider.class);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
-        accessTokenDO.setScope(new String[]{TEST_CONFIG_ID, "openid"});
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID, "openid"});
         AuthenticatedUser authenticatedUser = new AuthenticatedUser();
         authenticatedUser.setUserName(TEST_USERNAME);
         authenticatedUser.setUserId(TEST_USER_ID);
@@ -159,7 +159,7 @@ public class CredentialIssuanceServiceTest {
         when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(-1234);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userStoreManager.getUserClaimValuesWithID(TEST_USER_ID,
-                credentialConfig.getClaims().toArray(new String[0]), null))
+                vcTemplate.getClaims().toArray(new String[0]), null))
                 .thenReturn(userClaims);
 
         // Mock IdentityTenantUtil
@@ -188,8 +188,8 @@ public class CredentialIssuanceServiceTest {
             expectedExceptions = CredentialIssuanceException.class,
             expectedExceptionsMessageRegExp = ".*Error verifying access token.*")
     public void testIssueCredentialWithInvalidAccessToken() throws Exception {
-        // Mock credential configuration manager
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(credentialConfigManager);
+        // Mock template manager
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
 
         // Mock token provider to throw exception for invalid token
         TokenProvider tokenProvider = mock(TokenProvider.class);
@@ -202,28 +202,28 @@ public class CredentialIssuanceServiceTest {
         credentialIssuanceService.issueCredential(reqDTO);
     }
 
-    @Test(priority = 4, description = "Test with invalid credential configuration ID",
+    @Test(priority = 4, description = "Test with invalid template ID",
             expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*No credential configuration found.*")
+            expectedExceptionsMessageRegExp = ".*No VC template found.*")
     public void testIssueCredentialWithInvalidCredentialConfigurationId() throws Exception {
-        // Mock credential configuration manager to return null for invalid config ID
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(credentialConfigManager);
-        when(credentialConfigManager.getByIdentifier("invalid-config-id", TENANT_DOMAIN))
+        // Mock template manager to return null for invalid config ID
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+        when(vcTemplateManager.getByIdentifier("invalid-template-id", TENANT_DOMAIN))
                 .thenReturn(null);
 
         // Mock token provider with valid token
         TokenProvider tokenProvider = mock(TokenProvider.class);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
-        accessTokenDO.setScope(new String[]{TEST_CONFIG_ID});
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID});
         AuthenticatedUser authenticatedUser = new AuthenticatedUser();
         authenticatedUser.setUserName(TEST_USERNAME);
         accessTokenDO.setAuthzUser(authenticatedUser);
         when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
 
-        // Execute test with invalid credential configuration ID
+        // Execute test with invalid template ID
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
-        reqDTO.setCredentialConfigurationId("invalid-config-id");
+        reqDTO.setCredentialConfigurationId("invalid-template-id");
         credentialIssuanceService.issueCredential(reqDTO);
     }
 
@@ -231,11 +231,11 @@ public class CredentialIssuanceServiceTest {
             expectedExceptions = CredentialIssuanceException.class,
             expectedExceptionsMessageRegExp = ".*does not contain the required scope.*")
     public void testIssueCredentialWithFailedScopeValidation() throws Exception {
-        // Mock credential configuration with required scope
-        VCCredentialConfiguration credentialConfig = createTestCredentialConfiguration();
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(credentialConfigManager);
-        when(credentialConfigManager.getByIdentifier(TEST_CONFIG_ID, TENANT_DOMAIN))
-                .thenReturn(credentialConfig);
+        // Mock template with required scope
+        VCTemplate credentialvcTemplate = createTestVCTemplate();
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+        when(vcTemplateManager.getByIdentifier(TEST_TEMPLATE_ID, TENANT_DOMAIN))
+                .thenReturn(credentialvcTemplate);
 
         // Mock token provider with token that has WRONG scopes (missing required scope)
         TokenProvider tokenProvider = mock(TokenProvider.class);
@@ -277,33 +277,33 @@ public class CredentialIssuanceServiceTest {
     private CredentialIssuanceReqDTO createTestRequest() {
         CredentialIssuanceReqDTO reqDTO = new CredentialIssuanceReqDTO();
         reqDTO.setTenantDomain(TENANT_DOMAIN);
-        reqDTO.setCredentialConfigurationId(TEST_CONFIG_ID);
+        reqDTO.setCredentialConfigurationId(TEST_TEMPLATE_ID);
         reqDTO.setToken(TEST_TOKEN);
         return reqDTO;
     }
 
     /**
-     * Helper method to create a test credential configuration.
+     * Helper method to create a test template.
      *
-     * @return VCCredentialConfiguration.
+     * @return VCTemplate.
      */
-    private VCCredentialConfiguration createTestCredentialConfiguration() {
-        VCCredentialConfiguration config = new VCCredentialConfiguration();
-        config.setId("config-id-123");
-        config.setIdentifier(TEST_CONFIG_ID);
-        config.setDisplayName("Test Credential");
-        config.setFormat("jwt_vc_json");
-        config.setExpiresIn(3600);
-        config.setSigningAlgorithm("RS256");
+    private VCTemplate createTestVCTemplate() {
+        VCTemplate template = new VCTemplate();
+        template.setId("template-id-123");
+        template.setIdentifier(TEST_TEMPLATE_ID);
+        template.setDisplayName("Test Template");
+        template.setFormat("jwt_vc_json");
+        template.setExpiresIn(3600);
+        template.setSigningAlgorithm("RS256");
 
         List<String> claims = Arrays.asList(
                 "http://wso2.org/claims/emailaddress",
                 "http://wso2.org/claims/fullname",
                 "http://wso2.org/claims/employeeid"
         );
-        config.setClaims(claims);
+        template.setClaims(claims);
 
-        return config;
+        return template;
     }
 
     /**

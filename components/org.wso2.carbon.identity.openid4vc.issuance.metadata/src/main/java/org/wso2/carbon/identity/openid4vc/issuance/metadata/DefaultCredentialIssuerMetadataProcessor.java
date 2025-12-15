@@ -22,15 +22,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.identity.core.URLBuilderException;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.openid4vc.config.management.exception.VCConfigMgtException;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.exception.CredentialIssuerMetadataException;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.internal.CredentialIssuerMetadataDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.model.CredentialConfigurationMetadataBuilder;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.response.CredentialIssuerMetadataResponse;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -111,18 +111,18 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
     protected Map<String, Object> getCredentialConfigurations(String tenantDomain)
             throws CredentialIssuerMetadataException {
 
-        VCCredentialConfigManager configManager = CredentialIssuerMetadataDataHolder.getInstance()
+        VCTemplateManager configManager = CredentialIssuerMetadataDataHolder.getInstance()
                 .getVCCredentialConfigManager();
         try {
-            List<VCCredentialConfiguration> configurations = configManager.list(tenantDomain);
+            List<VCTemplate> configurations = configManager.list(tenantDomain);
 
             Map<String, Object> configurationsMap = new LinkedHashMap<>();
             if (configurations == null || configurations.isEmpty()) {
                 return configurationsMap;
             }
 
-            for (VCCredentialConfiguration cfg : configurations) {
-                VCCredentialConfiguration configuration = configManager.get(cfg.getId(), tenantDomain);
+            for (VCTemplate cfg : configurations) {
+                VCTemplate configuration = configManager.get(cfg.getId(), tenantDomain);
 
                 // Use builder pattern for clean construction
                 CredentialConfigurationMetadataBuilder builder = new CredentialConfigurationMetadataBuilder()
@@ -139,8 +139,8 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
             }
 
             return configurationsMap;
-        } catch (VCConfigMgtException e) {
-            throw new CredentialIssuerMetadataException("Error while retrieving VC credential configurations " +
+        } catch (VCTemplateMgtException e) {
+            throw new CredentialIssuerMetadataException("Error while retrieving VC templates " +
                     "for tenant: " + tenantDomain, e);
         }
     }

@@ -24,13 +24,13 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.ServiceURL;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.openid4vc.config.management.exception.VCConfigMgtException;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.exception.CredentialOfferException;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.internal.CredentialOfferDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.response.CredentialOfferResponse;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -51,19 +51,19 @@ public class DefaultCredentialOfferProcessorTest {
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_ISSUER_URL = "https://localhost:9443/oid4vci";
     private static final String TEST_TOKEN_URL = "https://localhost:9443/oauth2/token";
-    private static final String TEST_CONFIG_ID = "config-123";
+    private static final String TEST_TEMPLATE_ID = "config-123";
     private static final String TEST_IDENTIFIER = "employee_badge";
 
     private DefaultCredentialOfferProcessor processor;
-    private VCCredentialConfigManager configManager;
+    private VCTemplateManager configManager;
     private MockedStatic<CommonUtil> commonUtilMockedStatic;
 
     @BeforeMethod
     public void setUp() {
         processor = DefaultCredentialOfferProcessor.getInstance();
-        configManager = mock(VCCredentialConfigManager.class);
+        configManager = mock(VCTemplateManager.class);
 
-        CredentialOfferDataHolder.getInstance().setVcCredentialConfigManager(configManager);
+        CredentialOfferDataHolder.getInstance().setVCTemplateManager(configManager);
     }
 
     @AfterMethod
@@ -79,7 +79,7 @@ public class DefaultCredentialOfferProcessorTest {
         commonUtilMockedStatic = mockCommonUtil();
 
         // Mock VCCredentialConfigurations
-        VCCredentialConfiguration config = createTestConfiguration();
+        VCTemplate config = createTestConfiguration();
         when(configManager.getByOfferId(TEST_OFFER_ID, TEST_TENANT_DOMAIN)).thenReturn(config);
 
         // Execute
@@ -123,14 +123,14 @@ public class DefaultCredentialOfferProcessorTest {
 
     @Test(priority = 3, description = "Test error handling when config retrieval fails",
             expectedExceptions = CredentialOfferException.class,
-            expectedExceptionsMessageRegExp = ".*Error while retrieving VC credential configuration.*")
+            expectedExceptionsMessageRegExp = ".*Error while retrieving VC template.*")
     public void testGenerateOfferWithConfigRetrievalError() throws Exception {
         // Mock URL building
         commonUtilMockedStatic = mockCommonUtil();
 
         // Mock configManager to throw exception
         when(configManager.getByOfferId(TEST_OFFER_ID, TEST_TENANT_DOMAIN))
-                .thenThrow(new VCConfigMgtException("error-code", "Config not found"));
+                .thenThrow(new VCTemplateMgtException("error-code", "Config not found"));
 
         // Execute - should throw CredentialOfferException
         processor.generateOffer(TEST_OFFER_ID, TEST_TENANT_DOMAIN);
@@ -157,13 +157,13 @@ public class DefaultCredentialOfferProcessorTest {
     }
 
     /**
-     * Helper method to create a test VC credential configuration.
+     * Helper method to create a test VC template.
      */
-    private VCCredentialConfiguration createTestConfiguration() {
-        VCCredentialConfiguration config = new VCCredentialConfiguration();
-        config.setId(DefaultCredentialOfferProcessorTest.TEST_CONFIG_ID);
+    private VCTemplate createTestConfiguration() {
+        VCTemplate config = new VCTemplate();
+        config.setId(DefaultCredentialOfferProcessorTest.TEST_TEMPLATE_ID);
         config.setIdentifier(DefaultCredentialOfferProcessorTest.TEST_IDENTIFIER);
-        config.setDisplayName("Test Config " + DefaultCredentialOfferProcessorTest.TEST_CONFIG_ID);
+        config.setDisplayName("Test Config " + DefaultCredentialOfferProcessorTest.TEST_TEMPLATE_ID);
         config.setFormat("jwt_vc_json");
         config.setOfferId(DefaultCredentialOfferProcessorTest.TEST_OFFER_ID);
         return config;

@@ -21,10 +21,10 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
 public class CredentialIssuerTest {
 
     private static final String TEST_FORMAT = "jwt_vc_json";
-    private static final String TEST_CONFIG_ID = "test-config-123";
+    private static final String TEST_TEMPLATE_ID = "test-config-123";
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_CREDENTIAL =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature";
@@ -58,8 +58,8 @@ public class CredentialIssuerTest {
 
     @Test(priority = 1, description = "Test successful credential issuance with valid format handler")
     public void testIssueCredentialSuccess() throws CredentialIssuanceException {
-        // Create credential configuration
-        VCCredentialConfiguration credentialConfig = createCredentialConfiguration(TEST_FORMAT);
+        // Create template
+        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT);
 
         // Create issuer context
         CredentialIssuerContext context = createIssuerContext(credentialConfig);
@@ -85,8 +85,8 @@ public class CredentialIssuerTest {
             expectedExceptions = CredentialIssuanceException.class,
             expectedExceptionsMessageRegExp = ".*Credential format cannot be null.*")
     public void testIssueCredentialWithNullFormat() throws CredentialIssuanceException {
-        // Create credential configuration with null format
-        VCCredentialConfiguration credentialConfig = createCredentialConfiguration(null);
+        // Create template with null format
+        VCTemplate credentialConfig = createVCTemplate(null);
 
         // Create issuer context
         CredentialIssuerContext context = createIssuerContext(credentialConfig);
@@ -99,8 +99,8 @@ public class CredentialIssuerTest {
             expectedExceptions = IllegalArgumentException.class,
             expectedExceptionsMessageRegExp = ".*Unsupported credential format.*")
     public void testIssueCredentialWithHandlerNotFound() throws CredentialIssuanceException {
-        // Create credential configuration with a format that has no handler
-        VCCredentialConfiguration credentialConfig = createCredentialConfiguration("unsupported_format");
+        // Create template with a format that has no handler
+        VCTemplate credentialConfig = createVCTemplate("unsupported_format");
 
         // Create issuer context
         CredentialIssuerContext context = createIssuerContext(credentialConfig);
@@ -115,11 +115,11 @@ public class CredentialIssuerTest {
     }
 
     /**
-     * Helper method to create a VCCredentialConfiguration.
+     * Helper method to create a VCTemplate.
      */
-    private VCCredentialConfiguration createCredentialConfiguration(String format) {
-        VCCredentialConfiguration config = new VCCredentialConfiguration();
-        config.setId(TEST_CONFIG_ID);
+    private VCTemplate createVCTemplate(String format) {
+        VCTemplate config = new VCTemplate();
+        config.setId(TEST_TEMPLATE_ID);
         config.setIdentifier("test-identifier");
         config.setFormat(format);
         config.setExpiresIn(3600);
@@ -130,10 +130,10 @@ public class CredentialIssuerTest {
     /**
      * Helper method to create a CredentialIssuerContext.
      */
-    private CredentialIssuerContext createIssuerContext(VCCredentialConfiguration credentialConfig) {
+    private CredentialIssuerContext createIssuerContext(VCTemplate credentialConfig) {
         CredentialIssuerContext context = new CredentialIssuerContext();
-        context.setCredentialConfiguration(credentialConfig);
-        context.setConfigurationId(TEST_CONFIG_ID);
+        context.setVCTemplate(credentialConfig);
+        context.setConfigurationId(TEST_TEMPLATE_ID);
         context.setTenantDomain(TEST_TENANT_DOMAIN);
 
         Map<String, String> claims = new HashMap<>();

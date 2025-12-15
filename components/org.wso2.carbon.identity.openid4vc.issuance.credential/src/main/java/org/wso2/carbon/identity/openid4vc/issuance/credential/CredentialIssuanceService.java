@@ -24,15 +24,15 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.openid4vc.config.management.exception.VCConfigMgtException;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuer;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
@@ -59,10 +59,10 @@ public class CredentialIssuanceService {
             throw new CredentialIssuanceException("Credential issuance request cannot be null");
         }
 
-        VCCredentialConfigManager configManager =
-                CredentialIssuanceDataHolder.getInstance().getVcCredentialConfigManager();
-        if (configManager == null) {
-            throw new CredentialIssuanceException("VC credential configuration manager is not available");
+        VCTemplateManager templateManager =
+                CredentialIssuanceDataHolder.getInstance().getVCTemplateManager();
+        if (templateManager == null) {
+            throw new CredentialIssuanceException("VC template manager is not available");
         }
 
         AccessTokenDO accessTokenDO;
@@ -77,27 +77,27 @@ public class CredentialIssuanceService {
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
 
         try {
-            VCCredentialConfiguration credentialConfiguration = configManager
+            VCTemplate template = templateManager
                     .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
 
-            if (credentialConfiguration == null) {
-                throw new CredentialIssuanceException("No credential configuration found for identifier: "
+            if (template == null) {
+                throw new CredentialIssuanceException("No VC template found for identifier: "
                         + reqDTO.getCredentialConfigurationId() + " in tenant: " + reqDTO.getTenantDomain());
             }
 
             // Validate scope - check if the required scope exists in JWT token
-            validateScope(scopes, credentialConfiguration.getIdentifier());
+            validateScope(scopes, template.getIdentifier());
 
 
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
             AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
             Map<String, String> claims =  userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
-                    credentialConfiguration.getClaims().toArray(new String[0]), null);
+                    template.getClaims().toArray(new String[0]), null);
             claims.put("id", authenticatedUser.getUserId());
 
             CredentialIssuerContext issuerContext = new CredentialIssuerContext();
-            issuerContext.setConfigurationId(credentialConfiguration.getId());
-            issuerContext.setCredentialConfiguration(credentialConfiguration);
+            issuerContext.setConfigurationId(template.getId());
+            issuerContext.setVCTemplate(template);
             issuerContext.setTenantDomain(reqDTO.getTenantDomain());
             issuerContext.setClaims(claims);
 
@@ -107,8 +107,8 @@ public class CredentialIssuanceService {
             return respDTO;
 
 
-        } catch (VCConfigMgtException e) {
-            throw new CredentialIssuanceException("Error retrieving credential configurations for tenant: "
+        } catch (VCTemplateMgtException e) {
+            throw new CredentialIssuanceException("Error retrieving credential template for tenant: "
                     + reqDTO.getTenantDomain(), e);
         } catch (IdentityException e) {
             throw new CredentialIssuanceException("Error retrieving user realm for tenant: "
@@ -120,10 +120,10 @@ public class CredentialIssuanceService {
     }
 
     /**
-     * Validates if the required scope from credential configuration exists in the JWT token scope.
+     * Validates if the required scope from template exists in the JWT token scope.
      *
      * @param scopes the scopes from token
-     * @param requiredScope the scope required by the credential configuration
+     * @param requiredScope the scope required by the template
      * @throws CredentialIssuanceException if the required scope is not present in JWT token
      */
     private void validateScope(String[] scopes, String requiredScope) throws CredentialIssuanceException {

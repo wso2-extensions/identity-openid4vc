@@ -29,7 +29,7 @@ public interface CredentialOfferProcessor {
     /**
      * Generate credential offer response.
      *
-     * @param offerId      Credential configuration ID
+     * @param offerId      template ID
      * @param tenantDomain Tenant domain
      * @return CredentialOfferResponse
      * @throws CredentialOfferException if offer generation fails

@@ -28,7 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Builder for creating OpenID4VCI Credential Configuration metadata structures.
+ * Builder for creating OpenID4VCI template metadata structures.
  * This builder follows the OpenID for Verifiable Credential Issuance specification.
  *
  * @see <a href="https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html">OpenID4VCI Specification</a>
@@ -44,7 +44,7 @@ public class CredentialConfigurationMetadataBuilder {
     private List<String> claims;
 
     /**
-     * Set the credential configuration identifier.
+     * Set the template identifier.
      *
      * @param id the configuration identifier
      * @return this builder
@@ -131,9 +131,9 @@ public class CredentialConfigurationMetadataBuilder {
     }
 
     /**
-     * Build the credential configuration metadata as a Map according to OpenID4VCI specification.
+     * Build the template metadata as a Map according to OpenID4VCI specification.
      *
-     * @return the credential configuration metadata structure
+     * @return the template metadata structure
      */
     public Map<String, Object> build() {
         Map<String, Object> config = new LinkedHashMap<>();

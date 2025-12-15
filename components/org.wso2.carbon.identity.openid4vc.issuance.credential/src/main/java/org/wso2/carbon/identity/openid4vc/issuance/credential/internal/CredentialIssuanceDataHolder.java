@@ -20,8 +20,8 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.internal;
 
 import org.wso2.carbon.identity.oauth.tokenprocessor.DefaultTokenProvider;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
@@ -33,7 +33,7 @@ import java.util.List;
 public class CredentialIssuanceDataHolder {
 
     private static final CredentialIssuanceDataHolder instance = new CredentialIssuanceDataHolder();
-    private VCCredentialConfigManager vcCredentialConfigManager;
+    private VCTemplateManager vcTemplateManager;
     private final List<CredentialFormatHandler> credentialFormatHandlers = new ArrayList<>();
     private TokenProvider tokenProvider;
     private RealmService realmService;
@@ -47,14 +47,14 @@ public class CredentialIssuanceDataHolder {
         return instance;
     }
 
-    public VCCredentialConfigManager getVcCredentialConfigManager() {
+    public VCTemplateManager getVCTemplateManager() {
 
-        return vcCredentialConfigManager;
+        return vcTemplateManager;
     }
 
-    public void setVcCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
+    public void setVCTemplateManager(VCTemplateManager vcTemplateManager) {
 
-        this.vcCredentialConfigManager = vcCredentialConfigManager;
+        this.vcTemplateManager = vcTemplateManager;
     }
 
     public List<CredentialFormatHandler> getCredentialFormatHandlers() {

@@ -43,11 +43,11 @@ public class CredentialIssuer {
     public String issueCredential(CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 
-        if (credentialIssuerContext.getCredentialConfiguration().getFormat() == null) {
+        if (credentialIssuerContext.getVCTemplate().getFormat() == null) {
             throw new CredentialIssuanceException("Credential format cannot be null");
         }
 
-        String format = credentialIssuerContext.getCredentialConfiguration().getFormat();
+        String format = credentialIssuerContext.getVCTemplate().getFormat();
         List<CredentialFormatHandler> formatHandlers = CredentialIssuanceDataHolder.getInstance()
                 .getCredentialFormatHandlers();
         CredentialFormatHandler handler = formatHandlers.stream()

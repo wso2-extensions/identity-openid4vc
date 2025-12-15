@@ -39,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.openid4vc</groupId>
-            <artifactId>org.wso2.carbon.identity.openid4vc.config.management</artifactId>
+            <artifactId>org.wso2.carbon.identity.openid4vc.template.management</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.carbon.identity.openid4vc</groupId>
@@ -117,7 +117,7 @@
                             org.wso2.carbon.base; version="${carbon.base.imp.pkg.version.range}",
                             org.wso2.carbon.identity.base; version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.*; version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.identity.openid4vc.config.management.*; version="${project.version}",
+                            org.wso2.carbon.identity.openid4vc.template.management.*; version="${project.version}",
                             org.wso2.carbon.identity.oauth.*; version="${carbon.identity.oauth.package.import.version.range}",
                             org.wso2.carbon.identity.oauth2.*; version="${carbon.identity.oauth.package.import.version.range}",
                             org.apache.commons.logging; version="${commons-logging.osgi.version.range}",

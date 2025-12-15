@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer;
 
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +28,7 @@ import java.util.Map;
  */
 public class CredentialIssuerContext {
 
-    private VCCredentialConfiguration credentialConfiguration;
+    private VCTemplate vcTemplate;
     private String configurationId;
     private String tenantDomain;
     private Map<String, String> claims;
@@ -37,12 +37,12 @@ public class CredentialIssuerContext {
         this.claims = new HashMap<>();
     }
 
-    public VCCredentialConfiguration getCredentialConfiguration() {
-        return credentialConfiguration;
+    public VCTemplate getVCTemplate() {
+        return vcTemplate;
     }
 
-    public void setCredentialConfiguration(VCCredentialConfiguration credentialConfiguration) {
-        this.credentialConfiguration = credentialConfiguration;
+    public void setVCTemplate(VCTemplate vcTemplate) {
+        this.vcTemplate = vcTemplate;
     }
 
     public String getConfigurationId() {

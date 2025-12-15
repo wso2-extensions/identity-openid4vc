@@ -26,9 +26,9 @@ import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.CredentialIssuerMetadataProcessor;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.DefaultCredentialIssuerMetadataProcessor;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 
 /**
  * Service component for OID4VCI Credential Issuer Metadata.
@@ -60,20 +60,20 @@ public class CredentialIssuerMetadataServiceComponent {
     }
 
     @Reference(
-            name = "vc.config.mgt.service.component",
-            service = VCCredentialConfigManager.class,
+            name = "vc.template.mgt.service.component",
+            service = VCTemplateManager.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetVCCredentialConfigManager"
+            unbind = "unsetVCTemplateManager"
     )
-    protected void setVCCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
+    protected void setVCTemplateManager(VCTemplateManager vcTemplateManager) {
 
-        CredentialIssuerMetadataDataHolder.getInstance().setVCCredentialConfigManager(vcCredentialConfigManager);
+        CredentialIssuerMetadataDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
     }
 
-    protected void unsetVCCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
+    protected void unsetVCTemplateManager(VCTemplateManager vcTemplateManager) {
 
-        CredentialIssuerMetadataDataHolder.getInstance().setVCCredentialConfigManager(null);
+        CredentialIssuerMetadataDataHolder.getInstance().setVCTemplateManager(null);
     }
 
 }

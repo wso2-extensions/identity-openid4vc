@@ -24,13 +24,13 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.core.ServiceURL;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
-import org.wso2.carbon.identity.openid4vc.config.management.exception.VCConfigMgtException;
-import org.wso2.carbon.identity.openid4vc.config.management.model.VCCredentialConfiguration;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.exception.CredentialIssuerMetadataException;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.internal.CredentialIssuerMetadataDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.response.CredentialIssuerMetadataResponse;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,14 +54,14 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
     private static final String TEST_TOKEN_URL = "https://localhost:9443/oauth2/token";
 
     private DefaultCredentialIssuerMetadataProcessor processor;
-    private VCCredentialConfigManager configManager;
+    private VCTemplateManager configManager;
     private MockedStatic<CommonUtil> commonUtilMockedStatic;
 
     @BeforeMethod
     public void setUp() {
         processor = DefaultCredentialIssuerMetadataProcessor.getInstance();
-        configManager = mock(VCCredentialConfigManager.class);
-        CredentialIssuerMetadataDataHolder.getInstance().setVCCredentialConfigManager(configManager);
+        configManager = mock(VCTemplateManager.class);
+        CredentialIssuerMetadataDataHolder.getInstance().setVCTemplateManager(configManager);
     }
 
     @AfterMethod
@@ -76,8 +76,8 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         // Mock URL building
         commonUtilMockedStatic = mockCommonUtil();
 
-        // Mock credential configurations
-        VCCredentialConfiguration config = createTestConfiguration();
+        // Mock templates
+        VCTemplate config = createTestConfiguration();
         when(configManager.list(TEST_TENANT_DOMAIN)).thenReturn(Collections.singletonList(config));
         when(configManager.get(config.getId(), TEST_TENANT_DOMAIN)).thenReturn(config);
 
@@ -127,14 +127,14 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
 
     @Test(priority = 3, description = "Test error handling when config retrieval fails",
             expectedExceptions = CredentialIssuerMetadataException.class,
-            expectedExceptionsMessageRegExp = ".*Error while retrieving VC credential configurations.*")
+            expectedExceptionsMessageRegExp = ".*Error while retrieving VC templates.*")
     public void testGetMetadataResponseWithConfigRetrievalError() throws Exception {
         // Mock URL building
         commonUtilMockedStatic = mockCommonUtil();
 
         // Mock config manager to throw exception
         when(configManager.list(TEST_TENANT_DOMAIN))
-                .thenThrow(new VCConfigMgtException("error", "Database error"));
+                .thenThrow(new VCTemplateMgtException("error", "Database error"));
 
         // Execute - should throw CredentialIssuerMetadataException
         processor.getMetadataResponse(TEST_TENANT_DOMAIN);
@@ -170,10 +170,10 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
     }
 
     /**
-     * Helper method to create a test VC credential configuration.
+     * Helper method to create a test VC template.
      */
-    private VCCredentialConfiguration createTestConfiguration() {
-        VCCredentialConfiguration config = new VCCredentialConfiguration();
+    private VCTemplate createTestConfiguration() {
+        VCTemplate config = new VCTemplate();
         config.setId("config-123");
         config.setIdentifier("employee_badge");
         config.setFormat("jwt_vc_json");

@@ -86,7 +86,7 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
 
         Instant now = Instant.now();
 
-        int expiryIn = credentialIssuerContext.getCredentialConfiguration().getExpiresIn();
+        int expiryIn = credentialIssuerContext.getVCTemplate().getExpiresIn();
         Instant validUntil = now.plusSeconds(expiryIn);
 
         String id = UUID.randomUUID().toString();
@@ -121,7 +121,7 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
     private Map<String, Object> buildVerifiableCredential(CredentialIssuerContext credentialIssuerContext, String id,
                                                           String issuerUrl, Instant validFrom, Instant validUntil) {
 
-        String credentialType = credentialIssuerContext.getCredentialConfiguration().getIdentifier();
+        String credentialType = credentialIssuerContext.getVCTemplate().getIdentifier();
         Map<String, String> claims = credentialIssuerContext.getClaims();
 
         return new W3CVCDataModelBuilder()
@@ -143,7 +143,7 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
     private String signJWT(JWTClaimsSet jwtClaimsSet, CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 
-        String signatureAlgorithm = credentialIssuerContext.getCredentialConfiguration()
+        String signatureAlgorithm = credentialIssuerContext.getVCTemplate()
                 .getSigningAlgorithm();
         if (JWSAlgorithm.RS256.getName().equals(signatureAlgorithm)) {
             return signJWTWithRSA(jwtClaimsSet, credentialIssuerContext);

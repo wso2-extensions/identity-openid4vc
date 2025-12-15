@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.metadata.internal;
 
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 
 /**
  * Data holder for OID4VCI Credential Issuer Metadata.
@@ -29,14 +29,14 @@ public class CredentialIssuerMetadataDataHolder {
     public static CredentialIssuerMetadataDataHolder getInstance() {
         return instance;
     }
-    private VCCredentialConfigManager vcCredentialConfigManager;
+    private VCTemplateManager vcTemplateManager;
 
 
-    public void setVCCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
-        this.vcCredentialConfigManager = vcCredentialConfigManager;
+    public void setVCTemplateManager(VCTemplateManager vcTemplateManager) {
+        this.vcTemplateManager = vcTemplateManager;
     }
 
-    public VCCredentialConfigManager getVCCredentialConfigManager() {
-        return vcCredentialConfigManager;
+    public VCTemplateManager getVCCredentialConfigManager() {
+        return vcTemplateManager;
     }
 }

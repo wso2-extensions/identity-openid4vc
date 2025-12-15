@@ -27,10 +27,10 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
-import org.wso2.carbon.identity.openid4vc.config.management.VCCredentialConfigManager;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.impl.JwtVcJsonFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -60,20 +60,20 @@ public class CredentialIssuanceServiceComponent {
     }
 
     @Reference(
-            name = "vc.config.mgt.service.component",
-            service = VCCredentialConfigManager.class,
+            name = "vc.template.mgt.service.component",
+            service = VCTemplateManager.class,
             cardinality = ReferenceCardinality.MANDATORY,
             policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetVCCredentialConfigManager"
+            unbind = "unsetVCTemplateManager"
     )
-    protected void setVCCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
+    protected void setVCTemplateManager(VCTemplateManager vcTemplateManager) {
 
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(vcCredentialConfigManager);
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
     }
 
-    protected void unsetVCCredentialConfigManager(VCCredentialConfigManager vcCredentialConfigManager) {
+    protected void unsetVCTemplateManager(VCTemplateManager vcTemplateManager) {
 
-        CredentialIssuanceDataHolder.getInstance().setVcCredentialConfigManager(null);
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(null);
     }
 
     @Reference(
