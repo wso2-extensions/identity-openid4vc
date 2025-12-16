@@ -30,7 +30,6 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssu
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.response.CredentialIssuanceResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.error.CredentialErrorResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.factories.CredentialIssuanceServiceFactory;
@@ -57,7 +56,6 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class CredentialEndpoint {
 
     private static final Log LOG = LogFactory.getLog(CredentialEndpoint.class);
-    public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
 
     @POST
     @Path("/credential")
@@ -129,18 +127,6 @@ public class CredentialEndpoint {
             Response.Status status = determineHttpStatus(errorCode);
 
             return Response.status(status)
-                    .entity(errorResponse)
-                    .build();
-        } catch (CredentialIssuanceServerException e) {
-            LOG.error(String.format("Credential issuance server error for tenant: %s", tenantDomain), e);
-
-            String errorResponse = CredentialErrorResponse.builder()
-                    .error(e.getCode())
-                    .errorDescription(e.getMessage())
-                    .build()
-                    .toJson();
-
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorResponse)
                     .build();
         } catch (CredentialIssuanceException e) {

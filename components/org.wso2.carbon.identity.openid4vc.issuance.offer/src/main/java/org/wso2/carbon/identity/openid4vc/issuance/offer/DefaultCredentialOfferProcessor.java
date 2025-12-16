@@ -23,10 +23,10 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
-import org.wso2.carbon.identity.openid4vc.issuance.offer.exception.CredentialOfferClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.exception.CredentialOfferException;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.internal.CredentialOfferDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.response.CredentialOfferResponse;
+import org.wso2.carbon.identity.openid4vc.issuance.offer.util.CredentialOfferExceptionHandler;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
@@ -35,6 +35,10 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_OFFER_NOT_FOUND;
+import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR;
+import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_URL_BUILD_ERROR;
 
 /**
  * Default implementation for credential offer processing.
@@ -86,7 +90,7 @@ public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor
 
             return new CredentialOfferResponse(offer);
         } catch (URLBuilderException e) {
-            throw new CredentialOfferException("Error while constructing credential offer URLs", e);
+            throw CredentialOfferExceptionHandler.handleServerException(ERROR_CODE_URL_BUILD_ERROR, e);
         }
     }
 
@@ -98,13 +102,11 @@ public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor
         try {
             VCTemplate config  = vcTemplateManager.getByOfferId(offerId, tenantDomain);
             if (config == null) {
-                throw new CredentialOfferClientException("No VC template found for offer ID: " +
-                        offerId);
+                throw CredentialOfferExceptionHandler.handleClientException(ERROR_CODE_OFFER_NOT_FOUND, offerId);
             }
             return config.getIdentifier();
         } catch (VCTemplateMgtException e) {
-            throw new CredentialOfferException("Error while retrieving VC template for offer ID: " +
-                    offerId, e);
+            throw CredentialOfferExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e, offerId);
         }
     }
 

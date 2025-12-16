@@ -23,12 +23,41 @@ package org.wso2.carbon.identity.openid4vc.issuance.offer.exception;
  */
 public class CredentialOfferException extends Exception {
 
+    private String errorCode;
+    private String description;
+
     public CredentialOfferException(String message) {
+
         super(message);
     }
 
     public CredentialOfferException(String message, Throwable cause) {
+
         super(message, cause);
+    }
+
+    public CredentialOfferException(String message, String description, String errorCode) {
+
+        super(message);
+        this.errorCode = errorCode;
+        this.description = description;
+    }
+
+    public CredentialOfferException(String message, String description, String errorCode, Throwable cause) {
+
+        super(message, cause);
+        this.errorCode = errorCode;
+        this.description = description;
+    }
+
+    public String getErrorCode() {
+
+        return errorCode;
+    }
+
+    public String getDescription() {
+
+        return description;
     }
 }
 

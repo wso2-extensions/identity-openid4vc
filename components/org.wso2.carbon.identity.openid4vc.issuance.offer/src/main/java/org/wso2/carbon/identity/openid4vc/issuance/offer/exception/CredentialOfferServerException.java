@@ -19,27 +19,27 @@
 package org.wso2.carbon.identity.openid4vc.issuance.offer.exception;
 
 /**
- * Exception class for client errors (4xx) in credential offer processing.
- * This represents errors caused by invalid client requests.
+ * Exception class for server errors (5xx) in credential offer processing.
+ * This represents errors caused by server-side failures.
  */
-public class CredentialOfferClientException extends CredentialOfferException {
+public class CredentialOfferServerException extends CredentialOfferException {
 
-    public CredentialOfferClientException(String message) {
+    public CredentialOfferServerException(String message) {
 
         super(message);
     }
 
-    public CredentialOfferClientException(String message, Throwable cause) {
+    public CredentialOfferServerException(String message, Throwable cause) {
 
         super(message, cause);
     }
 
-    public CredentialOfferClientException(String message, String description, String errorCode) {
+    public CredentialOfferServerException(String message, String description, String errorCode) {
 
         super(message, description, errorCode);
     }
 
-    public CredentialOfferClientException(String message, String description, String errorCode, Throwable cause) {
+    public CredentialOfferServerException(String message, String description, String errorCode, Throwable cause) {
 
         super(message, description, errorCode, cause);
     }
