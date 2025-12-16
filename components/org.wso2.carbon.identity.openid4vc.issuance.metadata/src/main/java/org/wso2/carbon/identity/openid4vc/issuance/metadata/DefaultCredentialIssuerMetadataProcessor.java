@@ -43,14 +43,14 @@ import java.util.Map;
  */
 public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssuerMetadataProcessor {
 
-    private static final Log log = LogFactory.getLog(DefaultCredentialIssuerMetadataProcessor.class);
+    private static final Log LOG = LogFactory.getLog(DefaultCredentialIssuerMetadataProcessor.class);
     private static final DefaultCredentialIssuerMetadataProcessor defaultCredentialIssuerMetadataProcessor =
             new DefaultCredentialIssuerMetadataProcessor();
 
     private DefaultCredentialIssuerMetadataProcessor() {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing DefaultCredentialIssuerMetadataProcessor for " +
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Initializing DefaultCredentialIssuerMetadataProcessor for " +
                     "CredentialIssuerMetadataProcessor.");
         }
     }

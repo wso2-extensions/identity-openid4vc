@@ -38,6 +38,7 @@ import static org.wso2.carbon.identity.openid4vc.template.management.constant.VC
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CO;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.EQ;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.EW;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_FIELD;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.GE;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.GT;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.LE;
@@ -45,7 +46,7 @@ import static org.wso2.carbon.identity.openid4vc.template.management.constant.VC
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.SW;
 
 /**
- * Utility class for VC Config filter operations.
+ * Utility class for VC Template filter operations.
  */
 public class VCTemplateFilterUtil {
 
@@ -84,9 +85,8 @@ public class VCTemplateFilterUtil {
             Node rootNode = filterTreeBuilder.buildTree();
             setExpressionNodeList(rootNode, expressionNodes);
         } catch (IOException | IdentityException e) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                    "Invalid filter expression: " + filter, e);
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_FIELD,
+                    "Invalid filter expression: " + filter);
         }
         return expressionNodes;
     }
@@ -115,8 +115,7 @@ public class VCTemplateFilterUtil {
                 String attributeName = VCTemplateManagementConstants.ATTRIBUTE_COLUMN_MAP.get(attributeValue);
 
                 if (attributeName == null) {
-                    throw new VCTemplateMgtClientException(
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_FIELD,
                             "Unsupported filter attribute: " + attributeValue);
                 }
 
@@ -206,8 +205,7 @@ public class VCTemplateFilterUtil {
                     ++count;
                     break;
                 default:
-                    throw new VCTemplateMgtClientException(
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_FIELD,
                             "Unsupported filter operation: " + operation);
             }
         }

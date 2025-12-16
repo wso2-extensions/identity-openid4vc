@@ -39,7 +39,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 )
 public class CredentialOfferServiceComponent {
 
-    private static final Log log = LogFactory.getLog(CredentialOfferServiceComponent.class);
+    private static final Log LOG = LogFactory.getLog(CredentialOfferServiceComponent.class);
 
     protected void activate(ComponentContext context) {
         try {
@@ -47,11 +47,11 @@ public class CredentialOfferServiceComponent {
             // Exposing credential offer processor as a service
             bundleContext.registerService(CredentialOfferProcessor.class.getName(),
                     DefaultCredentialOfferProcessor.getInstance(), null);
-            if (log.isDebugEnabled()) {
-                log.debug("OID4VCI Credential Offer bundle is activated");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("OID4VCI Credential Offer bundle is activated");
             }
         } catch (Throwable e) {
-            log.error("Error while activating CredentialOfferServiceComponent", e);
+            LOG.error("Error while activating CredentialOfferServiceComponent", e);
         }
     }
 

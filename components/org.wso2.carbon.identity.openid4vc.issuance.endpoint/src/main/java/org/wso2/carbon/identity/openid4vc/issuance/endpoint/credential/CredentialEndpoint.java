@@ -24,12 +24,13 @@ import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.response.CredentialIssuanceResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.error.CredentialErrorResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.factories.CredentialIssuanceServiceFactory;
@@ -45,6 +46,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CREDENTIAL_CONFIGURATION_ID;
+
 
 /**
  * Rest implementation of OID4VCI credential endpoint.
@@ -53,7 +56,7 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class CredentialEndpoint {
 
-    private static final Log log = LogFactory.getLog(CredentialEndpoint.class);
+    private static final Log LOG = LogFactory.getLog(CredentialEndpoint.class);
     public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
 
     @POST
@@ -63,8 +66,9 @@ public class CredentialEndpoint {
     public Response requestCredential(@Context HttpServletRequest request, @Context HttpServletResponse response,
                                       String payload) {
 
+        String tenantDomain = CommonUtil.resolveTenantDomain();
         try {
-            // Validate Authorization header (Section 8.3.1.1 - Authorization Errors)
+
             String authHeader = request.getHeader("Authorization");
             if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
                 String errorResponse = CredentialErrorResponse.builder()
@@ -73,7 +77,6 @@ public class CredentialEndpoint {
                         .build()
                         .toJson();
                 return Response.status(Response.Status.UNAUTHORIZED)
-                        .header("Cache-Control", "no-store")
                         .entity(errorResponse)
                         .build();
             }
@@ -85,7 +88,7 @@ public class CredentialEndpoint {
             try {
                 jsonObject = JsonParser.parseString(payload).getAsJsonObject();
             } catch (JsonSyntaxException e) {
-                log.error("Invalid JSON payload", e);
+                LOG.error("Invalid JSON payload", e);
                 String errorResponse = CredentialErrorResponse.builder()
                         .error(CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST)
                         .errorDescription("Invalid JSON format")
@@ -95,7 +98,7 @@ public class CredentialEndpoint {
             }
 
             // Validate required field: credential_configuration_id
-            if (!jsonObject.has("credential_configuration_id")) {
+            if (!jsonObject.has(CREDENTIAL_CONFIGURATION_ID)) {
                 String errorResponse = CredentialErrorResponse.builder()
                         .error(CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST)
                         .errorDescription("Missing required field: credential_configuration_id")
@@ -106,57 +109,73 @@ public class CredentialEndpoint {
 
             String credentialConfigurationId = jsonObject.get("credential_configuration_id").getAsString();
 
-            String token = authHeader.substring(7); // Remove "Bearer " prefix
-
-            // Build CredentialIssuanceReqDTO directly
-            CredentialIssuanceReqDTO credentialIssuanceReqDTO = new CredentialIssuanceReqDTO();
-            credentialIssuanceReqDTO.setTenantDomain(resolveTenantDomain());
-            credentialIssuanceReqDTO.setCredentialConfigurationId(credentialConfigurationId);
-            credentialIssuanceReqDTO.setToken(token);
-
-            // Issue credential
-            CredentialIssuanceService credentialIssuanceService = CredentialIssuanceServiceFactory
-                    .getCredentialIssuanceService();
-            CredentialIssuanceRespDTO credentialIssuanceRespDTO = credentialIssuanceService
-                    .issueCredential(credentialIssuanceReqDTO);
+            CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(authHeader,
+                    tenantDomain, credentialConfigurationId);
             return buildResponse(credentialIssuanceRespDTO);
 
-        } catch (CredentialIssuanceException e) {
-            String tenantDomain = resolveTenantDomain();
-            if (log.isDebugEnabled()) {
-                log.debug(String.format("Credential issuance failed for tenant: %s", tenantDomain), e);
+        } catch (CredentialIssuanceClientException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Credential issuance client error for tenant: %s", tenantDomain), e);
             }
 
-            // Map exception to appropriate OpenID4VCI error code
-            String errorCode = mapExceptionToErrorCode(e);
+            String errorCode = e.getOAuth2ErrorCode() != null ? e.getOAuth2ErrorCode() :
+                    CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST;
             String errorResponse = CredentialErrorResponse.builder()
                     .error(errorCode)
                     .errorDescription(e.getMessage())
                     .build()
                     .toJson();
 
-            // Return 403 Forbidden for insufficient_scope, 400 Bad Request for others
-            Response.Status status = CredentialErrorResponse.INSUFFICIENT_SCOPE.equals(errorCode)
-                    ? Response.Status.FORBIDDEN
-                    : Response.Status.BAD_REQUEST;
+            Response.Status status = determineHttpStatus(errorCode);
 
             return Response.status(status)
-                    .header("Cache-Control", "no-store")
+                    .entity(errorResponse)
+                    .build();
+        } catch (CredentialIssuanceServerException e) {
+            LOG.error(String.format("Credential issuance server error for tenant: %s", tenantDomain), e);
+
+            String errorResponse = CredentialErrorResponse.builder()
+                    .error(e.getCode())
+                    .errorDescription(e.getMessage())
+                    .build()
+                    .toJson();
+
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorResponse)
+                    .build();
+        } catch (CredentialIssuanceException e) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug(String.format("Credential issuance failed for tenant: %s", tenantDomain), e);
+            }
+
+            // Get error code from exception or default to credential_request_denied
+            String errorCode = e.getOAuth2ErrorCode() != null
+                    ? e.getOAuth2ErrorCode()
+                    : CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED;
+            String errorResponse = CredentialErrorResponse.builder()
+                    .error(errorCode)
+                    .errorDescription(e.getMessage())
+                    .build()
+                    .toJson();
+
+            // Determine HTTP status based on error code
+            Response.Status status = determineHttpStatus(errorCode);
+
+            return Response.status(status)
                     .entity(errorResponse)
                     .build();
         } catch (IllegalStateException e) {
-            log.error("Credential issuance processor service is unavailable", e);
+            LOG.error("Credential issuance processor service is unavailable", e);
             String errorResponse = CredentialErrorResponse.builder()
                     .error(CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED)
                     .errorDescription("Credential issuance service is unavailable")
                     .build()
                     .toJson();
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .header("Cache-Control", "no-store")
                     .entity(errorResponse)
                     .build();
         } catch (Exception e) {
-            log.error("Error building credential response", e);
+            LOG.error("Error building credential response", e);
             String errorResponse = CredentialErrorResponse.builder()
                     .error(CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED)
                     .errorDescription("Error processing credential request")
@@ -169,39 +188,59 @@ public class CredentialEndpoint {
         }
     }
 
+    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader, String tenantDomain,
+                                                                          String credentialConfigurationId)
+            throws CredentialIssuanceException {
+
+        String token = authHeader.substring(7);
+
+        CredentialIssuanceReqDTO credentialIssuanceReqDTO = new CredentialIssuanceReqDTO();
+        credentialIssuanceReqDTO.setTenantDomain(tenantDomain);
+        credentialIssuanceReqDTO.setCredentialConfigurationId(credentialConfigurationId);
+        credentialIssuanceReqDTO.setToken(token);
+
+        CredentialIssuanceService credentialIssuanceService = CredentialIssuanceServiceFactory
+                .getCredentialIssuanceService();
+        return credentialIssuanceService.issueCredential(credentialIssuanceReqDTO);
+    }
+
     /**
-     * Maps CredentialIssuanceException to appropriate OpenID4VCI error code.
+     * Determines the appropriate HTTP status code based on the OpenID4VCI/RFC6750 error code.
      *
-     * @param exception the credential issuance exception
-     * @return the appropriate error code
+     * @param errorCode the error code
+     * @return the appropriate HTTP status
      */
-    private String mapExceptionToErrorCode(CredentialIssuanceException exception) {
-        String message = exception.getMessage();
-        if (message == null) {
-            return CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED;
+    private Response.Status determineHttpStatus(String errorCode) {
+
+        if (errorCode == null) {
+            return Response.Status.BAD_REQUEST;
         }
 
-        // Map based on exception message patterns
-        if (message.contains("insufficient_scope")) {
-            return CredentialErrorResponse.INSUFFICIENT_SCOPE;
-        } else if (message.contains("unknown") && message.contains("configuration")) {
-            return CredentialErrorResponse.UNKNOWN_CREDENTIAL_CONFIGURATION;
-        } else if (message.contains("unknown") && message.contains("identifier")) {
-            return CredentialErrorResponse.UNKNOWN_CREDENTIAL_IDENTIFIER;
-        } else if (message.contains("proof")) {
-            return CredentialErrorResponse.INVALID_PROOF;
-        } else if (message.contains("nonce")) {
-            return CredentialErrorResponse.INVALID_NONCE;
-        } else if (message.contains("encryption")) {
-            return CredentialErrorResponse.INVALID_ENCRYPTION_PARAMETERS;
-        } else if (message.contains("denied")) {
-            return CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED;
-        } else {
-            return CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST;
+        switch (errorCode) {
+            case CredentialErrorResponse.INVALID_TOKEN:
+                return Response.Status.UNAUTHORIZED;
+            case CredentialErrorResponse.INSUFFICIENT_SCOPE:
+                return Response.Status.FORBIDDEN;
+            case CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST:
+            case CredentialErrorResponse.UNKNOWN_CREDENTIAL_CONFIGURATION:
+            case CredentialErrorResponse.UNKNOWN_CREDENTIAL_IDENTIFIER:
+            case CredentialErrorResponse.INVALID_PROOF:
+            case CredentialErrorResponse.INVALID_NONCE:
+            case CredentialErrorResponse.INVALID_ENCRYPTION_PARAMETERS:
+                return Response.Status.BAD_REQUEST;
+            case CredentialErrorResponse.CREDENTIAL_REQUEST_DENIED:
+            default:
+                return Response.Status.BAD_REQUEST;
         }
     }
 
-
+    /**
+     * Builds the successful credential issuance response.
+     *
+     * @param credentialIssuanceRespDTO the credential issuance response DTO
+     * @return the HTTP response
+     * @throws CredentialIssuanceException if an error occurs while building the response
+     */
     private Response buildResponse(CredentialIssuanceRespDTO credentialIssuanceRespDTO)
             throws CredentialIssuanceException {
 
@@ -210,18 +249,5 @@ public class CredentialEndpoint {
                 .build()
                 .toJson();
         return Response.ok(payload, MediaType.APPLICATION_JSON).build();
-    }
-
-    private String resolveTenantDomain() {
-
-        String tenantDomain = null;
-        Object tenantObj = IdentityUtil.threadLocalProperties.get().get(TENANT_NAME_FROM_CONTEXT);
-        if (tenantObj != null) {
-            tenantDomain = (String) tenantObj;
-        }
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        return tenantDomain;
     }
 }

@@ -38,7 +38,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
         immediate = true
 )
 public class CredentialIssuerMetadataServiceComponent {
-    private static final Log log = LogFactory.getLog(CredentialIssuerMetadataServiceComponent.class);
+    private static final Log LOG = LogFactory.getLog(CredentialIssuerMetadataServiceComponent.class);
     private static BundleContext bundleContext = null;
 
     public static BundleContext getBundleContext() {
@@ -51,11 +51,11 @@ public class CredentialIssuerMetadataServiceComponent {
             // exposing server configuration as a service
             bundleContext.registerService(CredentialIssuerMetadataProcessor.class.getName(),
                     DefaultCredentialIssuerMetadataProcessor.getInstance(), null);
-            if (log.isDebugEnabled()) {
-                log.debug("OID4VCI Credential Issuer Metadata bundle is activated");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("OID4VCI Credential Issuer Metadata bundle is activated");
             }
         } catch (Throwable e) {
-            log.error("Error while activating CredentialIssuerMetadataServiceComponent", e);
+            LOG.error("Error while activating CredentialIssuerMetadataServiceComponent", e);
         }
     }
 

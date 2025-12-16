@@ -36,7 +36,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssu
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
@@ -177,16 +177,21 @@ public class CredentialIssuanceServiceTest {
     }
 
     @Test(priority = 2, description = "Test with null request DTO",
-            expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*cannot be null.*")
+            expectedExceptions = CredentialIssuanceException.class)
     public void testIssueCredentialWithNullDTO() throws CredentialIssuanceException {
         // Test with null request DTO
-        credentialIssuanceService.issueCredential(null);
+        try {
+            credentialIssuanceService.issueCredential(null);
+            Assert.fail("Expected CredentialIssuanceException to be thrown");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getDescription().contains("invalid") || e.getDescription().contains("malformed"),
+                    "Exception description should indicate invalid request. Actual: " + e.getDescription());
+            throw e;
+        }
     }
 
     @Test(priority = 3, description = "Test with invalid access token",
-            expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*Error verifying access token.*")
+            expectedExceptions = CredentialIssuanceException.class)
     public void testIssueCredentialWithInvalidAccessToken() throws Exception {
         // Mock template manager
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
@@ -199,12 +204,19 @@ public class CredentialIssuanceServiceTest {
 
         // Execute test with invalid token
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
-        credentialIssuanceService.issueCredential(reqDTO);
+        try {
+            credentialIssuanceService.issueCredential(reqDTO);
+            Assert.fail("Expected CredentialIssuanceException to be thrown");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getDescription().contains("invalid") || e.getDescription().contains("expired")
+                    || e.getDescription().contains("revoked"),
+                    "Exception description should indicate invalid token. Actual: " + e.getDescription());
+            throw e;
+        }
     }
 
     @Test(priority = 4, description = "Test with invalid template ID",
-            expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*No VC template found.*")
+            expectedExceptions = CredentialIssuanceException.class)
     public void testIssueCredentialWithInvalidCredentialConfigurationId() throws Exception {
         // Mock template manager to return null for invalid config ID
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
@@ -224,12 +236,19 @@ public class CredentialIssuanceServiceTest {
         // Execute test with invalid template ID
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
         reqDTO.setCredentialConfigurationId("invalid-template-id");
-        credentialIssuanceService.issueCredential(reqDTO);
+        try {
+            credentialIssuanceService.issueCredential(reqDTO);
+            Assert.fail("Expected CredentialIssuanceException to be thrown");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getDescription().contains("not supported") || e.getDescription().contains("unknown")
+                    || e.getDescription().contains("does not exist"),
+                    "Exception description should indicate unknown configuration. Actual: " + e.getDescription());
+            throw e;
+        }
     }
 
     @Test(priority = 5, description = "Test with failed scope validation",
-            expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*does not contain the required scope.*")
+            expectedExceptions = CredentialIssuanceException.class)
     public void testIssueCredentialWithFailedScopeValidation() throws Exception {
         // Mock template with required scope
         VCTemplate credentialvcTemplate = createTestVCTemplate();
@@ -249,7 +268,14 @@ public class CredentialIssuanceServiceTest {
 
         // Execute test - should fail at scope validation
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
-        credentialIssuanceService.issueCredential(reqDTO);
+        try {
+            credentialIssuanceService.issueCredential(reqDTO);
+            Assert.fail("Expected CredentialIssuanceException to be thrown");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getDescription().contains("scope") || e.getDescription().contains("required"),
+                    "Exception description should indicate insufficient scope. Actual: " + e.getDescription());
+            throw e;
+        }
     }
 
     private MockedStatic<ServiceURLBuilder> mockServiceUrlBuilder() throws Exception {

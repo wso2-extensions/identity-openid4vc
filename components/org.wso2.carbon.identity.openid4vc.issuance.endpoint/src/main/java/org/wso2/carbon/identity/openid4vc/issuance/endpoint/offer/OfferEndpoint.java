@@ -22,8 +22,7 @@ import com.google.gson.Gson;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.offer.factories.CredentialOfferServiceFactory;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.CredentialOfferProcessor;
 import org.wso2.carbon.identity.openid4vc.issuance.offer.exception.CredentialOfferClientException;
@@ -44,16 +43,15 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class OfferEndpoint {
 
-    private static final Log log = LogFactory.getLog(OfferEndpoint.class);
+    private static final Log LOG = LogFactory.getLog(OfferEndpoint.class);
     private static final Gson GSON = new Gson();
-    public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
 
     @GET
     @Path("/credential-offer/{offer_id}")
     public Response getCredentialOffer(
             @PathParam("offer_id") String offerId) {
 
-        String tenantDomain = resolveTenantDomain();
+        String tenantDomain = CommonUtil.resolveTenantDomain();
 
         if (StringUtils.isEmpty(offerId)) {
             return Response.status(Response.Status.BAD_REQUEST)
@@ -78,19 +76,6 @@ public class OfferEndpoint {
                             "\"error_description\":\"" + e.getMessage() + "\"}")
                     .build();
         }
-    }
-
-    private String resolveTenantDomain() {
-
-        String tenantDomain = null;
-        Object tenantObj = IdentityUtil.threadLocalProperties.get().get(TENANT_NAME_FROM_CONTEXT);
-        if (tenantObj != null) {
-            tenantDomain = (String) tenantObj;
-        }
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        return tenantDomain;
     }
 }
 

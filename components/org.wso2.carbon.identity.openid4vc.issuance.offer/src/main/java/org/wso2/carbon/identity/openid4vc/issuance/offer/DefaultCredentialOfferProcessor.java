@@ -41,14 +41,14 @@ import java.util.Map;
  */
 public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor {
 
-    private static final Log log = LogFactory.getLog(DefaultCredentialOfferProcessor.class);
+    private static final Log LOG = LogFactory.getLog(DefaultCredentialOfferProcessor.class);
     private static final DefaultCredentialOfferProcessor defaultCredentialOfferProcessor =
             new DefaultCredentialOfferProcessor();
 
     private DefaultCredentialOfferProcessor() {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Initializing DefaultCredentialOfferProcessor for CredentialOfferProcessor.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Initializing DefaultCredentialOfferProcessor for CredentialOfferProcessor.");
         }
     }
 

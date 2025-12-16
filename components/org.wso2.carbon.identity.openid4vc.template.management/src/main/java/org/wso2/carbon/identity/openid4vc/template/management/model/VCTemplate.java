@@ -23,133 +23,127 @@ import java.util.List;
 
 /**
  * Model representing a VC template.
- * Aligns with the updated Admin API schema.
  */
 public class VCTemplate {
 
-    // Server-generated identifier (resource id)
     private String id;
 
-    // Stable identifier used in OID4VCI issuer metadata
     private String identifier;
 
-    // template identifier published via issuer metadata.
     private String displayName;
 
     private String description;
 
     private String format;
 
-    // Single signing algorithm supported for this configuration.
     private String signingAlgorithm;
 
     private List<String> claims = new ArrayList<>();
 
     private Integer expiresIn;
 
-    // Backend-generated random UUID for credential offer. Null if no offer has been generated.
     private String offerId;
 
-    // Cursor key for pagination support.
     private Integer cursorKey;
 
     public String getId() {
+
         return id;
     }
 
     public void setId(String id) {
+
         this.id = id;
     }
 
     public String getIdentifier() {
+
         return identifier;
     }
 
     public void setIdentifier(String identifier) {
+
         this.identifier = identifier;
     }
 
     public String getFormat() {
+
         return format;
     }
 
     public void setFormat(String format) {
+
         this.format = format;
     }
 
     public String getSigningAlgorithm() {
+
         return signingAlgorithm;
     }
 
     public void setSigningAlgorithm(String signingAlgorithm) {
+
         this.signingAlgorithm = signingAlgorithm;
     }
 
     public List<String> getClaims() {
+
         return claims;
     }
 
     public void setClaims(List<String> claims) {
+
         this.claims = claims;
     }
 
     public String getDisplayName() {
+
         return displayName;
     }
 
     public void setDisplayName(String displayName) {
+
         this.displayName = displayName;
     }
 
     public String getDescription() {
+
         return description;
     }
 
     public void setDescription(String description) {
+
         this.description = description;
     }
 
     public Integer getExpiresIn() {
+
         return expiresIn;
     }
 
     public void setExpiresIn(Integer expiresIn) {
+
         this.expiresIn = expiresIn;
     }
 
-    /**
-     * Get the offer ID.
-     *
-     * @return Offer ID or null if no offer exists.
-     */
+
     public String getOfferId() {
+
         return offerId;
     }
 
-    /**
-     * Set the offer ID.
-     *
-     * @param offerId Offer ID.
-     */
     public void setOfferId(String offerId) {
+
         this.offerId = offerId;
     }
 
-    /**
-     * Get the cursor key for pagination.
-     *
-     * @return Cursor key.
-     */
     public Integer getCursorKey() {
+
         return cursorKey;
     }
 
-    /**
-     * Set the cursor key for pagination.
-     *
-     * @param cursorKey Cursor key.
-     */
     public void setCursorKey(Integer cursorKey) {
+
         this.cursorKey = cursorKey;
     }
 }

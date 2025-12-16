@@ -147,9 +147,8 @@ public class VCTemplateManagerImplTest {
                 "Default signing algorithm should be RS256.");
     }
 
-    @Test(priority = 2, expectedExceptions = VCTemplateMgtClientException.class,
-            expectedExceptionsMessageRegExp = ".*Identifier cannot be empty.*")
-    public void testAddConfigurationWithEmptyIdentifier() throws VCTemplateMgtException {
+    @Test(priority = 2, expectedExceptions = VCTemplateMgtClientException.class)
+    public void testAddConfigurationWithEmptyIdentifier() throws VCTemplateMgtClientException {
 
         VCTemplate config = createSampleConfiguration(
                 StringUtils.EMPTY,
@@ -158,12 +157,22 @@ public class VCTemplateManagerImplTest {
                 TEST_EXPIRES_IN,
                 Arrays.asList("email")
         );
-        configManager.add(config, TENANT_DOMAIN);
+        try {
+            configManager.add(config, TENANT_DOMAIN);
+            Assert.fail("Expected VCTemplateMgtClientException to be thrown");
+        } catch (VCTemplateMgtClientException e) {
+            Assert.assertTrue(e.getDescription().contains("Identifier")
+                            && e.getDescription().contains("cannot be empty"),
+                    "Exception description should contain 'Identifier cannot be empty'. Actual: "
+                            + e.getDescription());
+            throw e;
+        } catch (VCTemplateMgtException e) {
+            Assert.fail("Unexpected exception type: " + e.getClass().getName());
+        }
     }
 
-    @Test(priority = 3, expectedExceptions = VCTemplateMgtClientException.class,
-            expectedExceptionsMessageRegExp = ".*Display name cannot be empty.*")
-    public void testAddConfigurationWithEmptyDisplayName() throws VCTemplateMgtException {
+    @Test(priority = 3, expectedExceptions = VCTemplateMgtClientException.class)
+    public void testAddConfigurationWithEmptyDisplayName() throws VCTemplateMgtClientException {
 
         VCTemplate config = createSampleConfiguration(
                 "UniqueIdentifier1-" + System.currentTimeMillis(),
@@ -172,12 +181,22 @@ public class VCTemplateManagerImplTest {
                 TEST_EXPIRES_IN,
                 Arrays.asList("email")
         );
-        configManager.add(config, TENANT_DOMAIN);
+        try {
+            configManager.add(config, TENANT_DOMAIN);
+            Assert.fail("Expected VCTemplateMgtClientException to be thrown");
+        } catch (VCTemplateMgtClientException e) {
+            Assert.assertTrue(e.getDescription().contains("Display name") &&
+                            e.getDescription().contains("cannot be empty"),
+                    "Exception description should contain 'Display name cannot be empty'. Actual: "
+                            + e.getDescription());
+            throw e;
+        } catch (VCTemplateMgtException e) {
+            Assert.fail("Unexpected exception type: " + e.getClass().getName());
+        }
     }
 
-    @Test(priority = 5, expectedExceptions = VCTemplateMgtClientException.class,
-            expectedExceptionsMessageRegExp = ".*Expiry must be at least.*")
-    public void testAddConfigurationWithInvalidExpiry() throws VCTemplateMgtException {
+    @Test(priority = 5, expectedExceptions = VCTemplateMgtClientException.class)
+    public void testAddConfigurationWithInvalidExpiry() throws VCTemplateMgtClientException {
 
         VCTemplate config = createSampleConfiguration(
                 "UniqueIdentifier3-" + System.currentTimeMillis(),
@@ -186,7 +205,16 @@ public class VCTemplateManagerImplTest {
                 59,
                 Arrays.asList("email")
         );
-        configManager.add(config, TENANT_DOMAIN);
+        try {
+            configManager.add(config, TENANT_DOMAIN);
+            Assert.fail("Expected VCTemplateMgtClientException to be thrown");
+        } catch (VCTemplateMgtClientException e) {
+            Assert.assertTrue(e.getDescription().contains("Expiry must be at least"),
+                    "Exception description should contain 'Expiry must be at least'. Actual: " + e.getDescription());
+            throw e;
+        } catch (VCTemplateMgtException e) {
+            Assert.fail("Unexpected exception type: " + e.getClass().getName());
+        }
     }
 
     @Test(priority = 6, expectedExceptions = VCTemplateMgtClientException.class,
@@ -286,15 +314,24 @@ public class VCTemplateManagerImplTest {
         sampleConfig = updated;
     }
 
-    @Test(priority = 12, expectedExceptions = VCTemplateMgtClientException.class,
-            expectedExceptionsMessageRegExp = ".*Identifier cannot be updated.*")
-    public void testUpdateConfigurationWithNewIdentifier() throws VCTemplateMgtException {
+    @Test(priority = 12, expectedExceptions = VCTemplateMgtClientException.class)
+    public void testUpdateConfigurationWithNewIdentifier() throws VCTemplateMgtClientException {
 
         VCTemplate updatingConfig = new VCTemplate();
         updatingConfig.setIdentifier("NewIdentifier");
         updatingConfig.setDisplayName("Some Display Name");
 
-        configManager.update(sampleConfig.getId(), updatingConfig, TENANT_DOMAIN);
+        try {
+            configManager.update(sampleConfig.getId(), updatingConfig, TENANT_DOMAIN);
+            Assert.fail("Expected VCTemplateMgtClientException to be thrown");
+        } catch (VCTemplateMgtClientException e) {
+            Assert.assertTrue(e.getDescription().contains("Identifier cannot be updated"),
+                    "Exception description should contain 'Identifier cannot be updated'. Actual: "
+                            + e.getDescription());
+            throw e;
+        } catch (VCTemplateMgtException e) {
+            Assert.fail("Unexpected exception type: " + e.getClass().getName());
+        }
     }
 
     @Test(priority = 13, expectedExceptions = VCTemplateMgtClientException.class,
@@ -374,9 +411,8 @@ public class VCTemplateManagerImplTest {
         configManager.add(config, TENANT_DOMAIN);
     }
 
-    @Test(priority = 18, expectedExceptions = VCTemplateMgtClientException.class,
-            expectedExceptionsMessageRegExp = ".*claim.*")
-    public void testAddConfigurationWithInvalidClaims() throws VCTemplateMgtException {
+    @Test(priority = 18, expectedExceptions = VCTemplateMgtClientException.class)
+    public void testAddConfigurationWithInvalidClaims() throws VCTemplateMgtClientException {
 
         List<String> invalidClaims = new ArrayList<>();
         invalidClaims.add("valid_claim");
@@ -391,7 +427,16 @@ public class VCTemplateManagerImplTest {
                 invalidClaims
         );
 
-        configManager.add(config, TENANT_DOMAIN);
+        try {
+            configManager.add(config, TENANT_DOMAIN);
+            Assert.fail("Expected VCTemplateMgtClientException to be thrown");
+        } catch (VCTemplateMgtClientException e) {
+            Assert.assertTrue(e.getDescription().contains("Invalid claim"),
+                    "Exception description should contain 'Invalid claim'. Actual: " + e.getDescription());
+            throw e;
+        } catch (VCTemplateMgtException e) {
+            Assert.fail("Unexpected exception type: " + e.getClass().getName());
+        }
     }
 
     /**

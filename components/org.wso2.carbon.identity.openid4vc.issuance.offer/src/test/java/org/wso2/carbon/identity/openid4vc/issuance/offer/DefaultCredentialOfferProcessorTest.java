@@ -130,7 +130,7 @@ public class DefaultCredentialOfferProcessorTest {
 
         // Mock configManager to throw exception
         when(configManager.getByOfferId(TEST_OFFER_ID, TEST_TENANT_DOMAIN))
-                .thenThrow(new VCTemplateMgtException("error-code", "Config not found"));
+                .thenThrow(new VCTemplateMgtException("Config not found", "Error retrieving config", "error-code"));
 
         // Execute - should throw CredentialOfferException
         processor.generateOffer(TEST_OFFER_ID, TEST_TENANT_DOMAIN);

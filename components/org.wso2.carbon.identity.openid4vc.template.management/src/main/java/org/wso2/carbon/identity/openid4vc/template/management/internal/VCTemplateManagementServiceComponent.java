@@ -33,7 +33,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManagerImpl;
 
 /**
- * Service component for the VC config management.
+ * Service component for the VC template management.
  */
 @Component(
         name = "vc.template.mgt.service.component",
@@ -50,9 +50,9 @@ public class VCTemplateManagementServiceComponent {
             BundleContext bundleCtx = context.getBundleContext();
             bundleCtx.registerService(VCTemplateManager.class,
                     VCTemplateManagerImpl.getInstance(), null);
-            LOG.debug("VC config management bundle is activated");
+            LOG.debug("VC template management bundle is activated");
         } catch (Throwable e) {
-            LOG.error("Error while initializing VC config management component.", e);
+            LOG.error("Error while initializing VC template management component.", e);
         }
     }
 
@@ -62,9 +62,9 @@ public class VCTemplateManagementServiceComponent {
         try {
             BundleContext bundleCtx = context.getBundleContext();
             bundleCtx.ungetService(bundleCtx.getServiceReference(VCTemplateManager.class));
-            LOG.debug("VC config management bundle is deactivated");
+            LOG.debug("VC template management bundle is deactivated");
         } catch (Throwable e) {
-            LOG.error("Error while deactivating VC config management component.", e);
+            LOG.error("Error while deactivating VC template management component.", e);
         }
     }
 

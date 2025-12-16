@@ -19,16 +19,23 @@
 package org.wso2.carbon.identity.openid4vc.template.management.exception;
 
 /**
- * Server error for VC Config management.
+ * Server error for VC Template management.
  */
 public class VCTemplateMgtServerException extends VCTemplateMgtException {
 
-    public VCTemplateMgtServerException(String code, String message) {
-        super(code, message);
+    public VCTemplateMgtServerException(String message) {
+
+        super(message);
     }
 
-    public VCTemplateMgtServerException(String code, String message, Throwable cause) {
-        super(code, message, cause);
+    public VCTemplateMgtServerException(String message, Throwable cause) {
+
+        super(message, cause);
+    }
+
+    public VCTemplateMgtServerException(String message, String description, String errorCode, Throwable cause) {
+
+        super(message, description, errorCode, cause);
     }
 }
 

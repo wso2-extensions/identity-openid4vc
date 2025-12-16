@@ -49,6 +49,7 @@ public class CredentialIssuerMetadataResponse {
      * @return JSON representation of the metadata
      */
     public String toJson() {
+
         return GSON.toJson(metadata);
     }
 }

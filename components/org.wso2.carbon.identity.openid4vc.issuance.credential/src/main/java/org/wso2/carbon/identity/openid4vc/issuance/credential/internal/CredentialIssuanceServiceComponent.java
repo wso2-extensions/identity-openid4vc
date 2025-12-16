@@ -28,8 +28,8 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.impl.JwtVcJsonFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.JwtVcJsonFormatHandler;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -42,7 +42,7 @@ import org.wso2.carbon.user.core.service.RealmService;
 )
 public class CredentialIssuanceServiceComponent {
 
-    private static final Log log = LogFactory.getLog(CredentialIssuanceServiceComponent.class);
+    private static final Log LOG = LogFactory.getLog(CredentialIssuanceServiceComponent.class);
 
 
     protected void activate(ComponentContext context) {
@@ -51,11 +51,11 @@ public class CredentialIssuanceServiceComponent {
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(CredentialIssuanceService.class, new CredentialIssuanceService(), null);
             bundleContext.registerService(CredentialFormatHandler.class, new JwtVcJsonFormatHandler(), null);
-            if (log.isDebugEnabled()) {
-                log.debug("OID4VCI credential issuance component activated");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("OID4VCI credential issuance component activated");
             }
         } catch (Throwable throwable) {
-            log.error("Error while activating CredentialIssuanceServiceComponent", throwable);
+            LOG.error("Error while activating CredentialIssuanceServiceComponent", throwable);
         }
     }
 
@@ -85,16 +85,16 @@ public class CredentialIssuanceServiceComponent {
     )
     protected void addCredentialFormatHandler(CredentialFormatHandler credentialFormatHandler) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Adding the CredentialFormatHandler Service : " + credentialFormatHandler.getFormat());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding the CredentialFormatHandler Service : " + credentialFormatHandler.getFormat());
         }
         CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(credentialFormatHandler);
     }
 
     protected void removeScopeValidationHandler(CredentialFormatHandler credentialFormatHandler) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Removing the CredentialFormatHandler Service : " + credentialFormatHandler.getFormat());
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Removing the CredentialFormatHandler Service : " + credentialFormatHandler.getFormat());
         }
         CredentialIssuanceDataHolder.getInstance().removeCredentialFormatHandler(credentialFormatHandler);
     }
@@ -108,16 +108,16 @@ public class CredentialIssuanceServiceComponent {
     )
     protected void setTokenProvider(TokenProvider tokenProvider) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Setting token provider.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Setting token provider.");
         }
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
     }
 
     protected void unsetTokenProvider(TokenProvider tokenProvider) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Unset token provider.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Unset token provider.");
         }
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
     }
@@ -131,16 +131,16 @@ public class CredentialIssuanceServiceComponent {
     )
     protected void setRealmService(RealmService realmService) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Adding the Realm Service");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding the Realm Service");
         }
         CredentialIssuanceDataHolder.getInstance().setRealmService(realmService);
     }
 
     protected void unsetRealmService(RealmService realmService) {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Removing the Realm Service");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Removing the Realm Service");
         }
         CredentialIssuanceDataHolder.getInstance().setRealmService(null);
     }

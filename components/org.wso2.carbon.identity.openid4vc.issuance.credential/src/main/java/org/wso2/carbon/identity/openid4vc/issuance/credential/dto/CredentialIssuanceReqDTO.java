@@ -28,26 +28,32 @@ public class CredentialIssuanceReqDTO {
     private String token;
 
     public String getTenantDomain() {
+
         return tenantDomain;
     }
 
     public void setTenantDomain(String tenantDomain) {
+
         this.tenantDomain = tenantDomain;
     }
 
     public String getCredentialConfigurationId() {
+
         return credentialConfigurationId;
     }
 
     public void setCredentialConfigurationId(String credentialConfigurationId) {
+
         this.credentialConfigurationId = credentialConfigurationId;
     }
 
     public String getToken() {
+
         return token;
     }
 
     public void setToken(String token) {
+
         this.token = token;
     }
 }

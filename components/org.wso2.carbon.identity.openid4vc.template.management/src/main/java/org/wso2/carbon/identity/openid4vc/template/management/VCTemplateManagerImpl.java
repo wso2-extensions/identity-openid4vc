@@ -34,11 +34,11 @@ import org.wso2.carbon.identity.openid4vc.template.management.dao.VCTemplateMgtD
 import org.wso2.carbon.identity.openid4vc.template.management.dao.impl.VCTemplateMgtDAOImpl;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
-import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtServerException;
 import org.wso2.carbon.identity.openid4vc.template.management.internal.VCTemplateManagementServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplateSearchResult;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterUtil;
+import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateMgtExceptionHandler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,16 @@ import java.util.Set;
 
 import static org.wso2.carbon.identity.api.resource.mgt.constant.APIResourceManagementConstants.APIResourceTypes.VC;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.DEFAULT_SIGNING_ALGORITHM;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_CLAIM_VALIDATION_ERROR;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_EMPTY_FIELD;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_IDENTIFIER_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_CLAIM;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_EXPIRY;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_FIELD;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_OFFER_NOT_FOUND;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_ID_MISMATCH;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_VC_FORMAT;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.VC_DIALECT;
 
 /**
@@ -147,7 +157,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             return dao.add(template, tenantId);
         } catch (VCTemplateMgtException e) {
             if (VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getCode()
-                    .equals(e.getCode())) {
+                    .equals(e.getErrorCode())) {
                 // Rollback VC resource addition if DAO operation fails.
                 deleteVCResource(template, tenantDomain);
             }
@@ -164,23 +174,18 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
                     tenantDomain));
         }
         if (template.getId() != null && !StringUtils.equals(id, template.getId())) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_ID_MISMATCH.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_ID_MISMATCH.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_ID_MISMATCH);
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
         // Validate identifier uniqueness if changed.
         VCTemplate existing = dao.get(id, tenantId);
         if (existing == null) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
         }
 
         if (!StringUtils.isBlank(template.getIdentifier())) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                    "Identifier cannot be updated.");
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_FIELD,
+                    "Identifier cannot be updated");
         }
 
         // Preserve identifier from existing template.
@@ -207,7 +212,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             dao.delete(id, tenantId);
         } catch (VCTemplateMgtException e) {
             if (VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getCode()
-                    .equals(e.getCode())) {
+                    .equals(e.getErrorCode())) {
                 // Rollback VC resource deletion if DAO operation fails.
                 addVCResource(template, tenantDomain);
             }
@@ -226,14 +231,10 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             throws VCTemplateMgtException {
 
         if (StringUtils.isBlank(template.getIdentifier())) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                    "Identifier cannot be empty.");
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_EMPTY_FIELD, "Identifier");
         }
         if (dao.existsByIdentifier(template.getIdentifier(), tenantId)) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_IDENTIFIER_ALREADY_EXISTS.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_IDENTIFIER_ALREADY_EXISTS.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_IDENTIFIER_ALREADY_EXISTS);
         }
     }
 
@@ -248,9 +249,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             throws VCTemplateMgtException {
 
         if (StringUtils.isBlank(template.getDisplayName())) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                    "Display name cannot be empty.");
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_EMPTY_FIELD, "Display name");
         }
     }
 
@@ -268,9 +267,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             // Currently only default format is supported.
             if (!StringUtils.equals(template.getFormat(),
                     VCTemplateManagementConstants.DEFAULT_VC_FORMAT)) {
-                throw new VCTemplateMgtClientException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_VC_FORMAT.getCode(),
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_UNSUPPORTED_VC_FORMAT.getMessage());
+                throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_UNSUPPORTED_VC_FORMAT);
             }
         }
     }
@@ -284,10 +281,8 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
     private void validateExpiry(Integer expiryInSeconds) throws VCTemplateMgtClientException {
 
         if (expiryInSeconds == null || expiryInSeconds < VCTemplateManagementConstants.MIN_EXPIRES_IN_SECONDS) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                    String.format("Expiry must be at least %d seconds.",
-                            VCTemplateManagementConstants.MIN_EXPIRES_IN_SECONDS));
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_EXPIRY,
+                    VCTemplateManagementConstants.MIN_EXPIRES_IN_SECONDS);
         }
     }
 
@@ -363,9 +358,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
                 vcClaims = ClaimMetadataHandler.getInstance()
                         .getMappingsFromOtherDialectToCarbon(VC_DIALECT, null, tenantDomain);
             } catch (ClaimMetadataException e) {
-                throw new VCTemplateMgtServerException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                        "Error while validating claims.");
+                throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_CLAIM_VALIDATION_ERROR, e);
             }
 
             // Build a map for efficient claim lookup.
@@ -376,9 +369,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
 
             for (String claim : claims) {
                 if (StringUtils.isBlank(claim) || !vcClaimURIs.contains(claim)) {
-                    throw new VCTemplateMgtClientException(
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_INVALID_REQUEST.getCode(),
-                            "Invalid claim: " + claim);
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_CLAIM, claim);
                 }
             }
         }
@@ -398,9 +389,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
         // Check if template exists.
         VCTemplate existing = dao.get(templateId, tenantId);
         if (existing == null) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
         }
 
         // Generate new offer ID (regardless of whether one exists - handles both generation and regeneration).
@@ -424,16 +413,12 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
         // Check if template exists.
         VCTemplate existing = dao.get(templateId, tenantId);
         if (existing == null) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
         }
 
         // Check if offer exists.
         if (existing.getOfferId() == null) {
-            throw new VCTemplateMgtClientException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_OFFER_NOT_FOUND.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_OFFER_NOT_FOUND.getMessage());
+            throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_OFFER_NOT_FOUND);
         }
 
         // Revoke offer by setting offerId to null.

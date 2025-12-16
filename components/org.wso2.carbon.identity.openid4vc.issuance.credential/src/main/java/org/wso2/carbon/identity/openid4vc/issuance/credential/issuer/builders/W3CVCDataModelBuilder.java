@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.model;
+package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.builders;
 
 import org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants;
 
@@ -43,7 +43,7 @@ public class W3CVCDataModelBuilder {
     private Map<String, String> credentialSubject;
 
     public W3CVCDataModelBuilder() {
-        // Add default W3C context and type as per W3C VC Data Model v2
+
         this.contexts.add(Constants.W3CVCDataModel.W3C_CREDENTIALS_V2_CONTEXT);
         this.types.add(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE);
     }
@@ -55,6 +55,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder id(String id) {
+
         this.id = id;
         return this;
     }
@@ -66,6 +67,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder addContext(String context) {
+
         if (context != null && !context.isEmpty()) {
             this.contexts.add(context);
         }
@@ -79,6 +81,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder addType(String type) {
+
         if (type != null && !type.isEmpty()) {
             this.types.add(type);
         }
@@ -92,6 +95,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder issuer(String issuer) {
+
         this.issuer = issuer;
         return this;
     }
@@ -103,6 +107,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder validFrom(Instant validFrom) {
+
         this.validFrom = validFrom;
         return this;
     }
@@ -114,6 +119,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder validUntil(Instant validUntil) {
+
         this.validUntil = validUntil;
         return this;
     }
@@ -125,6 +131,7 @@ public class W3CVCDataModelBuilder {
      * @return this builder
      */
     public W3CVCDataModelBuilder credentialSubject(Map<String, String> credentialSubject) {
+
         this.credentialSubject = credentialSubject;
         return this;
     }
@@ -135,6 +142,7 @@ public class W3CVCDataModelBuilder {
      * @return the W3C VC structure
      */
     public Map<String, Object> build() {
+
         Map<String, Object> vc = new LinkedHashMap<>();
 
         vc.put(Constants.W3CVCDataModel.CONTEXT, contexts);

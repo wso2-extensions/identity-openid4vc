@@ -21,48 +21,31 @@ package org.wso2.carbon.identity.openid4vc.template.management.model;
 import java.util.List;
 
 /**
- * VC template search result with pagination support.
+ * VC template search result.
  */
 public class VCTemplateSearchResult {
 
     private int totalCount;
     private List<VCTemplate> templates;
 
-    /**
-     * Get the total count of configurations.
-     *
-     * @return Total count.
-     */
     public int getTotalCount() {
 
         return totalCount;
     }
 
-    /**
-     * Set the total count of configurations.
-     *
-     * @param totalCount Total count.
-     */
     public void setTotalCount(int totalCount) {
 
         this.totalCount = totalCount;
     }
 
-    /**
-     * Get the list of VC templates.
-     *
-     * @return List of VC templates.
-     */
     public List<VCTemplate> getTemplates() {
+
         return templates;
     }
 
-    /**
-     * Set the list of VC templates.
-     *
-     * @param templates List of VC templates.
-     */
+
     public void setTemplates(List<VCTemplate> templates) {
+
         this.templates = templates;
     }
 }

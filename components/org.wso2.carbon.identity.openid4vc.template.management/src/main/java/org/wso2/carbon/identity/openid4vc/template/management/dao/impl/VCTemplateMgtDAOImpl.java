@@ -22,14 +22,13 @@ import org.apache.commons.collections.CollectionUtils;
 import org.wso2.carbon.identity.core.model.ExpressionNode;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.template.management.constant.SQLConstants;
-import org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants;
 import org.wso2.carbon.identity.openid4vc.template.management.dao.VCTemplateMgtDAO;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
-import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtServerException;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterQueryBuilder;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterUtil;
+import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateMgtExceptionHandler;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -42,6 +41,11 @@ import java.util.UUID;
 
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.AFTER;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.BEFORE;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_DELETION_ERROR;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR;
 
 /**
  * JDBC implementation of {@link VCTemplateMgtDAO}.
@@ -62,9 +66,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return results;
     }
@@ -103,9 +105,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
         } catch (VCTemplateMgtClientException e) {
             throw e;
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return results;
     }
@@ -147,9 +147,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
         } catch (VCTemplateMgtClientException e) {
             throw e;
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return 0;
     }
@@ -168,9 +166,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return null;
     }
@@ -188,9 +184,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return null;
     }
@@ -209,9 +203,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
         return null;
     }
@@ -228,9 +220,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 return rs.next();
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_RETRIEVAL_ERROR, e);
         }
     }
 
@@ -265,14 +255,10 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 if (e instanceof VCTemplateMgtException) {
                     throw (VCTemplateMgtException) e;
                 }
-                throw new VCTemplateMgtServerException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getCode(),
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getMessage(), e);
+                throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_TRANSACTION_ERROR, e);
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_PERSISTENCE_ERROR, e);
         }
     }
 
@@ -295,9 +281,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 ps.setString(9, id);
                 int updated = ps.executeUpdate();
                 if (updated == 0) {
-                    throw new VCTemplateMgtClientException(
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getCode(),
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getMessage());
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
                 }
 
                 deleteClaims(conn, id);
@@ -312,14 +296,10 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 if (e instanceof VCTemplateMgtException) {
                     throw (VCTemplateMgtException) e;
                 }
-                throw new VCTemplateMgtServerException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getMessage(), e);
+                throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_PERSISTENCE_ERROR, e);
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_PERSISTENCE_ERROR, e);
         }
     }
 
@@ -336,14 +316,10 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 IdentityDatabaseUtil.commitTransaction(conn);
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(conn);
-                throw new VCTemplateMgtServerException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getCode(),
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TRANSACTION_ERROR.getMessage(), e);
+                throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_TRANSACTION_ERROR, e);
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_DELETION_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_DELETION_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_DELETION_ERROR, e);
         }
     }
 
@@ -359,9 +335,7 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 ps.setString(3, configId);
                 int updated = ps.executeUpdate();
                 if (updated == 0) {
-                    throw new VCTemplateMgtClientException(
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getCode(),
-                            VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_TEMPLATE_NOT_FOUND.getMessage());
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
                 }
                 IdentityDatabaseUtil.commitTransaction(conn);
             } catch (SQLException | VCTemplateMgtException e) {
@@ -369,14 +343,10 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
                 if (e instanceof VCTemplateMgtException) {
                     throw (VCTemplateMgtException) e;
                 }
-                throw new VCTemplateMgtServerException(
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                        VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getMessage(), e);
+                throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_PERSISTENCE_ERROR, e);
             }
         } catch (SQLException e) {
-            throw new VCTemplateMgtServerException(
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getCode(),
-                    VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_PERSISTENCE_ERROR.getMessage(), e);
+            throw VCTemplateMgtExceptionHandler.handleServerException(ERROR_CODE_PERSISTENCE_ERROR, e);
         }
     }
 

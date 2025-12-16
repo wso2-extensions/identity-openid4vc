@@ -22,7 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 
 import java.util.List;
 
@@ -31,7 +31,7 @@ import java.util.List;
  */
 public class CredentialIssuer {
 
-    private static final Log log = LogFactory.getLog(CredentialIssuer.class);
+    private static final Log LOG = LogFactory.getLog(CredentialIssuer.class);
 
     /**
      * Issue a credential based on the format.
@@ -54,8 +54,8 @@ public class CredentialIssuer {
                 .filter(h -> format.equals(h.getFormat()))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Unsupported credential format: " + format));
-        if (log.isDebugEnabled()) {
-            log.debug("Issuing credential with format: " + format +
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Issuing credential with format: " + format +
                      " for configuration: " + credentialIssuerContext.getConfigurationId());
         }
 

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.impl;
+package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -34,8 +34,8 @@ import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.format.CredentialFormatHandler;
-import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.model.W3CVCDataModelBuilder;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.builders.W3CVCDataModelBuilder;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceUtil;
 
 import java.security.Key;
@@ -54,7 +54,7 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
  */
 public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
 
-    private static final Log log = LogFactory.getLog(JwtVcJsonFormatHandler.class);
+    private static final Log LOG = LogFactory.getLog(JwtVcJsonFormatHandler.class);
     private static final String FORMAT = JWT_VC_JSON_FORMAT;
 
     @Override
@@ -65,8 +65,8 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
     @Override
     public String issueCredential(CredentialIssuerContext credentialIssuerContext) throws CredentialIssuanceException {
 
-        if (log.isDebugEnabled()) {
-            log.debug("Issuing JWT VC JSON credential for configuration: " +
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Issuing JWT VC JSON credential for configuration: " +
                     credentialIssuerContext.getConfigurationId());
         }
 
@@ -135,11 +135,26 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
                 .build();
     }
 
+    /**
+     * Builds the credential issuer URL.
+     *
+     * @param tenantDomain the tenant domain
+     * @return the credential issuer URL
+     * @throws URLBuilderException if an error occurs while building the URL
+     */
     private String buildCredentialIssuerUrl(String tenantDomain) throws URLBuilderException {
 
         return CommonUtil.buildServiceUrl(tenantDomain, CONTEXT_OPENID4VCI).getAbsolutePublicURL();
     }
 
+    /**
+     * Signs the JWT.
+     *
+     * @param jwtClaimsSet the JWT claims set
+     * @param credentialIssuerContext the credential issuer context
+     * @return the signed JWT as a string
+     * @throws CredentialIssuanceException if an error occurs while signing the JWT
+     */
     private String signJWT(JWTClaimsSet jwtClaimsSet, CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 
@@ -152,6 +167,14 @@ public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
         }
     }
 
+    /**
+     * Signs the JWT using RSA algorithm.
+     *
+     * @param jwtClaimsSet the JWT claims set
+     * @param credentialIssuerContext the credential issuer context
+     * @return the signed JWT as a string
+     * @throws CredentialIssuanceException if an error occurs while signing the JWT
+     */
     private String signJWTWithRSA(JWTClaimsSet jwtClaimsSet, CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 

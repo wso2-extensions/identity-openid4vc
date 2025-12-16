@@ -18,11 +18,9 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.endpoint.metadata;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.base.MultitenantConstants;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.metadata.factories.CredentialIssuerMetadataServiceFactory;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.CredentialIssuerMetadataProcessor;
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.exception.CredentialIssuerMetadataException;
@@ -41,14 +39,13 @@ import javax.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class MetadataEndpoint {
 
-    private static final Log log = LogFactory.getLog(MetadataEndpoint.class);
-    public static final String TENANT_NAME_FROM_CONTEXT = "TenantNameFromContext";
+    private static final Log LOG = LogFactory.getLog(MetadataEndpoint.class);
 
     @GET
     @Path("/.well-known/openid-credential-issuer")
     public Response getIssuerMetadata() {
 
-        String tenantDomain = resolveTenantDomain();
+        String tenantDomain = CommonUtil.resolveTenantDomain();
         try {
             CredentialIssuerMetadataProcessor processor =
                     CredentialIssuerMetadataServiceFactory.getMetadataProcessor();
@@ -57,21 +54,8 @@ public class MetadataEndpoint {
             String responsePayload = metadataResponse.toJson();
             return Response.ok(responsePayload, MediaType.APPLICATION_JSON).build();
         } catch (CredentialIssuerMetadataException e) {
-            log.error(String.format("Error while resolving OpenID4VCI metadata for tenant: %s", tenantDomain), e);
+            LOG.error(String.format("Error while resolving OpenID4VCI metadata for tenant: %s", tenantDomain), e);
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
-    }
-
-    private String resolveTenantDomain() {
-
-        String tenantDomain = null;
-        Object tenantObj = IdentityUtil.threadLocalProperties.get().get(TENANT_NAME_FROM_CONTEXT);
-        if (tenantObj != null) {
-            tenantDomain = (String) tenantObj;
-        }
-        if (StringUtils.isEmpty(tenantDomain)) {
-            tenantDomain = MultitenantConstants.SUPER_TENANT_DOMAIN_NAME;
-        }
-        return tenantDomain;
     }
 }

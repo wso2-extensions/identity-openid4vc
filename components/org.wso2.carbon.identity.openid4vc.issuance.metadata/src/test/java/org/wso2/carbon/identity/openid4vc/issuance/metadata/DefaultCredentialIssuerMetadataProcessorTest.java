@@ -134,7 +134,7 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
 
         // Mock config manager to throw exception
         when(configManager.list(TEST_TENANT_DOMAIN))
-                .thenThrow(new VCTemplateMgtException("error", "Database error"));
+                .thenThrow(new VCTemplateMgtException("Database error", "Error retrieving templates", "error"));
 
         // Execute - should throw CredentialIssuerMetadataException
         processor.getMetadataResponse(TEST_TENANT_DOMAIN);

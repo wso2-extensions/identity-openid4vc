@@ -28,11 +28,11 @@ public class Constants {
     public static final String SEGMENT_TOKEN = "token";
     public static final String VC_CLAIM = "vc";
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
+    public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
 
     /**
      * W3C Verifiable Credential Data Model related constants.
      * These constants are specific to the W3C Verifiable Credentials Data Model specification.
-     *
      * @see <a href="https://www.w3.org/TR/vc-data-model/">W3C Verifiable Credentials Data Model</a>
      */
     public static class W3CVCDataModel {
@@ -51,7 +51,6 @@ public class Constants {
     /**
      * OpenID4VCI Credential Issuer Metadata related constants.
      * These constants are specific to the OpenID for Verifiable Credential Issuance specification.
-     *
      */
     public static class CredentialIssuerMetadata {
         public static final String CREDENTIAL_ISSUER = "credential_issuer";
@@ -68,12 +67,12 @@ public class Constants {
         public static final String CLAIMS = "claims";
         public static final String NAME = "name";
         public static final String PATH = "path";
+        public static final String SUBJECT_IDENTIFIER = "sub";
     }
 
     /**
      * OpenID4VCI Credential Offer related constants.
      * These constants are specific to the OpenID for Verifiable Credential Issuance credential offer structure.
-     *
      */
     public static class CredentialOffer {
         public static final String CREDENTIAL_ISSUER = "credential_issuer";

@@ -50,6 +50,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder id(String id) {
+
         this.id = id;
         return this;
     }
@@ -61,6 +62,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder format(String format) {
+
         this.format = format;
         return this;
     }
@@ -72,6 +74,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder scope(String scope) {
+
         this.scope = scope;
         return this;
     }
@@ -83,6 +86,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder signingAlgorithm(String algorithm) {
+
         if (algorithm != null && !algorithm.isEmpty()) {
             this.signingAlgorithms.add(algorithm);
         }
@@ -96,6 +100,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder type(String type) {
+
         if (type != null && !type.isEmpty()) {
             this.types.add(type);
         }
@@ -109,6 +114,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder display(String displayName) {
+
         if (displayName != null && !displayName.isEmpty()) {
             Map<String, Object> displayObject = new LinkedHashMap<>();
             displayObject.put(Constants.CredentialIssuerMetadata.NAME, displayName);
@@ -126,6 +132,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return this builder
      */
     public CredentialConfigurationMetadataBuilder claims(List<String> claims) {
+
         this.claims = claims;
         return this;
     }
@@ -136,9 +143,9 @@ public class CredentialConfigurationMetadataBuilder {
      * @return the template metadata structure
      */
     public Map<String, Object> build() {
+
         Map<String, Object> config = new LinkedHashMap<>();
 
-        // Basic fields
         if (id != null) {
             config.put(Constants.W3CVCDataModel.ID, id);
         }
@@ -149,18 +156,15 @@ public class CredentialConfigurationMetadataBuilder {
             config.put(Constants.CredentialIssuerMetadata.SCOPE, scope);
         }
 
-        // Signing algorithms
         config.put(Constants.CredentialIssuerMetadata.CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED,
                 signingAlgorithms);
 
-        // Credential definition with types
         if (!types.isEmpty()) {
             Map<String, Object> credentialDefinition = new LinkedHashMap<>();
             credentialDefinition.put(Constants.W3CVCDataModel.TYPE, types);
             config.put(Constants.CredentialIssuerMetadata.CREDENTIAL_DEFINITION, credentialDefinition);
         }
 
-        // Credential metadata with display and claims
         Map<String, Object> credentialMetadata = new LinkedHashMap<>();
         credentialMetadata.put(Constants.CredentialIssuerMetadata.DISPLAY, display);
         credentialMetadata.put(Constants.CredentialIssuerMetadata.CLAIMS, buildClaimsList(claims));
@@ -176,6 +180,7 @@ public class CredentialConfigurationMetadataBuilder {
      * @return the list of claim objects with path
      */
     private List<Map<String, Object>> buildClaimsList(List<String> claims) {
+
         if (claims == null) {
             return Collections.emptyList();
         }
