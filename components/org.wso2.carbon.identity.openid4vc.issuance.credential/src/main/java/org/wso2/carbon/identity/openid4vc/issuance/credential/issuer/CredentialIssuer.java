@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.issuer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 
@@ -43,17 +44,13 @@ public class CredentialIssuer {
     public String issueCredential(CredentialIssuerContext credentialIssuerContext)
             throws CredentialIssuanceException {
 
-        if (credentialIssuerContext.getVCTemplate().getFormat() == null) {
-            throw new CredentialIssuanceException("Credential format cannot be null");
-        }
-
         String format = credentialIssuerContext.getVCTemplate().getFormat();
         List<CredentialFormatHandler> formatHandlers = CredentialIssuanceDataHolder.getInstance()
                 .getCredentialFormatHandlers();
         CredentialFormatHandler handler = formatHandlers.stream()
                 .filter(h -> format.equals(h.getFormat()))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Unsupported credential format: " + format));
+                .orElseThrow(() -> new CredentialIssuanceServerException("Unsupported credential format: " + format));
         if (LOG.isDebugEnabled()) {
             LOG.debug("Issuing credential with format: " + format +
                      " for configuration: " + credentialIssuerContext.getConfigurationId());

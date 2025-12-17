@@ -22,6 +22,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
@@ -81,36 +82,16 @@ public class CredentialIssuerTest {
         Assert.assertEquals(credential, TEST_CREDENTIAL, "Credential should match expected value");
     }
 
-    @Test(priority = 2, description = "Test credential issuance with null format",
-            expectedExceptions = CredentialIssuanceException.class,
-            expectedExceptionsMessageRegExp = ".*Credential format cannot be null.*")
-    public void testIssueCredentialWithNullFormat() throws CredentialIssuanceException {
-        // Create template with null format
-        VCTemplate credentialConfig = createVCTemplate(null);
-
-        // Create issuer context
-        CredentialIssuerContext context = createIssuerContext(credentialConfig);
-
-        // Execute test - should throw CredentialIssuanceException
-        credentialIssuer.issueCredential(context);
-    }
-
     @Test(priority = 3, description = "Test credential issuance when handler not found",
-            expectedExceptions = IllegalArgumentException.class,
+            expectedExceptions = CredentialIssuanceServerException.class,
             expectedExceptionsMessageRegExp = ".*Unsupported credential format.*")
     public void testIssueCredentialWithHandlerNotFound() throws CredentialIssuanceException {
-        // Create template with a format that has no handler
+
         VCTemplate credentialConfig = createVCTemplate("unsupported_format");
-
-        // Create issuer context
         CredentialIssuerContext context = createIssuerContext(credentialConfig);
-
-        // Register a handler for a different format
         CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
         when(mockHandler.getFormat()).thenReturn(TEST_FORMAT);
         CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
-
-        // Execute test - should throw IllegalArgumentException
         credentialIssuer.issueCredential(context);
     }
 

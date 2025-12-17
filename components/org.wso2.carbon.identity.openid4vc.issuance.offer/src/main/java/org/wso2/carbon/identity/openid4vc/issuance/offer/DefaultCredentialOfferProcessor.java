@@ -36,9 +36,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_OFFER_NOT_FOUND;
+import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_INVALID_OFFER_ID;
 import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_RETRIEVAL_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.offer.constant.CredentialOfferConstants.ErrorMessages.ERROR_CODE_URL_BUILD_ERROR;
+
 
 /**
  * Default implementation for credential offer processing.
@@ -102,7 +103,7 @@ public class DefaultCredentialOfferProcessor implements CredentialOfferProcessor
         try {
             VCTemplate config  = vcTemplateManager.getByOfferId(offerId, tenantDomain);
             if (config == null) {
-                throw CredentialOfferExceptionHandler.handleClientException(ERROR_CODE_OFFER_NOT_FOUND, offerId);
+                throw CredentialOfferExceptionHandler.handleClientException(ERROR_CODE_INVALID_OFFER_ID, offerId);
             }
             return config.getIdentifier();
         } catch (VCTemplateMgtException e) {

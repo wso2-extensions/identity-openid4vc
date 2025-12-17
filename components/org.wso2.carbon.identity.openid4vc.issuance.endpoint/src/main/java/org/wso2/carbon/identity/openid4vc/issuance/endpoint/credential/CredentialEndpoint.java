@@ -105,7 +105,7 @@ public class CredentialEndpoint {
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
             }
 
-            String credentialConfigurationId = jsonObject.get("credential_configuration_id").getAsString();
+            String credentialConfigurationId = jsonObject.get(CREDENTIAL_CONFIGURATION_ID).getAsString();
 
             CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(authHeader,
                     tenantDomain, credentialConfigurationId);

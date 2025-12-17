@@ -41,6 +41,7 @@ import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CredentialIssuerMetadata.SUBJECT_IDENTIFIER;
@@ -86,6 +87,44 @@ public class CredentialIssuanceService {
             throw CredentialIssuanceExceptionHandler.handleServerException(VC_TEMPLATE_MANAGER_NOT_AVAILABLE, null);
         }
 
+        validateAccessToken(reqDTO);
+
+        try {
+            VCTemplate template = templateManager
+                    .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
+
+            if (template == null) {
+                throw CredentialIssuanceExceptionHandler.handleClientException(UNKNOWN_CREDENTIAL_CONFIGURATION,
+                        "identifier: %s in tenant: %s", reqDTO.getCredentialConfigurationId(),
+                        reqDTO.getTenantDomain());
+            }
+
+            CredentialIssuerContext issuerContext = new CredentialIssuerContext();
+            issuerContext.setConfigurationId(template.getId());
+            issuerContext.setVCTemplate(template);
+            issuerContext.setTenantDomain(reqDTO.getTenantDomain());
+            issuerContext.setClaims(getClaims(reqDTO, template));
+
+            String credential = credentialIssuer.issueCredential(issuerContext);
+            CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();
+            respDTO.setCredential(credential);
+            return respDTO;
+
+
+        } catch (VCTemplateMgtException e) {
+            throw CredentialIssuanceExceptionHandler.handleServerException(INTERNAL_SERVER_ERROR, e,
+                    "tenant: %s", reqDTO.getTenantDomain());
+        }
+    }
+
+    /**
+     * Validate the access token from the request.
+     *
+     * @param reqDTO Credential issuance request DTO
+     * @throws CredentialIssuanceClientException If the access token is invalid
+     */
+    private void validateAccessToken(CredentialIssuanceReqDTO reqDTO) throws CredentialIssuanceClientException {
+
         AccessTokenDO accessTokenDO;
         try {
             accessTokenDO = CredentialIssuanceDataHolder.getInstance().getTokenProvider()
@@ -99,43 +138,30 @@ public class CredentialIssuanceService {
         }
 
         String[] scopes  = accessTokenDO.getScope();
+        validateScope(scopes, reqDTO.getCredentialConfigurationId());
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
+        reqDTO.setAuthenticatedUser(authenticatedUser);
+    }
 
+    /**
+     * Retrieve user claims required for the credential from the user store.
+     *
+     * @param reqDTO            Credential issuance request DTO
+     * @param template          Verifiable Credential template
+     * @return Map of user claims
+     * @throws CredentialIssuanceException If an error occurs while retrieving claims
+     */
+    private Map<String, String> getClaims(CredentialIssuanceReqDTO reqDTO, VCTemplate template)
+            throws CredentialIssuanceException {
+
+        AuthenticatedUser authenticatedUser = reqDTO.getAuthenticatedUser();
         try {
-            VCTemplate template = templateManager
-                    .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
-
-            if (template == null) {
-                throw CredentialIssuanceExceptionHandler.handleClientException(UNKNOWN_CREDENTIAL_CONFIGURATION,
-                        "identifier: %s in tenant: %s", reqDTO.getCredentialConfigurationId(),
-                        reqDTO.getTenantDomain());
-            }
-
-            // Validate scope - check if the required scope exists in JWT token
-            validateScope(scopes, template.getIdentifier());
-
-
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
             AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
             Map<String, String> claims =  userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
                     template.getClaims().toArray(new String[0]), null);
             claims.put(SUBJECT_IDENTIFIER, authenticatedUser.getUserId());
-
-            CredentialIssuerContext issuerContext = new CredentialIssuerContext();
-            issuerContext.setConfigurationId(template.getId());
-            issuerContext.setVCTemplate(template);
-            issuerContext.setTenantDomain(reqDTO.getTenantDomain());
-            issuerContext.setClaims(claims);
-
-            String credential = credentialIssuer.issueCredential(issuerContext);
-            CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();
-            respDTO.setCredential(credential);
-            return respDTO;
-
-
-        } catch (VCTemplateMgtException e) {
-            throw CredentialIssuanceExceptionHandler.handleServerException(INTERNAL_SERVER_ERROR, e,
-                    "tenant: %s", reqDTO.getTenantDomain());
+            return claims;
         } catch (IdentityException e) {
             throw CredentialIssuanceExceptionHandler.handleServerException(USER_REALM_ERROR, e,
                     "tenant: %s", reqDTO.getTenantDomain());
@@ -154,17 +180,15 @@ public class CredentialIssuanceService {
      */
     private void validateScope(String[] scopes, String requiredScope) throws CredentialIssuanceClientException {
 
-        for (String scope : scopes) {
-            if (requiredScope.equals(scope)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Required scope: " + requiredScope + " is present in access token scopes");
-                }
-                return;
+        boolean scopePresent = scopes != null && Arrays.asList(scopes).contains(requiredScope);
+        if (scopePresent) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Required scope: " + requiredScope + " is present in access token scopes");
             }
+            return;
         }
 
-        throw CredentialIssuanceExceptionHandler.handleClientException(INSUFFICIENT_SCOPE,
-                "scope: %s", requiredScope);
+        throw CredentialIssuanceExceptionHandler.handleClientException(INSUFFICIENT_SCOPE, "scope: %s", requiredScope);
     }
 
     /**

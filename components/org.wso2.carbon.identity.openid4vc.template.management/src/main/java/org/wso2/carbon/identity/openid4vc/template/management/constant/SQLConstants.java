@@ -95,5 +95,4 @@ public final class SQLConstants {
             "FETCH FIRST %d ROWS ONLY";
     public static final String GET_VC_TEMPLATES_COUNT = "SELECT COUNT(DISTINCT(ID)) FROM IDN_VC_TEMPLATE WHERE ";
     public static final String GET_VC_TEMPLATES_COUNT_TAIL = " TENANT_ID = ?";
-
 }

@@ -227,7 +227,7 @@ public class CredentialIssuanceServiceTest {
         TokenProvider tokenProvider = mock(TokenProvider.class);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
-        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID});
+        accessTokenDO.setScope(new String[]{"invalid-template-id"});
         AuthenticatedUser authenticatedUser = new AuthenticatedUser();
         authenticatedUser.setUserName(TEST_USERNAME);
         accessTokenDO.setAuthzUser(authenticatedUser);

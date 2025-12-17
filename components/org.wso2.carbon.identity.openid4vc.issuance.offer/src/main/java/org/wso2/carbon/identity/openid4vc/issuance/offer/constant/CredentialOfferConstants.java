@@ -32,8 +32,6 @@ public class CredentialOfferConstants {
     public enum ErrorMessages {
 
         // Client errors
-        ERROR_CODE_OFFER_NOT_FOUND("VCO-60001", "Credential offer not found.",
-                "No VC template found for offer ID: %s"),
         ERROR_CODE_INVALID_OFFER_ID("VCO-60002", "Invalid offer ID.",
                 "The provided offer ID is invalid or malformed."),
 
