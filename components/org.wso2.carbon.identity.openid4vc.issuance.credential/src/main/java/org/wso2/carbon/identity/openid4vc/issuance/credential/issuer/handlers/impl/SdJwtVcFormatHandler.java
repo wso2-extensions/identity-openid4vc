@@ -201,7 +201,7 @@ public class SdJwtVcFormatHandler implements CredentialFormatHandler {
             Key privateKey = CredentialIssuanceUtil.getPrivateKey(tenantDomain);
             JWSSigner signer = OAuth2Util.createJWSSigner((RSAPrivateKey) privateKey);
 
-            // Build header with typ = "vc+sd-jwt"
+            // Build header with typ = "dc+sd-jwt"
             JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.RS256);
             headerBuilder.type(new JOSEObjectType(SDJWTConstants.TYP_VC_SD_JWT));
 

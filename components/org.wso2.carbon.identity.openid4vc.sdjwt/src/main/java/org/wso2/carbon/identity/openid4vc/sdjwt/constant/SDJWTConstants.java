@@ -66,12 +66,12 @@ public final class SDJWTConstants {
     /**
      * OpenID4VCI format identifier for SD-JWT Verifiable Credentials.
      */
-    public static final String FORMAT_VC_SD_JWT = "vc+sd-jwt";
+    public static final String FORMAT_VC_SD_JWT = "dc+sd-jwt";
 
     /**
      * JWT typ header value for SD-JWT VCs.
      */
-    public static final String TYP_VC_SD_JWT = "vc+sd-jwt";
+    public static final String TYP_VC_SD_JWT = "dc+sd-jwt";
 
     /**
      * Separator character used between JWT and Disclosures in SD-JWT string representation.

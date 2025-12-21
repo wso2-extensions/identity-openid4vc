@@ -262,7 +262,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
     private void validateFormat(VCTemplate template) throws VCTemplateMgtClientException {
 
         if (StringUtils.isBlank(template.getFormat())) {
-            template.setFormat(VCTemplateManagementConstants.DEFAULT_VC_FORMAT);
+            template.setFormat(VCTemplateManagementConstants.JWT_VC_FORMAT);
         } else {
             // Check if format is in the list of supported formats.
             if (!VCTemplateManagementConstants.SUPPORTED_FORMATS.contains(template.getFormat())) {
