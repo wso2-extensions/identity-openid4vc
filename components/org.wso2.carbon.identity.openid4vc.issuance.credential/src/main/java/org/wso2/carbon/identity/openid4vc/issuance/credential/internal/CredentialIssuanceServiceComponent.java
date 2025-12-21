@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.JwtVcJsonFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.SdJwtVcFormatHandler;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -44,13 +45,13 @@ public class CredentialIssuanceServiceComponent {
 
     private static final Log LOG = LogFactory.getLog(CredentialIssuanceServiceComponent.class);
 
-
     protected void activate(ComponentContext context) {
 
         try {
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(CredentialIssuanceService.class, new CredentialIssuanceService(), null);
             bundleContext.registerService(CredentialFormatHandler.class, new JwtVcJsonFormatHandler(), null);
+            bundleContext.registerService(CredentialFormatHandler.class, new SdJwtVcFormatHandler(), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("OID4VCI credential issuance component activated");
             }
