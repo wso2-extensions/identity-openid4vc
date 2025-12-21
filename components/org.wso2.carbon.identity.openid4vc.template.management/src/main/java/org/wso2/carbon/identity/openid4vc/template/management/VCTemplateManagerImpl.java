@@ -242,7 +242,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
      * Validate display name.
      *
      * @param template VC template.
-     * @param tenantId      Tenant ID.
+     * @param tenantId Tenant ID.
      * @throws VCTemplateMgtException on validation errors.
      */
     private void validateDisplayName(VCTemplate template, int tenantId)
@@ -264,9 +264,8 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
         if (StringUtils.isBlank(template.getFormat())) {
             template.setFormat(VCTemplateManagementConstants.DEFAULT_VC_FORMAT);
         } else {
-            // Currently only default format is supported.
-            if (!StringUtils.equals(template.getFormat(),
-                    VCTemplateManagementConstants.DEFAULT_VC_FORMAT)) {
+            // Check if format is in the list of supported formats.
+            if (!VCTemplateManagementConstants.SUPPORTED_FORMATS.contains(template.getFormat())) {
                 throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_UNSUPPORTED_VC_FORMAT);
             }
         }
@@ -289,8 +288,8 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
     /**
      * Add VC API resource for the given VC template.
      *
-     * @param template VC template.
-     * @param tenantDomain  Tenant domain.
+     * @param template     VC template.
+     * @param tenantDomain Tenant domain.
      */
     private void addVCResource(VCTemplate template, String tenantDomain) {
         try {
@@ -322,8 +321,8 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
     /**
      * Delete VC API resource for the given VC template.
      *
-     * @param template VC template.
-     * @param tenantDomain  Tenant domain.
+     * @param template     VC template.
+     * @param tenantDomain Tenant domain.
      */
     private void deleteVCResource(VCTemplate template, String tenantDomain) {
         try {
@@ -392,7 +391,8 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_TEMPLATE_NOT_FOUND);
         }
 
-        // Generate new offer ID (regardless of whether one exists - handles both generation and regeneration).
+        // Generate new offer ID (regardless of whether one exists - handles both
+        // generation and regeneration).
         String offerId = java.util.UUID.randomUUID().toString();
         dao.updateOfferId(templateId, offerId, tenantId);
 
