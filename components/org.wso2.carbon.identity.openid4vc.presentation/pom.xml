@@ -110,6 +110,13 @@
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.http</artifactId>
+            <version>${osgi.service.http.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -136,8 +143,7 @@
                             org.osgi.service.component;version="${osgi.service.component.imp.pkg.version.range}",
                             org.osgi.service.http;version="[1.2.1,2.0.0)",
                             org.apache.commons.logging;version="${import.package.version.commons.logging}",
-                            org.apache.commons.lang3;version="${commons-lang.wso2.osgi.version.range}",
-                            org.wso2.carbon.identity.application.authentication.framework.*;version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.apache.commons.lang3; version="[2.6.0,4.0.0)"; resolution:=optional,                            org.wso2.carbon.identity.application.authentication.framework.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*;version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.user.api;version="${carbon.user.api.imp.pkg.version.range}",

@@ -24,7 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.CarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
-import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.LocalApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletResponse;
  * Custom authenticator for Wallet-based authentication using Verifiable Presentations.
  */
 public class WalletAuthenticator extends AbstractApplicationAuthenticator
-        implements FederatedApplicationAuthenticator {
+        implements LocalApplicationAuthenticator {
 
     private static final long serialVersionUID = 1L;
     private static final Log log = LogFactory.getLog(WalletAuthenticator.class);
