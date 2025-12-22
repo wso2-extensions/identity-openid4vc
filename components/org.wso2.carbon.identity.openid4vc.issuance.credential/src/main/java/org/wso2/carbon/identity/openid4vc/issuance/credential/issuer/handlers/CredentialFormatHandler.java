@@ -29,7 +29,7 @@ public interface CredentialFormatHandler {
     /**
      * Get the format identifier supported by this handler.
      *
-     * @return format identifier (e.g., "jwt_vc_json", "ldp_vc", "vc+sd-jwt")
+     * @return format identifier (e.g., "jwt_vc_json", "ldp_vc", "dc+sd-jwt")
      */
     String getFormat();
 
