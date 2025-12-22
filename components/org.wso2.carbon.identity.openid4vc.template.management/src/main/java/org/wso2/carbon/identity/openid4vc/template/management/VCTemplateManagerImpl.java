@@ -190,6 +190,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
 
         // Preserve identifier from existing template.
         template.setIdentifier(existing.getIdentifier());
+        template.setOfferId(existing.getOfferId());
         template.setSigningAlgorithm(DEFAULT_SIGNING_ALGORITHM);
         validateDisplayName(template, tenantId);
         validateFormat(template);
