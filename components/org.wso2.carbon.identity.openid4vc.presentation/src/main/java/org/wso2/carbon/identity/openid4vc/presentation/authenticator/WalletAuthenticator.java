@@ -57,13 +57,26 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
     private static final String AUTHENTICATOR_FRIENDLY_NAME = "Wallet Login";
     private static final String PARAM_STATE = "state";
     private static final String SESSION_DATA_KEY = "sessionDataKey";
-    private static final String WALLET_PAGE_URL = "/wallet/login.jsp";
+    private static final String WALLET_PAGE_URL = "/authenticationendpoint/wallet/login.jsp";
+    private static final String WAIT_PAGE_URL = "/authenticationendpoint/wallet/wait.jsp";
+    private static final String RETRY_PAGE_URL = "/authenticationendpoint/wallet/retry.jsp";
+    private static final String PROCEED_AUTH = "proceedAuth";
+    private static final String VP_TOKEN_NOT_FOUND = "vpTokenNotFound";
+    private static final String VP_TOKEN_NOT_FOUND_MESSAGE = "VP token not received from wallet";
+    private static final String AUTH_DENIED = "authDenied";
+    private static final String AUTH_DENIED_MESSAGE = "Authentication denied by user";
+    private static final String INVALID_VP_TOKEN = "invalidVpToken";
+    private static final String INVALID_VP_TOKEN_MESSAGE = "Invalid VP token received";
+    private static final String CONTEXT_WALLET_STATE = "walletState";
+    private static final String CONTEXT_USER_EMAIL = "userEmail";
 
     @Override
     public boolean canHandle(HttpServletRequest request) {
         // Check if request contains wallet-specific parameters
+        String proceedAuth = request.getParameter(PROCEED_AUTH);
         String state = request.getParameter(PARAM_STATE);
-        return state != null && !state.trim().isEmpty();
+        return (proceedAuth != null && !proceedAuth.trim().isEmpty()) ||
+               (state != null && !state.trim().isEmpty());
     }
 
     @Override
@@ -75,17 +88,22 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             // Generate unique state parameter
             String state = UUID.randomUUID().toString();
 
+            // Get sessionDataKey from request
+            String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
+
             // Store state in authentication context
-            context.setProperty(PARAM_STATE, state);
+            context.setProperty(CONTEXT_WALLET_STATE, state);
 
             if (log.isDebugEnabled()) {
-                log.debug("Initiating wallet authentication with state: " + state);
+                log.debug("Initiating wallet authentication with state: " + state +
+                         " for sessionDataKey: " + sessionDataKey);
             }
 
-            // Build redirect URL to wallet presentation page
-            String redirectUrl = buildRedirectUrl(request, state, context);
+            // Store context in cache
+            WalletDataCache.getInstance().storeContext(sessionDataKey, context);
 
-            response.sendRedirect(redirectUrl);
+            // Redirect to wallet presentation page
+            redirectToWalletPage(response, sessionDataKey, state);
 
         } catch (IOException e) {
             throw new AuthenticationFailedException("Error initiating wallet authentication", e);
@@ -98,37 +116,45 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             throws AuthenticationFailedException {
 
         try {
-            // Step 1: Retrieve state from request
-            String receivedState = request.getParameter(PARAM_STATE);
-            if (receivedState == null || receivedState.trim().isEmpty()) {
-                throw new AuthenticationFailedException("State parameter is missing");
+            // Step 1: Retrieve sessionDataKey from request
+            String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
+            if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+                throw new AuthenticationFailedException("Session data key is missing");
             }
 
-            // Step 2: Validate state
-            String expectedState = (String) context.getProperty(PARAM_STATE);
-            if (!receivedState.equals(expectedState)) {
-                log.error("State mismatch. Expected: " + expectedState + ", Received: " + receivedState);
-                throw new AuthenticationFailedException("Invalid state parameter");
+            // Step 2: Retrieve context from cache
+            AuthenticationContext storedContext = WalletDataCache.getInstance().getContext(sessionDataKey);
+            if (storedContext == null) {
+                throw new AuthenticationFailedException("Session context not found for sessionDataKey: "
+                    + sessionDataKey);
+            }
+
+            // Step 3: Retrieve state from stored context
+            String state = (String) storedContext.getProperty(CONTEXT_WALLET_STATE);
+            if (state == null || state.trim().isEmpty()) {
+                throw new AuthenticationFailedException("State not found in session context");
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("State validation successful for: " + receivedState);
+                log.debug("Processing authentication response for state: " + state);
             }
 
-            // Step 3: Fetch VP token from cache
-            String vpToken = WalletDataCache.getInstance().retrieveToken(receivedState);
+            // Step 4: Fetch VP token from cache
+            String vpToken = WalletDataCache.getInstance().retrieveToken(state);
             if (vpToken == null || vpToken.trim().isEmpty()) {
                 throw new AuthenticationFailedException("VP token not found in cache for state: "
-                    + receivedState);
+                    + state);
             }
 
-            // Step 4: Decode and parse JWT
+            // Step 5: Decode and parse JWT
             String email = extractEmailFromJWT(vpToken);
 
-            // Step 5: Validate user exists
-            validateUserExists(email);
+            // Step 6: Validate user exists
+            if (!validateUserExists(email)) {
+                throw new AuthenticationFailedException("User not found: " + email);
+            }
 
-            // Step 6: Complete authentication
+            // Step 7: Complete authentication
             AuthenticatedUser authenticatedUser = createAuthenticatedUser(email, context);
             context.setSubject(authenticatedUser);
 
@@ -218,26 +244,29 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
     /**
      * Validate that user exists in user store.
      */
-    private void validateUserExists(String email) throws AuthenticationFailedException {
+    private boolean validateUserExists(String email) {
         try {
             UserRealm userRealm = CarbonContext.getThreadLocalCarbonContext().getUserRealm();
             if (userRealm == null) {
-                throw new AuthenticationFailedException("User realm not found");
+                log.warn("User realm not found");
+                return false;
             }
 
             UserStoreManager userStoreManager = userRealm.getUserStoreManager();
             if (!userStoreManager.isExistingUser(email)) {
                 log.warn("User not found in user store: " + email);
-                throw new AuthenticationFailedException("User not found: " + email);
+                return false;
             }
 
             if (log.isDebugEnabled()) {
                 log.debug("User exists in user store: " + email);
             }
 
+            return true;
+
         } catch (UserStoreException e) {
             log.error("Error validating user existence", e);
-            throw new AuthenticationFailedException("User validation failed", e);
+            return false;
         }
     }
 
@@ -263,22 +292,44 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
     }
 
     /**
-     * Build redirect URL to wallet presentation page.
+     * Redirect to wallet presentation page.
      */
-    private String buildRedirectUrl(HttpServletRequest request, String state,
-            AuthenticationContext context) {
-        String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
-
+    private void redirectToWalletPage(HttpServletResponse response, String sessionDataKey,
+            String state) throws IOException {
         StringBuilder redirectUrl = new StringBuilder();
-        redirectUrl.append(request.getContextPath())
-                   .append(WALLET_PAGE_URL)
+        redirectUrl.append(WALLET_PAGE_URL)
                    .append("?").append(PARAM_STATE).append("=").append(state);
 
         if (sessionDataKey != null) {
             redirectUrl.append("&").append(SESSION_DATA_KEY).append("=").append(sessionDataKey);
         }
 
-        return redirectUrl.toString();
+        if (log.isDebugEnabled()) {
+            log.debug("Redirecting to wallet page: " + redirectUrl);
+        }
+
+        response.sendRedirect(redirectUrl.toString());
+    }
+
+    /**
+     * Redirect to retry page with error information.
+     */
+    private void redirectToRetryPage(HttpServletResponse response, String sessionDataKey,
+            String errorCode) throws AuthenticationFailedException {
+        try {
+            StringBuilder redirectUrl = new StringBuilder();
+            redirectUrl.append(RETRY_PAGE_URL)
+                       .append("?").append(SESSION_DATA_KEY).append("=").append(sessionDataKey)
+                       .append("&errorCode=").append(errorCode);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Redirecting to retry page with error: " + errorCode);
+            }
+
+            response.sendRedirect(redirectUrl.toString());
+        } catch (IOException e) {
+            throw new AuthenticationFailedException("Error redirecting to retry page", e);
+        }
     }
 }
 

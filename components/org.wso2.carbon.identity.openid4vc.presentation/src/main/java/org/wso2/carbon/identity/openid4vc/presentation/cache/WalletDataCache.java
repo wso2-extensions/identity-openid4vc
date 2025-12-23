@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +40,7 @@ public class WalletDataCache {
     private static final long CLEANUP_INTERVAL_MINUTES = 1;
 
     private final Map<String, CacheEntry> tokenCache;
+    private final Map<String, ContextCacheEntry> contextCache;
     private final ScheduledExecutorService cleanupScheduler;
 
     /**
@@ -46,6 +48,7 @@ public class WalletDataCache {
      */
     private WalletDataCache() {
         this.tokenCache = new ConcurrentHashMap<>();
+        this.contextCache = new ConcurrentHashMap<>();
         this.cleanupScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread thread = new Thread(r, "WalletDataCache-Cleanup");
             thread.setDaemon(true);
@@ -119,17 +122,97 @@ public class WalletDataCache {
     }
 
     /**
+     * Store authentication context with sessionDataKey as key.
+     *
+     * @param sessionDataKey Session data key
+     * @param context        Authentication context to store
+     */
+    public void storeContext(String sessionDataKey, AuthenticationContext context) {
+        if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+            log.warn("Attempted to store context with null or empty sessionDataKey");
+            return;
+        }
+        if (context == null) {
+            log.warn("Attempted to store null context");
+            return;
+        }
+
+        long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
+        contextCache.put(sessionDataKey, new ContextCacheEntry(context, expiryTime));
+
+        if (log.isDebugEnabled()) {
+            log.debug("Stored authentication context for sessionDataKey: " + sessionDataKey);
+        }
+    }
+
+    /**
+     * Retrieve authentication context (without removing).
+     *
+     * @param sessionDataKey Session data key
+     * @return Authentication context or null if not found/expired
+     */
+    public AuthenticationContext getContext(String sessionDataKey) {
+        if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+            log.warn("Attempted to retrieve context with null or empty sessionDataKey");
+            return null;
+        }
+
+        ContextCacheEntry entry = contextCache.get(sessionDataKey);
+        if (entry == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("No context found for sessionDataKey: " + sessionDataKey);
+            }
+            return null;
+        }
+
+        if (entry.isExpired()) {
+            log.warn("Context expired for sessionDataKey: " + sessionDataKey);
+            contextCache.remove(sessionDataKey);
+            return null;
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Retrieved authentication context for sessionDataKey: " + sessionDataKey);
+        }
+        return entry.getContext();
+    }
+
+    /**
+     * Clear authentication context.
+     *
+     * @param sessionDataKey Session data key
+     */
+    public void clearContext(String sessionDataKey) {
+        if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+            return;
+        }
+
+        contextCache.remove(sessionDataKey);
+        if (log.isDebugEnabled()) {
+            log.debug("Cleared authentication context for sessionDataKey: " + sessionDataKey);
+        }
+    }
+
+    /**
      * Start periodic cleanup task to remove expired entries.
      */
     private void startCleanupTask() {
         cleanupScheduler.scheduleAtFixedRate(() -> {
             try {
                 int removedCount = 0;
-                long currentTime = System.currentTimeMillis();
 
+                // Clean up token cache
                 for (Map.Entry<String, CacheEntry> entry : tokenCache.entrySet()) {
                     if (entry.getValue().isExpired()) {
                         tokenCache.remove(entry.getKey());
+                        removedCount++;
+                    }
+                }
+
+                // Clean up context cache
+                for (Map.Entry<String, ContextCacheEntry> entry : contextCache.entrySet()) {
+                    if (entry.getValue().isExpired()) {
+                        contextCache.remove(entry.getKey());
                         removedCount++;
                     }
                 }
@@ -153,10 +236,20 @@ public class WalletDataCache {
     }
 
     /**
+     * Get current context cache size (for testing/monitoring).
+     *
+     * @return Number of context entries in cache
+     */
+    public int contextSize() {
+        return contextCache.size();
+    }
+
+    /**
      * Clear all entries (for testing).
      */
     public void clear() {
         tokenCache.clear();
+        contextCache.clear();
         if (log.isDebugEnabled()) {
             log.debug("Cache cleared");
         }
@@ -176,6 +269,27 @@ public class WalletDataCache {
 
         String getToken() {
             return token;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
+
+    /**
+     * Internal class to store context cache entry with expiry time.
+     */
+    private static class ContextCacheEntry {
+        private final AuthenticationContext context;
+        private final long expiryTime;
+
+        ContextCacheEntry(AuthenticationContext context, long expiryTime) {
+            this.context = context;
+            this.expiryTime = expiryTime;
+        }
+
+        AuthenticationContext getContext() {
+            return context;
         }
 
         boolean isExpired() {
