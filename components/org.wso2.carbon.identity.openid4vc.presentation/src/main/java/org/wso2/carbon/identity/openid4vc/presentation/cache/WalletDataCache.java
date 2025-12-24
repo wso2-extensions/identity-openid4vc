@@ -98,19 +98,31 @@ public class WalletDataCache {
      */
     public boolean hasToken(String state) {
         if (state == null || state.trim().isEmpty()) {
+            if (log.isDebugEnabled()) {
+                log.debug("hasToken called with null or empty state");
+            }
             return false;
         }
 
         CacheEntry entry = tokenCache.get(state);
         if (entry == null) {
+            if (log.isDebugEnabled()) {
+                log.debug("No token found in cache for state: " + state);
+            }
             return false;
         }
 
         if (entry.isExpired()) {
             tokenCache.remove(state);
+            if (log.isDebugEnabled()) {
+                log.debug("Token expired for state: " + state);
+            }
             return false;
         }
 
+        if (log.isDebugEnabled()) {
+            log.debug("Token exists and valid for state: " + state);
+        }
         return true;
     }
 
