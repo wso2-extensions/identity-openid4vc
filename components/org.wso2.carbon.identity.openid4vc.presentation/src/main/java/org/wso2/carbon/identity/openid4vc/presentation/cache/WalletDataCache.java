@@ -91,6 +91,30 @@ public class WalletDataCache {
     }
 
     /**
+     * Check if token exists for given state (without removing).
+     *
+     * @param state State parameter
+     * @return true if token exists and not expired, false otherwise
+     */
+    public boolean hasToken(String state) {
+        if (state == null || state.trim().isEmpty()) {
+            return false;
+        }
+
+        CacheEntry entry = tokenCache.get(state);
+        if (entry == null) {
+            return false;
+        }
+
+        if (entry.isExpired()) {
+            tokenCache.remove(state);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Retrieve and remove VP token (single-use).
      *
      * @param state State parameter
