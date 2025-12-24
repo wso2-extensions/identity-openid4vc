@@ -51,6 +51,11 @@ public class WalletResponseServlet extends HttpServlet {
             String vpToken = request.getParameter(PARAM_VP_TOKEN);
             String state = request.getParameter(PARAM_STATE);
 
+            if (log.isDebugEnabled()) {
+                log.debug("Received wallet callback - state: " + state +
+                         ", vpToken present: " + (vpToken != null && !vpToken.trim().isEmpty()));
+            }
+
             // Validate required parameters
             if (vpToken == null || vpToken.trim().isEmpty()) {
                 log.warn("Missing or empty vp_token parameter");
@@ -72,6 +77,8 @@ public class WalletResponseServlet extends HttpServlet {
             if (log.isDebugEnabled()) {
                 log.debug("Successfully stored VP token for state: " + state);
             }
+
+            log.info("VP token received and stored for state: " + state);
 
             // Send success response
             sendSuccessResponse(response);

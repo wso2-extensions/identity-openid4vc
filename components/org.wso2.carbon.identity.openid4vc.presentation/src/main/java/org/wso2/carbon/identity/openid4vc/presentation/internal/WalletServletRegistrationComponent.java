@@ -29,6 +29,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.WalletResponseServlet;
+import org.wso2.carbon.identity.openid4vc.presentation.servlet.WalletStatusServlet;
 
 /**
  * OSGi component to register the Wallet Response Servlet for handling wallet callback requests.
@@ -41,6 +42,7 @@ public class WalletServletRegistrationComponent {
 
     private static final Log log = LogFactory.getLog(WalletServletRegistrationComponent.class);
     private static final String SERVLET_URL_PATTERN = "/wallet-callback";
+    private static final String STATUS_SERVLET_URL_PATTERN = "/wallet-callback/status";
 
     private HttpService httpService;
 
@@ -50,19 +52,24 @@ public class WalletServletRegistrationComponent {
             // Register the wallet callback servlet
             httpService.registerServlet(SERVLET_URL_PATTERN, new WalletResponseServlet(), null, null);
             log.info("Wallet Response Servlet registered successfully at: " + SERVLET_URL_PATTERN);
+
+            // Register the wallet status servlet
+            httpService.registerServlet(STATUS_SERVLET_URL_PATTERN, new WalletStatusServlet(), null, null);
+            log.info("Wallet Status Servlet registered successfully at: " + STATUS_SERVLET_URL_PATTERN);
         } catch (Exception e) {
-            log.error("Error occurred while registering Wallet Response Servlet", e);
+            log.error("Error occurred while registering Wallet servlets", e);
         }
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
         try {
-            // Unregister the servlet
+            // Unregister the servlets
             httpService.unregister(SERVLET_URL_PATTERN);
-            log.info("Wallet Response Servlet unregistered successfully");
+            httpService.unregister(STATUS_SERVLET_URL_PATTERN);
+            log.info("Wallet servlets unregistered successfully");
         } catch (Exception e) {
-            log.error("Error occurred while unregistering Wallet Response Servlet", e);
+            log.error("Error occurred while unregistering Wallet servlets", e);
         }
     }
 
