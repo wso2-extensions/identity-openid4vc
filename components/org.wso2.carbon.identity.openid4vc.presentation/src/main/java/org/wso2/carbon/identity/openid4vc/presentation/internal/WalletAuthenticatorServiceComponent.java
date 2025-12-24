@@ -31,6 +31,7 @@ import org.osgi.service.http.HttpService;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.WalletAuthenticator;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.WalletResponseServlet;
+import org.wso2.carbon.identity.openid4vc.presentation.servlet.WalletStatusServlet;
 
 /**
  * OSGi service component for Wallet Authenticator.
@@ -43,6 +44,7 @@ public class WalletAuthenticatorServiceComponent {
 
     private static final Log log = LogFactory.getLog(WalletAuthenticatorServiceComponent.class);
     private static final String WALLET_CALLBACK_URL = "/wallet/callback";
+    private static final String WALLET_STATUS_URL = "/wallet/status";
 
     @Activate
     protected void activate(ComponentContext context) {
@@ -78,7 +80,7 @@ public class WalletAuthenticatorServiceComponent {
     )
     protected void setHttpService(HttpService httpService) {
         try {
-            // Register servlet
+            // Register callback servlet
             httpService.registerServlet(WALLET_CALLBACK_URL, new WalletResponseServlet(),
                 null, null);
 
@@ -86,19 +88,28 @@ public class WalletAuthenticatorServiceComponent {
                 log.debug("Wallet Response Servlet registered at: " + WALLET_CALLBACK_URL);
             }
 
+            // Register status polling servlet
+            httpService.registerServlet(WALLET_STATUS_URL, new WalletStatusServlet(),
+                null, null);
+
+            if (log.isDebugEnabled()) {
+                log.debug("Wallet Status Servlet registered at: " + WALLET_STATUS_URL);
+            }
+
         } catch (Exception e) {
-            log.error("Error registering Wallet Response Servlet", e);
+            log.error("Error registering Wallet Servlets", e);
         }
     }
 
     protected void unsetHttpService(HttpService httpService) {
         try {
             httpService.unregister(WALLET_CALLBACK_URL);
+            httpService.unregister(WALLET_STATUS_URL);
             if (log.isDebugEnabled()) {
-                log.debug("Wallet Response Servlet unregistered");
+                log.debug("Wallet Servlets unregistered");
             }
         } catch (Exception e) {
-            log.error("Error unregistering Wallet Response Servlet", e);
+            log.error("Error unregistering Wallet Servlets", e);
         }
     }
 }

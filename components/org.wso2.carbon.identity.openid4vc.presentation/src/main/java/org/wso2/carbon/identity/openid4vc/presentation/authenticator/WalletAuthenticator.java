@@ -75,8 +75,11 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
         // Check if request contains wallet-specific parameters
         String proceedAuth = request.getParameter(PROCEED_AUTH);
         String state = request.getParameter(PARAM_STATE);
+        String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
+
         return (proceedAuth != null && !proceedAuth.trim().isEmpty()) ||
-               (state != null && !state.trim().isEmpty());
+               (state != null && !state.trim().isEmpty()) ||
+               (sessionDataKey != null && request.getParameter("checkAuth") != null);
     }
 
     @Override
@@ -135,26 +138,36 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
                 throw new AuthenticationFailedException("State not found in session context");
             }
 
+            // Step 4: Check if VP token exists (without removing it yet)
+            if (!WalletDataCache.getInstance().hasToken(state)) {
+                // Token not yet received - redirect to wait page which will auto-refresh
+                if (log.isDebugEnabled()) {
+                    log.debug("VP token not yet received for state: " + state + ", showing wait page");
+                }
+                redirectToWaitPage(response, sessionDataKey, state);
+                return; // Don't proceed with authentication yet
+            }
+
             if (log.isDebugEnabled()) {
                 log.debug("Processing authentication response for state: " + state);
             }
 
-            // Step 4: Fetch VP token from cache
+            // Step 5: Fetch VP token from cache (now remove it)
             String vpToken = WalletDataCache.getInstance().retrieveToken(state);
             if (vpToken == null || vpToken.trim().isEmpty()) {
                 throw new AuthenticationFailedException("VP token not found in cache for state: "
                     + state);
             }
 
-            // Step 5: Decode and parse JWT
+            // Step 6: Decode and parse JWT
             String email = extractEmailFromJWT(vpToken);
 
-            // Step 6: Validate user exists
+            // Step 7: Validate user exists
             if (!validateUserExists(email)) {
                 throw new AuthenticationFailedException("User not found: " + email);
             }
 
-            // Step 7: Complete authentication
+            // Step 8: Complete authentication
             AuthenticatedUser authenticatedUser = createAuthenticatedUser(email, context);
             context.setSubject(authenticatedUser);
 
@@ -306,6 +319,26 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
 
         if (log.isDebugEnabled()) {
             log.debug("Redirecting to wallet page: " + redirectUrl);
+        }
+
+        response.sendRedirect(redirectUrl.toString());
+    }
+
+    /**
+     * Redirect to wait page - this page will auto-submit to check authentication status.
+     */
+    private void redirectToWaitPage(HttpServletResponse response, String sessionDataKey,
+            String state) throws IOException {
+        StringBuilder redirectUrl = new StringBuilder();
+        redirectUrl.append(WAIT_PAGE_URL)
+                   .append("?").append(PARAM_STATE).append("=").append(state);
+
+        if (sessionDataKey != null) {
+            redirectUrl.append("&").append(SESSION_DATA_KEY).append("=").append(sessionDataKey);
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("Redirecting to wait page for polling: " + redirectUrl);
         }
 
         response.sendRedirect(redirectUrl.toString());
