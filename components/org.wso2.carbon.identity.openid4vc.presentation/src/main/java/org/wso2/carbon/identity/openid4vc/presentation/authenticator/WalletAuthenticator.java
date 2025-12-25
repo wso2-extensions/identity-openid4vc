@@ -30,7 +30,6 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.authentication.framework.util.FrameworkUtils;
-import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.user.api.UserRealm;
 import org.wso2.carbon.user.api.UserStoreException;
@@ -39,8 +38,6 @@ import org.wso2.carbon.user.api.UserStoreManager;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
@@ -418,15 +415,14 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
         authenticatedUser.setAuthenticatedSubjectIdentifier(email);
         authenticatedUser.setUserName(email);
 
-        // Set user attributes
-        Map<ClaimMapping, String> attributes = new HashMap<>();
-        attributes.put(ClaimMapping.build("http://wso2.org/claims/emailaddress",
-            "email", null, false), email);
-        authenticatedUser.setUserAttributes(attributes);
-
         // Set tenant domain
         String tenantDomain = CarbonContext.getThreadLocalCarbonContext().getTenantDomain();
         authenticatedUser.setTenantDomain(tenantDomain);
+
+        // Set user store domain (default)
+        authenticatedUser.setUserStoreDomain("PRIMARY");
+
+        log.info("    Created AuthenticatedUser: username=" + email + ", tenant=" + tenantDomain);
 
         return authenticatedUser;
     }
