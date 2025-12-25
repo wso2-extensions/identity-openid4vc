@@ -75,17 +75,23 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
 
     @Override
     public boolean canHandle(HttpServletRequest request) {
-        // Only handle polling requests (when proceedAuth is present)
-        // Initial authentication request will be handled by framework calling initiateAuthenticationRequest
+        // Handle when proceedAuth is present (polling redirect back to complete auth)
         String proceedAuth = request.getParameter(PROCEED_AUTH);
+        String walletState = request.getParameter(PARAM_WALLET_STATE);
+        String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
 
-        boolean canHandle = (proceedAuth != null && !proceedAuth.trim().isEmpty());
+        boolean canHandle = (proceedAuth != null && "true".equalsIgnoreCase(proceedAuth.trim()));
 
-        log.info("=== WalletAuthenticator.canHandle called: " + canHandle + " | proceedAuth=" + proceedAuth + " ===");
+        log.info("=== WalletAuthenticator.canHandle called ===");
+        log.info("    proceedAuth=" + proceedAuth);
+        log.info("    walletState=" + walletState);
+        log.info("    sessionDataKey=" + sessionDataKey);
+        log.info("    canHandle result=" + canHandle);
 
         if (log.isDebugEnabled()) {
             log.debug("WalletAuthenticator canHandle: " + canHandle +
-                     " | proceedAuth=" + proceedAuth);
+                     " | proceedAuth=" + proceedAuth +
+                     " | walletState=" + walletState);
         }
 
         return canHandle;
@@ -185,21 +191,39 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             HttpServletResponse response, AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        log.info("=== WalletAuthenticator.processAuthenticationResponse CALLED ===");
+
         try {
             // Step 1: Retrieve sessionDataKey from request
             String sessionDataKey = request.getParameter(SESSION_DATA_KEY);
+            log.info("    sessionDataKey from request: " + sessionDataKey);
+
             if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+                sessionDataKey = context.getContextIdentifier();
+                log.info("    sessionDataKey from context: " + sessionDataKey);
+            }
+
+            if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+                log.error("Session data key is missing from both request and context");
                 throw new AuthenticationFailedException("Session data key is missing");
             }
 
-            // Step 2: Retrieve state from current context (set during initiate)
-            String state = (String) context.getProperty(CONTEXT_WALLET_STATE);
+            // Step 2: Retrieve walletState from request first (passed from JSP redirect)
+            String state = request.getParameter(PARAM_WALLET_STATE);
+            log.info("    walletState from request: " + state);
+
+            // If not in request, try from context
+            if (state == null || state.trim().isEmpty()) {
+                state = (String) context.getProperty(CONTEXT_WALLET_STATE);
+                log.info("    walletState from context property: " + state);
+            }
 
             // If state not in current context, try to retrieve from cache
             if (state == null || state.trim().isEmpty()) {
                 AuthenticationContext storedContext = WalletDataCache.getInstance().getContext(sessionDataKey);
                 if (storedContext != null) {
                     state = (String) storedContext.getProperty(CONTEXT_WALLET_STATE);
+                    log.info("    walletState from cached context: " + state);
                     // Copy state to current context
                     if (state != null) {
                         context.setProperty(CONTEXT_WALLET_STATE, state);
@@ -208,16 +232,23 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             }
 
             if (state == null || state.trim().isEmpty()) {
+                log.error("State not found in request, context, or cache");
                 throw new AuthenticationFailedException("State not found in authentication context");
             }
+
+            log.info("    Using state for token lookup: " + state);
 
             if (log.isDebugEnabled()) {
                 log.debug("Processing authentication response for state: " + state);
             }
 
             // Step 3: Check if VP token exists (without removing it yet)
-            if (!WalletDataCache.getInstance().hasToken(state)) {
+            boolean hasToken = WalletDataCache.getInstance().hasToken(state);
+            log.info("    Token exists in cache: " + hasToken);
+
+            if (!hasToken) {
                 // Token not yet received - redirect to wait page which will auto-refresh
+                log.info("    VP token not yet received, redirecting to wait page");
                 if (log.isDebugEnabled()) {
                     log.debug("VP token not yet received for state: " + state + ", showing wait page");
                 }
@@ -228,6 +259,7 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             // Step 4: Fetch VP token from cache (now remove it)
             String vpToken = WalletDataCache.getInstance().retrieveToken(state);
             if (vpToken == null || vpToken.trim().isEmpty()) {
+                log.error("VP token not found in cache for state: " + state);
                 throw new AuthenticationFailedException("VP token not found in cache for state: "
                     + state);
             }
@@ -237,30 +269,40 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             }
 
             // Step 5: Decode and parse JWT to extract email
+            log.info("    Extracting email from VP token...");
             String email = extractEmailFromJWT(vpToken);
+            log.info("    Extracted email: " + email);
 
             if (log.isDebugEnabled()) {
                 log.debug("Extracted email from VP token: " + email);
             }
 
             // Step 6: Validate user exists in user store
+            log.info("    Validating user exists in user store...");
             if (!validateUserExists(email)) {
                 log.error("User not found in user store: " + email);
                 throw new AuthenticationFailedException("User not found: " + email);
             }
+            log.info("    User validation: PASSED");
 
             // Step 7: Complete authentication - set authenticated user
+            log.info("    Creating authenticated user...");
             AuthenticatedUser authenticatedUser = createAuthenticatedUser(email, context);
             context.setSubject(authenticatedUser);
+            log.info("    Authentication context subject set to: " + email);
 
             // Clear context from cache
             WalletDataCache.getInstance().clearContext(sessionDataKey);
+            log.info("    Cleared context from cache");
+
+            log.info("=== AUTHENTICATION SUCCESSFUL for user: " + email + " ===");
 
             if (log.isDebugEnabled()) {
                 log.debug("Authentication successful for user: " + email);
             }
 
         } catch (AuthenticationFailedException e) {
+            log.error("Authentication failed: " + e.getMessage());
             throw e;
         } catch (Exception e) {
             log.error("Error processing authentication response", e);

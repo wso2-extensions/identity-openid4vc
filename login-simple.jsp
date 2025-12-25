@@ -73,30 +73,55 @@
         }
 
         // Polling
+        let pollingInterval = null;
         function startPolling() {
             let count = 0;
-            console.log('=== Starting polling ===');
+            console.log('=== Starting polling for state: ' + WALLET_STATE + ' ===');
 
-            setInterval(() => {
+            pollingInterval = setInterval(() => {
                 count++;
-                console.log('[Poll ' + count + '] Checking...');
+                console.log('[Poll ' + count + '] Checking status for state: ' + WALLET_STATE);
 
-                fetch('/wallet-callback/status?state=' + encodeURIComponent(WALLET_STATE))
-                    .then(r => r.json())
+                fetch('/wallet-callback/status?state=' + encodeURIComponent(WALLET_STATE), {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                    .then(r => {
+                        console.log('[Poll ' + count + '] Response status: ' + r.status);
+                        return r.json();
+                    })
                     .then(data => {
-                        console.log('[Poll ' + count + ']', data);
-                        if (data.tokenReceived || data.status === 'received') {
-                            console.log('✓ Token received! Redirecting...');
-                            document.getElementById('status').innerHTML = '<div class="success">✓ Verified! Redirecting...</div>';
+                        console.log('[Poll ' + count + '] Response data:', JSON.stringify(data));
+                        if (data.tokenReceived === true) {
+                            console.log('✓ TOKEN RECEIVED! Stopping polling and redirecting...');
+                            // Stop polling immediately
+                            if (pollingInterval) {
+                                clearInterval(pollingInterval);
+                                pollingInterval = null;
+                            }
+                            document.getElementById('status').innerHTML = '<div class="success">✓ Wallet verified! Completing authentication...</div>';
+                            document.querySelector('.polling').textContent = 'Redirecting...';
+
+                            // Build redirect URL - use commonauth endpoint
+                            const redirectUrl = '/commonauth?sessionDataKey=' +
+                                encodeURIComponent(SESSION_DATA_KEY) +
+                                '&walletState=' + encodeURIComponent(WALLET_STATE) +
+                                '&proceedAuth=true';
+
+                            console.log('=== REDIRECTING TO: ' + redirectUrl + ' ===');
+
                             setTimeout(() => {
-                                window.location.href = CONTEXT_PATH + '/commonauth?sessionDataKey=' +
-                                    encodeURIComponent(SESSION_DATA_KEY) +
-                                    '&walletState=' + encodeURIComponent(WALLET_STATE) +
-                                    '&proceedAuth=true';
-                            }, 500);
+                                window.location.href = redirectUrl;
+                            }, 300);
+                        } else {
+                            console.log('[Poll ' + count + '] Token not yet received, continuing...');
                         }
                     })
-                    .catch(e => console.debug('[Poll ' + count + '] Error:', e.message));
+                    .catch(e => {
+                        console.error('[Poll ' + count + '] Error:', e.message);
+                    });
             }, 2000);
         }
 
@@ -112,4 +137,3 @@
     </script>
 </body>
 </html>
-
