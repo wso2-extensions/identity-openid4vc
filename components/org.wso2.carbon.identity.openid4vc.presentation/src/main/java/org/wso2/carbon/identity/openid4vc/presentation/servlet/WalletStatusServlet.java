@@ -47,7 +47,11 @@ public class WalletStatusServlet extends HttpServlet {
         try {
             String state = request.getParameter(PARAM_STATE);
 
+            log.info("=== WalletStatusServlet.doGet called ===");
+            log.info("    state parameter: " + state);
+
             if (state == null || state.trim().isEmpty()) {
+                log.warn("Missing required parameter: state");
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     "Missing required parameter: state");
                 return;
@@ -55,6 +59,8 @@ public class WalletStatusServlet extends HttpServlet {
 
             // Check if token exists in cache (without removing it)
             boolean tokenReceived = WalletDataCache.getInstance().hasToken(state);
+
+            log.info("    Token received for state " + state + ": " + tokenReceived);
 
             if (log.isDebugEnabled()) {
                 log.debug("Status check for state " + state + ": " +
