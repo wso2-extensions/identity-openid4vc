@@ -58,6 +58,7 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
     private static final String AUTHENTICATOR_NAME = "WalletAuthenticator";
     private static final String AUTHENTICATOR_FRIENDLY_NAME = "Wallet Login";
     private static final String PARAM_STATE = "state";
+    private static final String PARAM_WALLET_STATE = "walletState";
     private static final String SESSION_DATA_KEY = "sessionDataKey";
     private static final String WALLET_PAGE_URL = "/authenticationendpoint/wallet/login.jsp";
     private static final String WAIT_PAGE_URL = "/authenticationendpoint/wallet/wait.jsp";
@@ -144,18 +145,18 @@ public class WalletAuthenticator extends AbstractApplicationAuthenticator
             StringBuilder redirectUrl = new StringBuilder(walletLoginPageUrl);
             redirectUrl.append("?");
 
+            // Add walletState parameter (unique to this auth attempt)
+            redirectUrl.append("walletState=").append(state);
+
+            // Add framework query params if available
             if (queryParams != null && !queryParams.trim().isEmpty()) {
-                redirectUrl.append(queryParams);
-                if (!queryParams.endsWith("&")) {
-                    redirectUrl.append("&");
+                redirectUrl.append("&").append(queryParams);
+            } else {
+                // If no query params from framework, manually add required params
+                redirectUrl.append("&sessionDataKey=").append(sessionDataKey);
+                if (context.getServiceProviderName() != null) {
+                    redirectUrl.append("&spId=").append(context.getServiceProviderName());
                 }
-            }
-
-            redirectUrl.append("state=").append(state)
-                      .append("&sessionDataKey=").append(sessionDataKey);
-
-            if (context.getServiceProviderName() != null) {
-                redirectUrl.append("&spId=").append(context.getServiceProviderName());
             }
 
             String finalRedirectUrl = redirectUrl.toString();

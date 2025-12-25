@@ -19,14 +19,31 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="java.util.UUID" %>
 <%
-    String state = request.getParameter("state");
+    // Get wallet authentication state (unique for this wallet auth attempt)
+    String walletState = request.getParameter("walletState");
     String sessionDataKey = request.getParameter("sessionDataKey");
-
-    // Generate a unique request ID for this authentication attempt
-    String requestId = UUID.randomUUID().toString();
 
     // Get context path
     String contextPath = request.getContextPath();
+    if (contextPath == null) {
+        contextPath = "";
+    }
+
+    // Check for missing parameters (we'll show error in UI instead of redirecting)
+    boolean hasError = false;
+    String errorMessage = "";
+
+    if (walletState == null || walletState.trim().isEmpty()) {
+        hasError = true;
+        errorMessage = "Missing wallet state parameter. Please try again.";
+        walletState = ""; // Set to empty to avoid null errors
+    }
+
+    if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
+        hasError = true;
+        errorMessage = "Missing session data key. Please try again.";
+        sessionDataKey = ""; // Set to empty to avoid null errors
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -320,6 +337,29 @@
     </style>
 </head>
 <body>
+    <% if (hasError) { %>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚠️</div>
+            <h1>Authentication Error</h1>
+        </div>
+        <div style="background: #f8d7da; color: #721c24; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <strong>Error:</strong> <%= errorMessage %>
+        </div>
+        <button class="button button-secondary" onclick="window.history.back()">
+            ← Go Back
+        </button>
+        <div class="footer">
+            Powered by <strong>WSO2 Identity Server</strong>
+        </div>
+    </div>
+    </body>
+    </html>
+    <%
+        return; // Stop processing
+    }
+    %>
+
     <div class="container">
         <div class="header">
             <div class="logo">🔐</div>
@@ -342,7 +382,7 @@
             <div id="qrcode" class="qr-placeholder"></div>
             <p id="qrStatus" style="color: #666; font-size: 13px; margin-top: 10px;">Generating QR code...</p>
             <div class="state-info">
-                Request ID: <code><%= requestId %></code>
+                Session ID: <code><%= sessionDataKey != null && !sessionDataKey.isEmpty() ? sessionDataKey.substring(0, Math.min(16, sessionDataKey.length())) + "..." : "N/A" %></code>
             </div>
         </div>
 
@@ -364,15 +404,23 @@
     </div>
 
     <script>
-        // Configuration
-        const STATE = '<%= state %>';
-        const SESSION_DATA_KEY = '<%= sessionDataKey %>';
-        const CONTEXT_PATH = '<%= contextPath %>';
+        // Configuration - with defensive null checks
+        const WALLET_STATE = '<%= walletState != null ? walletState : "" %>';
+        const SESSION_DATA_KEY = '<%= sessionDataKey != null ? sessionDataKey : "" %>';
+        const CONTEXT_PATH = '<%= contextPath != null ? contextPath : "" %>';
         const CALLBACK_URL = '/wallet-callback';
         const COMMONAUTH_URL = '/commonauth';
         const POLL_INTERVAL = 2000; // 2 seconds
 
         let pollingInterval = null;
+
+        // Validate we have required parameters
+        if (!WALLET_STATE || !SESSION_DATA_KEY) {
+            console.error('Missing required parameters');
+            if (typeof showStatus === 'function') {
+                showStatus('Configuration error: Missing required parameters', 'error');
+            }
+        }
 
         /**
          * Show status message
@@ -394,29 +442,72 @@
          * Poll for authentication completion
          */
         function startPolling() {
+            // Validate parameters before polling
+            if (!WALLET_STATE) {
+                console.error('Cannot start polling: missing wallet state');
+                return;
+            }
+
+            console.log('=== Starting polling for wallet state:', WALLET_STATE);
+
             // Show polling status
-            document.getElementById('pollingStatus').style.display = 'block';
+            const pollingStatus = document.getElementById('pollingStatus');
+            if (pollingStatus) {
+                pollingStatus.style.display = 'block';
+            }
+
+            let pollCount = 0;
+            const maxPolls = 150; // 150 * 2 seconds = 5 minutes
 
             pollingInterval = setInterval(() => {
-                fetch(CALLBACK_URL + '/status?state=' + encodeURIComponent(STATE))
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.authenticated) {
-                            clearInterval(pollingInterval);
-                            showStatus('✅ Authentication successful!', 'success');
+                pollCount++;
 
-                            // Redirect to the provided URL or commonauth
+                if (pollCount > maxPolls) {
+                    clearInterval(pollingInterval);
+                    showStatus('⏱️ Polling timeout. Please refresh and try again.', 'error');
+                    console.log('Polling stopped: max attempts reached');
+                    return;
+                }
+
+                console.log(`[Poll ${pollCount}] Checking /wallet-callback/status?state=${WALLET_STATE.substring(0, 8)}...`);
+
+                fetch('/wallet-callback/status?state=' + encodeURIComponent(WALLET_STATE))
+                    .then(response => {
+                        console.log(`[Poll ${pollCount}] Response status: ${response.status}`);
+                        if (!response.ok) {
+                            throw new Error('HTTP ' + response.status);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log(`[Poll ${pollCount}] Response data:`, data);
+
+                        if (data.status === 'received' || data.tokenReceived || data.authenticated) {
+                            clearInterval(pollingInterval);
+                            console.log('✓ VP token received! Redirecting to authentication...');
+                            showStatus('✅ Wallet response received! Verifying...', 'success');
+
+                            // Redirect to commonauth with proceedAuth to trigger authentication
                             setTimeout(() => {
-                                window.location.href = data.redirectUrl ||
-                                    (COMMONAUTH_URL + '?state=' + encodeURIComponent(STATE));
-                            }, 1000);
+                                const redirectUrl = CONTEXT_PATH + '/commonauth' +
+                                    '?sessionDataKey=' + encodeURIComponent(SESSION_DATA_KEY) +
+                                    '&walletState=' + encodeURIComponent(WALLET_STATE) +
+                                    '&proceedAuth=true';
+
+                                console.log('Redirecting to:', redirectUrl);
+                                window.location.href = redirectUrl;
+                            }, 500);
+                        } else {
+                            console.debug(`[Poll ${pollCount}] Token not yet received`);
                         }
                     })
                     .catch(error => {
-                        // Silently handle polling errors
-                        console.debug('Polling error (expected if status endpoint not implemented):', error);
+                        // Log polling errors for debugging
+                        console.debug(`[Poll ${pollCount}] Error:`, error.message);
                     });
             }, POLL_INTERVAL);
+
+            console.log('=== Polling started successfully, interval:', POLL_INTERVAL, 'ms');
         }
 
         /**
@@ -424,6 +515,12 @@
          */
         function generateQRCode() {
             try {
+                // Validate required parameters
+                if (!WALLET_STATE) {
+                    showStatus('Cannot generate QR code: missing wallet state', 'error');
+                    return;
+                }
+
                 // Generate nonce (unique per request)
                 const nonce = generateNonce();
 
@@ -440,20 +537,33 @@
                     '&client_id=wso2-identity-server' +
                     '&response_mode=direct_post' +
                     '&response_uri=' + encodeURIComponent(responseUri) +
-                    '&state=' + encodeURIComponent(STATE) +
+                    '&state=' + encodeURIComponent(WALLET_STATE) +
                     '&nonce=' + encodeURIComponent(nonce);
 
                 if (typeof console !== 'undefined' && console.log) {
                     console.log('OpenID4VP Request:', authRequest);
-                    console.log('State:', STATE);
+                    console.log('Wallet State:', WALLET_STATE);
                     console.log('Nonce:', nonce);
                     console.log('Response URI:', responseUri);
                 }
 
                 // Generate QR code
                 const qrCodeContainer = document.getElementById('qrcode');
+                if (!qrCodeContainer) {
+                    console.error('QR code container not found');
+                    return;
+                }
+
                 qrCodeContainer.innerHTML = ''; // Clear any existing content
 
+                // Check if QRCode library is loaded
+                if (typeof QRCode === 'undefined') {
+                    console.error('QRCode library not loaded');
+                    showFallbackQRCode(authRequest, qrCodeContainer);
+                    return;
+                }
+
+                // Generate QR code with library
                 new QRCode(qrCodeContainer, {
                     text: authRequest,
                     width: 236,
@@ -464,8 +574,11 @@
                 });
 
                 // Update status
-                document.getElementById('qrStatus').textContent = 'Scan QR code with your wallet app';
-                document.getElementById('qrStatus').style.color = '#ff7300';
+                const statusEl = document.getElementById('qrStatus');
+                if (statusEl) {
+                    statusEl.textContent = 'Scan QR code with your wallet app';
+                    statusEl.style.color = '#ff7300';
+                }
 
                 if (typeof console !== 'undefined' && console.log) {
                     console.log('QR Code generated successfully');
@@ -473,11 +586,75 @@
 
             } catch (error) {
                 console.error('Error generating QR code:', error);
-                document.getElementById('qrStatus').textContent = 'Error generating QR code';
-                document.getElementById('qrStatus').style.color = '#721c24';
+                const statusEl = document.getElementById('qrStatus');
+                if (statusEl) {
+                    statusEl.textContent = 'Error generating QR code';
+                    statusEl.style.color = '#721c24';
+                }
 
-                // Show error emoji as fallback
-                document.getElementById('qrcode').innerHTML = '<span style="font-size: 60px;">⚠️</span>';
+                // Show error and provide manual URL
+                const qrCodeContainer = document.getElementById('qrcode');
+                if (qrCodeContainer) {
+                    showFallbackQRCode('Error loading QR code', qrCodeContainer);
+                }
+            }
+        }
+
+        /**
+         * Show fallback when QR code library fails
+         */
+        function showFallbackQRCode(authRequest, container) {
+            container.innerHTML = `
+                <div style="padding: 20px; background: #fff3cd; border: 2px dashed #ff7300; border-radius: 8px;">
+                    <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
+                    <p style="margin: 10px 0; font-size: 14px; color: #856404;">
+                        <strong>QR Code library not available</strong><br>
+                        Copy this URL to your wallet app:
+                    </p>
+                    <div style="background: white; padding: 10px; border-radius: 4px; word-break: break-all; font-size: 11px; font-family: monospace; max-height: 150px; overflow-y: auto;">
+                        ${authRequest}
+                    </div>
+                    <button onclick="copyToClipboard('${authRequest.replace(/'/g, "\\'")}'); return false;"
+                            style="margin-top: 10px; padding: 8px 16px; background: #ff7300; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        📋 Copy URL
+                    </button>
+                </div>
+            `;
+
+            const statusEl = document.getElementById('qrStatus');
+            if (statusEl) {
+                statusEl.textContent = 'Use the URL above with your wallet app';
+                statusEl.style.color = '#856404';
+            }
+        }
+
+        /**
+         * Copy text to clipboard
+         */
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showStatus('✓ URL copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Failed to copy:', err);
+                    showStatus('Failed to copy. Please copy manually.', 'error');
+                });
+            } else {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showStatus('✓ URL copied to clipboard!', 'success');
+                } catch (err) {
+                    console.error('Failed to copy:', err);
+                    showStatus('Failed to copy. Please copy manually.', 'error');
+                }
+                document.body.removeChild(textArea);
             }
         }
 
@@ -504,17 +681,26 @@
          * Initialize page
          */
         window.addEventListener('DOMContentLoaded', () => {
+            // Validate we have required parameters
+            if (!WALLET_STATE || !SESSION_DATA_KEY) {
+                showStatus('Configuration error: Missing required parameters', 'error');
+                console.error('Missing required parameters:', {
+                    walletState: WALLET_STATE,
+                    sessionDataKey: SESSION_DATA_KEY
+                });
+                return;
+            }
+
             // Generate QR code
             generateQRCode();
 
-            // Start polling for authentication (optional)
-            // Uncomment if you implement status polling endpoint
-            // startPolling();
+            // Start polling for wallet response
+            startPolling();
 
             // Log state for debugging
             if (typeof console !== 'undefined' && console.log) {
                 console.log('Wallet authentication initialized:', {
-                    state: STATE,
+                    walletState: WALLET_STATE,
                     sessionDataKey: SESSION_DATA_KEY,
                     callbackUrl: CALLBACK_URL
                 });
