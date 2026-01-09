@@ -117,14 +117,6 @@
             <scope>provided</scope>
         </dependency>
         
-        <!-- Eclipse Equinox HTTP Helper for servlet registration -->
-        <dependency>
-            <groupId>org.eclipse.equinox</groupId>
-            <artifactId>org.eclipse.equinox.http.helper</artifactId>
-            <version>${equinox.http.helper.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        
         <!-- OSGi SCR Annotations -->
         <dependency>
             <groupId>org.osgi</groupId>
@@ -166,14 +158,13 @@
                             org.osgi.service.component;version="${osgi.service.component.imp.pkg.version.range}",
                             org.osgi.service.http;version="[1.2.1,2.0.0)",
                             org.osgi.service.component.annotations;version="${osgi.service.component.annotations.imp.pkg.version.range}";resolution:=optional,
-                            org.eclipse.equinox.http.helper;version="${equinox.http.helper.imp.pkg.version.range}",
                             org.apache.commons.logging;version="${import.package.version.commons.logging}",
                             org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
                             org.apache.commons.lang3; version="[2.6.0,4.0.0)"; resolution:=optional,
                             org.wso2.carbon.identity.application.authentication.framework.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.application.common.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.*;version="${carbon.identity.framework.imp.pkg.version.range}",
-                            org.wso2.carbon.user.core.*;version="${carbon.user.api.imp.pkg.version.range}",
+                            org.wso2.carbon.user.core.*;version="${carbon.user.api.imp.pkg.version.range}";resolution:=optional,
                             org.wso2.carbon.user.api;version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.context;version="${carbon.kernel.imp.pkg.version.range}",
                             org.wso2.carbon.utils;version="${carbon.kernel.imp.pkg.version.range}",
