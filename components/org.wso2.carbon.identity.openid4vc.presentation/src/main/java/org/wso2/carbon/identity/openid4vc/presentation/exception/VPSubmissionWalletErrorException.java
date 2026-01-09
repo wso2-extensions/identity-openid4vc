@@ -25,31 +25,41 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPSubmissionWalletErrorException extends VPException {
 
     private static final long serialVersionUID = 1L;
+    private static final String DEFAULT_ERROR_CODE = "WALLET_ERROR";
 
+    /**
+     * The wallet error code.
+     */
     private String walletError;
+
+    /**
+     * The wallet error description.
+     */
     private String walletErrorDescription;
 
     /**
      * Constructor with wallet error.
      *
-     * @param walletError Error code from wallet
+     * @param error Error code from wallet
      */
-    public VPSubmissionWalletErrorException(String walletError) {
-        super(walletError, "Wallet returned an error: " + walletError);
-        this.walletError = walletError;
+    public VPSubmissionWalletErrorException(final String error) {
+        super(DEFAULT_ERROR_CODE, "Wallet returned an error: " + error);
+        this.walletError = error;
     }
 
     /**
      * Constructor with wallet error and description.
      *
-     * @param walletError            Error code from wallet
-     * @param walletErrorDescription Error description from wallet
+     * @param error       Error code from wallet
+     * @param description Error description from wallet
      */
-    public VPSubmissionWalletErrorException(String walletError, String walletErrorDescription) {
-        super(walletError, walletErrorDescription != null ? walletErrorDescription : 
-            "Wallet returned an error: " + walletError);
-        this.walletError = walletError;
-        this.walletErrorDescription = walletErrorDescription;
+    public VPSubmissionWalletErrorException(final String error,
+                                            final String description) {
+
+        super(DEFAULT_ERROR_CODE, description != null ? description
+                : "Wallet returned an error: " + error);
+        this.walletError = error;
+        this.walletErrorDescription = description;
     }
 
     /**

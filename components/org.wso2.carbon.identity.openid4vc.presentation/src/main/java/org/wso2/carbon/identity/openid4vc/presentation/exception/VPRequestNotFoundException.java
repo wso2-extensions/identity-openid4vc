@@ -26,27 +26,32 @@ public class VPRequestNotFoundException extends VPException {
     private static final long serialVersionUID = 1L;
     private static final String DEFAULT_ERROR_CODE = "VP_REQUEST_NOT_FOUND";
 
+    /**
+     * The request ID that was not found.
+     */
     private String requestId;
 
     /**
      * Constructor with request ID.
      *
-     * @param requestId The request ID that was not found
+     * @param reqId The request ID that was not found
      */
-    public VPRequestNotFoundException(String requestId) {
-        super(DEFAULT_ERROR_CODE, "VP request not found: " + requestId);
-        this.requestId = requestId;
+    public VPRequestNotFoundException(final String reqId) {
+
+        super(DEFAULT_ERROR_CODE, "VP request not found: " + reqId);
+        this.requestId = reqId;
     }
 
     /**
      * Constructor with request ID and custom message.
      *
-     * @param requestId Request ID
-     * @param message   Custom error message
+     * @param reqId Request ID
+     * @param msg   Custom error message
      */
-    public VPRequestNotFoundException(String requestId, String message) {
-        super(DEFAULT_ERROR_CODE, message);
-        this.requestId = requestId;
+    public VPRequestNotFoundException(final String reqId, final String msg) {
+
+        super(DEFAULT_ERROR_CODE, msg);
+        this.requestId = reqId;
     }
 
     /**
