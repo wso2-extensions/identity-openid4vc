@@ -19,74 +19,256 @@
 package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.JsonObject;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
  * Servlet to check if VP token has been received for polling from the login page.
+ * Supports both immediate status check and long polling.
  */
 public class WalletStatusServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(WalletStatusServlet.class);
+    private static final Log LOG = LogFactory.getLog(WalletStatusServlet.class);
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final String PARAM_STATE = "state";
+    private static final String PARAM_TIMEOUT = "timeout";
+    private static final String PARAM_LONG_POLL = "long_poll";
+
+    /**
+     * Default tenant ID.
+     */
+    private static final int DEFAULT_TENANT_ID = -1234;
+
+    /**
+     * Default long polling timeout in seconds.
+     */
+    private static final long DEFAULT_TIMEOUT_SECONDS = 60L;
+
+    /**
+     * Maximum timeout in seconds.
+     */
+    private static final long MAX_TIMEOUT_SECONDS = 120L;
+
+    /**
+     * Long polling manager.
+     */
+    private LongPollingManager pollingManager;
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    public void init() throws ServletException {
+
+        super.init();
+        this.pollingManager = LongPollingManager.getInstance();
+    }
+
+    @Override
+    protected void doGet(final HttpServletRequest request,
+                         final HttpServletResponse response) throws IOException {
+
         response.setContentType(CONTENT_TYPE_JSON + "; charset=UTF-8");
 
         try {
             String state = request.getParameter(PARAM_STATE);
 
-            log.info("=== WalletStatusServlet.doGet called ===");
-            log.info("    state parameter: " + state);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("WalletStatusServlet.doGet called, state: " + state);
+            }
 
-            if (state == null || state.trim().isEmpty()) {
-                log.warn("Missing required parameter: state");
+            if (StringUtils.isBlank(state)) {
+                LOG.warn("Missing required parameter: state");
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
-                    "Missing required parameter: state");
+                        "Missing required parameter: state");
                 return;
             }
 
-            // Check if token exists in cache (without removing it)
-            boolean tokenReceived = WalletDataCache.getInstance().hasToken(state);
+            // Check if long polling is requested
+            boolean enableLongPoll = isLongPollingEnabled(request);
 
-            log.info("    Token received for state " + state + ": " + tokenReceived);
-
-            if (log.isDebugEnabled()) {
-                log.debug("Status check for state " + state + ": " +
-                    (tokenReceived ? "token received" : "waiting"));
+            if (enableLongPoll) {
+                // Use long polling
+                handleLongPoll(request, response, state);
+            } else {
+                // Immediate status check
+                handleImmediateStatus(response, state);
             }
 
-            // Send status response
-            sendStatusResponse(response, tokenReceived);
-
         } catch (Exception e) {
-            log.error("Error checking wallet status", e);
+            LOG.error("Error checking wallet status", e);
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                "Internal server error");
+                    "Internal server error");
         }
+    }
+
+    /**
+     * Handle immediate status check (existing behavior).
+     */
+    private void handleImmediateStatus(final HttpServletResponse response,
+                                        final String state) throws IOException {
+
+        // Check if token exists in cache (without removing it)
+        boolean tokenReceived = WalletDataCache.getInstance().hasToken(state);
+
+        // Also check submission cache
+        if (!tokenReceived) {
+            tokenReceived = WalletDataCache.getInstance().hasSubmission(state);
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Immediate status for state " + state + ": tokenReceived=" + tokenReceived);
+        }
+
+        sendStatusResponse(response, tokenReceived, "ACTIVE");
+    }
+
+    /**
+     * Handle long polling request.
+     */
+    private void handleLongPoll(final HttpServletRequest request,
+                                 final HttpServletResponse response,
+                                 final String state) throws IOException {
+
+        long timeoutSeconds = getTimeoutSeconds(request);
+        long timeoutMs = timeoutSeconds * 1000L;
+        int tenantId = getTenantId(request);
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Long poll for state: " + state + ", timeout: " + timeoutSeconds + "s");
+        }
+
+        // Use synchronous long poll (blocking)
+        handleSyncLongPoll(response, state, timeoutMs, tenantId);
+    }
+
+    /**
+     * Handle synchronous long polling.
+     */
+    private void handleSyncLongPoll(final HttpServletResponse response,
+                                     final String state,
+                                     final long timeoutMs,
+                                     final int tenantId) throws IOException {
+
+        // Wait for status change
+        PollingResult result = pollingManager.waitForStatusChange(state, timeoutMs, tenantId);
+
+        // Send response based on result
+        sendPollingResultResponse(response, result);
+    }
+
+    /**
+     * Send response based on polling result.
+     */
+    private void sendPollingResultResponse(final HttpServletResponse response,
+                                            final PollingResult result) throws IOException {
+
+        response.setStatus(HttpServletResponse.SC_OK);
+
+        JsonObject jsonResponse = new JsonObject();
+        jsonResponse.addProperty("status", "success");
+
+        boolean tokenReceived = result.isTokenReceived();
+        String statusStr = result.getStatus() != null ? result.getStatus() : "ACTIVE";
+
+        jsonResponse.addProperty("tokenReceived", tokenReceived);
+        jsonResponse.addProperty("vpStatus", statusStr);
+
+        if (result.isExpired()) {
+            jsonResponse.addProperty("expired", true);
+        }
+
+        if (result.isTimeout()) {
+            jsonResponse.addProperty("timeout", true);
+        }
+
+        if (result.hasWalletError()) {
+            jsonResponse.addProperty("walletError", true);
+        }
+
+        try (PrintWriter out = response.getWriter()) {
+            out.print(jsonResponse.toString());
+            out.flush();
+        }
+    }
+
+    /**
+     * Check if long polling is enabled for this request.
+     */
+    private boolean isLongPollingEnabled(final HttpServletRequest request) {
+
+        String longPollParam = request.getParameter(PARAM_LONG_POLL);
+        if (longPollParam != null) {
+            return "true".equalsIgnoreCase(longPollParam) || "1".equals(longPollParam);
+        }
+
+        // If timeout parameter is provided, assume long polling
+        String timeoutParam = request.getParameter(PARAM_TIMEOUT);
+        return StringUtils.isNotBlank(timeoutParam);
+    }
+
+    /**
+     * Get timeout seconds from request.
+     */
+    private long getTimeoutSeconds(final HttpServletRequest request) {
+
+        String timeoutParam = request.getParameter(PARAM_TIMEOUT);
+        if (StringUtils.isNotBlank(timeoutParam)) {
+            try {
+                long timeout = Long.parseLong(timeoutParam);
+                if (timeout > 0 && timeout <= MAX_TIMEOUT_SECONDS) {
+                    return timeout;
+                }
+                if (timeout > MAX_TIMEOUT_SECONDS) {
+                    return MAX_TIMEOUT_SECONDS;
+                }
+            } catch (NumberFormatException e) {
+                LOG.debug("Invalid timeout parameter: " + timeoutParam);
+            }
+        }
+        return DEFAULT_TIMEOUT_SECONDS;
+    }
+
+    /**
+     * Get tenant ID from request.
+     */
+    private int getTenantId(final HttpServletRequest request) {
+
+        String tenantHeader = request.getHeader("X-Tenant-Id");
+        if (StringUtils.isNotBlank(tenantHeader)) {
+            try {
+                return Integer.parseInt(tenantHeader);
+            } catch (NumberFormatException e) {
+                LOG.debug("Invalid tenant ID header: " + tenantHeader);
+            }
+        }
+        return DEFAULT_TENANT_ID;
     }
 
     /**
      * Send status response.
      */
-    private void sendStatusResponse(HttpServletResponse response, boolean tokenReceived)
+    private void sendStatusResponse(final HttpServletResponse response,
+                                     final boolean tokenReceived,
+                                     final String vpStatus)
             throws IOException {
+
         response.setStatus(HttpServletResponse.SC_OK);
 
         JsonObject jsonResponse = new JsonObject();
         jsonResponse.addProperty("status", "success");
         jsonResponse.addProperty("tokenReceived", tokenReceived);
+        jsonResponse.addProperty("vpStatus", vpStatus);
 
         try (PrintWriter out = response.getWriter()) {
             out.print(jsonResponse.toString());
@@ -97,8 +279,11 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Send error JSON response.
      */
-    private void sendErrorResponse(HttpServletResponse response, int statusCode, String message)
+    private void sendErrorResponse(final HttpServletResponse response,
+                                    final int statusCode,
+                                    final String message)
             throws IOException {
+
         response.setStatus(statusCode);
 
         JsonObject jsonResponse = new JsonObject();

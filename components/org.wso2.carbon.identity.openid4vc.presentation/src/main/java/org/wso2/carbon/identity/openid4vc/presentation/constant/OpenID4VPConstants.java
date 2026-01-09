@@ -187,6 +187,8 @@ public class OpenID4VPConstants {
         public static final String VERIFICATION_ENABLED = "OpenID4VP.VerificationEnabled";
         public static final String REVOCATION_CHECK_ENABLED = "OpenID4VP.RevocationCheckEnabled";
         public static final String TRUSTED_ISSUERS = "OpenID4VP.TrustedIssuers";
+        public static final String LONG_POLLING_TIMEOUT_SECONDS = "OpenID4VP.LongPollingTimeoutSeconds";
+        public static final String LONG_POLLING_ENABLED = "OpenID4VP.LongPollingEnabled";
         
         private ConfigKeys() {
         }
@@ -200,6 +202,9 @@ public class OpenID4VPConstants {
         public static final int CACHE_ENTRY_EXPIRY_SECONDS = 300; // 5 minutes
         public static final int MAX_CACHE_ENTRIES = 1000;
         public static final String SIGNING_ALGORITHM = "RS256";
+        public static final int LONG_POLLING_TIMEOUT_SECONDS = 60; // 1 minute
+        public static final int MAX_LONG_POLLING_TIMEOUT_SECONDS = 120; // 2 minutes
+        public static final int MIN_LONG_POLLING_TIMEOUT_SECONDS = 5;
         public static final String[] SUPPORTED_VC_FORMATS = {
             VCFormats.JWT_VP_JSON,
             VCFormats.JWT_VC_JSON,
