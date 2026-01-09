@@ -1,0 +1,172 @@
+/*
+ * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.wso2.carbon.identity.openid4vc.presentation.exception;
+
+/**
+ * Exception thrown when a revocation status check fails.
+ */
+public class RevocationCheckException extends VPException {
+
+    private static final long serialVersionUID = 1L;
+
+    private String statusListUrl;
+    private Integer statusIndex;
+    private String statusType;
+
+    /**
+     * Constructor with message.
+     *
+     * @param message Error message
+     */
+    public RevocationCheckException(String message) {
+        super(message);
+    }
+
+    /**
+     * Constructor with message and cause.
+     *
+     * @param message Error message
+     * @param cause   Original exception
+     */
+    public RevocationCheckException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    /**
+     * Constructor with all details.
+     *
+     * @param message       Error message
+     * @param statusListUrl The status list URL being checked
+     * @param statusIndex   The index being checked
+     */
+    public RevocationCheckException(String message, String statusListUrl, Integer statusIndex) {
+        super(message);
+        this.statusListUrl = statusListUrl;
+        this.statusIndex = statusIndex;
+    }
+
+    /**
+     * Constructor with all details and cause.
+     *
+     * @param message       Error message
+     * @param statusListUrl The status list URL being checked
+     * @param statusIndex   The index being checked
+     * @param cause         Original exception
+     */
+    public RevocationCheckException(String message, String statusListUrl, Integer statusIndex,
+                                     Throwable cause) {
+        super(message, cause);
+        this.statusListUrl = statusListUrl;
+        this.statusIndex = statusIndex;
+    }
+
+    // Static factory methods
+
+    /**
+     * Create exception for network errors.
+     *
+     * @param url   The URL that failed
+     * @param cause The network error
+     * @return RevocationCheckException
+     */
+    public static RevocationCheckException networkError(String url, Throwable cause) {
+        RevocationCheckException ex = new RevocationCheckException(
+                "Failed to fetch status list from: " + url, cause);
+        ex.setStatusListUrl(url);
+        return ex;
+    }
+
+    /**
+     * Create exception for invalid status list credential.
+     *
+     * @param url    The URL of the invalid credential
+     * @param reason The reason it's invalid
+     * @return RevocationCheckException
+     */
+    public static RevocationCheckException invalidStatusList(String url, String reason) {
+        RevocationCheckException ex = new RevocationCheckException(
+                "Invalid status list credential at " + url + ": " + reason);
+        ex.setStatusListUrl(url);
+        return ex;
+    }
+
+    /**
+     * Create exception for unsupported status type.
+     *
+     * @param statusType The unsupported type
+     * @return RevocationCheckException
+     */
+    public static RevocationCheckException unsupportedStatusType(String statusType) {
+        RevocationCheckException ex = new RevocationCheckException(
+                "Unsupported credential status type: " + statusType);
+        ex.setStatusType(statusType);
+        return ex;
+    }
+
+    /**
+     * Create exception for invalid status index.
+     *
+     * @param index       The invalid index
+     * @param bitstringLength The length of the bitstring
+     * @return RevocationCheckException
+     */
+    public static RevocationCheckException invalidIndex(int index, int bitstringLength) {
+        RevocationCheckException ex = new RevocationCheckException(
+                "Status index " + index + " is out of bounds (bitstring length: " + bitstringLength + ")");
+        ex.setStatusIndex(index);
+        return ex;
+    }
+
+    /**
+     * Create exception for decoding errors.
+     *
+     * @param cause The decoding error
+     * @return RevocationCheckException
+     */
+    public static RevocationCheckException decodingError(Throwable cause) {
+        return new RevocationCheckException(
+                "Failed to decode status list: " + cause.getMessage(), cause);
+    }
+
+    // Getters and Setters
+
+    public String getStatusListUrl() {
+        return statusListUrl;
+    }
+
+    public void setStatusListUrl(String statusListUrl) {
+        this.statusListUrl = statusListUrl;
+    }
+
+    public Integer getStatusIndex() {
+        return statusIndex;
+    }
+
+    public void setStatusIndex(Integer statusIndex) {
+        this.statusIndex = statusIndex;
+    }
+
+    public String getStatusType() {
+        return statusType;
+    }
+
+    public void setStatusType(String statusType) {
+        this.statusType = statusType;
+    }
+}
