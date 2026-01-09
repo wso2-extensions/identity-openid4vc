@@ -604,6 +604,9 @@
          * Show fallback when QR code library fails
          */
         function showFallbackQRCode(authRequest, container) {
+            // Escape single quotes for safe insertion into onclick attribute
+            const escapedUrl = authRequest.replace(/'/g, "\\'");
+            
             container.innerHTML = `
                 <div style="padding: 20px; background: #fff3cd; border: 2px dashed #ff7300; border-radius: 8px;">
                     <div style="font-size: 48px; margin-bottom: 10px;">📱</div>
@@ -612,9 +615,9 @@
                         Copy this URL to your wallet app:
                     </p>
                     <div style="background: white; padding: 10px; border-radius: 4px; word-break: break-all; font-size: 11px; font-family: monospace; max-height: 150px; overflow-y: auto;">
-                        ${authRequest}
+                        ` + authRequest + `
                     </div>
-                    <button onclick="copyToClipboard('${authRequest.replace(/'/g, "\\'")}'); return false;"
+                    <button onclick="copyToClipboard('` + escapedUrl + `'); return false;"
                             style="margin-top: 10px; padding: 8px 16px; background: #ff7300; color: white; border: none; border-radius: 4px; cursor: pointer;">
                         📋 Copy URL
                     </button>
