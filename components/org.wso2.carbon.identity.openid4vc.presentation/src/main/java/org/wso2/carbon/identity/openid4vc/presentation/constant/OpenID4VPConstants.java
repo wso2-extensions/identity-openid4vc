@@ -189,6 +189,16 @@ public class OpenID4VPConstants {
         public static final String TRUSTED_ISSUERS = "OpenID4VP.TrustedIssuers";
         public static final String LONG_POLLING_TIMEOUT_SECONDS = "OpenID4VP.LongPollingTimeoutSeconds";
         public static final String LONG_POLLING_ENABLED = "OpenID4VP.LongPollingEnabled";
+        // Credential verification config keys
+        public static final String SIGNATURE_VERIFICATION_ENABLED = "OpenID4VP.Verification.SignatureVerificationEnabled";
+        public static final String EXPIRATION_CHECK_ENABLED = "OpenID4VP.Verification.ExpirationCheckEnabled";
+        public static final String SUPPORTED_PROOF_TYPES = "OpenID4VP.Verification.SupportedProofTypes";
+        public static final String SUPPORTED_ALGORITHMS = "OpenID4VP.Verification.SupportedAlgorithms";
+        // DID resolution config keys
+        public static final String DID_RESOLUTION_ENABLED = "OpenID4VP.DID.ResolutionEnabled";
+        public static final String DID_SUPPORTED_METHODS = "OpenID4VP.DID.SupportedMethods";
+        public static final String DID_CACHE_TTL_SECONDS = "OpenID4VP.DID.CacheTTLSeconds";
+        public static final String DID_UNIVERSAL_RESOLVER_URL = "OpenID4VP.DID.UniversalResolverUrl";
         
         private ConfigKeys() {
         }
@@ -261,8 +271,85 @@ public class OpenID4VPConstants {
         public static final String VP_SUBMISSION_PREFIX = "VP_SUBMISSION_";
         public static final String PRESENTATION_DEF_PREFIX = "PRES_DEF_";
         public static final String TRANSACTION_PREFIX = "TXN_";
+        public static final String DID_DOCUMENT_PREFIX = "DID_DOC_";
         
         private CacheKeys() {
+        }
+    }
+
+    /**
+     * Credential verification constants.
+     */
+    public static class Verification {
+        // Content types for verification requests
+        public static final String CONTENT_TYPE_VC_LD_JSON = "application/vc+ld+json";
+        public static final String CONTENT_TYPE_VC_JWT = "application/vc+jwt";
+        public static final String CONTENT_TYPE_VC_SD_JWT = "application/vc+sd-jwt";
+        public static final String CONTENT_TYPE_JWT = "application/jwt";
+        
+        // Proof types for JSON-LD credentials
+        public static final String PROOF_TYPE_ED25519_2020 = "Ed25519Signature2020";
+        public static final String PROOF_TYPE_ED25519_2018 = "Ed25519Signature2018";
+        public static final String PROOF_TYPE_JSON_WEB_SIG_2020 = "JsonWebSignature2020";
+        public static final String PROOF_TYPE_ECDSA_SECP256K1_2019 = "EcdsaSecp256k1Signature2019";
+        
+        // JWT algorithms
+        public static final String ALG_RS256 = "RS256";
+        public static final String ALG_RS384 = "RS384";
+        public static final String ALG_RS512 = "RS512";
+        public static final String ALG_ES256 = "ES256";
+        public static final String ALG_ES384 = "ES384";
+        public static final String ALG_ES512 = "ES512";
+        public static final String ALG_ES256K = "ES256K";
+        public static final String ALG_EDDSA = "EdDSA";
+        public static final String ALG_PS256 = "PS256";
+        
+        // Credential status types
+        public static final String STATUS_TYPE_STATUS_LIST_2021 = "StatusList2021Entry";
+        public static final String STATUS_TYPE_REVOCATION_LIST_2020 = "RevocationList2020Status";
+        
+        // Credential subject fields
+        public static final String CREDENTIAL_SUBJECT_ID = "id";
+        
+        private Verification() {
+        }
+    }
+
+    /**
+     * DID (Decentralized Identifier) constants.
+     */
+    public static class DID {
+        // DID methods
+        public static final String METHOD_WEB = "web";
+        public static final String METHOD_JWK = "jwk";
+        public static final String METHOD_KEY = "key";
+        
+        // DID document properties
+        public static final String DOC_CONTEXT = "@context";
+        public static final String DOC_ID = "id";
+        public static final String DOC_CONTROLLER = "controller";
+        public static final String DOC_VERIFICATION_METHOD = "verificationMethod";
+        public static final String DOC_AUTHENTICATION = "authentication";
+        public static final String DOC_ASSERTION_METHOD = "assertionMethod";
+        public static final String DOC_KEY_AGREEMENT = "keyAgreement";
+        public static final String DOC_SERVICE = "service";
+        
+        // Verification method properties
+        public static final String VM_TYPE = "type";
+        public static final String VM_PUBLIC_KEY_JWK = "publicKeyJwk";
+        public static final String VM_PUBLIC_KEY_MULTIBASE = "publicKeyMultibase";
+        public static final String VM_PUBLIC_KEY_BASE58 = "publicKeyBase58";
+        
+        // Verification method types
+        public static final String VM_TYPE_JSON_WEB_KEY_2020 = "JsonWebKey2020";
+        public static final String VM_TYPE_ED25519_2020 = "Ed25519VerificationKey2020";
+        public static final String VM_TYPE_ED25519_2018 = "Ed25519VerificationKey2018";
+        public static final String VM_TYPE_ECDSA_SECP256K1_2019 = "EcdsaSecp256k1VerificationKey2019";
+        
+        // Default TTL for DID document cache (1 hour)
+        public static final long DID_CACHE_TTL_MS = 3600000;
+        
+        private DID() {
         }
     }
 
