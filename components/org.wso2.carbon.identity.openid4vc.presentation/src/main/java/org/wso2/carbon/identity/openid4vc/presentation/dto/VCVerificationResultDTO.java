@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatu
 
 /**
  * Data Transfer Object for individual VC verification result.
+ * Provides comprehensive information about each credential's verification status.
  */
 public class VCVerificationResultDTO {
 
@@ -35,11 +36,44 @@ public class VCVerificationResultDTO {
     @SerializedName("credentialType")
     private String credentialType;
 
+    @SerializedName("credentialTypes")
+    private String[] credentialTypes;
+
     @SerializedName("issuer")
     private String issuer;
 
+    @SerializedName("issuerId")
+    private String issuerId;
+
+    @SerializedName("subject")
+    private String subject;
+
+    @SerializedName("issuanceDate")
+    private String issuanceDate;
+
+    @SerializedName("expirationDate")
+    private String expirationDate;
+
+    @SerializedName("credentialId")
+    private String credentialId;
+
+    @SerializedName("format")
+    private String format;
+
+    @SerializedName("signatureValid")
+    private Boolean signatureValid;
+
+    @SerializedName("expired")
+    private Boolean expired;
+
+    @SerializedName("revoked")
+    private Boolean revoked;
+
     @SerializedName("error")
     private String error;
+
+    @SerializedName("errorDetails")
+    private String errorDetails;
 
     /**
      * Default constructor.
@@ -114,12 +148,100 @@ public class VCVerificationResultDTO {
         this.issuer = issuer;
     }
 
+    public String[] getCredentialTypes() {
+        return credentialTypes;
+    }
+
+    public void setCredentialTypes(String[] credentialTypes) {
+        this.credentialTypes = credentialTypes;
+    }
+
+    public String getIssuerId() {
+        return issuerId;
+    }
+
+    public void setIssuerId(String issuerId) {
+        this.issuerId = issuerId;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public String getIssuanceDate() {
+        return issuanceDate;
+    }
+
+    public void setIssuanceDate(String issuanceDate) {
+        this.issuanceDate = issuanceDate;
+    }
+
+    public String getExpirationDate() {
+        return expirationDate;
+    }
+
+    public void setExpirationDate(String expirationDate) {
+        this.expirationDate = expirationDate;
+    }
+
+    public String getCredentialId() {
+        return credentialId;
+    }
+
+    public void setCredentialId(String credentialId) {
+        this.credentialId = credentialId;
+    }
+
+    public String getFormat() {
+        return format;
+    }
+
+    public void setFormat(String format) {
+        this.format = format;
+    }
+
+    public Boolean getSignatureValid() {
+        return signatureValid;
+    }
+
+    public void setSignatureValid(Boolean signatureValid) {
+        this.signatureValid = signatureValid;
+    }
+
+    public Boolean getExpired() {
+        return expired;
+    }
+
+    public void setExpired(Boolean expired) {
+        this.expired = expired;
+    }
+
+    public Boolean getRevoked() {
+        return revoked;
+    }
+
+    public void setRevoked(Boolean revoked) {
+        this.revoked = revoked;
+    }
+
     public String getError() {
         return error;
     }
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public String getErrorDetails() {
+        return errorDetails;
+    }
+
+    public void setErrorDetails(String errorDetails) {
+        this.errorDetails = errorDetails;
     }
 
     /**
@@ -141,6 +263,98 @@ public class VCVerificationResultDTO {
         return status != null && status.isSuccess();
     }
 
+    /**
+     * Builder class for comprehensive result construction.
+     */
+    public static class Builder {
+
+        private final VCVerificationResultDTO dto = new VCVerificationResultDTO();
+
+        public Builder vcIndex(int vcIndex) {
+            dto.vcIndex = vcIndex;
+            return this;
+        }
+
+        public Builder verificationStatus(VCVerificationStatus status) {
+            dto.verificationStatus = status != null ? status.getValue() : null;
+            return this;
+        }
+
+        public Builder credentialType(String credentialType) {
+            dto.credentialType = credentialType;
+            return this;
+        }
+
+        public Builder credentialTypes(String[] credentialTypes) {
+            dto.credentialTypes = credentialTypes;
+            return this;
+        }
+
+        public Builder issuer(String issuer) {
+            dto.issuer = issuer;
+            return this;
+        }
+
+        public Builder issuerId(String issuerId) {
+            dto.issuerId = issuerId;
+            return this;
+        }
+
+        public Builder subject(String subject) {
+            dto.subject = subject;
+            return this;
+        }
+
+        public Builder issuanceDate(String issuanceDate) {
+            dto.issuanceDate = issuanceDate;
+            return this;
+        }
+
+        public Builder expirationDate(String expirationDate) {
+            dto.expirationDate = expirationDate;
+            return this;
+        }
+
+        public Builder credentialId(String credentialId) {
+            dto.credentialId = credentialId;
+            return this;
+        }
+
+        public Builder format(String format) {
+            dto.format = format;
+            return this;
+        }
+
+        public Builder signatureValid(Boolean signatureValid) {
+            dto.signatureValid = signatureValid;
+            return this;
+        }
+
+        public Builder expired(Boolean expired) {
+            dto.expired = expired;
+            return this;
+        }
+
+        public Builder revoked(Boolean revoked) {
+            dto.revoked = revoked;
+            return this;
+        }
+
+        public Builder error(String error) {
+            dto.error = error;
+            return this;
+        }
+
+        public Builder errorDetails(String errorDetails) {
+            dto.errorDetails = errorDetails;
+            return this;
+        }
+
+        public VCVerificationResultDTO build() {
+            return dto;
+        }
+    }
+
     @Override
     public String toString() {
         return "VCVerificationResultDTO{" +
@@ -148,6 +362,10 @@ public class VCVerificationResultDTO {
                 ", verificationStatus='" + verificationStatus + '\'' +
                 ", credentialType='" + credentialType + '\'' +
                 ", issuer='" + issuer + '\'' +
+                ", format='" + format + '\'' +
+                ", signatureValid=" + signatureValid +
+                ", expired=" + expired +
+                ", revoked=" + revoked +
                 ", error='" + error + '\'' +
                 '}';
     }
