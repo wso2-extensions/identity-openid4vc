@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -38,6 +39,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.status.StatusNotificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.VPSubmissionValidator;
 
 import java.io.IOException;
@@ -86,12 +88,24 @@ public class VPSubmissionServlet extends HttpServlet {
      */
     private VPStatusListenerCache statusListenerCache;
 
+    /**
+     * Status notification service for coordinated notifications.
+     */
+    private StatusNotificationService statusNotificationService;
+
+    /**
+     * Wallet data cache for storing submissions.
+     */
+    private WalletDataCache walletDataCache;
+
     @Override
     public void init() throws ServletException {
 
         super.init();
         this.vpSubmissionService = new VPSubmissionServiceImpl();
         this.statusListenerCache = VPStatusListenerCache.getInstance();
+        this.statusNotificationService = StatusNotificationService.getInstance();
+        this.walletDataCache = WalletDataCache.getInstance();
     }
 
     /**
@@ -272,24 +286,38 @@ public class VPSubmissionServlet extends HttpServlet {
     private void notifyStatusListeners(final String requestId,
                                        final VPSubmission submission) {
 
-        if (statusListenerCache == null || StringUtils.isBlank(requestId)) {
+        if (StringUtils.isBlank(requestId)) {
             return;
         }
 
-        String status;
-        if (StringUtils.isNotBlank(submission.getError())) {
-            // Error from wallet
-            status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
-        } else {
-            // Successful submission
-            status = VPRequestStatus.VP_SUBMITTED.name();
+        // Store submission in wallet data cache for status checks
+        if (walletDataCache != null) {
+            walletDataCache.storeSubmission(requestId, submission);
         }
 
-        statusListenerCache.notifyListeners(requestId, status);
+        // Use the centralized notification service
+        if (statusNotificationService != null) {
+            if (StringUtils.isNotBlank(submission.getError())) {
+                statusNotificationService.notifySubmissionError(
+                        requestId,
+                        submission.getError(),
+                        submission.getErrorDescription());
+            } else {
+                statusNotificationService.notifyVPSubmitted(requestId, submission);
+            }
+        } else if (statusListenerCache != null) {
+            // Fallback to direct notification
+            String status;
+            if (StringUtils.isNotBlank(submission.getError())) {
+                status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
+            } else {
+                status = VPRequestStatus.VP_SUBMITTED.name();
+            }
+            statusListenerCache.notifyListeners(requestId, status);
+        }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notified status listeners for request: " + requestId
-                    + " with status: " + status);
+            LOG.debug("Notified status listeners for request: " + requestId);
         }
     }
 
