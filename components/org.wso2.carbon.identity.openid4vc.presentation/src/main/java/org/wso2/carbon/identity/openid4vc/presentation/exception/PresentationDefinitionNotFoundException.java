@@ -24,29 +24,36 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class PresentationDefinitionNotFoundException extends VPException {
 
     private static final long serialVersionUID = 1L;
-    private static final String DEFAULT_ERROR_CODE = "PRESENTATION_DEFINITION_NOT_FOUND";
+    private static final String DEFAULT_ERROR_CODE = "DEFINITION_NOT_FOUND";
 
+    /**
+     * The definition ID that was not found.
+     */
     private String definitionId;
 
     /**
      * Constructor with definition ID.
      *
-     * @param definitionId The definition ID that was not found
+     * @param defId The definition ID that was not found
      */
-    public PresentationDefinitionNotFoundException(String definitionId) {
-        super(DEFAULT_ERROR_CODE, "Presentation definition not found: " + definitionId);
-        this.definitionId = definitionId;
+    public PresentationDefinitionNotFoundException(final String defId) {
+
+        super(DEFAULT_ERROR_CODE,
+                "Presentation definition not found: " + defId);
+        this.definitionId = defId;
     }
 
     /**
      * Constructor with definition ID and custom message.
      *
-     * @param definitionId Definition ID
-     * @param message      Custom error message
+     * @param defId Definition ID
+     * @param msg   Custom error message
      */
-    public PresentationDefinitionNotFoundException(String definitionId, String message) {
-        super(DEFAULT_ERROR_CODE, message);
-        this.definitionId = definitionId;
+    public PresentationDefinitionNotFoundException(final String defId,
+                                                   final String msg) {
+
+        super(DEFAULT_ERROR_CODE, msg);
+        this.definitionId = defId;
     }
 
     /**

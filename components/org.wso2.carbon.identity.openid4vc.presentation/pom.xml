@@ -116,6 +116,29 @@
             <version>${osgi.service.http.version}</version>
             <scope>provided</scope>
         </dependency>
+        
+        <!-- Eclipse Equinox HTTP Helper for servlet registration -->
+        <dependency>
+            <groupId>org.eclipse.equinox</groupId>
+            <artifactId>org.eclipse.equinox.http.helper</artifactId>
+            <version>${equinox.http.helper.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- OSGi SCR Annotations -->
+        <dependency>
+            <groupId>org.osgi</groupId>
+            <artifactId>org.osgi.service.component.annotations</artifactId>
+            <version>${osgi.service.component.annotations.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- Identity Application Common -->
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.application.common</artifactId>
+        </dependency>
+        
 
     </dependencies>
 
@@ -142,8 +165,13 @@
                             org.osgi.framework;version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component;version="${osgi.service.component.imp.pkg.version.range}",
                             org.osgi.service.http;version="[1.2.1,2.0.0)",
+                            org.osgi.service.component.annotations;version="${osgi.service.component.annotations.imp.pkg.version.range}";resolution:=optional,
+                            org.eclipse.equinox.http.helper;version="${equinox.http.helper.imp.pkg.version.range}",
                             org.apache.commons.logging;version="${import.package.version.commons.logging}",
-                            org.apache.commons.lang3; version="[2.6.0,4.0.0)"; resolution:=optional,                            org.wso2.carbon.identity.application.authentication.framework.*;version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.apache.commons.lang;version="${commons-lang.wso2.osgi.version.range}",
+                            org.apache.commons.lang3; version="[2.6.0,4.0.0)"; resolution:=optional,
+                            org.wso2.carbon.identity.application.authentication.framework.*;version="${carbon.identity.framework.imp.pkg.version.range}",
+                            org.wso2.carbon.identity.application.common.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.identity.core.*;version="${carbon.identity.framework.imp.pkg.version.range}",
                             org.wso2.carbon.user.core.*;version="${carbon.user.api.imp.pkg.version.range}",
                             org.wso2.carbon.user.api;version="${carbon.user.api.imp.pkg.version.range}",
@@ -153,6 +181,10 @@
                             com.nimbusds.jose.*;version="${nimbusds.osgi.version.range}",
                             com.nimbusds.jwt.*;version="${nimbusds.osgi.version.range}"
                         </Import-Package>
+                        <DynamicImport-Package>*</DynamicImport-Package>
+                        <Service-Component>
+                            OSGI-INF/serviceComponents.xml
+                        </Service-Component>
                     </instructions>
                 </configuration>
             </plugin>
@@ -161,5 +193,10 @@
 
     <properties>
         <imp.pkg.version.javax.servlet>[2.6.0, 4.0.0)</imp.pkg.version.javax.servlet>
+        <osgi.service.component.annotations.version>1.4.0</osgi.service.component.annotations.version>
+        <osgi.service.component.annotations.imp.pkg.version.range>[1.2.0,2.0.0)</osgi.service.component.annotations.imp.pkg.version.range>
+        <equinox.http.helper.version>1.0.0</equinox.http.helper.version>
+        <equinox.http.helper.imp.pkg.version.range>[1.1.0,2.0.0)</equinox.http.helper.imp.pkg.version.range>
+        <commons-lang.wso2.osgi.version.range>[2.6,3)</commons-lang.wso2.osgi.version.range>
     </properties>
 </project>
