@@ -30,6 +30,7 @@ public class VPSubmission implements Serializable {
 
     private String submissionId;
     private String requestId;
+    private String transactionId;
     private String vpToken;
     private String presentationSubmission;
     private String error;
@@ -51,6 +52,7 @@ public class VPSubmission implements Serializable {
     private VPSubmission(Builder builder) {
         this.submissionId = builder.submissionId;
         this.requestId = builder.requestId;
+        this.transactionId = builder.transactionId;
         this.vpToken = builder.vpToken;
         this.presentationSubmission = builder.presentationSubmission;
         this.error = builder.error;
@@ -77,6 +79,14 @@ public class VPSubmission implements Serializable {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(String transactionId) {
+        this.transactionId = transactionId;
     }
 
     public String getVpToken() {
@@ -167,6 +177,7 @@ public class VPSubmission implements Serializable {
     public static class Builder {
         private String submissionId;
         private String requestId;
+        private String transactionId;
         private String vpToken;
         private String presentationSubmission;
         private String error;
@@ -183,6 +194,11 @@ public class VPSubmission implements Serializable {
 
         public Builder requestId(String requestId) {
             this.requestId = requestId;
+            return this;
+        }
+
+        public Builder transactionId(String transactionId) {
+            this.transactionId = transactionId;
             return this;
         }
 
@@ -236,6 +252,7 @@ public class VPSubmission implements Serializable {
         return "VPSubmission{" +
                 "submissionId='" + submissionId + '\'' +
                 ", requestId='" + requestId + '\'' +
+                ", transactionId='" + transactionId + '\'' +
                 ", hasVpToken=" + hasVpToken() +
                 ", hasError=" + hasError() +
                 ", verificationStatus=" + verificationStatus +

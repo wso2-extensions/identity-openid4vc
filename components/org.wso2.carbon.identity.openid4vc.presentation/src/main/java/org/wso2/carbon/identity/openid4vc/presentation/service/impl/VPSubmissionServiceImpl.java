@@ -113,6 +113,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
 
         // Create submission record
         String submissionId = OpenID4VPUtil.generateSubmissionId();
+        String transactionId = OpenID4VPUtil.generateTransactionId();
         long submittedAt = System.currentTimeMillis();
 
         // Convert presentation submission JsonObject to String for storage
@@ -122,6 +123,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         VPSubmission vpSubmission = new VPSubmission.Builder()
                 .submissionId(submissionId)
                 .requestId(requestId)
+                .transactionId(transactionId)
                 .vpToken(submissionDTO.getVpToken())
                 .presentationSubmission(presentationSubmissionJson)
                 .verificationStatus(VCVerificationStatus.PENDING)
@@ -151,12 +153,14 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
 
         String requestId = vpRequest.getRequestId();
         String submissionId = OpenID4VPUtil.generateSubmissionId();
+        String transactionId = OpenID4VPUtil.generateTransactionId();
         long submittedAt = System.currentTimeMillis();
 
         // Create submission record with error
         VPSubmission vpSubmission = new VPSubmission.Builder()
                 .submissionId(submissionId)
                 .requestId(requestId)
+                .transactionId(transactionId)
                 .error(submissionDTO.getError())
                 .errorDescription(submissionDTO.getErrorDescription())
                 .verificationStatus(VCVerificationStatus.ERROR)
