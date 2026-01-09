@@ -354,6 +354,65 @@ public class OpenID4VPConstants {
     }
 
     /**
+     * Revocation constants for credential status checking.
+     */
+    public static class Revocation {
+        // Status list types
+        public static final String STATUS_LIST_2021 = "StatusList2021";
+        public static final String STATUS_LIST_2021_ENTRY = "StatusList2021Entry";
+        public static final String BITSTRING_STATUS_LIST = "BitstringStatusList";
+        public static final String BITSTRING_STATUS_LIST_ENTRY = "BitstringStatusListEntry";
+        public static final String REVOCATION_LIST_2020 = "RevocationList2020";
+        public static final String REVOCATION_LIST_2020_STATUS = "RevocationList2020Status";
+
+        // Status purposes
+        public static final String PURPOSE_REVOCATION = "revocation";
+        public static final String PURPOSE_SUSPENSION = "suspension";
+        public static final String PURPOSE_MESSAGE = "message";
+
+        // Status list credential properties
+        public static final String ENCODED_LIST = "encodedList";
+        public static final String STATUS_PURPOSE = "statusPurpose";
+        public static final String STATUS_LIST_INDEX = "statusListIndex";
+        public static final String STATUS_LIST_CREDENTIAL = "statusListCredential";
+
+        // Cache settings
+        public static final long STATUS_LIST_CACHE_TTL_MS = 300000; // 5 minutes
+        public static final int HTTP_TIMEOUT_MS = 10000;
+
+        // Minimum bitstring size per spec (16KB = 131,072 bits)
+        public static final int MIN_BITSTRING_SIZE = 16 * 1024;
+
+        private Revocation() {
+        }
+    }
+
+    /**
+     * Trusted verifier constants.
+     */
+    public static class TrustedVerifier {
+        // Trust levels
+        public static final String TRUST_LEVEL_BASIC = "BASIC";
+        public static final String TRUST_LEVEL_STANDARD = "STANDARD";
+        public static final String TRUST_LEVEL_ELEVATED = "ELEVATED";
+        public static final String TRUST_LEVEL_FULL = "FULL";
+
+        // Verifier status
+        public static final String STATUS_ACTIVE = "ACTIVE";
+        public static final String STATUS_SUSPENDED = "SUSPENDED";
+        public static final String STATUS_REVOKED = "REVOKED";
+        public static final String STATUS_PENDING = "PENDING";
+
+        // Redirect URI validation modes
+        public static final String REDIRECT_URI_MODE_STRICT = "STRICT";
+        public static final String REDIRECT_URI_MODE_RELAXED = "RELAXED";
+        public static final String REDIRECT_URI_MODE_DISABLED = "DISABLED";
+
+        private TrustedVerifier() {
+        }
+    }
+
+    /**
      * Logging constants.
      */
     public static class Logging {

@@ -30,10 +30,13 @@ import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstan
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
+import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiablePresentation;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDResolverService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.StatusListService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.SignatureVerifier;
 
@@ -85,6 +88,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
     private final DIDResolverService didResolverService;
     private final SignatureVerifier signatureVerifier;
+    private final StatusListService statusListService;
 
     /**
      * Default constructor.
@@ -92,6 +96,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     public VCVerificationServiceImpl() {
         this.didResolverService = new DIDResolverServiceImpl();
         this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.statusListService = new StatusListServiceImpl();
     }
 
     /**
@@ -102,6 +107,20 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     public VCVerificationServiceImpl(DIDResolverService didResolverService) {
         this.didResolverService = didResolverService;
         this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.statusListService = new StatusListServiceImpl();
+    }
+
+    /**
+     * Constructor with all dependencies.
+     *
+     * @param didResolverService DID resolver service
+     * @param statusListService Status list service
+     */
+    public VCVerificationServiceImpl(DIDResolverService didResolverService, 
+            StatusListService statusListService) {
+        this.didResolverService = didResolverService;
+        this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.statusListService = statusListService;
     }
 
     @Override
@@ -405,46 +424,44 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         VerifiableCredential.CredentialStatus status = credential.getCredentialStatus();
 
-        // Currently support StatusList2021
-        if (status.isStatusList2021()) {
-            return checkStatusList2021(status);
-        }
+        try {
+            // Use the StatusListService to check revocation
+            RevocationCheckResult result = statusListService.checkRevocationStatus(status);
 
-        // Unknown status type - log and return false (not revoked)
-        LOG.warn("Unknown credential status type: " + status.getType());
-        return false;
+            if (result.getStatus() == RevocationCheckResult.Status.SKIPPED) {
+                LOG.debug("Revocation check skipped: " + result.getMessage());
+                return false;
+            }
+
+            if (result.getStatus() == RevocationCheckResult.Status.UNKNOWN) {
+                LOG.warn("Revocation check returned unknown status: " + result.getMessage());
+                return false;
+            }
+
+            // Return true if REVOKED or SUSPENDED
+            return result.getStatus() == RevocationCheckResult.Status.REVOKED ||
+                   result.getStatus() == RevocationCheckResult.Status.SUSPENDED;
+
+        } catch (RevocationCheckException e) {
+            LOG.error("Error checking revocation status", e);
+            throw new CredentialVerificationException(
+                    "Error checking revocation status: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Check revocation status using StatusList2021.
+     * Check revocation status using StatusList2021 with detailed result.
+     *
+     * @param status the credential status
+     * @return the revocation check result
+     * @throws CredentialVerificationException if check fails
      */
-    private boolean checkStatusList2021(VerifiableCredential.CredentialStatus status)
+    public RevocationCheckResult checkRevocationStatus(VerifiableCredential.CredentialStatus status)
             throws CredentialVerificationException {
 
-        String statusListCredential = status.getStatusListCredential();
-        String statusListIndex = status.getStatusListIndex();
-
-        if (statusListCredential == null || statusListIndex == null) {
-            LOG.warn("Missing status list credential or index");
-            return false;
-        }
-
         try {
-            // Fetch the status list credential
-            // This would typically involve an HTTP call to fetch the credential
-            // For now, we'll log and skip
-            LOG.debug("StatusList2021 check would fetch: " + statusListCredential +
-                    " and check index: " + statusListIndex);
-
-            // TODO: Implement actual status list fetching and bit checking
-            // 1. Fetch the statusListCredential from the URL
-            // 2. Verify the status list credential
-            // 3. Decode the encodedList (base64 + gzip)
-            // 4. Check the bit at statusListIndex
-
-            return false; // Not revoked (placeholder)
-
-        } catch (Exception e) {
+            return statusListService.checkRevocationStatus(status);
+        } catch (RevocationCheckException e) {
             throw new CredentialVerificationException(
                     "Error checking revocation status: " + e.getMessage(), e);
         }

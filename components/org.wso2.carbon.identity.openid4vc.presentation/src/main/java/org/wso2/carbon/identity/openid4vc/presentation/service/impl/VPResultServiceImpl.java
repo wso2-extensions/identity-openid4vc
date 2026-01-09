@@ -490,8 +490,8 @@ public class VPResultServiceImpl implements VPResultService {
                     .issuerId(vc.getIssuer())
                     .subject(vc.getCredentialSubject() != null ? 
                             extractSubjectId(vc.getCredentialSubject()) : null)
-                    .issuanceDate(vc.getIssuanceDate())
-                    .expirationDate(vc.getExpirationDate())
+                    .issuanceDate(formatDate(vc.getIssuanceDate()))
+                    .expirationDate(formatDate(vc.getExpirationDate()))
                     .signatureValid(signatureValid)
                     .expired(expired)
                     .revoked(revoked)
@@ -533,5 +533,17 @@ public class VPResultServiceImpl implements VPResultService {
         }
         
         return null;
+    }
+
+    /**
+     * Format a Date object to ISO 8601 string.
+     */
+    private String formatDate(java.util.Date date) {
+        if (date == null) {
+            return null;
+        }
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+        sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+        return sdf.format(date);
     }
 }
