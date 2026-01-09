@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.PresentationDefinitionServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -340,6 +341,15 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
+     * Handle OPTIONS requests for CORS preflight.
+     */
+    @Override
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        CORSUtil.handlePreflight(request, response);
+    }
+
+    /**
      * Send JSON response.
      */
     private void sendJsonResponse(HttpServletResponse response, int statusCode, Object data)
@@ -347,6 +357,7 @@ public class VPDefinitionServlet extends HttpServlet {
         
         response.setStatus(statusCode);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
+        CORSUtil.addCORSHeaders(null, response);
         
         try (PrintWriter writer = response.getWriter()) {
             writer.write(gson.toJson(data));

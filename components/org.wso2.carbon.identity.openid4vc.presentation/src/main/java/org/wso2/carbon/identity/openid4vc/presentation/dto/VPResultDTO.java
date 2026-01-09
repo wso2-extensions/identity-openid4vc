@@ -25,11 +25,33 @@ import java.util.List;
 
 /**
  * Data Transfer Object for VP verification result.
+ * Provides comprehensive verification results for a verifiable presentation.
  */
 public class VPResultDTO {
 
     @SerializedName("transactionId")
     private String transactionId;
+
+    @SerializedName("requestId")
+    private String requestId;
+
+    @SerializedName("status")
+    private String status;
+
+    @SerializedName("overallResult")
+    private String overallResult;
+
+    @SerializedName("verificationTimestamp")
+    private Long verificationTimestamp;
+
+    @SerializedName("holder")
+    private String holder;
+
+    @SerializedName("presentationDefinitionId")
+    private String presentationDefinitionId;
+
+    @SerializedName("vcCount")
+    private Integer vcCount;
 
     @SerializedName("vcVerificationResults")
     private List<VCVerificationResultDTO> vcVerificationResults;
@@ -79,6 +101,62 @@ public class VPResultDTO {
 
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getOverallResult() {
+        return overallResult;
+    }
+
+    public void setOverallResult(String overallResult) {
+        this.overallResult = overallResult;
+    }
+
+    public Long getVerificationTimestamp() {
+        return verificationTimestamp;
+    }
+
+    public void setVerificationTimestamp(Long verificationTimestamp) {
+        this.verificationTimestamp = verificationTimestamp;
+    }
+
+    public String getHolder() {
+        return holder;
+    }
+
+    public void setHolder(String holder) {
+        this.holder = holder;
+    }
+
+    public String getPresentationDefinitionId() {
+        return presentationDefinitionId;
+    }
+
+    public void setPresentationDefinitionId(String presentationDefinitionId) {
+        this.presentationDefinitionId = presentationDefinitionId;
+    }
+
+    public Integer getVcCount() {
+        return vcCount;
+    }
+
+    public void setVcCount(Integer vcCount) {
+        this.vcCount = vcCount;
     }
 
     public List<VCVerificationResultDTO> getVcVerificationResults() {

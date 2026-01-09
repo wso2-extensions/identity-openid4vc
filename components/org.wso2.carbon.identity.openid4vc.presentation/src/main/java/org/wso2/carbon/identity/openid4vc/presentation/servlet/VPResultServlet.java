@@ -29,8 +29,11 @@ import org.wso2.carbon.identity.openid4vc.presentation.dto.VPResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPSubmissionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.service.VPResultService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPResultServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,8 +47,9 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet for retrieving VP verification results.
  * 
- * Endpoint:
- * - GET /api/identity/openid4vp/v1/vp-result/{transactionId} - Get verification results
+ * Endpoints:
+ * - GET /api/identity/openid4vp/v1/vp-result/{transactionId} - Get full verification results
+ * - GET /api/identity/openid4vp/v1/vp-result/{transactionId}/summary - Get result summary
  * 
  * This endpoint is called by the relying party to retrieve the verification
  * results for a submitted VP. The transaction ID was provided when creating
@@ -64,11 +68,13 @@ public class VPResultServlet extends HttpServlet {
     private static final int DEFAULT_TENANT_ID = -1234;
 
     private VPSubmissionService vpSubmissionService;
+    private VPResultService vpResultService;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.vpSubmissionService = new VPSubmissionServiceImpl();
+        this.vpResultService = new VPResultServiceImpl();
     }
 
     /**
@@ -91,21 +97,23 @@ public class VPResultServlet extends HttpServlet {
             return;
         }
 
-        String transactionId = pathInfo.substring(1); // Remove leading slash
-        
-        // Remove any trailing segments
-        if (transactionId.contains("/")) {
-            transactionId = transactionId.split("/")[0];
-        }
+        String[] pathParts = pathInfo.substring(1).split("/");
+        String transactionId = pathParts[0];
+        boolean isSummary = pathParts.length > 1 && "summary".equals(pathParts[1]);
 
         int tenantId = getTenantId(request);
 
         try {
-            // Get verification result
-            VPResultDTO resultDTO = vpSubmissionService.getVPResult(transactionId, tenantId);
-            
-            // Send response
-            sendJsonResponse(response, HttpServletResponse.SC_OK, resultDTO);
+            if (isSummary) {
+                // Get summary result
+                VPResultService.VPResultSummaryDTO summaryDTO = 
+                        vpResultService.getVPResultSummary(transactionId, tenantId);
+                sendJsonResponse(response, HttpServletResponse.SC_OK, summaryDTO);
+            } else {
+                // Get full verification result using enhanced service
+                VPResultDTO resultDTO = vpResultService.getVPResult(transactionId, tenantId);
+                sendJsonResponse(response, HttpServletResponse.SC_OK, resultDTO);
+            }
 
             if (log.isDebugEnabled()) {
                 log.debug("Returned VP result for transaction: " + transactionId);
@@ -133,6 +141,15 @@ public class VPResultServlet extends HttpServlet {
     }
 
     /**
+     * Handle OPTIONS requests for CORS preflight.
+     */
+    @Override
+    protected void doOptions(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        CORSUtil.handlePreflight(request, response);
+    }
+
+    /**
      * Send JSON response.
      */
     private void sendJsonResponse(HttpServletResponse response, int statusCode, Object data)
@@ -140,6 +157,7 @@ public class VPResultServlet extends HttpServlet {
         
         response.setStatus(statusCode);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
+        CORSUtil.addCORSHeaders(null, response);
         
         try (PrintWriter writer = response.getWriter()) {
             writer.write(gson.toJson(data));
