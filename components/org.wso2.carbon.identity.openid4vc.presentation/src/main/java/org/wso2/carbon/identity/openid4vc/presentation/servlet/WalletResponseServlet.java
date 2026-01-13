@@ -40,10 +40,17 @@ public class WalletResponseServlet extends HttpServlet {
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final String PARAM_VP_TOKEN = "vp_token";
     private static final String PARAM_STATE = "state";
+    
+    // Log prefix for easy filtering
+    private static final String LOG_PREFIX = "[WALLET-CALLBACK]";
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
+        log.info(LOG_PREFIX + " ========================================");
+        log.info(LOG_PREFIX + " doPost() - Wallet Callback Received");
+        log.info(LOG_PREFIX + " ========================================");
+        
         response.setContentType(CONTENT_TYPE_JSON + "; charset=UTF-8");
 
         try {
@@ -51,40 +58,41 @@ public class WalletResponseServlet extends HttpServlet {
             String vpToken = request.getParameter(PARAM_VP_TOKEN);
             String state = request.getParameter(PARAM_STATE);
 
-            if (log.isDebugEnabled()) {
-                log.debug("Received wallet callback - state: " + state +
-                         ", vpToken present: " + (vpToken != null && !vpToken.trim().isEmpty()));
-            }
+            log.info(LOG_PREFIX + " Request URI: " + request.getRequestURI());
+            log.info(LOG_PREFIX + " State: " + state);
+            log.info(LOG_PREFIX + " VP Token present: " + (vpToken != null && !vpToken.trim().isEmpty()));
+            log.info(LOG_PREFIX + " VP Token length: " + (vpToken != null ? vpToken.length() : 0));
 
             // Validate required parameters
             if (vpToken == null || vpToken.trim().isEmpty()) {
-                log.warn("Missing or empty vp_token parameter");
+                log.warn(LOG_PREFIX + " Missing or empty vp_token parameter");
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     "Missing required parameter: vp_token");
                 return;
             }
 
             if (state == null || state.trim().isEmpty()) {
-                log.warn("Missing or empty state parameter");
+                log.warn(LOG_PREFIX + " Missing or empty state parameter");
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     "Missing required parameter: state");
                 return;
             }
 
             // Store token in cache
+            log.info(LOG_PREFIX + " Storing VP token in cache for state: " + state);
             WalletDataCache.getInstance().storeToken(state, vpToken);
+            log.info(LOG_PREFIX + " VP token stored successfully");
 
-            if (log.isDebugEnabled()) {
-                log.debug("Successfully stored VP token for state: " + state);
-            }
-
-            log.info("VP token received and stored for state: " + state);
+            log.info(LOG_PREFIX + " ========================================");
+            log.info(LOG_PREFIX + " CALLBACK PROCESSED SUCCESSFULLY");
+            log.info(LOG_PREFIX + " State: " + state);
+            log.info(LOG_PREFIX + " ========================================");
 
             // Send success response
             sendSuccessResponse(response);
 
         } catch (Exception e) {
-            log.error("Error processing wallet callback", e);
+            log.error(LOG_PREFIX + " Error processing wallet callback", e);
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                 "Internal server error processing request");
         }
