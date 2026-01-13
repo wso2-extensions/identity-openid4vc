@@ -46,6 +46,9 @@ public class WalletStatusServlet extends HttpServlet {
     private static final String PARAM_STATE = "state";
     private static final String PARAM_TIMEOUT = "timeout";
     private static final String PARAM_LONG_POLL = "long_poll";
+    
+    // Log prefix for easy filtering
+    private static final String LOG_PREFIX = "[WALLET-STATUS]";
 
     /**
      * Default tenant ID.
