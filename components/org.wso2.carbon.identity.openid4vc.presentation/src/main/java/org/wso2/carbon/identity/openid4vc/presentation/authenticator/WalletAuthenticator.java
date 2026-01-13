@@ -47,9 +47,12 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * Custom authenticator for Wallet-based authentication using Verifiable Presentations.
+ * 
+ * DISABLED: This authenticator is temporarily disabled to avoid conflicts with OpenID4VPAuthenticator.
+ * To re-enable, uncomment the "implements LocalApplicationAuthenticator" line below.
  */
-public class WalletAuthenticator extends AbstractApplicationAuthenticator
-        implements LocalApplicationAuthenticator {
+public class WalletAuthenticator extends AbstractApplicationAuthenticator {
+        // implements LocalApplicationAuthenticator {
 
     private static final long serialVersionUID = 1L;
     private static final Log log = LogFactory.getLog(WalletAuthenticator.class);

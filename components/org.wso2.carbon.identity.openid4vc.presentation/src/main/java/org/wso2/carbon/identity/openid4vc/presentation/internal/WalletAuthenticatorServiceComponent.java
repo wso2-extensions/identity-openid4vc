@@ -35,11 +35,15 @@ import org.wso2.carbon.identity.openid4vc.presentation.servlet.WalletStatusServl
 
 /**
  * OSGi service component for Wallet Authenticator.
+ * DISABLED: This component is disabled to avoid conflicts with OpenID4VPAuthenticator.
+ * The servlets are now registered in WalletServletRegistrationComponent.
  */
+/*
 @Component(
         name = "org.wso2.carbon.identity.openid4vc.presentation",
         immediate = true
 )
+*/
 public class WalletAuthenticatorServiceComponent {
 
     private static final Log log = LogFactory.getLog(WalletAuthenticatorServiceComponent.class);

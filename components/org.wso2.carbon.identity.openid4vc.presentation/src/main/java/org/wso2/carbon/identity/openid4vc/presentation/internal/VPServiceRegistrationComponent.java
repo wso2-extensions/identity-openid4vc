@@ -55,10 +55,17 @@ import java.util.Hashtable;
 public class VPServiceRegistrationComponent {
 
     private static final Log log = LogFactory.getLog(VPServiceRegistrationComponent.class);
+    private static volatile boolean authenticatorRegistered = false;
 
     @Activate
     protected void activate(ComponentContext context) {
         try {
+            // Only register once to avoid duplicates
+            if (authenticatorRegistered) {
+                log.debug("OpenID4VP services already registered, skipping duplicate activation");
+                return;
+            }
+            
             BundleContext bundleContext = context.getBundleContext();
             
             // Initialize services using default constructors (which create their own DAOs)
@@ -85,6 +92,8 @@ public class VPServiceRegistrationComponent {
             bundleContext.registerService(ApplicationAuthenticator.class.getName(),
                     authenticator, new Hashtable<>());
             
+            authenticatorRegistered = true;
+            
             log.info("OpenID4VP service registration component activated successfully");
             log.info("Registered OpenID4VPAuthenticator as local authenticator");
             
@@ -99,6 +108,8 @@ public class VPServiceRegistrationComponent {
         VPServiceDataHolder.getInstance().setVPRequestService(null);
         VPServiceDataHolder.getInstance().setVPSubmissionService(null);
         VPServiceDataHolder.getInstance().setPresentationDefinitionService(null);
+        
+        authenticatorRegistered = false;
         
         log.info("OpenID4VP service registration component deactivated");
     }
