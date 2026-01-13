@@ -40,7 +40,7 @@ public class OpenID4VPConstants {
         public static final String OPENID4VP_SCHEME = "openid4vp://";
         public static final String PRESENTATION_DEFINITION = "presentation_definition";
         public static final String PRESENTATION_DEFINITION_URI = "presentation_definition_uri";
-        
+
         private Protocol() {
         }
     }
@@ -64,7 +64,7 @@ public class OpenID4VPConstants {
         public static final String PRESENTATION_SUBMISSION = "presentation_submission";
         public static final String ID_TOKEN = "id_token";
         public static final String TRANSACTION_ID = "transaction_id";
-        
+
         private RequestParams() {
         }
     }
@@ -78,7 +78,7 @@ public class OpenID4VPConstants {
         public static final String ERROR = "error";
         public static final String ERROR_DESCRIPTION = "error_description";
         public static final String STATE = "state";
-        
+
         private ResponseParams() {
         }
     }
@@ -94,7 +94,7 @@ public class OpenID4VPConstants {
         public static final String UNSUPPORTED_RESPONSE_TYPE = "unsupported_response_type";
         public static final String INVALID_SCOPE = "invalid_scope";
         public static final String SERVER_ERROR = "server_error";
-        
+
         // OpenID4VP Specific Error Codes
         public static final String VP_FORMATS_NOT_SUPPORTED = "vp_formats_not_supported";
         public static final String INVALID_PRESENTATION_DEFINITION_URI = "invalid_presentation_definition_uri";
@@ -103,7 +103,7 @@ public class OpenID4VPConstants {
         // Wallet Error Codes
         public static final String USER_CANCELLED = "user_cancelled";
         public static final String CREDENTIAL_NOT_AVAILABLE = "credential_not_available";
-        
+
         private ErrorCodes() {
         }
     }
@@ -120,7 +120,7 @@ public class OpenID4VPConstants {
         public static final String LDP_VC = "ldp_vc";
         public static final String VC_SD_JWT = "vc+sd-jwt";
         public static final String MSO_MDOC = "mso_mdoc";
-        
+
         private VCFormats() {
         }
     }
@@ -139,7 +139,7 @@ public class OpenID4VPConstants {
         public static final String NONCE = "nonce";
         public static final String VP = "vp";
         public static final String VC = "vc";
-        
+
         private JWTClaims() {
         }
     }
@@ -153,7 +153,7 @@ public class OpenID4VPConstants {
         public static final String CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
         public static final String AUTHORIZATION_HEADER = "Authorization";
         public static final String BEARER_PREFIX = "Bearer ";
-        
+
         private HTTP() {
         }
     }
@@ -164,12 +164,12 @@ public class OpenID4VPConstants {
     public static class Endpoints {
         public static final String AUTHORIZE = "/authorize";
         public static final String VP_REQUEST = "/vp-request";
-        public static final String VP_RESPONSE = "/vp-response";
+        public static final String VP_RESPONSE = "/response";
         public static final String VP_STATUS = "/vp-status";
         public static final String VP_RESULT = "/vp-result";
         public static final String PRESENTATION_DEFINITIONS = "/presentation-definitions";
         public static final String REQUEST_URI = "/request-uri";
-        
+
         private Endpoints() {
         }
     }
@@ -199,7 +199,7 @@ public class OpenID4VPConstants {
         public static final String DID_SUPPORTED_METHODS = "OpenID4VP.DID.SupportedMethods";
         public static final String DID_CACHE_TTL_SECONDS = "OpenID4VP.DID.CacheTTLSeconds";
         public static final String DID_UNIVERSAL_RESOLVER_URL = "OpenID4VP.DID.UniversalResolverUrl";
-        
+
         private ConfigKeys() {
         }
     }
@@ -216,13 +216,13 @@ public class OpenID4VPConstants {
         public static final int MAX_LONG_POLLING_TIMEOUT_SECONDS = 120; // 2 minutes
         public static final int MIN_LONG_POLLING_TIMEOUT_SECONDS = 5;
         public static final String[] SUPPORTED_VC_FORMATS = {
-            VCFormats.JWT_VP_JSON,
-            VCFormats.JWT_VC_JSON,
-            VCFormats.LDP_VP,
-            VCFormats.LDP_VC,
-            VCFormats.VC_SD_JWT
+                VCFormats.JWT_VP_JSON,
+                VCFormats.JWT_VC_JSON,
+                VCFormats.LDP_VP,
+                VCFormats.LDP_VC,
+                VCFormats.VC_SD_JWT
         };
-        
+
         private Defaults() {
         }
     }
@@ -242,7 +242,7 @@ public class OpenID4VPConstants {
         public static final String FILTER = "filter";
         public static final String LIMIT_DISCLOSURE = "limit_disclosure";
         public static final String SUBMISSION_REQUIREMENTS = "submission_requirements";
-        
+
         private PresentationDef() {
         }
     }
@@ -258,7 +258,7 @@ public class OpenID4VPConstants {
         public static final String FORMAT = "format";
         public static final String PATH = "path";
         public static final String PATH_NESTED = "path_nested";
-        
+
         private PresentationSubmission() {
         }
     }
@@ -272,7 +272,7 @@ public class OpenID4VPConstants {
         public static final String PRESENTATION_DEF_PREFIX = "PRES_DEF_";
         public static final String TRANSACTION_PREFIX = "TXN_";
         public static final String DID_DOCUMENT_PREFIX = "DID_DOC_";
-        
+
         private CacheKeys() {
         }
     }
@@ -286,13 +286,13 @@ public class OpenID4VPConstants {
         public static final String CONTENT_TYPE_VC_JWT = "application/vc+jwt";
         public static final String CONTENT_TYPE_VC_SD_JWT = "application/vc+sd-jwt";
         public static final String CONTENT_TYPE_JWT = "application/jwt";
-        
+
         // Proof types for JSON-LD credentials
         public static final String PROOF_TYPE_ED25519_2020 = "Ed25519Signature2020";
         public static final String PROOF_TYPE_ED25519_2018 = "Ed25519Signature2018";
         public static final String PROOF_TYPE_JSON_WEB_SIG_2020 = "JsonWebSignature2020";
         public static final String PROOF_TYPE_ECDSA_SECP256K1_2019 = "EcdsaSecp256k1Signature2019";
-        
+
         // JWT algorithms
         public static final String ALG_RS256 = "RS256";
         public static final String ALG_RS384 = "RS384";
@@ -303,14 +303,14 @@ public class OpenID4VPConstants {
         public static final String ALG_ES256K = "ES256K";
         public static final String ALG_EDDSA = "EdDSA";
         public static final String ALG_PS256 = "PS256";
-        
+
         // Credential status types
         public static final String STATUS_TYPE_STATUS_LIST_2021 = "StatusList2021Entry";
         public static final String STATUS_TYPE_REVOCATION_LIST_2020 = "RevocationList2020Status";
-        
+
         // Credential subject fields
         public static final String CREDENTIAL_SUBJECT_ID = "id";
-        
+
         private Verification() {
         }
     }
@@ -323,7 +323,7 @@ public class OpenID4VPConstants {
         public static final String METHOD_WEB = "web";
         public static final String METHOD_JWK = "jwk";
         public static final String METHOD_KEY = "key";
-        
+
         // DID document properties
         public static final String DOC_CONTEXT = "@context";
         public static final String DOC_ID = "id";
@@ -333,22 +333,22 @@ public class OpenID4VPConstants {
         public static final String DOC_ASSERTION_METHOD = "assertionMethod";
         public static final String DOC_KEY_AGREEMENT = "keyAgreement";
         public static final String DOC_SERVICE = "service";
-        
+
         // Verification method properties
         public static final String VM_TYPE = "type";
         public static final String VM_PUBLIC_KEY_JWK = "publicKeyJwk";
         public static final String VM_PUBLIC_KEY_MULTIBASE = "publicKeyMultibase";
         public static final String VM_PUBLIC_KEY_BASE58 = "publicKeyBase58";
-        
+
         // Verification method types
         public static final String VM_TYPE_JSON_WEB_KEY_2020 = "JsonWebKey2020";
         public static final String VM_TYPE_ED25519_2020 = "Ed25519VerificationKey2020";
         public static final String VM_TYPE_ED25519_2018 = "Ed25519VerificationKey2018";
         public static final String VM_TYPE_ECDSA_SECP256K1_2019 = "EcdsaSecp256k1VerificationKey2019";
-        
+
         // Default TTL for DID document cache (1 hour)
         public static final long DID_CACHE_TTL_MS = 3600000;
-        
+
         private DID() {
         }
     }
@@ -418,7 +418,7 @@ public class OpenID4VPConstants {
     public static class Logging {
         public static final String COMPONENT_ID = "openid4vp";
         public static final String LOG_PREFIX = "[OpenID4VP] ";
-        
+
         private Logging() {
         }
     }

@@ -121,6 +121,13 @@ public class VPSubmissionServlet extends HttpServlet {
                           final HttpServletResponse response)
             throws ServletException, IOException {
 
+        LOG.info("========== VP SUBMISSION SERVLET CALLED ==========");
+        LOG.info("Request URI: " + request.getRequestURI());
+        LOG.info("Request URL: " + request.getRequestURL());
+        LOG.info("Context Path: " + request.getContextPath());
+        LOG.info("Servlet Path: " + request.getServletPath());
+        LOG.info("==================================================");
+
         if (LOG.isDebugEnabled()) {
             LOG.debug("Received VP submission from wallet");
         }
