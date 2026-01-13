@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -382,10 +384,14 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
         createDTO.setClientId(clientId);
         
-        // Set presentation definition ID
+        // Set presentation definition ID or create default inline definition
         String presentationDefId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
         if (StringUtils.isNotBlank(presentationDefId)) {
             createDTO.setPresentationDefinitionId(presentationDefId);
+        } else {
+            // Create a default presentation definition requesting any verifiable credential
+            log.info(LOG_PREFIX + " No presentation definition configured, using default");
+            createDTO.setPresentationDefinition(createDefaultPresentationDefinition());
         }
         
         // Set response mode
@@ -402,6 +408,45 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         VPRequestService vpRequestService = getVPRequestService();
         int tenantId = getTenantId(context);
         return vpRequestService.createVPRequest(createDTO, tenantId);
+    }
+
+    /**
+     * Create a default presentation definition that accepts any verifiable credential.
+     * This is used when no specific presentation definition is configured.
+     */
+    private JsonObject createDefaultPresentationDefinition() {
+        JsonObject presentationDef = new JsonObject();
+        presentationDef.addProperty("id", "default-wallet-auth");
+        presentationDef.addProperty("name", "Wallet Authentication");
+        presentationDef.addProperty("purpose", "Authenticate using your digital wallet");
+        
+        // Create input descriptors - accepts any VC
+        JsonArray inputDescriptors = new JsonArray();
+        JsonObject descriptor = new JsonObject();
+        descriptor.addProperty("id", "any-credential");
+        descriptor.addProperty("name", "Any Verifiable Credential");
+        descriptor.addProperty("purpose", "Present any verifiable credential from your wallet");
+        
+        // Add constraints - accept any type of credential
+        JsonObject constraints = new JsonObject();
+        JsonArray fields = new JsonArray();
+        
+        // Require credential type field
+        JsonObject typeField = new JsonObject();
+        JsonArray pathArray = new JsonArray();
+        pathArray.add("$.type");
+        pathArray.add("$.vc.type");
+        pathArray.add("$.vct");
+        typeField.add("path", pathArray);
+        
+        fields.add(typeField);
+        constraints.add("fields", fields);
+        descriptor.add("constraints", constraints);
+        
+        inputDescriptors.add(descriptor);
+        presentationDef.add("input_descriptors", inputDescriptors);
+        
+        return presentationDef;
     }
 
     /**
@@ -554,12 +599,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         log.info(LOG_PREFIX + " authenticator: " + authenticator);
         log.info(LOG_PREFIX + " status: " + status);
         log.info(LOG_PREFIX + " ========================================");
-        
-        // Handle initial authenticator selection (when user clicks authenticator in UI)
-        if (AUTHENTICATOR_NAME.equals(authenticator)) {
-            log.info(LOG_PREFIX + " canHandle=true (explicit authenticator selection)");
-            return true;
-        }
         
         // Handle polling requests from login page
         if (StringUtils.isNotBlank(poll) && StringUtils.isNotBlank(sessionDataKey)) {
