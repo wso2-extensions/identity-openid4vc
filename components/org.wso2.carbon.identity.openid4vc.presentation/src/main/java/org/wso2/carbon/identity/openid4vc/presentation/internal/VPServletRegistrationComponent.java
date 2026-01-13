@@ -42,10 +42,10 @@ import javax.servlet.ServletException;
  * OSGi component for registering OpenID4VP servlets.
  * 
  * Registers the following servlets:
- * - /api/identity/openid4vp/v1/vp-request - VP request management
- * - /api/identity/openid4vp/v1/vp-response - VP submission handling
- * - /api/identity/openid4vp/v1/vp-result - VP verification results
- * - /api/identity/openid4vp/v1/presentation-definitions - Definition management
+ * - /openid4vp/v1/vp-request - VP request management
+ * - /openid4vp/v1/response - VP submission handling
+ * - /openid4vp/v1/vp-result - VP verification results
+ * - /openid4vp/v1/presentation-definitions - Definition management
  */
 @Component(name = "org.wso2.carbon.identity.openid4vc.presentation.servlet.component", immediate = true)
 public class VPServletRegistrationComponent {

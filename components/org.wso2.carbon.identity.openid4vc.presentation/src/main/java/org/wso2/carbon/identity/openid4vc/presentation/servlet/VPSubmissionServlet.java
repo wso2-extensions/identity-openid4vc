@@ -57,7 +57,7 @@ import javax.servlet.http.HttpServletResponse;
  * Implements the OpenID4VP direct_post response mode.
  * 
  * Endpoint:
- * - POST /api/identity/openid4vp/v1/vp-response - Receive VP submission from wallet
+ * - POST /openid4vp/v1/response - Receive VP submission from wallet
  * 
  * The wallet submits via application/x-www-form-urlencoded with:
  * - vp_token: The VP token (JWT or JSON-LD)

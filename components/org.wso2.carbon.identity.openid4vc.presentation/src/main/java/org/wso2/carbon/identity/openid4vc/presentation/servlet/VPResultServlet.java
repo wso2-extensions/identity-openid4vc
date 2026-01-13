@@ -48,8 +48,8 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet for retrieving VP verification results.
  * 
  * Endpoints:
- * - GET /api/identity/openid4vp/v1/vp-result/{transactionId} - Get full verification results
- * - GET /api/identity/openid4vp/v1/vp-result/{transactionId}/summary - Get result summary
+ * - GET /openid4vp/v1/vp-result/{transactionId} - Get full verification results
+ * - GET /openid4vp/v1/vp-result/{transactionId}/summary - Get result summary
  * 
  * This endpoint is called by the relying party to retrieve the verification
  * results for a submitted VP. The transaction ID was provided when creating
