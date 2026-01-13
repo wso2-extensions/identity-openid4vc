@@ -216,7 +216,7 @@ public class OpenID4VPUtil {
         if (!baseUrl.endsWith("/")) {
             uri.append("/");
         }
-        uri.append("api/openid4vp/v1");
+        uri.append("openid4vp/v1");
         uri.append(OpenID4VPConstants.Endpoints.REQUEST_URI);
         uri.append("/").append(requestId);
         return uri.toString();
@@ -233,7 +233,7 @@ public class OpenID4VPUtil {
         if (!baseUrl.endsWith("/")) {
             uri.append("/");
         }
-        uri.append("api/openid4vp/v1");
+        uri.append("openid4vp/v1");
         uri.append(OpenID4VPConstants.Endpoints.VP_RESPONSE);
         return uri.toString();
     }

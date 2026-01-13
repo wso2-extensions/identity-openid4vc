@@ -371,7 +371,7 @@
             qrContent: '${qrContent}',
             pollInterval: 2000,
             timeout: 300, // 5 minutes in seconds
-            pollEndpoint: '/api/identity/openid4vp/v1/vp-request/${requestId}/status'
+            pollEndpoint: '/openid4vp/v1/vp-request/${requestId}/status'
         };
         
         let timeRemaining = CONFIG.timeout;

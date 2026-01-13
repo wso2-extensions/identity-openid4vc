@@ -48,11 +48,11 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet for managing Presentation Definitions.
  * 
  * Endpoints:
- * - GET /api/identity/openid4vp/v1/presentation-definitions - List all definitions
- * - GET /api/identity/openid4vp/v1/presentation-definitions/{id} - Get specific definition
- * - POST /api/identity/openid4vp/v1/presentation-definitions - Create new definition
- * - PUT /api/identity/openid4vp/v1/presentation-definitions/{id} - Update definition
- * - DELETE /api/identity/openid4vp/v1/presentation-definitions/{id} - Delete definition
+ * - GET /openid4vp/v1/presentation-definitions - List all definitions
+ * - GET /openid4vp/v1/presentation-definitions/{id} - Get specific definition
+ * - POST /openid4vp/v1/presentation-definitions - Create new definition
+ * - PUT /openid4vp/v1/presentation-definitions/{id} - Update definition
+ * - DELETE /openid4vp/v1/presentation-definitions/{id} - Delete definition
  */
 public class VPDefinitionServlet extends HttpServlet {
 
