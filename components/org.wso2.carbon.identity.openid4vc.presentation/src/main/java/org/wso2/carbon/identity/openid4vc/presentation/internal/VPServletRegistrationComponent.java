@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.eclipse.equinox.http.helper.ContextPathServletAdaptor;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -48,17 +47,14 @@ import javax.servlet.ServletException;
  * - /api/identity/openid4vp/v1/vp-result - VP verification results
  * - /api/identity/openid4vp/v1/presentation-definitions - Definition management
  */
-@Component(
-        name = "org.wso2.carbon.identity.openid4vc.presentation.servlet.component",
-        immediate = true
-)
+@Component(name = "org.wso2.carbon.identity.openid4vc.presentation.servlet.component", immediate = true)
 public class VPServletRegistrationComponent {
 
     private static final Log log = LogFactory.getLog(VPServletRegistrationComponent.class);
 
-    private static final String API_BASE_PATH = "/api/identity/openid4vp/v1";
+    private static final String API_BASE_PATH = "/openid4vp/v1";
     private static final String VP_REQUEST_PATH = API_BASE_PATH + "/vp-request";
-    private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/vp-response";
+    private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/response";
     private static final String VP_RESULT_PATH = API_BASE_PATH + "/vp-result";
     private static final String PRESENTATION_DEFINITIONS_PATH = API_BASE_PATH + "/presentation-definitions";
 
@@ -94,27 +90,19 @@ public class VPServletRegistrationComponent {
         }
 
         // Register VP Request Servlet
-        Servlet vpRequestServlet = new ContextPathServletAdaptor(
-                new VPRequestServlet(), VP_REQUEST_PATH);
-        httpService.registerServlet(VP_REQUEST_PATH, vpRequestServlet, null, null);
+        httpService.registerServlet(VP_REQUEST_PATH, new VPRequestServlet(), null, null);
         log.info("Registered VPRequestServlet at: " + VP_REQUEST_PATH);
 
         // Register VP Submission Servlet
-        Servlet vpSubmissionServlet = new ContextPathServletAdaptor(
-                new VPSubmissionServlet(), VP_RESPONSE_PATH);
-        httpService.registerServlet(VP_RESPONSE_PATH, vpSubmissionServlet, null, null);
+        httpService.registerServlet(VP_RESPONSE_PATH, new VPSubmissionServlet(), null, null);
         log.info("Registered VPSubmissionServlet at: " + VP_RESPONSE_PATH);
 
         // Register VP Result Servlet
-        Servlet vpResultServlet = new ContextPathServletAdaptor(
-                new VPResultServlet(), VP_RESULT_PATH);
-        httpService.registerServlet(VP_RESULT_PATH, vpResultServlet, null, null);
+        httpService.registerServlet(VP_RESULT_PATH, new VPResultServlet(), null, null);
         log.info("Registered VPResultServlet at: " + VP_RESULT_PATH);
 
         // Register Presentation Definition Servlet
-        Servlet vpDefinitionServlet = new ContextPathServletAdaptor(
-                new VPDefinitionServlet(), PRESENTATION_DEFINITIONS_PATH);
-        httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, vpDefinitionServlet, null, null);
+        httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
         log.info("Registered VPDefinitionServlet at: " + PRESENTATION_DEFINITIONS_PATH);
     }
 
@@ -155,13 +143,7 @@ public class VPServletRegistrationComponent {
         }
     }
 
-    @Reference(
-            name = "osgi.http.service",
-            service = HttpService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetHttpService"
-    )
+    @Reference(name = "osgi.http.service", service = HttpService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetHttpService")
     protected void setHttpService(HttpService httpService) {
         this.httpService = httpService;
         if (log.isDebugEnabled()) {
@@ -176,13 +158,7 @@ public class VPServletRegistrationComponent {
         }
     }
 
-    @Reference(
-            name = "user.realm.service",
-            service = RealmService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRealmService"
-    )
+    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {

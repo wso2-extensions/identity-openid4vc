@@ -100,8 +100,8 @@ public class OpenID4VPUtil {
             try {
                 return Integer.parseInt(configValue);
             } catch (NumberFormatException e) {
-                log.warn("Invalid VP request expiry configuration: " + configValue + 
-                    ". Using default value.");
+                log.warn("Invalid VP request expiry configuration: " + configValue +
+                        ". Using default value.");
             }
         }
         return OpenID4VPConstants.Defaults.VP_REQUEST_EXPIRY_SECONDS;
@@ -216,7 +216,7 @@ public class OpenID4VPUtil {
         if (!baseUrl.endsWith("/")) {
             uri.append("/");
         }
-        uri.append("api/identity/openid4vp/v1");
+        uri.append("api/openid4vp/v1");
         uri.append(OpenID4VPConstants.Endpoints.REQUEST_URI);
         uri.append("/").append(requestId);
         return uri.toString();
@@ -233,7 +233,7 @@ public class OpenID4VPUtil {
         if (!baseUrl.endsWith("/")) {
             uri.append("/");
         }
-        uri.append("api/identity/openid4vp/v1");
+        uri.append("api/openid4vp/v1");
         uri.append(OpenID4VPConstants.Endpoints.VP_RESPONSE);
         return uri.toString();
     }
@@ -245,8 +245,8 @@ public class OpenID4VPUtil {
      * @return The OpenID4VP deep link URL
      */
     public static String buildOpenID4VPDeepLink(String requestUri) {
-        return OpenID4VPConstants.Protocol.OPENID4VP_SCHEME + 
-            "?" + OpenID4VPConstants.RequestParams.REQUEST_URI + "=" + requestUri;
+        return OpenID4VPConstants.Protocol.OPENID4VP_SCHEME +
+                "?" + OpenID4VPConstants.RequestParams.REQUEST_URI + "=" + requestUri;
     }
 
     /**
