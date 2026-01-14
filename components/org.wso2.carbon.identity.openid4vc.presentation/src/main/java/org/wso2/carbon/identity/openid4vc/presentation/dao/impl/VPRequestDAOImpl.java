@@ -41,38 +41,29 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     private static final Log log = LogFactory.getLog(VPRequestDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_VP_REQUEST = 
-        "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, CLIENT_ID, NONCE, " +
-        "PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
-        "REQUEST_JWT, STATUS, CREATED_AT, EXPIRES_AT, TENANT_ID) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, CLIENT_ID, NONCE, "
+            +
+            "PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
+            "REQUEST_JWT, STATUS, CREATED_AT, EXPIRES_AT, TENANT_ID) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_VP_REQUEST_BY_ID = 
-        "SELECT * FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID = 
-        "SELECT * FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID = "SELECT * FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID = 
-        "SELECT REQUEST_ID FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID = "SELECT REQUEST_ID FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_VP_REQUEST_STATUS = 
-        "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VP_REQUEST_STATUS = "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_VP_REQUEST_JWT = 
-        "UPDATE IDN_VP_REQUEST SET REQUEST_JWT = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VP_REQUEST_JWT = "UPDATE IDN_VP_REQUEST SET REQUEST_JWT = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_REQUEST = 
-        "DELETE FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_VP_REQUEST = "DELETE FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_EXPIRED_VP_REQUESTS = 
-        "SELECT * FROM IDN_VP_REQUEST WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_EXPIRED_VP_REQUESTS = "SELECT * FROM IDN_VP_REQUEST WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
 
-    private static final String SQL_MARK_EXPIRED_REQUESTS = 
-        "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_MARK_EXPIRED_REQUESTS = "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_VP_REQUESTS_BY_STATUS = 
-        "SELECT * FROM IDN_VP_REQUEST WHERE STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUESTS_BY_STATUS = "SELECT * FROM IDN_VP_REQUEST WHERE STATUS = ? AND TENANT_ID = ?";
 
     @Override
     public void createVPRequest(VPRequest vpRequest) throws VPException {
@@ -127,7 +118,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     }
 
     @Override
-    public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId) 
+    public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -148,7 +139,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     }
 
     @Override
-    public List<String> getRequestIdsByTransactionId(String transactionId, int tenantId) 
+    public List<String> getRequestIdsByTransactionId(String transactionId, int tenantId)
             throws VPException {
         List<String> requestIds = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
@@ -164,15 +155,20 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error retrieving request IDs for transaction: " + 
-                transactionId, e);
+            throw new VPException("Error retrieving request IDs for transaction: " +
+                    transactionId, e);
         }
         return requestIds;
     }
 
     @Override
-    public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId) 
+    public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId)
             throws VPException {
+        log.info("[VP_REQUEST_DAO] Updating VP request status...");
+        log.info("[VP_REQUEST_DAO] Request ID: " + requestId);
+        log.info("[VP_REQUEST_DAO] New Status: " + status);
+        log.info("[VP_REQUEST_DAO] Tenant ID: " + tenantId);
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_STATUS)) {
                 ps.setString(1, status.getValue());
@@ -182,21 +178,24 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Updated VP request status: " + requestId + " to " + status + 
-                        ", rows affected: " + updated);
+                log.info("[VP_REQUEST_DAO] VP request status updated successfully - Rows affected: " + updated);
+
+                if (updated == 0) {
+                    log.warn("[VP_REQUEST_DAO] No rows updated - Request may not exist: " + requestId);
                 }
             } catch (SQLException e) {
+                log.error("[VP_REQUEST_DAO] SQL error updating VP request status: " + e.getMessage(), e);
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
+            log.error("[VP_REQUEST_DAO] Database error updating VP request status: " + requestId, e);
             throw new VPException("Error updating VP request status: " + requestId, e);
         }
     }
 
     @Override
-    public void updateVPRequestJwt(String requestId, String requestJwt, int tenantId) 
+    public void updateVPRequestJwt(String requestId, String requestJwt, int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_JWT)) {
@@ -288,7 +287,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     }
 
     @Override
-    public List<VPRequest> getVPRequestsByStatus(VPRequestStatus status, int tenantId) 
+    public List<VPRequest> getVPRequestsByStatus(VPRequestStatus status, int tenantId)
             throws VPException {
         List<VPRequest> requests = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
