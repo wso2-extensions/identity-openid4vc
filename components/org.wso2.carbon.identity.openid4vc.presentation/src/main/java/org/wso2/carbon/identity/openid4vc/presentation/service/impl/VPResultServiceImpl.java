@@ -72,7 +72,7 @@ public class VPResultServiceImpl implements VPResultService {
      * Constructor for dependency injection.
      */
     public VPResultServiceImpl(VPRequestDAO vpRequestDAO, VPSubmissionDAO vpSubmissionDAO,
-                                VCVerificationService vcVerificationService) {
+            VCVerificationService vcVerificationService) {
         this.vpRequestDAO = vpRequestDAO;
         this.vpSubmissionDAO = vpSubmissionDAO;
         this.vcVerificationService = vcVerificationService;
@@ -303,7 +303,7 @@ public class VPResultServiceImpl implements VPResultService {
             if (parts.length >= 2) {
                 String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
                 JsonObject claims = GSON.fromJson(payload, JsonObject.class);
-                
+
                 // Try 'iss' claim first (holder is usually the issuer of VP)
                 if (claims.has("iss")) {
                     return claims.get("iss").getAsString();
@@ -458,9 +458,29 @@ public class VPResultServiceImpl implements VPResultService {
 
             // Use verification service to verify the credential
             VerifiableCredential vc = vcVerificationService.parseCredential(vcString, contentType);
+            log.info("[VC_VERIFICATION] Verifying credential index: " + index + ", ID: " + vc.getId() + ", Issuer: "
+                    + vc.getIssuer());
+
             boolean signatureValid = vcVerificationService.verifySignature(vc);
+            if (signatureValid) {
+                log.info("[VC_VERIFICATION] Signature verification PASSED for credential: " + vc.getId());
+            } else {
+                log.error("[VC_VERIFICATION] Signature verification FAILED for credential: " + vc.getId());
+            }
+
             boolean expired = vcVerificationService.isExpired(vc);
+            if (!expired) {
+                log.info("[VC_VERIFICATION] Expiration check PASSED for credential: " + vc.getId());
+            } else {
+                log.warn("[VC_VERIFICATION] Credential EXPIRED: " + vc.getId());
+            }
+
             boolean revoked = vcVerificationService.isRevoked(vc);
+            if (!revoked) {
+                log.info("[VC_VERIFICATION] Revocation check PASSED for credential: " + vc.getId());
+            } else {
+                log.warn("[VC_VERIFICATION] Credential REVOKED: " + vc.getId());
+            }
 
             VCVerificationStatus status;
             String error = null;
@@ -476,6 +496,7 @@ public class VPResultServiceImpl implements VPResultService {
                 error = "Credential has been revoked";
             } else {
                 status = VCVerificationStatus.SUCCESS;
+                log.info("[VC_VERIFICATION] Credential verification SUCCESSFUL for ID: " + vc.getId());
             }
 
             List<String> types = vc.getType();
@@ -488,8 +509,7 @@ public class VPResultServiceImpl implements VPResultService {
                     .credentialTypes(types != null ? types.toArray(new String[0]) : null)
                     .issuer(vc.getIssuer())
                     .issuerId(vc.getIssuer())
-                    .subject(vc.getCredentialSubject() != null ? 
-                            extractSubjectId(vc.getCredentialSubject()) : null)
+                    .subject(vc.getCredentialSubject() != null ? extractSubjectId(vc.getCredentialSubject()) : null)
                     .issuanceDate(formatDate(vc.getIssuanceDate()))
                     .expirationDate(formatDate(vc.getExpirationDate()))
                     .signatureValid(signatureValid)
@@ -515,12 +535,12 @@ public class VPResultServiceImpl implements VPResultService {
         if (credentialSubject == null) {
             return null;
         }
-        
+
         try {
             if (credentialSubject instanceof String) {
                 return (String) credentialSubject;
             }
-            
+
             JsonElement element = GSON.toJsonTree(credentialSubject);
             if (element.isJsonObject()) {
                 JsonObject obj = element.getAsJsonObject();
@@ -531,7 +551,7 @@ public class VPResultServiceImpl implements VPResultService {
         } catch (Exception e) {
             log.debug("Failed to extract subject ID: " + e.getMessage());
         }
-        
+
         return null;
     }
 

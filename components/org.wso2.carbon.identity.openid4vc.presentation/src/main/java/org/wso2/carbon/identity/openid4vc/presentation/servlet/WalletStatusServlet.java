@@ -25,6 +25,10 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
 import org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
+import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -35,7 +39,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet to check if VP token has been received for polling from the login page.
+ * Servlet to check if VP token has been received for polling from the login
+ * page.
  * Supports both immediate status check and long polling.
  */
 public class WalletStatusServlet extends HttpServlet {
@@ -46,7 +51,7 @@ public class WalletStatusServlet extends HttpServlet {
     private static final String PARAM_STATE = "state";
     private static final String PARAM_TIMEOUT = "timeout";
     private static final String PARAM_LONG_POLL = "long_poll";
-    
+
     // Log prefix for easy filtering
     private static final String LOG_PREFIX = "[WALLET-STATUS]";
 
@@ -79,7 +84,7 @@ public class WalletStatusServlet extends HttpServlet {
 
     @Override
     protected void doGet(final HttpServletRequest request,
-                         final HttpServletResponse response) throws IOException {
+            final HttpServletResponse response) throws IOException {
 
         response.setContentType(CONTENT_TYPE_JSON + "; charset=UTF-8");
 
@@ -119,7 +124,7 @@ public class WalletStatusServlet extends HttpServlet {
      * Handle immediate status check (existing behavior).
      */
     private void handleImmediateStatus(final HttpServletResponse response,
-                                        final String state) throws IOException {
+            final String state) throws IOException {
 
         // Check if token exists in cache (without removing it)
         boolean tokenReceived = WalletDataCache.getInstance().hasToken(state);
@@ -127,6 +132,41 @@ public class WalletStatusServlet extends HttpServlet {
         // Also check submission cache
         if (!tokenReceived) {
             tokenReceived = WalletDataCache.getInstance().hasSubmission(state);
+        }
+
+        // DB FALLBACK: If not in cache, check the database status
+        // The 'state' parameter corresponds to the Request ID
+        if (!tokenReceived) {
+            try {
+                VPRequestService requestService = VPServiceDataHolder.getInstance().getVPRequestService();
+                if (requestService != null) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("DB Fallback: VPRequestService found, checking state: " + state);
+                    }
+                    VPRequest vpRequest = requestService.getVPRequestById(state, DEFAULT_TENANT_ID);
+                    if (vpRequest != null) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("DB Fallback: Request found. Status: " + vpRequest.getStatus());
+                        }
+                        if (vpRequest.getStatus() == VPRequestStatus.VP_SUBMITTED ||
+                                vpRequest.getStatus() == VPRequestStatus.COMPLETED) {
+                            tokenReceived = true;
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Token received detected via Database fallback for state: " + state);
+                            }
+                        }
+                    } else {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("DB Fallback: No request found for state: " + state);
+                        }
+                    }
+                } else {
+                    LOG.warn("DB Fallback: VPRequestService is NULL in DataHolder");
+                }
+            } catch (Exception e) {
+                // Log but don't fail the request, just treat as not received
+                LOG.error("Error checking DB status in fallback for state: " + state, e);
+            }
         }
 
         if (LOG.isDebugEnabled()) {
@@ -140,8 +180,8 @@ public class WalletStatusServlet extends HttpServlet {
      * Handle long polling request.
      */
     private void handleLongPoll(final HttpServletRequest request,
-                                 final HttpServletResponse response,
-                                 final String state) throws IOException {
+            final HttpServletResponse response,
+            final String state) throws IOException {
 
         long timeoutSeconds = getTimeoutSeconds(request);
         long timeoutMs = timeoutSeconds * 1000L;
@@ -159,9 +199,9 @@ public class WalletStatusServlet extends HttpServlet {
      * Handle synchronous long polling.
      */
     private void handleSyncLongPoll(final HttpServletResponse response,
-                                     final String state,
-                                     final long timeoutMs,
-                                     final int tenantId) throws IOException {
+            final String state,
+            final long timeoutMs,
+            final int tenantId) throws IOException {
 
         // Wait for status change
         PollingResult result = pollingManager.waitForStatusChange(state, timeoutMs, tenantId);
@@ -174,7 +214,7 @@ public class WalletStatusServlet extends HttpServlet {
      * Send response based on polling result.
      */
     private void sendPollingResultResponse(final HttpServletResponse response,
-                                            final PollingResult result) throws IOException {
+            final PollingResult result) throws IOException {
 
         response.setStatus(HttpServletResponse.SC_OK);
 
@@ -262,8 +302,8 @@ public class WalletStatusServlet extends HttpServlet {
      * Send status response.
      */
     private void sendStatusResponse(final HttpServletResponse response,
-                                     final boolean tokenReceived,
-                                     final String vpStatus)
+            final boolean tokenReceived,
+            final String vpStatus)
             throws IOException {
 
         response.setStatus(HttpServletResponse.SC_OK);
@@ -283,8 +323,8 @@ public class WalletStatusServlet extends HttpServlet {
      * Send error JSON response.
      */
     private void sendErrorResponse(final HttpServletResponse response,
-                                    final int statusCode,
-                                    final String message)
+            final int statusCode,
+            final String message)
             throws IOException {
 
         response.setStatus(statusCode);
@@ -299,4 +339,3 @@ public class WalletStatusServlet extends HttpServlet {
         }
     }
 }
-

@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPSubmissionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.VPRequestDAOImpl;
@@ -52,6 +53,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
 
     private final VPSubmissionDAO vpSubmissionDAO;
     private final VPRequestDAO vpRequestDAO;
+    private final VPRequestCache vpRequestCache;
 
     /**
      * Default constructor.
@@ -59,6 +61,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     public VPSubmissionServiceImpl() {
         this.vpSubmissionDAO = new VPSubmissionDAOImpl();
         this.vpRequestDAO = new VPRequestDAOImpl();
+        this.vpRequestCache = VPRequestCache.getInstance();
     }
 
     /**
@@ -67,6 +70,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     public VPSubmissionServiceImpl(VPSubmissionDAO vpSubmissionDAO, VPRequestDAO vpRequestDAO) {
         this.vpSubmissionDAO = vpSubmissionDAO;
         this.vpRequestDAO = vpRequestDAO;
+        this.vpRequestCache = VPRequestCache.getInstance();
     }
 
     @Override
@@ -101,7 +105,12 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
             log.warn("[VP_SUBMISSION] VP REQUEST EXPIRED: " + requestId);
             // Mark as expired in database
+            // Mark as expired in database
             vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.EXPIRED, tenantId);
+            // INVALIDATE CACHE
+            if (vpRequestCache != null) {
+                vpRequestCache.remove(requestId);
+            }
             log.info("[VP_SUBMISSION] Updated request status to EXPIRED");
             throw new VPRequestExpiredException(requestId);
         }
@@ -131,8 +140,13 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
 
         log.info("[VP_SUBMISSION] Creating submission record...");
         // Create submission record
+        // Use the transaction ID from the request for consistency
+        String transactionId = vpRequest.getTransactionId();
+        if (StringUtils.isBlank(transactionId)) {
+            transactionId = OpenID4VPUtil.generateTransactionId();
+        }
+
         String submissionId = OpenID4VPUtil.generateSubmissionId();
-        String transactionId = OpenID4VPUtil.generateTransactionId();
         long submittedAt = System.currentTimeMillis();
 
         log.info("[VP_SUBMISSION] Generated Submission ID: " + submissionId);
@@ -167,6 +181,11 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         log.info("[VP_SUBMISSION] Updating request status to VP_SUBMITTED...");
         // Update request status to VP_SUBMITTED
         vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.VP_SUBMITTED, tenantId);
+        // INVALIDATE CACHE: Ensure subsequent reads pick up the new status
+        if (vpRequestCache != null) {
+            vpRequestCache.remove(requestId);
+            log.info("[VP_SUBMISSION] Invalidated VP request cache for ID: " + requestId);
+        }
         log.info("[VP_SUBMISSION] Request status updated successfully");
 
         log.info("[VP_SUBMISSION] ========== VP Submission Processed Successfully ==========");
@@ -219,6 +238,10 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         log.info("[VP_ERROR_SUBMISSION] Updating request status to VP_SUBMITTED...");
         // Update request status - still VP_SUBMITTED but with error
         vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.VP_SUBMITTED, tenantId);
+        // INVALIDATE CACHE
+        if (vpRequestCache != null) {
+            vpRequestCache.remove(requestId);
+        }
         log.info("[VP_ERROR_SUBMISSION] Request status updated successfully");
 
         log.info("[VP_ERROR_SUBMISSION] ========== Wallet Error Submission Processed ==========");

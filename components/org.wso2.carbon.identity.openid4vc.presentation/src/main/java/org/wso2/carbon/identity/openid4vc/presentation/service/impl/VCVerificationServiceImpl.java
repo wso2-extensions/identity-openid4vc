@@ -114,9 +114,9 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      * Constructor with all dependencies.
      *
      * @param didResolverService DID resolver service
-     * @param statusListService Status list service
+     * @param statusListService  Status list service
      */
-    public VCVerificationServiceImpl(DIDResolverService didResolverService, 
+    public VCVerificationServiceImpl(DIDResolverService didResolverService,
             StatusListService statusListService) {
         this.didResolverService = didResolverService;
         this.signatureVerifier = new SignatureVerifier(didResolverService);
@@ -132,7 +132,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     @Override
     public VCVerificationResultDTO verify(String vcString, String contentType, int vcIndex)
             throws CredentialVerificationException {
-        
+
         if (vcString == null || vcString.trim().isEmpty()) {
             throw new CredentialVerificationException(VCVerificationStatus.INVALID,
                     "Credential string is null or empty");
@@ -141,10 +141,10 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         try {
             // Parse the credential
             VerifiableCredential credential = parseCredential(vcString, contentType);
-            
+
             // Perform verification
             VCVerificationResultDTO result = verifyCredentialInternal(credential, vcIndex);
-            
+
             return result;
 
         } catch (CredentialVerificationException e) {
@@ -171,24 +171,32 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         String credentialType = credential.getPrimaryType();
         String issuer = credential.getIssuerId();
 
+        LOG.info("[VC_VERIFICATION] Starting verification for credential ID: " + credential.getId() +
+                ", Type: " + credentialType + ", Issuer: " + issuer);
+
         // 1. Check expiration
         if (credential.getExpirationDate() != null && isExpired(credential)) {
+            LOG.warn("[VC_VERIFICATION] Credential has expired: " + credential.getId());
             LOG.debug("Credential has expired: " + credential.getId());
             return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.EXPIRED,
                     "Credential has expired");
         }
         credential.setExpirationChecked(true);
+        LOG.info("[VC_VERIFICATION] Expiration check passed for credential: " + credential.getId());
 
         // 2. Verify signature
         try {
             boolean signatureValid = verifySignature(credential);
             if (!signatureValid) {
+                LOG.error("[VC_VERIFICATION] Credential signature verification failed: " + credential.getId());
                 LOG.debug("Credential signature verification failed: " + credential.getId());
                 return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
                         "Cryptographic signature verification failed");
             }
             credential.setSignatureVerified(true);
+            LOG.info("[VC_VERIFICATION] Signature verification passed for credential: " + credential.getId());
         } catch (CredentialVerificationException e) {
+            LOG.error("[VC_VERIFICATION] Signature verification error: " + e.getMessage());
             LOG.debug("Signature verification error: " + e.getMessage());
             return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
                     "Signature verification error: " + e.getMessage());
@@ -198,18 +206,24 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         if (credential.hasCredentialStatus()) {
             try {
                 if (isRevoked(credential)) {
+                    LOG.info("[VC_VERIFICATION] Credential has been revoked: " + credential.getId());
                     LOG.debug("Credential has been revoked: " + credential.getId());
                     return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.REVOKED,
                             "Credential has been revoked");
                 }
                 credential.setRevocationChecked(true);
+                LOG.info("[VC_VERIFICATION] Revocation check passed for credential: " + credential.getId());
             } catch (CredentialVerificationException e) {
-                LOG.warn("Revocation check failed, continuing: " + e.getMessage());
+                LOG.warn("[VC_VERIFICATION] Revocation check failed, continuing: " + e.getMessage());
                 // Continue without failing - revocation check is optional
             }
+        } else {
+            LOG.info("[VC_VERIFICATION] No revocation status found - skipping check for credential: "
+                    + credential.getId());
         }
 
         // All checks passed
+        LOG.info("[VC_VERIFICATION] Credential verification COMPLETED successfully: " + credential.getId());
         LOG.debug("Credential verification successful: " + credential.getId());
         return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.SUCCESS,
                 credentialType, issuer);
@@ -218,7 +232,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     @Override
     public List<VCVerificationResultDTO> verifyVPToken(String vpToken)
             throws CredentialVerificationException {
-        
+
         if (vpToken == null || vpToken.trim().isEmpty()) {
             throw new CredentialVerificationException("VP token is null or empty");
         }
@@ -235,8 +249,12 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         if (presentation.getVerifiableCredentials() == null ||
                 presentation.getVerifiableCredentials().isEmpty()) {
+            LOG.error("[VC_VERIFICATION] No verifiable credentials found in presentation");
             throw new CredentialVerificationException("No verifiable credentials found in presentation");
         }
+
+        LOG.info("[VC_VERIFICATION] Verifying presentation with " +
+                presentation.getVerifiableCredentials().size() + " credentials");
 
         // Verify each credential
         int index = 0;
@@ -245,12 +263,15 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 VCVerificationResultDTO result = verifyCredentialInternal(credential, index);
                 results.add(result);
             } catch (CredentialVerificationException e) {
+                LOG.error("[VC_VERIFICATION] Verification failed for credential at index " + index + ": "
+                        + e.getMessage());
                 results.add(new VCVerificationResultDTO(index, VCVerificationStatus.INVALID,
                         e.getMessage()));
             }
             index++;
         }
 
+        LOG.info("[VC_VERIFICATION] Presentation verification completed. Total Results: " + results.size());
         return results;
     }
 
@@ -289,7 +310,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         String rawCredential = credential.getRawCredential();
         String[] parts = rawCredential.split("\\.");
-        
+
         if (parts.length != 3) {
             throw new CredentialVerificationException("Invalid JWT format");
         }
@@ -339,21 +360,21 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         // SD-JWT format: <issuer-jwt>~<disclosure1>~<disclosure2>~...~<kb-jwt>
         String rawCredential = credential.getRawCredential();
         String[] parts = rawCredential.split("~");
-        
+
         if (parts.length < 1) {
             throw new CredentialVerificationException("Invalid SD-JWT format");
         }
 
         // Verify the issuer JWT (first part)
         String issuerJwt = parts[0];
-        
+
         // Create a temporary credential for JWT verification
         VerifiableCredential tempCred = new VerifiableCredential();
         tempCred.setFormat(VerifiableCredential.Format.JWT);
         tempCred.setRawCredential(issuerJwt);
         tempCred.setIssuer(credential.getIssuer());
         tempCred.setIssuerId(credential.getIssuerId());
-        
+
         return verifyJwtSignature(tempCred);
     }
 
@@ -375,9 +396,9 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         try {
             // Extract DID from verification method
-            String did = verificationMethod.contains("#") ?
-                    verificationMethod.substring(0, verificationMethod.indexOf("#")) :
-                    verificationMethod;
+            String did = verificationMethod.contains("#")
+                    ? verificationMethod.substring(0, verificationMethod.indexOf("#"))
+                    : verificationMethod;
 
             // Get the public key
             PublicKey publicKey = didResolverService.getPublicKey(did, verificationMethod);
@@ -397,8 +418,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                     credential.getRawCredential(),
                     publicKey,
                     proof.getType(),
-                    proofValue
-            );
+                    proofValue);
 
         } catch (DIDResolutionException e) {
             throw new CredentialVerificationException(
@@ -440,7 +460,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
             // Return true if REVOKED or SUSPENDED
             return result.getStatus() == RevocationCheckResult.Status.REVOKED ||
-                   result.getStatus() == RevocationCheckResult.Status.SUSPENDED;
+                    result.getStatus() == RevocationCheckResult.Status.SUSPENDED;
 
         } catch (RevocationCheckException e) {
             LOG.error("Error checking revocation status", e);
@@ -659,7 +679,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 String decoded = new String(Base64.getUrlDecoder().decode(disclosure),
                         StandardCharsets.UTF_8);
                 JsonArray arr = JsonParser.parseString(decoded).getAsJsonArray();
-                
+
                 if (arr.size() >= 3) {
                     String claimName = arr.get(1).getAsString();
                     JsonElement claimValue = arr.get(2);
@@ -767,9 +787,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 JsonElement statusEl = json.get("credentialStatus");
                 if (statusEl.isJsonObject()) {
                     JsonObject statusObj = statusEl.getAsJsonObject();
-                    VerifiableCredential.CredentialStatus status =
-                            new VerifiableCredential.CredentialStatus();
-                    
+                    VerifiableCredential.CredentialStatus status = new VerifiableCredential.CredentialStatus();
+
                     if (statusObj.has("id")) {
                         status.setId(statusObj.get("id").getAsString());
                     }
@@ -786,7 +805,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                         status.setStatusListCredential(
                                 statusObj.get("statusListCredential").getAsString());
                     }
-                    
+
                     credential.setCredentialStatus(status);
                 }
             }
@@ -1013,12 +1032,12 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      * Extract credentials from a VP map.
      */
     private void extractVpCredentials(VerifiablePresentation presentation,
-                                       Map<String, Object> vpMap)
+            Map<String, Object> vpMap)
             throws CredentialVerificationException {
 
         if (vpMap.containsKey("verifiableCredential")) {
             Object vcClaim = vpMap.get("verifiableCredential");
-            
+
             if (vcClaim instanceof List) {
                 for (Object vc : (List<?>) vcClaim) {
                     if (vc instanceof String) {

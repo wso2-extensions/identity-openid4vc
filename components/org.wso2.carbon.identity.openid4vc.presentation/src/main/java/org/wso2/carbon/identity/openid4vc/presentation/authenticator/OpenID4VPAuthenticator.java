@@ -35,18 +35,24 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestResponseDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.dto.VPResultDTO;
+
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
+import com.google.gson.JsonParser;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
+import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.api.UserStoreException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -56,8 +62,10 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * OpenID4VP Wallet Authenticator for WSO2 Identity Server.
  * 
- * This authenticator implements the OpenID for Verifiable Presentations (OpenID4VP) protocol
- * to authenticate users by verifying their verifiable credentials from a digital wallet.
+ * This authenticator implements the OpenID for Verifiable Presentations
+ * (OpenID4VP) protocol
+ * to authenticate users by verifying their verifiable credentials from a
+ * digital wallet.
  * 
  * Flow:
  * 1. User initiates login
@@ -110,10 +118,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     @Override
     protected void initiateAuthenticationRequest(HttpServletRequest request,
-                                                   HttpServletResponse response,
-                                                   AuthenticationContext context)
+            HttpServletResponse response,
+            AuthenticationContext context)
             throws AuthenticationFailedException {
-        
+
         log.info(LOG_PREFIX + " ========================================");
         log.info(LOG_PREFIX + " initiateAuthenticationRequest() - START");
         log.info(LOG_PREFIX + " Session ID: " + context.getContextIdentifier());
@@ -123,29 +131,29 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         try {
             // Create VP request
             VPRequestResponseDTO vpRequestResponse = createVPRequest(context);
-            
+
             log.info(LOG_PREFIX + " VP Request created successfully");
             log.info(LOG_PREFIX + " Request ID: " + vpRequestResponse.getRequestId());
             log.info(LOG_PREFIX + " Transaction ID: " + vpRequestResponse.getTransactionId());
             log.info(LOG_PREFIX + " Request URI: " + vpRequestResponse.getRequestUri());
-            
+
             // Store request ID in session
             context.setProperty(SESSION_VP_REQUEST_ID, vpRequestResponse.getRequestId());
             context.setProperty(SESSION_TRANSACTION_ID, vpRequestResponse.getTransactionId());
-            
+
             // Generate QR code content
             String qrContent = QRCodeUtil.generateRequestUriQRContent(
                     vpRequestResponse.getRequestUri());
-            
+
             // Redirect to login page with QR code data
             String loginPage = getLoginPage(context);
             String queryParams = buildQueryParams(vpRequestResponse, qrContent, context);
-            
+
             log.info(LOG_PREFIX + " Redirecting to login page: " + loginPage);
             log.info(LOG_PREFIX + " initiateAuthenticationRequest() - END");
-            
+
             response.sendRedirect(loginPage + queryParams);
-            
+
         } catch (VPException e) {
             log.error(LOG_PREFIX + " Error creating VP request", e);
             throw new AuthenticationFailedException("Failed to create VP request", e);
@@ -157,116 +165,162 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     @Override
     protected void processAuthenticationResponse(HttpServletRequest request,
-                                                   HttpServletResponse response,
-                                                   AuthenticationContext context)
+            HttpServletResponse response,
+            AuthenticationContext context)
             throws AuthenticationFailedException {
-        
+
         log.info(LOG_PREFIX + " ========================================");
         log.info(LOG_PREFIX + " processAuthenticationResponse() - START");
         log.info(LOG_PREFIX + " Session ID: " + context.getContextIdentifier());
         log.info(LOG_PREFIX + " ========================================");
 
-        // Get transaction ID from session
-        String transactionId = (String) context.getProperty(SESSION_TRANSACTION_ID);
-        
-        log.info(LOG_PREFIX + " Transaction ID from context: " + transactionId);
-        
-        if (StringUtils.isBlank(transactionId)) {
-            log.error(LOG_PREFIX + " Transaction ID not found in session");
-            throw new AuthenticationFailedException("Transaction ID not found in session");
-        }
-
         try {
             // Get VP result
             VPSubmissionService submissionService = getVPSubmissionService();
             int tenantId = getTenantId(context);
-            
-            log.info(LOG_PREFIX + " Retrieving VP result for transaction: " + transactionId);
-            log.info(LOG_PREFIX + " Tenant ID: " + tenantId);
-            
-            VPResultDTO result = submissionService.getVPResult(transactionId, tenantId);
-            
-            if (result == null) {
-                log.error(LOG_PREFIX + " VP submission not found for transaction");
-                throw new AuthenticationFailedException("VP submission not found for transaction");
+
+            // Get the request ID from session
+            String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
+            log.info(LOG_PREFIX + " Retrieving VP submission for request: " + requestId);
+
+            VPSubmission submission = submissionService.getVPSubmissionByRequestId(requestId, tenantId);
+
+            if (submission == null || StringUtils.isBlank(submission.getVpToken())) {
+                log.error(LOG_PREFIX + " VP token not found in submission");
+                throw new AuthenticationFailedException("VP token not found in submission");
             }
-            
-            log.info(LOG_PREFIX + " VP Result retrieved successfully");
-            
-            // Check for errors
-            if (StringUtils.isNotBlank(result.getError())) {
-                log.error(LOG_PREFIX + " Wallet returned error: " + result.getError());
-                log.error(LOG_PREFIX + " Error description: " + result.getErrorDescription());
-                String errorMsg = StringUtils.isNotBlank(result.getErrorDescription())
-                        ? result.getErrorDescription()
-                        : "Wallet returned error: " + result.getError();
-                throw new AuthenticationFailedException(errorMsg);
-            }
-            
-            // Check verification status from the VC results
-            if (result.getVcVerificationResults() == null || result.getVcVerificationResults().isEmpty()) {
-                log.error(LOG_PREFIX + " No verification results found");
-                throw new AuthenticationFailedException("No verification results found");
-            }
-            
-            log.info(LOG_PREFIX + " Number of VC verification results: " + result.getVcVerificationResults().size());
-            
-            // Check if all VCs are verified successfully
-            for (org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultDTO vcResult :
-                    result.getVcVerificationResults()) {
-                if (!vcResult.isSuccess()) {
-                    log.error(LOG_PREFIX + " VC verification failed: " + vcResult.getError());
-                    String errorMsg = StringUtils.isNotBlank(vcResult.getError())
-                            ? vcResult.getError()
-                            : "Credential verification failed";
-                    throw new AuthenticationFailedException(errorMsg);
+
+            log.info(LOG_PREFIX + " VP Token retrieved, length: " + submission.getVpToken().length());
+
+            // Extract credentials from VP Token
+            String vpToken = submission.getVpToken();
+            String username = null;
+            String password = null;
+
+            try {
+                // Parse JWT payload (part 1)
+                String[] parts = vpToken.split("\\.");
+                if (parts.length < 2) {
+                    throw new VPException("Invalid VP token format");
                 }
+
+                String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                JsonObject vpPayload = JsonParser.parseString(payload).getAsJsonObject();
+
+                // Get nested VC JWT
+                JsonObject vp = vpPayload.getAsJsonObject("vp");
+                JsonArray vcArray = vp.getAsJsonArray("verifiableCredential");
+                String vcJwt = vcArray.get(0).getAsString();
+
+                // Parse inner VC (part 1)
+                String[] vcParts = vcJwt.split("\\.");
+                String vcPayloadStr = new String(Base64.getUrlDecoder().decode(vcParts[1]), StandardCharsets.UTF_8);
+                JsonObject vcPayload = JsonParser.parseString(vcPayloadStr).getAsJsonObject();
+
+                // Extract credentials from credentialSubject
+                JsonObject vc = vcPayload.getAsJsonObject("vc");
+                JsonObject credentialSubject = vc.getAsJsonObject("credentialSubject");
+
+                username = credentialSubject.get("username").getAsString();
+                password = credentialSubject.get("password").getAsString();
+
+                log.info(LOG_PREFIX + " Extracted credentials for user: " + username);
+
+            } catch (Exception e) {
+                log.error(LOG_PREFIX + " Error extracting credentials from VP token", e);
+                throw new AuthenticationFailedException("Failed to extract credentials from VP token", e);
             }
-            
-            // Extract authenticated user from VP
-            AuthenticatedUser authenticatedUser = extractAuthenticatedUser(result, context);
-            
-            // Set authenticated user
-            context.setSubject(authenticatedUser);
-            
-            // Store verification details in context for potential use by other components
-            storeVerificationDetails(context, result);
-            
-            if (log.isDebugEnabled()) {
-                log.debug("OpenID4VP authentication successful for user: " + 
-                        authenticatedUser.getAuthenticatedSubjectIdentifier());
+
+            // Authenticate against user store
+            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+                try {
+                    UserStoreManager userStoreManager = (UserStoreManager) VPServiceDataHolder
+                            .getInstance().getRealmService()
+                            .getTenantUserRealm(tenantId).getUserStoreManager();
+
+                    log.info(LOG_PREFIX + " Authenticating user against user store...");
+                    boolean isAuthenticated = userStoreManager.authenticate(username, password);
+
+                    if (!isAuthenticated) {
+                        log.error(LOG_PREFIX + " Authentication failed for user: " + username);
+                        throw new AuthenticationFailedException("Invalid credentials found in VP");
+                    }
+
+                    log.info(LOG_PREFIX + " Authentication successful for user: " + username);
+
+                    // Set authenticated user
+                    AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+                    authenticatedUser.setUserName(username);
+                    authenticatedUser.setAuthenticatedSubjectIdentifier(username);
+                    authenticatedUser.setTenantDomain(context.getTenantDomain());
+
+                    // Explicitly set user store domain (required for some WSO2 versions to resolve
+                    // ID)
+                    if (StringUtils.isBlank(authenticatedUser.getUserStoreDomain())) {
+                        authenticatedUser.setUserStoreDomain("PRIMARY");
+                    }
+
+                    // Resolve and set User ID (Required for IS 7.0+)
+                    try {
+                        String userId = userStoreManager.getUserClaimValue(username,
+                                "http://wso2.org/claims/userid", null);
+                        if (StringUtils.isBlank(userId)) {
+                            userId = userStoreManager.getUserClaimValue(username,
+                                    "http://wso2.org/claims/id", null);
+                        }
+
+                        if (StringUtils.isNotBlank(userId)) {
+                            authenticatedUser.setUserId(userId);
+                            log.info(LOG_PREFIX + " Resolved User ID for " + username + ": " + userId);
+                        } else {
+                            log.warn(LOG_PREFIX + " User ID claim not found for user: " + username);
+                        }
+                    } catch (org.wso2.carbon.user.api.UserStoreException e) {
+                        log.warn(LOG_PREFIX + " Could not resolve User ID for user: " + username +
+                                ". Post-authentication steps might fail.", e);
+                    }
+
+                    context.setSubject(authenticatedUser);
+
+                } catch (UserStoreException e) {
+                    log.error(LOG_PREFIX + " Error accessing user store", e);
+                    throw new AuthenticationFailedException("Error accessing user store", e);
+                }
+            } else {
+                log.error(LOG_PREFIX + " Username or password not found in VP payload");
+                throw new AuthenticationFailedException("Credentials not found in VP");
             }
-            
+
         } catch (VPException e) {
-            log.error("Error processing VP result", e);
-            throw new AuthenticationFailedException("Failed to process VP result", e);
+            log.error(LOG_PREFIX + " Error processing VP submission", e);
+            throw new AuthenticationFailedException("Failed to process VP submission", e);
         }
     }
 
     @Override
     public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
-                                            AuthenticationContext context)
+            AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
-        
+
         log.info(LOG_PREFIX + " ========================================");
         log.info(LOG_PREFIX + " process() CALLED");
         log.info(LOG_PREFIX + " Session ID: " + context.getContextIdentifier());
         log.info(LOG_PREFIX + " ========================================");
-        
+
         // Check if this is a polling request
         String poll = request.getParameter(PARAM_POLL);
         if ("true".equals(poll)) {
             log.info(LOG_PREFIX + " POLLING REQUEST detected");
             return handlePollRequest(request, response, context);
         }
-        
+
         // Check if status is being reported
         String status = request.getParameter(PARAM_STATUS);
         if (StringUtils.isNotBlank(status)) {
             log.info(LOG_PREFIX + " STATUS CALLBACK detected: " + status);
             return handleStatusCallback(request, response, context, status);
         }
-        
+
         log.info(LOG_PREFIX + " DEFAULT FLOW - calling super.process()");
         // Default behavior
         return super.process(request, response, context);
@@ -276,10 +330,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * Handle polling request from the login page.
      */
     private AuthenticatorFlowStatus handlePollRequest(HttpServletRequest request,
-                                                        HttpServletResponse response,
-                                                        AuthenticationContext context)
+            HttpServletResponse response,
+            AuthenticationContext context)
             throws AuthenticationFailedException {
-        
+
         String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
         if (StringUtils.isBlank(requestId)) {
             throw new AuthenticationFailedException("VP request ID not found in session");
@@ -289,20 +343,20 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             VPRequestService requestService = getVPRequestService();
             int tenantId = getTenantId(context);
             VPRequest vpRequest = requestService.getVPRequestById(requestId, tenantId);
-            
+
             if (vpRequest == null) {
                 sendPollResponse(response, "error", "Request not found");
                 return AuthenticatorFlowStatus.INCOMPLETE;
             }
-            
+
             VPRequestStatus status = vpRequest.getStatus();
-            
+
             // Check if VP has been submitted
-            if (VPRequestStatus.VP_SUBMITTED.equals(status) || 
-                VPRequestStatus.COMPLETED.equals(status)) {
-                
+            if (VPRequestStatus.VP_SUBMITTED.equals(status) ||
+                    VPRequestStatus.COMPLETED.equals(status)) {
+
                 sendPollResponse(response, status.getValue().toLowerCase(), null);
-                
+
                 if (VPRequestStatus.COMPLETED.equals(status)) {
                     // VP verified, complete authentication
                     return AuthenticatorFlowStatus.SUCCESS_COMPLETED;
@@ -317,9 +371,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 // Still pending (ACTIVE)
                 sendPollResponse(response, "pending", null);
             }
-            
+
             return AuthenticatorFlowStatus.INCOMPLETE;
-            
+
         } catch (VPException e) {
             log.error("Error checking VP request status", e);
             sendPollResponse(response, "error", e.getMessage());
@@ -331,11 +385,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * Handle status callback from the frontend.
      */
     private AuthenticatorFlowStatus handleStatusCallback(HttpServletRequest request,
-                                                           HttpServletResponse response,
-                                                           AuthenticationContext context,
-                                                           String status)
+            HttpServletResponse response,
+            AuthenticationContext context,
+            String status)
             throws AuthenticationFailedException {
-        
+
         if ("success".equals(status)) {
             // Process the authentication response
             processAuthenticationResponse(request, response, context);
@@ -345,7 +399,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         } else if ("expired".equals(status)) {
             throw new AuthenticationFailedException("VP request expired");
         }
-        
+
         return AuthenticatorFlowStatus.INCOMPLETE;
     }
 
@@ -355,14 +409,14 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private void sendPollResponse(HttpServletResponse response, String status, String error) {
         try {
             response.setContentType("application/json;charset=UTF-8");
-            
+
             StringBuilder json = new StringBuilder();
             json.append("{\"status\":\"").append(status).append("\"");
             if (error != null) {
                 json.append(",\"error\":\"").append(error.replace("\"", "\\\"")).append("\"");
             }
             json.append("}");
-            
+
             response.getWriter().write(json.toString());
         } catch (IOException e) {
             log.error("Error sending poll response", e);
@@ -374,16 +428,16 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      */
     private VPRequestResponseDTO createVPRequest(AuthenticationContext context) throws VPException {
         Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
-        
+
         VPRequestCreateDTO createDTO = new VPRequestCreateDTO();
-        
+
         // Set client ID from config or generate from tenant
         String clientId = authenticatorProperties.get(PROP_CLIENT_ID);
         if (StringUtils.isBlank(clientId)) {
             clientId = buildClientId(context);
         }
         createDTO.setClientId(clientId);
-        
+
         // Set presentation definition ID or create default inline definition
         String presentationDefId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
         if (StringUtils.isNotBlank(presentationDefId)) {
@@ -393,17 +447,17 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             log.info(LOG_PREFIX + " No presentation definition configured, using default");
             createDTO.setPresentationDefinition(createDefaultPresentationDefinition());
         }
-        
+
         // Set response mode
         String responseMode = authenticatorProperties.get(PROP_RESPONSE_MODE);
         if (StringUtils.isBlank(responseMode)) {
             responseMode = OpenID4VPConstants.Protocol.RESPONSE_MODE_DIRECT_POST;
         }
         createDTO.setResponseMode(responseMode);
-        
+
         // Set transaction ID to context identifier for correlation
         createDTO.setTransactionId(context.getContextIdentifier());
-        
+
         // Create VP request
         VPRequestService vpRequestService = getVPRequestService();
         int tenantId = getTenantId(context);
@@ -411,7 +465,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     /**
-     * Create a default presentation definition that accepts any verifiable credential.
+     * Create a default presentation definition that accepts any verifiable
+     * credential.
      * This is used when no specific presentation definition is configured.
      */
     private JsonObject createDefaultPresentationDefinition() {
@@ -419,18 +474,18 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         presentationDef.addProperty("id", "default-wallet-auth");
         presentationDef.addProperty("name", "Wallet Authentication");
         presentationDef.addProperty("purpose", "Authenticate using your digital wallet");
-        
+
         // Create input descriptors - accepts any VC
         JsonArray inputDescriptors = new JsonArray();
         JsonObject descriptor = new JsonObject();
         descriptor.addProperty("id", "any-credential");
         descriptor.addProperty("name", "Any Verifiable Credential");
         descriptor.addProperty("purpose", "Present any verifiable credential from your wallet");
-        
+
         // Add constraints - accept any type of credential
         JsonObject constraints = new JsonObject();
         JsonArray fields = new JsonArray();
-        
+
         // Require credential type field
         JsonObject typeField = new JsonObject();
         JsonArray pathArray = new JsonArray();
@@ -438,55 +493,15 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         pathArray.add("$.vc.type");
         pathArray.add("$.vct");
         typeField.add("path", pathArray);
-        
+
         fields.add(typeField);
         constraints.add("fields", fields);
         descriptor.add("constraints", constraints);
-        
+
         inputDescriptors.add(descriptor);
         presentationDef.add("input_descriptors", inputDescriptors);
-        
+
         return presentationDef;
-    }
-
-    /**
-     * Extract authenticated user from VP result.
-     */
-    private AuthenticatedUser extractAuthenticatedUser(VPResultDTO result, 
-                                                        AuthenticationContext context)
-            throws AuthenticationFailedException {
-        
-        Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
-        String subjectClaimPath = authenticatorProperties.get(PROP_SUBJECT_CLAIM);
-        if (StringUtils.isBlank(subjectClaimPath)) {
-            subjectClaimPath = "credentialSubject.id";
-        }
-        
-        // For now, use the transaction ID as the subject identifier
-        // In a full implementation, you would extract from the VP token claims
-        String subjectId = result.getTransactionId();
-        if (StringUtils.isBlank(subjectId)) {
-            throw new AuthenticationFailedException("Subject identifier not found in presentation");
-        }
-        
-        // Create authenticated user
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
-        authenticatedUser.setAuthenticatedSubjectIdentifier(subjectId);
-        authenticatedUser.setTenantDomain(context.getTenantDomain());
-        authenticatedUser.setFederatedUser(false);
-        
-        return authenticatedUser;
-    }
-
-    /**
-     * Store verification details in authentication context.
-     */
-    private void storeVerificationDetails(AuthenticationContext context, VPResultDTO result) {
-        Map<String, Object> vpDetails = new HashMap<>();
-        vpDetails.put("transactionId", result.getTransactionId());
-        vpDetails.put("vcVerificationResults", result.getVcVerificationResults());
-        
-        context.setProperty("openid4vp_verification_details", vpDetails);
     }
 
     /**
@@ -503,7 +518,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private int getTenantId(AuthenticationContext context) {
         // Default to super tenant
         int tenantId = -1234;
-        
+
         String tenantDomain = context.getTenantDomain();
         if (StringUtils.isNotBlank(tenantDomain)) {
             try {
@@ -516,7 +531,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 log.warn("Error resolving tenant ID for domain: " + tenantDomain, e);
             }
         }
-        
+
         return tenantId;
     }
 
@@ -534,9 +549,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     /**
      * Build query parameters for login page redirect.
      */
-    private String buildQueryParams(VPRequestResponseDTO vpRequestResponse, 
-                                      String qrContent,
-                                      AuthenticationContext context) {
+    private String buildQueryParams(VPRequestResponseDTO vpRequestResponse,
+            String qrContent,
+            AuthenticationContext context) {
         StringBuilder params = new StringBuilder();
         params.append("?");
         params.append("sessionDataKey=").append(context.getContextIdentifier());
@@ -544,7 +559,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         params.append("&transactionId=").append(vpRequestResponse.getTransactionId());
         params.append("&requestUri=").append(urlEncode(vpRequestResponse.getRequestUri()));
         params.append("&qrContent=").append(urlEncode(qrContent));
-        
+
         return params.toString();
     }
 
@@ -590,7 +605,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         String poll = request.getParameter(PARAM_POLL);
         String authenticator = request.getParameter("authenticator");
         String status = request.getParameter(PARAM_STATUS);
-        
+
         log.info(LOG_PREFIX + " ========================================");
         log.info(LOG_PREFIX + " canHandle() CALLED");
         log.info(LOG_PREFIX + " sessionDataKey: " + sessionDataKey);
@@ -599,25 +614,25 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         log.info(LOG_PREFIX + " authenticator: " + authenticator);
         log.info(LOG_PREFIX + " status: " + status);
         log.info(LOG_PREFIX + " ========================================");
-        
+
         // Handle polling requests from login page
         if (StringUtils.isNotBlank(poll) && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (polling request)");
             return true;
         }
-        
+
         // Handle status callbacks
         if (StringUtils.isNotBlank(status) && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (status callback)");
             return true;
         }
-        
+
         // Handle VP request callbacks
         if (StringUtils.isNotBlank(vpRequestId) && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (VP request callback)");
             return true;
         }
-        
+
         log.info(LOG_PREFIX + " canHandle=false (no matching condition)");
         return false;
     }
