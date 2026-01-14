@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.template.management;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.annotation.bundle.Capability;
 import org.wso2.carbon.identity.api.resource.mgt.APIResourceMgtException;
 import org.wso2.carbon.identity.application.common.model.APIResource;
 import org.wso2.carbon.identity.application.common.model.Scope;
@@ -61,6 +62,13 @@ import static org.wso2.carbon.identity.openid4vc.template.management.constant.VC
 /**
  * Implementation of {@link VCTemplateManager}.
  */
+@Capability(
+        namespace = "osgi.service",
+        attribute = {
+                "objectClass=org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager",
+                "service.scope=singleton"
+        }
+)
 public class VCTemplateManagerImpl implements VCTemplateManager {
 
     private static final Log LOG = LogFactory.getLog(VCTemplateManagerImpl.class);
