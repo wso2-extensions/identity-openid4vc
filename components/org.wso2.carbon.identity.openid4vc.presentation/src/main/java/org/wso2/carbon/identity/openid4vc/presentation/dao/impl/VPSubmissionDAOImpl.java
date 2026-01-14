@@ -42,33 +42,33 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     private static final Log log = LogFactory.getLog(VPSubmissionDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_VP_SUBMISSION = 
-        "INSERT INTO IDN_VP_SUBMISSION (SUBMISSION_ID, REQUEST_ID, VP_TOKEN, " +
-        "PRESENTATION_SUBMISSION, ERROR, ERROR_DESCRIPTION, VERIFICATION_STATUS, " +
-        "VERIFICATION_RESULT, SUBMITTED_AT, TENANT_ID) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SQL_INSERT_VP_SUBMISSION = "INSERT INTO IDN_VP_SUBMISSION (SUBMISSION_ID, REQUEST_ID, VP_TOKEN, "
+            +
+            "PRESENTATION_SUBMISSION, ERROR, ERROR_DESCRIPTION, VERIFICATION_STATUS, " +
+            "VERIFICATION_RESULT, SUBMITTED_AT, TENANT_ID) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_VP_SUBMISSION_BY_ID = 
-        "SELECT * FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_SUBMISSION_BY_ID = "SELECT * FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_VP_SUBMISSION_BY_REQUEST_ID = 
-        "SELECT * FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_SUBMISSION_BY_REQUEST_ID = "SELECT * FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_VERIFICATION_STATUS = 
-        "UPDATE IDN_VP_SUBMISSION SET VERIFICATION_STATUS = ?, VERIFICATION_RESULT = ? " +
-        "WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VERIFICATION_STATUS = "UPDATE IDN_VP_SUBMISSION SET VERIFICATION_STATUS = ?, VERIFICATION_RESULT = ? "
+            +
+            "WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_SUBMISSION = 
-        "DELETE FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_VP_SUBMISSION = "DELETE FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_SUBMISSIONS_BY_REQUEST_ID = 
-        "DELETE FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_VP_SUBMISSIONS_BY_REQUEST_ID = "DELETE FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_CHECK_SUBMISSION_EXISTS = 
-        "SELECT 1 FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_CHECK_SUBMISSION_EXISTS = "SELECT 1 FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
     @Override
     public void createVPSubmission(VPSubmission vpSubmission) throws VPException {
+        log.info("[VP_SUBMISSION_DAO] Creating VP submission in database...");
+        log.info("[VP_SUBMISSION_DAO] Submission ID: " + vpSubmission.getSubmissionId());
+        log.info("[VP_SUBMISSION_DAO] Request ID: " + vpSubmission.getRequestId());
+        log.info("[VP_SUBMISSION_DAO] Tenant ID: " + vpSubmission.getTenantId());
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_VP_SUBMISSION)) {
                 ps.setString(1, vpSubmission.getSubmissionId());
@@ -77,30 +77,36 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 ps.setString(4, vpSubmission.getPresentationSubmission());
                 ps.setString(5, vpSubmission.getError());
                 ps.setString(6, vpSubmission.getErrorDescription());
-                ps.setString(7, vpSubmission.getVerificationStatus() != null ? 
-                    vpSubmission.getVerificationStatus().getValue() : null);
+                ps.setString(7,
+                        vpSubmission.getVerificationStatus() != null ? vpSubmission.getVerificationStatus().getValue()
+                                : null);
                 ps.setString(8, vpSubmission.getVerificationResult());
                 ps.setLong(9, vpSubmission.getSubmittedAt());
                 ps.setInt(10, vpSubmission.getTenantId());
 
-                ps.executeUpdate();
+                int rowsAffected = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                    log.debug("Created VP submission: " + vpSubmission.getSubmissionId());
-                }
+                log.info("[VP_SUBMISSION_DAO] VP submission created successfully - Rows affected: " + rowsAffected);
             } catch (SQLException e) {
+                log.error("[VP_SUBMISSION_DAO] SQL error creating VP submission: " + e.getMessage(), e);
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-            throw new VPException("Error creating VP submission: " + 
-                vpSubmission.getSubmissionId(), e);
+            log.error("[VP_SUBMISSION_DAO] Database error creating VP submission: " +
+                    vpSubmission.getSubmissionId(), e);
+            throw new VPException("Error creating VP submission: " +
+                    vpSubmission.getSubmissionId(), e);
         }
     }
 
     @Override
     public VPSubmission getVPSubmissionById(String submissionId, int tenantId) throws VPException {
+        if (log.isDebugEnabled()) {
+            log.debug("[VP_SUBMISSION_DAO] Querying VP submission by ID: " + submissionId);
+        }
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_VP_SUBMISSION_BY_ID)) {
                 ps.setString(1, submissionId);
@@ -108,19 +114,31 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("[VP_SUBMISSION_DAO] VP submission found: " + submissionId);
+                        }
                         return mapResultSetToVPSubmission(rs);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("[VP_SUBMISSION_DAO] VP submission not found: " + submissionId);
+                        }
                     }
                 }
             }
         } catch (SQLException e) {
+            log.error("[VP_SUBMISSION_DAO] Database error retrieving VP submission: " + submissionId, e);
             throw new VPException("Error retrieving VP submission: " + submissionId, e);
         }
         return null;
     }
 
     @Override
-    public VPSubmission getVPSubmissionByRequestId(String requestId, int tenantId) 
+    public VPSubmission getVPSubmissionByRequestId(String requestId, int tenantId)
             throws VPException {
+        if (log.isDebugEnabled()) {
+            log.debug("[VP_SUBMISSION_DAO] Querying VP submission by request ID: " + requestId);
+        }
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
                     SQL_SELECT_VP_SUBMISSION_BY_REQUEST_ID)) {
@@ -129,33 +147,41 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
+                        if (log.isDebugEnabled()) {
+                            log.debug("[VP_SUBMISSION_DAO] VP submission found for request: " + requestId);
+                        }
                         return mapResultSetToVPSubmission(rs);
+                    } else {
+                        if (log.isDebugEnabled()) {
+                            log.debug("[VP_SUBMISSION_DAO] No VP submission found for request: " + requestId);
+                        }
                     }
                 }
             }
         } catch (SQLException e) {
+            log.error("[VP_SUBMISSION_DAO] Database error retrieving VP submission for request: " + requestId, e);
             throw new VPException("Error retrieving VP submission for request: " + requestId, e);
         }
         return null;
     }
 
     @Override
-    public List<VPSubmission> getVPSubmissionsByRequestIds(List<String> requestIds, int tenantId) 
+    public List<VPSubmission> getVPSubmissionsByRequestIds(List<String> requestIds, int tenantId)
             throws VPException {
         if (requestIds == null || requestIds.isEmpty()) {
             return Collections.emptyList();
         }
 
         List<VPSubmission> submissions = new ArrayList<>();
-        
+
         // Build dynamic IN clause
         StringBuilder placeholders = new StringBuilder();
         for (int i = 0; i < requestIds.size(); i++) {
             placeholders.append(i > 0 ? ", ?" : "?");
         }
-        
-        String sql = "SELECT * FROM IDN_VP_SUBMISSION WHERE REQUEST_ID IN (" + 
-            placeholders + ") AND TENANT_ID = ?";
+
+        String sql = "SELECT * FROM IDN_VP_SUBMISSION WHERE REQUEST_ID IN (" +
+                placeholders + ") AND TENANT_ID = ?";
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -179,7 +205,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
     @Override
     public void updateVerificationStatus(String submissionId, VCVerificationStatus verificationStatus,
-                                          String verificationResult, int tenantId) throws VPException {
+            String verificationResult, int tenantId) throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VERIFICATION_STATUS)) {
                 ps.setString(1, verificationStatus.getValue());
@@ -191,8 +217,8 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Updated verification status for submission: " + submissionId + 
-                        " to " + verificationStatus + ", rows affected: " + updated);
+                    log.debug("Updated verification status for submission: " + submissionId +
+                            " to " + verificationStatus + ", rows affected: " + updated);
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
@@ -214,8 +240,8 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted VP submission: " + submissionId + 
-                        ", rows affected: " + deleted);
+                    log.debug("Deleted VP submission: " + submissionId +
+                            ", rows affected: " + deleted);
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
@@ -238,8 +264,8 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted VP submissions for request: " + requestId + 
-                        ", rows affected: " + deleted);
+                    log.debug("Deleted VP submissions for request: " + requestId +
+                            ", rows affected: " + deleted);
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
@@ -262,8 +288,8 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error checking submission existence for request: " + 
-                requestId, e);
+            throw new VPException("Error checking submission existence for request: " +
+                    requestId, e);
         }
     }
 
@@ -272,8 +298,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
      */
     private VPSubmission mapResultSetToVPSubmission(ResultSet rs) throws SQLException {
         String statusStr = rs.getString("VERIFICATION_STATUS");
-        VCVerificationStatus status = statusStr != null ? 
-            VCVerificationStatus.fromValue(statusStr) : null;
+        VCVerificationStatus status = statusStr != null ? VCVerificationStatus.fromValue(statusStr) : null;
 
         return new VPSubmission.Builder()
                 .submissionId(rs.getString("SUBMISSION_ID"))
