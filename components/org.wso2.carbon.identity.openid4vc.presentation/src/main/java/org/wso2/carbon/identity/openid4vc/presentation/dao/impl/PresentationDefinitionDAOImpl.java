@@ -40,38 +40,31 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     private static final Log log = LogFactory.getLog(PresentationDefinitionDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_PRESENTATION_DEFINITION = 
-        "INSERT INTO IDN_PRESENTATION_DEFINITION (DEFINITION_ID, NAME, DESCRIPTION, " +
-        "DEFINITION_JSON, IS_DEFAULT, CREATED_AT, UPDATED_AT, TENANT_ID) " +
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SQL_INSERT_PRESENTATION_DEFINITION = "INSERT INTO IDN_PRESENTATION_DEFINITION (DEFINITION_ID, NAME, DESCRIPTION, "
+            +
+            "DEFINITION_JSON, IS_DEFAULT, CREATED_AT, UPDATED_AT, TENANT_ID) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_ID = 
-        "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_ID = "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_ALL_PRESENTATION_DEFINITIONS = 
-        "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE TENANT_ID = ?";
+    private static final String SQL_SELECT_ALL_PRESENTATION_DEFINITIONS = "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE TENANT_ID = ?";
 
-    private static final String SQL_SELECT_DEFAULT_PRESENTATION_DEFINITION = 
-        "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE IS_DEFAULT = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_DEFAULT_PRESENTATION_DEFINITION = "SELECT * FROM IDN_PRESENTATION_DEFINITION WHERE IS_DEFAULT = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_PRESENTATION_DEFINITION = 
-        "UPDATE IDN_PRESENTATION_DEFINITION SET NAME = ?, DESCRIPTION = ?, DEFINITION_JSON = ?, " +
-        "IS_DEFAULT = ?, UPDATED_AT = ? WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_PRESENTATION_DEFINITION = "UPDATE IDN_PRESENTATION_DEFINITION SET NAME = ?, DESCRIPTION = ?, DEFINITION_JSON = ?, "
+            +
+            "IS_DEFAULT = ?, UPDATED_AT = ? WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_PRESENTATION_DEFINITION = 
-        "DELETE FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_PRESENTATION_DEFINITION = "DELETE FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_CHECK_PRESENTATION_DEFINITION_EXISTS = 
-        "SELECT 1 FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_CHECK_PRESENTATION_DEFINITION_EXISTS = "SELECT 1 FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_CLEAR_DEFAULT = 
-        "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? WHERE TENANT_ID = ?";
+    private static final String SQL_CLEAR_DEFAULT = "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? WHERE TENANT_ID = ?";
 
-    private static final String SQL_SET_AS_DEFAULT = 
-        "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SET_AS_DEFAULT = "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
     @Override
-    public void createPresentationDefinition(PresentationDefinition presentationDefinition) 
+    public void createPresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -89,21 +82,26 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Created presentation definition: " + 
-                        presentationDefinition.getDefinitionId());
+                    log.debug("Created presentation definition: " +
+                            presentationDefinition.getDefinitionId());
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-            throw new VPException("Error creating presentation definition: " + 
-                presentationDefinition.getDefinitionId(), e);
+            String validationMsg = "Error creating presentation definition: " +
+                    presentationDefinition.getDefinitionId();
+            if (e.getMessage() != null && e.getMessage().contains("CONSTRAINT_INDEX_6F6")) {
+                validationMsg = "Presentation definition with name '" +
+                        presentationDefinition.getName() + "' already exists.";
+            }
+            throw new VPException(validationMsg, e);
         }
     }
 
     @Override
-    public PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId) 
+    public PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -124,7 +122,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     }
 
     @Override
-    public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId) 
+    public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId)
             throws VPException {
         List<PresentationDefinition> definitions = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
@@ -165,7 +163,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     }
 
     @Override
-    public void updatePresentationDefinition(PresentationDefinition presentationDefinition) 
+    public void updatePresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -182,16 +180,16 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Updated presentation definition: " + 
-                        presentationDefinition.getDefinitionId() + ", rows affected: " + updated);
+                    log.debug("Updated presentation definition: " +
+                            presentationDefinition.getDefinitionId() + ", rows affected: " + updated);
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-            throw new VPException("Error updating presentation definition: " + 
-                presentationDefinition.getDefinitionId(), e);
+            throw new VPException("Error updating presentation definition: " +
+                    presentationDefinition.getDefinitionId(), e);
         }
     }
 
@@ -207,8 +205,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted presentation definition: " + definitionId + 
-                        ", rows affected: " + deleted);
+                    log.debug("Deleted presentation definition: " + definitionId +
+                            ", rows affected: " + deleted);
                 }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
@@ -220,7 +218,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     }
 
     @Override
-    public boolean presentationDefinitionExists(String definitionId, int tenantId) 
+    public boolean presentationDefinitionExists(String definitionId, int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -233,8 +231,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error checking presentation definition existence: " + 
-                definitionId, e);
+            throw new VPException("Error checking presentation definition existence: " +
+                    definitionId, e);
         }
     }
 
@@ -267,18 +265,18 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 throw e;
             }
         } catch (SQLException e) {
-            throw new VPException("Error setting presentation definition as default: " + 
-                definitionId, e);
+            throw new VPException("Error setting presentation definition as default: " +
+                    definitionId, e);
         }
     }
 
     /**
      * Map ResultSet to PresentationDefinition object.
      */
-    private PresentationDefinition mapResultSetToPresentationDefinition(ResultSet rs) 
+    private PresentationDefinition mapResultSetToPresentationDefinition(ResultSet rs)
             throws SQLException {
         Long updatedAt = rs.getObject("UPDATED_AT") != null ? rs.getLong("UPDATED_AT") : null;
-        
+
         return new PresentationDefinition.Builder()
                 .id(rs.getInt("ID"))
                 .definitionId(rs.getString("DEFINITION_ID"))
