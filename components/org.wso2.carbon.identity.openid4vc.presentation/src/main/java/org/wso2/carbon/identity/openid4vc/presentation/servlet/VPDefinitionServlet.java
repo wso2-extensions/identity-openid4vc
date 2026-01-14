@@ -58,12 +58,12 @@ public class VPDefinitionServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private static final Log log = LogFactory.getLog(VPDefinitionServlet.class);
-    
+
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .create();
-    
+
     private static final int DEFAULT_TENANT_ID = -1234;
 
     private PresentationDefinitionService presentationDefinitionService;
@@ -80,32 +80,32 @@ public class VPDefinitionServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         String pathInfo = request.getPathInfo();
         int tenantId = getTenantId(request);
 
         try {
             if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
                 // List all definitions
-                handleListDefinitions(response, tenantId);
+                handleListDefinitions(request, response, tenantId);
             } else {
                 // Get specific definition
                 String definitionId = pathInfo.substring(1);
                 if (definitionId.contains("/")) {
                     definitionId = definitionId.split("/")[0];
                 }
-                handleGetDefinition(response, definitionId, tenantId);
+                handleGetDefinition(request, response, definitionId, tenantId);
             }
         } catch (PresentationDefinitionNotFoundException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
             log.error("Error retrieving presentation definition", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -116,16 +116,16 @@ public class VPDefinitionServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Creating new presentation definition");
         }
 
         try {
             String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
-            
+
             if (StringUtils.isBlank(requestBody)) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "Request body is required");
                 return;
             }
@@ -135,20 +135,20 @@ public class VPDefinitionServlet extends HttpServlet {
             try {
                 createRequest = gson.fromJson(requestBody, PresentationDefinitionRequest.class);
             } catch (Exception e) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
                 return;
             }
 
             // Validate required fields
             if (StringUtils.isBlank(createRequest.getName())) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "name is required");
                 return;
             }
 
             if (StringUtils.isBlank(createRequest.getDefinitionJson())) {
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "definitionJson is required");
                 return;
             }
@@ -170,7 +170,7 @@ public class VPDefinitionServlet extends HttpServlet {
                     .createPresentationDefinition(definition, tenantId);
 
             // Send response
-            sendJsonResponse(response, HttpServletResponse.SC_CREATED, toResponseDTO(created));
+            sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, toResponseDTO(created));
 
             if (log.isDebugEnabled()) {
                 log.debug("Created presentation definition: " + created.getDefinitionId());
@@ -178,11 +178,11 @@ public class VPDefinitionServlet extends HttpServlet {
 
         } catch (VPException e) {
             log.error("Error creating presentation definition", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -193,11 +193,11 @@ public class VPDefinitionServlet extends HttpServlet {
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         String pathInfo = request.getPathInfo();
-        
+
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Definition ID is required");
             return;
         }
@@ -213,9 +213,9 @@ public class VPDefinitionServlet extends HttpServlet {
 
         try {
             String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
-            
-            PresentationDefinitionRequest updateRequest = 
-                    gson.fromJson(requestBody, PresentationDefinitionRequest.class);
+
+            PresentationDefinitionRequest updateRequest = gson.fromJson(requestBody,
+                    PresentationDefinitionRequest.class);
 
             int tenantId = getTenantId(request);
 
@@ -234,18 +234,18 @@ public class VPDefinitionServlet extends HttpServlet {
                     .updatePresentationDefinition(definition, tenantId);
 
             // Send response
-            sendJsonResponse(response, HttpServletResponse.SC_OK, toResponseDTO(updated));
+            sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(updated));
 
         } catch (PresentationDefinitionNotFoundException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
             log.error("Error updating presentation definition", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -256,11 +256,11 @@ public class VPDefinitionServlet extends HttpServlet {
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         String pathInfo = request.getPathInfo();
-        
+
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Definition ID is required");
             return;
         }
@@ -283,15 +283,15 @@ public class VPDefinitionServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 
         } catch (PresentationDefinitionNotFoundException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
             log.error("Error deleting presentation definition", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -299,30 +299,30 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Handle list all definitions.
      */
-    private void handleListDefinitions(HttpServletResponse response, int tenantId)
+    private void handleListDefinitions(HttpServletRequest request, HttpServletResponse response, int tenantId)
             throws Exception {
-        
-        List<PresentationDefinition> definitions = 
-                presentationDefinitionService.getAllPresentationDefinitions(tenantId);
+
+        List<PresentationDefinition> definitions = presentationDefinitionService
+                .getAllPresentationDefinitions(tenantId);
 
         JsonObject responseObj = new JsonObject();
         responseObj.addProperty("count", definitions.size());
         responseObj.add("definitions", gson.toJsonTree(
                 definitions.stream().map(this::toResponseDTO).toArray()));
 
-        sendJsonResponse(response, HttpServletResponse.SC_OK, responseObj);
+        sendJsonResponse(request, response, HttpServletResponse.SC_OK, responseObj);
     }
 
     /**
      * Handle get specific definition.
      */
-    private void handleGetDefinition(HttpServletResponse response, String definitionId, 
-                                      int tenantId) throws Exception {
-        
-        PresentationDefinition definition = 
-                presentationDefinitionService.getPresentationDefinitionById(definitionId, tenantId);
+    private void handleGetDefinition(HttpServletRequest request, HttpServletResponse response, String definitionId,
+            int tenantId) throws Exception {
 
-        sendJsonResponse(response, HttpServletResponse.SC_OK, toResponseDTO(definition));
+        PresentationDefinition definition = presentationDefinitionService.getPresentationDefinitionById(definitionId,
+                tenantId);
+
+        sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(definition));
     }
 
     /**
@@ -352,13 +352,16 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Send JSON response.
      */
-    private void sendJsonResponse(HttpServletResponse response, int statusCode, Object data)
+    /**
+     * Send JSON response.
+     */
+    private void sendJsonResponse(HttpServletRequest request, HttpServletResponse response, int statusCode, Object data)
             throws IOException {
-        
+
         response.setStatus(statusCode);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
-        CORSUtil.addCORSHeaders(null, response);
-        
+        CORSUtil.addCORSHeaders(request, response);
+
         try (PrintWriter writer = response.getWriter()) {
             writer.write(gson.toJson(data));
         }
@@ -367,12 +370,12 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Send error response.
      */
-    private void sendErrorResponse(HttpServletResponse response, int statusCode,
-                                    ErrorDTO.ErrorCode errorCode, String message) 
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, int statusCode,
+            ErrorDTO.ErrorCode errorCode, String message)
             throws IOException {
-        
+
         ErrorDTO errorDTO = new ErrorDTO(errorCode, message, null);
-        sendJsonResponse(response, statusCode, errorDTO);
+        sendJsonResponse(request, response, statusCode, errorDTO);
     }
 
     /**
@@ -404,15 +407,19 @@ public class VPDefinitionServlet extends HttpServlet {
         public String getDefinitionId() {
             return definitionId;
         }
+
         public String getName() {
             return name;
         }
+
         public String getDescription() {
             return description;
         }
+
         public String getDefinitionJson() {
             return definitionJson;
         }
+
         public boolean isDefault() {
             return isDefault;
         }
@@ -434,21 +441,27 @@ public class VPDefinitionServlet extends HttpServlet {
         public void setDefinitionId(String definitionId) {
             this.definitionId = definitionId;
         }
+
         public void setName(String name) {
             this.name = name;
         }
+
         public void setDescription(String description) {
             this.description = description;
         }
+
         public void setDefinitionJson(String definitionJson) {
             this.definitionJson = definitionJson;
         }
+
         public void setDefault(boolean isDefault) {
             this.isDefault = isDefault;
         }
+
         public void setCreatedAt(long createdAt) {
             this.createdAt = createdAt;
         }
+
         public void setUpdatedAt(Long updatedAt) {
             this.updatedAt = updatedAt;
         }
