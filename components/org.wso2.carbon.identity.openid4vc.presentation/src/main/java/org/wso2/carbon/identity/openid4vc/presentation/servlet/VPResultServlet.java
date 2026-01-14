@@ -59,12 +59,12 @@ public class VPResultServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private static final Log log = LogFactory.getLog(VPResultServlet.class);
-    
+
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .create();
-    
+
     private static final int DEFAULT_TENANT_ID = -1234;
 
     private VPSubmissionService vpSubmissionService;
@@ -83,16 +83,16 @@ public class VPResultServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Received VP result request");
         }
 
         // Parse transaction ID from path
         String pathInfo = request.getPathInfo();
-        
+
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_TRANSACTION_ID, "Transaction ID is required");
             return;
         }
@@ -106,13 +106,13 @@ public class VPResultServlet extends HttpServlet {
         try {
             if (isSummary) {
                 // Get summary result
-                VPResultService.VPResultSummaryDTO summaryDTO = 
-                        vpResultService.getVPResultSummary(transactionId, tenantId);
-                sendJsonResponse(response, HttpServletResponse.SC_OK, summaryDTO);
+                VPResultService.VPResultSummaryDTO summaryDTO = vpResultService.getVPResultSummary(transactionId,
+                        tenantId);
+                sendJsonResponse(request, response, HttpServletResponse.SC_OK, summaryDTO);
             } else {
                 // Get full verification result using enhanced service
                 VPResultDTO resultDTO = vpResultService.getVPResult(transactionId, tenantId);
-                sendJsonResponse(response, HttpServletResponse.SC_OK, resultDTO);
+                sendJsonResponse(request, response, HttpServletResponse.SC_OK, resultDTO);
             }
 
             if (log.isDebugEnabled()) {
@@ -121,21 +121,21 @@ public class VPResultServlet extends HttpServlet {
 
         } catch (VPRequestNotFoundException e) {
             log.warn("VP result request for unknown transaction: " + transactionId);
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
-                    ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND, 
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+                    ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND,
                     "Transaction not found: " + transactionId);
         } catch (VPSubmissionNotFoundException e) {
             log.warn("No submission found for transaction: " + transactionId);
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_SUBMISSION_NOT_FOUND,
                     "No submission found for transaction: " + transactionId);
         } catch (VPException e) {
             log.error("Error retrieving VP result", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
             log.error("Unexpected error retrieving VP result", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -152,13 +152,14 @@ public class VPResultServlet extends HttpServlet {
     /**
      * Send JSON response.
      */
-    private void sendJsonResponse(HttpServletResponse response, int statusCode, Object data)
+    private void sendJsonResponse(HttpServletRequest request, HttpServletResponse response,
+            int statusCode, Object data)
             throws IOException {
-        
+
         response.setStatus(statusCode);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
-        CORSUtil.addCORSHeaders(null, response);
-        
+        CORSUtil.addCORSHeaders(request, response);
+
         try (PrintWriter writer = response.getWriter()) {
             writer.write(gson.toJson(data));
         }
@@ -167,12 +168,12 @@ public class VPResultServlet extends HttpServlet {
     /**
      * Send error response.
      */
-    private void sendErrorResponse(HttpServletResponse response, int statusCode,
-                                    ErrorDTO.ErrorCode errorCode, String message) 
+    private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,
+            int statusCode, ErrorDTO.ErrorCode errorCode, String message)
             throws IOException {
-        
+
         ErrorDTO errorDTO = new ErrorDTO(errorCode, message, null);
-        sendJsonResponse(response, statusCode, errorDTO);
+        sendJsonResponse(request, response, statusCode, errorDTO);
     }
 
     /**

@@ -61,7 +61,8 @@ import javax.servlet.http.HttpServletResponse;
  * 
  * The wallet submits via application/x-www-form-urlencoded with:
  * - vp_token: The VP token (JWT or JSON-LD)
- * - presentation_submission: JSON describing which credentials satisfy the request
+ * - presentation_submission: JSON describing which credentials satisfy the
+ * request
  * - state: The request ID (used as correlation)
  * - error: (Optional) Error code if wallet declined or failed
  * - error_description: (Optional) Error description
@@ -118,7 +119,7 @@ public class VPSubmissionServlet extends HttpServlet {
      */
     @Override
     protected void doPost(final HttpServletRequest request,
-                          final HttpServletResponse response)
+            final HttpServletResponse response)
             throws ServletException, IOException {
 
         LOG.info("========== VP SUBMISSION SERVLET CALLED ==========");
@@ -154,16 +155,21 @@ public class VPSubmissionServlet extends HttpServlet {
             VPSubmission submission = vpSubmissionService.processVPSubmission(
                     submissionDTO, tenantId);
 
+            LOG.info("[VP_SUBMISSION_SERVLET] VP submission processed, notifying status listeners...");
             // Notify status listeners for long polling
             notifyStatusListeners(submissionDTO.getState(), submission);
+            LOG.info("[VP_SUBMISSION_SERVLET] Status listeners notified");
 
+            LOG.info("[VP_SUBMISSION_SERVLET] Sending success response to wallet...");
             // Send success response
             sendSuccessResponse(response, submission);
+            LOG.info("[VP_SUBMISSION_SERVLET] Success response sent to wallet");
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Processed VP submission: " + submission.getSubmissionId()
-                        + " for request: " + submissionDTO.getState());
-            }
+            LOG.info("[VP_SUBMISSION_SERVLET] ========== VP SUBMISSION SERVLET COMPLETED SUCCESSFULLY ==========");
+            LOG.info("[VP_SUBMISSION_SERVLET] Submission ID: " + submission.getSubmissionId());
+            LOG.info("[VP_SUBMISSION_SERVLET] Request ID: " + submissionDTO.getState());
+            LOG.info(
+                    "[VP_SUBMISSION_SERVLET] ============================================================================");
 
         } catch (VPRequestNotFoundException e) {
             LOG.warn("VP submission for unknown request: " + e.getMessage());
@@ -222,7 +228,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param dto     DTO to populate
      */
     private void parseFormEncodedSubmission(final HttpServletRequest request,
-                                            final VPSubmissionDTO dto) {
+            final VPSubmissionDTO dto) {
 
         dto.setVpToken(getDecodedParameter(request,
                 OpenID4VPConstants.ResponseParams.VP_TOKEN));
@@ -270,7 +276,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @return Decoded value or original if decoding fails
      */
     private String getDecodedParameter(final HttpServletRequest request,
-                                       final String paramName) {
+            final String paramName) {
 
         String value = request.getParameter(paramName);
         if (StringUtils.isNotBlank(value)) {
@@ -291,41 +297,58 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param submission The VP submission
      */
     private void notifyStatusListeners(final String requestId,
-                                       final VPSubmission submission) {
+            final VPSubmission submission) {
+
+        LOG.info("[VP_NOTIFICATION] ========== Notifying Status Listeners ==========");
+        LOG.info("[VP_NOTIFICATION] Request ID: " + requestId);
+        LOG.info("[VP_NOTIFICATION] Submission ID: " + submission.getSubmissionId());
+        LOG.info("[VP_NOTIFICATION] Has Error: " + (StringUtils.isNotBlank(submission.getError())));
 
         if (StringUtils.isBlank(requestId)) {
+            LOG.warn("[VP_NOTIFICATION] Request ID is blank, skipping notification");
             return;
         }
 
         // Store submission in wallet data cache for status checks
         if (walletDataCache != null) {
+            LOG.info("[VP_NOTIFICATION] Storing submission in wallet data cache...");
             walletDataCache.storeSubmission(requestId, submission);
+            LOG.info("[VP_NOTIFICATION] Submission stored in cache");
+        } else {
+            LOG.warn("[VP_NOTIFICATION] Wallet data cache is null");
         }
 
         // Use the centralized notification service
         if (statusNotificationService != null) {
+            LOG.info("[VP_NOTIFICATION] Using centralized notification service");
             if (StringUtils.isNotBlank(submission.getError())) {
+                LOG.info("[VP_NOTIFICATION] Notifying submission error: " + submission.getError());
                 statusNotificationService.notifySubmissionError(
                         requestId,
                         submission.getError(),
                         submission.getErrorDescription());
             } else {
+                LOG.info("[VP_NOTIFICATION] Notifying VP submitted successfully");
                 statusNotificationService.notifyVPSubmitted(requestId, submission);
             }
+            LOG.info("[VP_NOTIFICATION] Centralized notification completed");
         } else if (statusListenerCache != null) {
             // Fallback to direct notification
+            LOG.info("[VP_NOTIFICATION] Using fallback status listener cache");
             String status;
             if (StringUtils.isNotBlank(submission.getError())) {
                 status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
             } else {
                 status = VPRequestStatus.VP_SUBMITTED.name();
             }
+            LOG.info("[VP_NOTIFICATION] Notifying listeners with status: " + status);
             statusListenerCache.notifyListeners(requestId, status);
+            LOG.info("[VP_NOTIFICATION] Fallback notification completed");
+        } else {
+            LOG.error("[VP_NOTIFICATION] Both statusNotificationService and statusListenerCache are null!");
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Notified status listeners for request: " + requestId);
-        }
+        LOG.info("[VP_NOTIFICATION] ========== Status Listeners Notified ==========");
     }
 
     /**
@@ -336,8 +359,12 @@ public class VPSubmissionServlet extends HttpServlet {
      * @throws IOException If writing fails
      */
     private void sendSuccessResponse(final HttpServletResponse response,
-                                     final VPSubmission submission)
+            final VPSubmission submission)
             throws IOException {
+
+        LOG.info("[VP_RESPONSE] Building success response for wallet...");
+        LOG.info("[VP_RESPONSE] Submission ID: " + submission.getSubmissionId());
+        LOG.info("[VP_RESPONSE] Transaction ID: " + submission.getTransactionId());
 
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON
@@ -353,9 +380,14 @@ public class VPSubmissionServlet extends HttpServlet {
             responseObj.addProperty("transaction_id", submission.getTransactionId());
         }
 
+        String responseJson = GSON.toJson(responseObj);
+        LOG.info("[VP_RESPONSE] Response JSON: " + responseJson);
+
         try (PrintWriter writer = response.getWriter()) {
-            writer.write(GSON.toJson(responseObj));
+            writer.write(responseJson);
         }
+
+        LOG.info("[VP_RESPONSE] Success response sent to wallet (HTTP 200)");
     }
 
     /**
@@ -368,9 +400,9 @@ public class VPSubmissionServlet extends HttpServlet {
      * @throws IOException If writing fails
      */
     private void sendErrorResponse(final HttpServletResponse response,
-                                   final int statusCode,
-                                   final String errorCode,
-                                   final String errorDescription)
+            final int statusCode,
+            final String errorCode,
+            final String errorDescription)
             throws IOException {
 
         response.setStatus(statusCode);
