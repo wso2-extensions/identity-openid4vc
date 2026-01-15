@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -305,12 +304,11 @@ public class VPDefinitionServlet extends HttpServlet {
         List<PresentationDefinition> definitions = presentationDefinitionService
                 .getAllPresentationDefinitions(tenantId);
 
-        JsonObject responseObj = new JsonObject();
-        responseObj.addProperty("count", definitions.size());
-        responseObj.add("definitions", gson.toJsonTree(
-                definitions.stream().map(this::toResponseDTO).toArray()));
+        List<PresentationDefinitionResponseDTO> responseDTOs = definitions.stream()
+                .map(this::toResponseDTO)
+                .collect(java.util.stream.Collectors.toList());
 
-        sendJsonResponse(request, response, HttpServletResponse.SC_OK, responseObj);
+        sendJsonResponse(request, response, HttpServletResponse.SC_OK, responseDTOs);
     }
 
     /**
