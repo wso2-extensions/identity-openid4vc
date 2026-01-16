@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
@@ -35,6 +36,7 @@ public class VPServiceDataHolder {
     private VPRequestService vpRequestService;
     private VPSubmissionService vpSubmissionService;
     private PresentationDefinitionService presentationDefinitionService;
+    private ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService;
 
     private VPServiceDataHolder() {
         // Private constructor for singleton
@@ -127,5 +129,24 @@ public class VPServiceDataHolder {
     public void setPresentationDefinitionService(
             PresentationDefinitionService presentationDefinitionService) {
         this.presentationDefinitionService = presentationDefinitionService;
+    }
+
+    /**
+     * Get the ApplicationPresentationDefinitionMappingService.
+     * 
+     * @return ApplicationPresentationDefinitionMappingService instance
+     */
+    public ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService() {
+        return applicationPresentationDefinitionMappingService;
+    }
+
+    /**
+     * Set the ApplicationPresentationDefinitionMappingService.
+     * 
+     * @param applicationPresentationDefinitionMappingService ApplicationPresentationDefinitionMappingService instance
+     */
+    public void setApplicationPresentationDefinitionMappingService(
+            ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
+        this.applicationPresentationDefinitionMappingService = applicationPresentationDefinitionMappingService;
     }
 }

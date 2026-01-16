@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,24 +36,21 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestResponseDTO;
-
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
-import com.google.gson.JsonParser;
-import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
-import org.wso2.carbon.user.api.UserStoreManager;
-import org.wso2.carbon.user.api.UserStoreException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -438,13 +436,19 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
         createDTO.setClientId(clientId);
 
-        // Set presentation definition ID or create default inline definition
-        String presentationDefId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
+        // NEW: Use per-application presentation definition mapping
+        // Resolution order:
+        // 1. Check application-specific mapping in IDN_APPLICATION_PRESENTATION_DEFINITION table
+        // 2. Fall back to authenticator configuration property (backward compatible)
+        // 3. Use inline default definition if neither exists
+        String presentationDefId = resolvePresentationDefinitionId(context);
+        
         if (StringUtils.isNotBlank(presentationDefId)) {
+            log.debug(LOG_PREFIX + " Using presentation definition ID: " + presentationDefId);
             createDTO.setPresentationDefinitionId(presentationDefId);
         } else {
             // Create a default presentation definition requesting any verifiable credential
-            log.info(LOG_PREFIX + " No presentation definition configured, using default");
+            log.info(LOG_PREFIX + " No presentation definition configured, using default inline definition");
             createDTO.setPresentationDefinition(createDefaultPresentationDefinition());
         }
 
@@ -462,6 +466,76 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         VPRequestService vpRequestService = getVPRequestService();
         int tenantId = getTenantId(context);
         return vpRequestService.createVPRequest(createDTO, tenantId);
+    }
+
+    /**
+     * Resolve the presentation definition ID for the application.
+     * 
+     * Resolution order:
+     * 1. Check application-specific mapping in IDN_APPLICATION_PRESENTATION_DEFINITION
+     * 2. Check authenticator configuration property
+     * 3. Return null to use inline default
+     * 
+     * @param context Authentication context
+     * @return Presentation definition ID or null
+     * @throws VPException If error occurs during resolution
+     */
+    private String resolvePresentationDefinitionId(AuthenticationContext context) throws VPException {
+        String applicationId = context.getServiceProviderName();
+        int tenantId = getTenantId(context);
+
+        try {
+            // Step 1: Try application-specific mapping
+            log.debug(LOG_PREFIX + " Resolving presentation definition for application: " + applicationId);
+            
+            String appDefinitionId = getApplicationPresentationDefinitionMappingService()
+                    .getApplicationPresentationDefinitionId(applicationId, tenantId);
+            
+            if (StringUtils.isNotBlank(appDefinitionId)) {
+                log.info(LOG_PREFIX + " Found application-specific presentation definition: " + appDefinitionId);
+                return appDefinitionId;
+            }
+            
+            log.debug(LOG_PREFIX + " No application-specific mapping found for: " + applicationId);
+        } catch (Exception e) {
+            log.warn(LOG_PREFIX + " Error looking up app-specific mapping, falling back to configuration", e);
+        }
+
+        // Step 2: Fall back to authenticator configuration
+        try {
+            Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
+            String configId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
+            
+            if (StringUtils.isNotBlank(configId)) {
+                log.debug(LOG_PREFIX + " Using authenticator-configured presentation definition: " + configId);
+                return configId;
+            }
+            
+            log.debug(LOG_PREFIX + " No presentation definition in authenticator configuration");
+        } catch (Exception e) {
+            log.warn(LOG_PREFIX + " Error checking authenticator configuration", e);
+        }
+
+        // Step 3: Will use inline default
+        log.debug(LOG_PREFIX + " No presentation definition configured, will use inline default");
+        return null;
+    }
+
+    /**
+     * Get the Application Presentation Definition Mapping Service.
+     * 
+     * @return ApplicationPresentationDefinitionMappingService
+     * @throws VPException If service is not available
+     */
+    private org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService 
+            getApplicationPresentationDefinitionMappingService() throws VPException {
+        org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService service = 
+                VPServiceDataHolder.getInstance().getApplicationPresentationDefinitionMappingService();
+        
+        if (service == null) {
+            throw new VPException("Application Presentation Definition Mapping Service not available");
+        }
+        return service;
     }
 
     /**
