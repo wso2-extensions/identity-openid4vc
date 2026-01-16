@@ -29,6 +29,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
+import org.wso2.carbon.identity.openid4vc.presentation.servlet.RequestUriServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPDefinitionServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPRequestServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPResultServlet;
@@ -54,6 +55,7 @@ public class VPServletRegistrationComponent {
 
     private static final String API_BASE_PATH = "/openid4vp/v1";
     private static final String VP_REQUEST_PATH = API_BASE_PATH + "/vp-request";
+    private static final String REQUEST_URI_PATH = API_BASE_PATH + "/request-uri";
     private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/response";
     private static final String VP_RESULT_PATH = API_BASE_PATH + "/vp-result";
     private static final String PRESENTATION_DEFINITIONS_PATH = API_BASE_PATH + "/presentation-definitions";
@@ -93,6 +95,10 @@ public class VPServletRegistrationComponent {
         httpService.registerServlet(VP_REQUEST_PATH, new VPRequestServlet(), null, null);
         log.info("Registered VPRequestServlet at: " + VP_REQUEST_PATH);
 
+        // Register Request URI Servlet (for wallet to fetch authorization request)
+        httpService.registerServlet(REQUEST_URI_PATH, new RequestUriServlet(), null, null);
+        log.info("Registered RequestUriServlet at: " + REQUEST_URI_PATH);
+
         // Register VP Submission Servlet
         httpService.registerServlet(VP_RESPONSE_PATH, new VPSubmissionServlet(), null, null);
         log.info("Registered VPSubmissionServlet at: " + VP_RESPONSE_PATH);
@@ -119,6 +125,13 @@ public class VPServletRegistrationComponent {
             log.info("Unregistered servlet at: " + VP_REQUEST_PATH);
         } catch (Exception e) {
             log.debug("Error unregistering VP request servlet", e);
+        }
+
+        try {
+            httpService.unregister(REQUEST_URI_PATH);
+            log.info("Unregistered servlet at: " + REQUEST_URI_PATH);
+        } catch (Exception e) {
+            log.debug("Error unregistering request URI servlet", e);
         }
 
         try {
