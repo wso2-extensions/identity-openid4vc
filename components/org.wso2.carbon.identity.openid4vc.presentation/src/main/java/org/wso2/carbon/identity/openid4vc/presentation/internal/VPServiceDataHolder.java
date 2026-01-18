@@ -20,8 +20,12 @@ package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.impl.TrustedIssuerServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VCVerificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**
@@ -37,6 +41,8 @@ public class VPServiceDataHolder {
     private VPSubmissionService vpSubmissionService;
     private PresentationDefinitionService presentationDefinitionService;
     private ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService;
+    private TrustedIssuerService trustedIssuerService;
+    private VCVerificationService vcVerificationService;
 
     private VPServiceDataHolder() {
         // Private constructor for singleton
@@ -148,5 +154,47 @@ public class VPServiceDataHolder {
     public void setApplicationPresentationDefinitionMappingService(
             ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
         this.applicationPresentationDefinitionMappingService = applicationPresentationDefinitionMappingService;
+    }
+
+    /**
+     * Get the TrustedIssuerService.
+     * 
+     * @return TrustedIssuerService instance
+     */
+    public TrustedIssuerService getTrustedIssuerService() {
+        if (trustedIssuerService == null) {
+            trustedIssuerService = new TrustedIssuerServiceImpl();
+        }
+        return trustedIssuerService;
+    }
+
+    /**
+     * Set the TrustedIssuerService.
+     * 
+     * @param trustedIssuerService TrustedIssuerService instance
+     */
+    public void setTrustedIssuerService(TrustedIssuerService trustedIssuerService) {
+        this.trustedIssuerService = trustedIssuerService;
+    }
+
+    /**
+     * Get the VCVerificationService.
+     * 
+     * @return VCVerificationService instance
+     */
+    public VCVerificationService getVCVerificationService() {
+        if (vcVerificationService == null) {
+            vcVerificationService = new VCVerificationServiceImpl();
+        }
+        return vcVerificationService;
+    }
+
+    /**
+     * Set the VCVerificationService.
+     * 
+     * @param vcVerificationService VCVerificationService instance
+     */
+    public void setVCVerificationService(VCVerificationService vcVerificationService) {
+        this.vcVerificationService = vcVerificationService;
     }
 }

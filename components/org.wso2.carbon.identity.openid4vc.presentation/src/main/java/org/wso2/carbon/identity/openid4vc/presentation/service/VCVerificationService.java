@@ -173,4 +173,28 @@ public interface VCVerificationService {
      * @return Array of supported content types
      */
     String[] getSupportedContentTypes();
+
+    /**
+     * Verify JWT VC issuer against trusted allowlist.
+     * Performs DID resolution and signature verification.
+     * 
+     * @param vcJwt The JWT VC token
+     * @param tenantDomain The tenant domain
+     * @return true if issuer is trusted and signature is valid
+     * @throws CredentialVerificationException if verification fails
+     */
+    boolean verifyJWTVCIssuer(String vcJwt, String tenantDomain) 
+            throws CredentialVerificationException;
+
+    /**
+     * Verify JSON-LD VC issuer against trusted allowlist.
+     * Performs DID resolution and signature verification.
+     * 
+     * @param vcJsonObject The JSON-LD VC as JsonObject
+     * @param tenantDomain The tenant domain
+     * @return true if issuer is trusted and signature is valid
+     * @throws CredentialVerificationException if verification fails
+     */
+    boolean verifyJSONLDVCIssuer(com.google.gson.JsonObject vcJsonObject, String tenantDomain) 
+            throws CredentialVerificationException;
 }

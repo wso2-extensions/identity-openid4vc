@@ -20,6 +20,8 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -31,15 +33,19 @@ import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCac
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestExpiredException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.status.StatusNotificationService;
+import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPLogger;
 import org.wso2.carbon.identity.openid4vc.presentation.util.VPSubmissionValidator;
 
 import java.io.IOException;
@@ -145,6 +151,20 @@ public class VPSubmissionServlet extends HttpServlet {
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
                         e.getMessage());
+                return;
+            }
+
+            // Get tenant domain and verify all VCs in the VP
+            String tenantDomain = getTenantDomain(request);
+            
+            // Verify issuer trust for all credentials before processing
+            try {
+                verifyAllCredentialIssuers(submissionDTO.getVpToken(), tenantDomain);
+            } catch (CredentialVerificationException e) {
+                LOG.error("Credential issuer verification failed: " + e.getMessage());
+                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                        "untrusted_issuer",
+                        "Credential from untrusted issuer: " + e.getMessage());
                 return;
             }
 
@@ -437,5 +457,182 @@ public class VPSubmissionServlet extends HttpServlet {
             }
         }
         return DEFAULT_TENANT_ID;
+    }
+
+    /**
+     * Get tenant domain from request context.
+     *
+     * @param request HTTP request
+     * @return Tenant domain
+     */
+    private String getTenantDomain(final HttpServletRequest request) {
+        String tenantDomain = request.getHeader("X-Tenant-Domain");
+        if (StringUtils.isNotBlank(tenantDomain)) {
+            return tenantDomain;
+        }
+        return "carbon.super";
+    }
+
+    /**
+     * Verify all credential issuers in the VP token.
+     * Extracts all VCs from the VP and verifies each issuer against the trusted allowlist.
+     *
+     * @param vpToken      The VP token (JWT or JSON-LD)
+     * @param tenantDomain The tenant domain
+     * @throws CredentialVerificationException If any credential is from untrusted issuer
+     */
+    private void verifyAllCredentialIssuers(String vpToken, String tenantDomain)
+            throws CredentialVerificationException {
+
+        if (StringUtils.isBlank(vpToken)) {
+            LOG.warn("VP token is blank, skipping issuer verification");
+            return;
+        }
+
+        OpenID4VPLogger.logVPSubmissionStart(LOG);
+
+        try {
+            VCVerificationService vcVerifier = VPServiceDataHolder.getInstance()
+                    .getVCVerificationService();
+
+            // Determine if VP is JWT or JSON-LD
+            JsonObject vp;
+            if (vpToken.contains(".")) {
+                // JWT VP - decode payload
+                String[] parts = vpToken.split("\\.");
+                if (parts.length >= 2) {
+                    String payloadJson = new String(
+                            java.util.Base64.getUrlDecoder().decode(parts[1]),
+                            java.nio.charset.StandardCharsets.UTF_8);
+                    vp = JsonParser.parseString(payloadJson).getAsJsonObject();
+                    OpenID4VPLogger.logVPTokenFormat(LOG, "JWT");
+                } else {
+                    throw new CredentialVerificationException(
+                            org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
+                            "Invalid JWT VP format");
+                }
+            } else {
+                // JSON-LD VP
+                vp = JsonParser.parseString(vpToken).getAsJsonObject();
+                OpenID4VPLogger.logVPTokenFormat(LOG, "JSON-LD");
+            }
+
+            // Extract verifiable credentials array
+            if (!vp.has("verifiableCredential") && !vp.has("vp")) {
+                LOG.warn("No verifiableCredential field in VP, skipping issuer verification");
+                return;
+            }
+
+            JsonElement vcElement = vp.has("verifiableCredential") 
+                    ? vp.get("verifiableCredential")
+                    : vp.getAsJsonObject("vp").get("verifiableCredential");
+
+            JsonArray verifiableCredentials;
+            if (vcElement.isJsonArray()) {
+                verifiableCredentials = vcElement.getAsJsonArray();
+            } else {
+                // Single credential - wrap in array
+                verifiableCredentials = new JsonArray();
+                verifiableCredentials.add(vcElement);
+            }
+
+            int credentialCount = verifiableCredentials.size();
+            OpenID4VPLogger.logCredentialCount(LOG, credentialCount);
+
+            // Verify each VC
+            for (int i = 0; i < credentialCount; i++) {
+                OpenID4VPLogger.logCredentialIndex(LOG, i + 1, credentialCount);
+
+                JsonElement vcElem = verifiableCredentials.get(i);
+
+                if (vcElem.isJsonPrimitive() && vcElem.getAsString().contains(".")) {
+                    // JWT VC
+                    String vcJwt = vcElem.getAsString();
+                    OpenID4VPLogger.logCredentialType(LOG, "JWT");
+
+                    boolean verified = vcVerifier.verifyJWTVCIssuer(vcJwt, tenantDomain);
+                    if (!verified) {
+                        OpenID4VPLogger.logCredentialVerificationFailed(LOG, i + 1,
+                                "Issuer verification failed");
+                        throw new CredentialVerificationException(
+                                org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
+                                "Credential " + (i + 1) + " from untrusted issuer");
+                    }
+                    OpenID4VPLogger.logCredentialVerificationSuccess(LOG, i + 1,
+                            extractIssuerFromJWT(vcJwt), "JWT");
+
+                } else if (vcElem.isJsonObject()) {
+                    // JSON-LD VC
+                    JsonObject vcObj = vcElem.getAsJsonObject();
+                    OpenID4VPLogger.logCredentialType(LOG, "JSON-LD");
+
+                    boolean verified = vcVerifier.verifyJSONLDVCIssuer(vcObj, tenantDomain);
+                    if (!verified) {
+                        OpenID4VPLogger.logCredentialVerificationFailed(LOG, i + 1,
+                                "Issuer verification failed");
+                        throw new CredentialVerificationException(
+                                org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
+                                "Credential " + (i + 1) + " from untrusted issuer");
+                    }
+
+                    String issuer = extractIssuerFromJsonLD(vcObj);
+                    OpenID4VPLogger.logCredentialVerificationSuccess(LOG, i + 1, issuer, "JSON-LD");
+                }
+            }
+
+            OpenID4VPLogger.logAllCredentialsVerified(LOG, credentialCount);
+            OpenID4VPLogger.logVPVerificationComplete(LOG);
+
+        } catch (CredentialVerificationException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("Error verifying credential issuers: " + e.getMessage(), e);
+            throw new CredentialVerificationException(
+                    "Failed to verify credential issuers: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Extract issuer from JWT VC.
+     *
+     * @param vcJwt JWT VC token
+     * @return Issuer DID
+     */
+    private String extractIssuerFromJWT(String vcJwt) {
+        try {
+            String[] parts = vcJwt.split("\\.");
+            if (parts.length >= 2) {
+                String payloadJson = new String(
+                        java.util.Base64.getUrlDecoder().decode(parts[1]),
+                        java.nio.charset.StandardCharsets.UTF_8);
+                JsonObject payload = JsonParser.parseString(payloadJson).getAsJsonObject();
+                return payload.get("iss").getAsString();
+            }
+        } catch (Exception e) {
+            LOG.debug("Failed to extract issuer from JWT: " + e.getMessage());
+        }
+        return "unknown";
+    }
+
+    /**
+     * Extract issuer from JSON-LD VC.
+     *
+     * @param vcObj JSON-LD VC object
+     * @return Issuer DID
+     */
+    private String extractIssuerFromJsonLD(JsonObject vcObj) {
+        try {
+            if (vcObj.has("issuer")) {
+                JsonElement issuer = vcObj.get("issuer");
+                if (issuer.isJsonPrimitive()) {
+                    return issuer.getAsString();
+                } else if (issuer.isJsonObject()) {
+                    return issuer.getAsJsonObject().get("id").getAsString();
+                }
+            }
+        } catch (Exception e) {
+            LOG.debug("Failed to extract issuer from JSON-LD: " + e.getMessage());
+        }
+        return "unknown";
     }
 }
