@@ -141,7 +141,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
             // Generate QR code content
             String qrContent = QRCodeUtil.generateRequestUriQRContent(
-                    vpRequestResponse.getRequestUri());
+                    vpRequestResponse.getRequestUri(),
+                    vpRequestResponse.getAuthorizationDetails().getClientId());
 
             // Redirect to login page with QR code data
             String loginPage = getLoginPage(context);
@@ -438,11 +439,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
         // NEW: Use per-application presentation definition mapping
         // Resolution order:
-        // 1. Check application-specific mapping in IDN_APPLICATION_PRESENTATION_DEFINITION table
+        // 1. Check application-specific mapping in
+        // IDN_APPLICATION_PRESENTATION_DEFINITION table
         // 2. Fall back to authenticator configuration property (backward compatible)
         // 3. Use inline default definition if neither exists
         String presentationDefId = resolvePresentationDefinitionId(context);
-        
+
         if (StringUtils.isNotBlank(presentationDefId)) {
             log.debug(LOG_PREFIX + " Using presentation definition ID: " + presentationDefId);
             createDTO.setPresentationDefinitionId(presentationDefId);
@@ -472,7 +474,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * Resolve the presentation definition ID for the application.
      * 
      * Resolution order:
-     * 1. Check application-specific mapping in IDN_APPLICATION_PRESENTATION_DEFINITION
+     * 1. Check application-specific mapping in
+     * IDN_APPLICATION_PRESENTATION_DEFINITION
      * 2. Check authenticator configuration property
      * 3. Return null to use inline default
      * 
@@ -487,15 +490,15 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         try {
             // Step 1: Try application-specific mapping
             log.debug(LOG_PREFIX + " Resolving presentation definition for application: " + applicationId);
-            
+
             String appDefinitionId = getApplicationPresentationDefinitionMappingService()
                     .getApplicationPresentationDefinitionId(applicationId, tenantId);
-            
+
             if (StringUtils.isNotBlank(appDefinitionId)) {
                 log.info(LOG_PREFIX + " Found application-specific presentation definition: " + appDefinitionId);
                 return appDefinitionId;
             }
-            
+
             log.debug(LOG_PREFIX + " No application-specific mapping found for: " + applicationId);
         } catch (Exception e) {
             log.warn(LOG_PREFIX + " Error looking up app-specific mapping, falling back to configuration", e);
@@ -505,12 +508,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         try {
             Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
             String configId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
-            
+
             if (StringUtils.isNotBlank(configId)) {
                 log.debug(LOG_PREFIX + " Using authenticator-configured presentation definition: " + configId);
                 return configId;
             }
-            
+
             log.debug(LOG_PREFIX + " No presentation definition in authenticator configuration");
         } catch (Exception e) {
             log.warn(LOG_PREFIX + " Error checking authenticator configuration", e);
@@ -527,11 +530,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @return ApplicationPresentationDefinitionMappingService
      * @throws VPException If service is not available
      */
-    private org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService 
-            getApplicationPresentationDefinitionMappingService() throws VPException {
-        org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService service = 
-                VPServiceDataHolder.getInstance().getApplicationPresentationDefinitionMappingService();
-        
+    private org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService()
+            throws VPException {
+        org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService service = VPServiceDataHolder
+                .getInstance().getApplicationPresentationDefinitionMappingService();
+
         if (service == null) {
             throw new VPException("Application Presentation Definition Mapping Service not available");
         }
@@ -582,8 +585,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * Build client ID from context.
      */
     private String buildClientId(AuthenticationContext context) {
-        String baseUrl = IdentityUtil.getServerURL("", true, true);
-        return baseUrl + "/oauth2/token";
+        // Use fixed DID for demo purposes as requested
+        return "did:web:masked-unprofitably-ardith.ngrok-free.dev";
     }
 
     /**

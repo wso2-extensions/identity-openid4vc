@@ -54,9 +54,10 @@ public class QRCodeUtil {
      * Generate QR code content for a VP request using request_uri flow.
      * 
      * @param requestUri The URI where the full request can be fetched
+     * @param clientId   The client ID to include in the authorization request
      * @return QR code content string (OpenID4VP deep link)
      */
-    public static String generateRequestUriQRContent(String requestUri) {
+    public static String generateRequestUriQRContent(String requestUri, String clientId) {
         if (StringUtils.isBlank(requestUri)) {
             throw new IllegalArgumentException("Request URI cannot be blank");
         }
@@ -65,10 +66,19 @@ public class QRCodeUtil {
         StringBuilder content = new StringBuilder();
         content.append(OpenID4VPConstants.Protocol.OPENID4VP_SCHEME);
         content.append("?");
+
+        // Add client_id if present (as requested by user)
+        if (StringUtils.isNotBlank(clientId)) {
+            content.append(OpenID4VPConstants.RequestParams.CLIENT_ID);
+            content.append("=");
+            content.append(urlEncode(clientId));
+            content.append("&");
+        }
+
         content.append(OpenID4VPConstants.RequestParams.REQUEST_URI);
         content.append("=");
         content.append(urlEncode(requestUri));
-        
+
         return content.toString();
     }
 
@@ -86,36 +96,36 @@ public class QRCodeUtil {
         StringBuilder content = new StringBuilder();
         content.append(OpenID4VPConstants.Protocol.OPENID4VP_SCHEME);
         content.append("?");
-        
+
         // Client ID
         content.append(OpenID4VPConstants.RequestParams.CLIENT_ID);
         content.append("=");
         content.append(urlEncode(authorizationDetails.getClientId()));
-        
+
         // Response type
         content.append("&");
         content.append(OpenID4VPConstants.RequestParams.RESPONSE_TYPE);
         content.append("=");
         content.append(OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN);
-        
+
         // Response mode
         content.append("&");
         content.append(OpenID4VPConstants.RequestParams.RESPONSE_MODE);
         content.append("=");
         content.append(urlEncode(authorizationDetails.getResponseMode()));
-        
+
         // Response URI
         content.append("&");
         content.append(OpenID4VPConstants.RequestParams.RESPONSE_URI);
         content.append("=");
         content.append(urlEncode(authorizationDetails.getResponseUri()));
-        
+
         // Nonce
         content.append("&");
         content.append(OpenID4VPConstants.RequestParams.NONCE);
         content.append("=");
         content.append(urlEncode(authorizationDetails.getNonce()));
-        
+
         // State (request ID)
         if (StringUtils.isNotBlank(authorizationDetails.getState())) {
             content.append("&");
@@ -123,7 +133,7 @@ public class QRCodeUtil {
             content.append("=");
             content.append(urlEncode(authorizationDetails.getState()));
         }
-        
+
         // Presentation definition
         if (authorizationDetails.getPresentationDefinition() != null) {
             content.append("&");
@@ -131,7 +141,7 @@ public class QRCodeUtil {
             content.append("=");
             content.append(urlEncode(authorizationDetails.getPresentationDefinition().toString()));
         }
-        
+
         return content.toString();
     }
 
@@ -142,7 +152,7 @@ public class QRCodeUtil {
      * like ZXing (Zebra Crossing) or QRCode.js to generate actual QR images.
      * 
      * @param content The content to encode in the QR code
-     * @param size The size of the QR code in pixels
+     * @param size    The size of the QR code in pixels
      * @return Data URL string (data:image/png;base64,...)
      * @throws VPException If QR generation fails
      */
@@ -156,18 +166,20 @@ public class QRCodeUtil {
         }
 
         // In production, use a library like ZXing:
-        // 
+        //
         // QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        // BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE, size, size);
+        // BitMatrix bitMatrix = qrCodeWriter.encode(content, BarcodeFormat.QR_CODE,
+        // size, size);
         // ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();
         // MatrixToImageWriter.writeToStream(bitMatrix, "PNG", pngOutputStream);
         // byte[] pngData = pngOutputStream.toByteArray();
-        // return "data:image/png;base64," + Base64.getEncoder().encodeToString(pngData);
+        // return "data:image/png;base64," +
+        // Base64.getEncoder().encodeToString(pngData);
 
         // For now, return a placeholder that indicates QR generation is needed
         // The actual QR can be generated on the client side using JavaScript libraries
         if (log.isDebugEnabled()) {
-            log.debug("QR code generation requested for content length: " + content.length() + 
+            log.debug("QR code generation requested for content length: " + content.length() +
                     ", size: " + size);
         }
 
@@ -193,13 +205,13 @@ public class QRCodeUtil {
     /**
      * Generate an HTML snippet for QR code display.
      * 
-     * @param content The content to encode
+     * @param content   The content to encode
      * @param requestId The request ID for identification
      * @return HTML string with QR code container
      */
     public static String generateQRCodeHtml(String content, String requestId) {
         int size = getConfiguredQRSize();
-        
+
         StringBuilder html = new StringBuilder();
         html.append("<div id=\"qr-container-").append(escapeHtml(requestId)).append("\" ");
         html.append("class=\"openid4vp-qr-container\" ");
@@ -208,7 +220,7 @@ public class QRCodeUtil {
         html.append("data-request-id=\"").append(escapeHtml(requestId)).append("\">");
         html.append("<canvas id=\"qr-canvas-").append(escapeHtml(requestId)).append("\"></canvas>");
         html.append("</div>");
-        
+
         return html.toString();
     }
 
@@ -217,8 +229,8 @@ public class QRCodeUtil {
      * Assumes QRCode.js library is available.
      * 
      * @param containerId The container element ID
-     * @param content The content to encode
-     * @param size The size in pixels
+     * @param content     The content to encode
+     * @param size        The size in pixels
      * @return JavaScript code string
      */
     public static String generateQRCodeScript(String containerId, String content, int size) {
@@ -231,7 +243,7 @@ public class QRCodeUtil {
         script.append("colorLight: '#ffffff',");
         script.append("correctLevel: QRCode.CorrectLevel.").append(getConfiguredErrorCorrection());
         script.append("});");
-        
+
         return script.toString();
     }
 
@@ -255,9 +267,9 @@ public class QRCodeUtil {
      */
     public static String getConfiguredErrorCorrection() {
         String configValue = IdentityUtil.getProperty("OpenID4VP.QRCode.ErrorCorrectionLevel");
-        if (StringUtils.isNotBlank(configValue) && 
-            (configValue.equals("L") || configValue.equals("M") || 
-             configValue.equals("Q") || configValue.equals("H"))) {
+        if (StringUtils.isNotBlank(configValue) &&
+                (configValue.equals("L") || configValue.equals("M") ||
+                        configValue.equals("Q") || configValue.equals("H"))) {
             return configValue;
         }
         return DEFAULT_ERROR_CORRECTION;
