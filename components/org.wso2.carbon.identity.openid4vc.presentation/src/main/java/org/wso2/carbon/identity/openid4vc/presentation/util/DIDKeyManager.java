@@ -18,18 +18,11 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
-import com.google.gson.Gson;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.ECGenParameterSpec;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,14 +32,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DIDKeyManager {
 
     private static final Log LOG = LogFactory.getLog(DIDKeyManager.class);
-    private static final Gson GSON = new Gson();
-
-    // Cache for tenant keys: tenantId -> KeyPair
-    private static final Map<Integer, KeyPair> keyCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, KeyPair> keyCache = new ConcurrentHashMap<>();
 
     /**
      * Get or generate a key pair for the given tenant.
-     * Uses ES256 (P-256) by default.
+     * Uses Ed25519 by default.
      * 
      * @param tenantId The tenant ID
      * @return KeyPair for the tenant
@@ -59,131 +49,106 @@ public class DIDKeyManager {
         }
 
         LOG.info("Generating new key pair for tenant: " + tenantId);
-        KeyPair keyPair = generateES256KeyPair();
+        KeyPair keyPair = generateEd25519KeyPair();
         keyCache.put(tenantId, keyPair);
         return keyPair;
     }
 
     /**
-     * Generate a new ES256 (P-256) key pair.
+     * Generate a new Ed25519 key pair.
      * 
      * @return KeyPair
      * @throws Exception if generation fails
      */
-    private static KeyPair generateES256KeyPair() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
-        ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1"); // P-256
-        keyGen.initialize(ecSpec);
+    private static KeyPair generateEd25519KeyPair() throws Exception {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("Ed25519");
         return keyGen.generateKeyPair();
     }
 
     /**
-     * Generate a new RSA key pair (2048-bit).
+     * Convert Ed25519 public key to multibase format.
+     * Format: z + base58btc(0xed01 + public key bytes)
      * 
-     * @return KeyPair
-     * @throws Exception if generation fails
+     * @param keyPair The key pair containing the Ed25519 public key
+     * @return Multibase encoded string (z-prefix for base58btc)
      */
-    public static KeyPair generateRSAKeyPair() throws Exception {
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
-        keyGen.initialize(2048);
-        return keyGen.generateKeyPair();
-    }
-
-    /**
-     * Convert a public key to JWK format as a Map.
-     * 
-     * @param keyPair The key pair containing the public key
-     * @param keyId The key ID (e.g., "key-1")
-     * @return JWK as Map
-     */
-    public static Map<String, Object> publicKeyToJWK(KeyPair keyPair, String keyId) {
-        Map<String, Object> jwk = new HashMap<>();
-        jwk.put("kty", "EC");
-        jwk.put("kid", keyId);
-        jwk.put("use", "sig");
-
-        if (keyPair.getPublic() instanceof ECPublicKey) {
-            ECPublicKey ecKey = (ECPublicKey) keyPair.getPublic();
+    public static String publicKeyToMultibase(KeyPair keyPair) {
+        try {
+            byte[] publicKeyBytes = keyPair.getPublic().getEncoded();
             
-            // Determine curve
-            int fieldSize = ecKey.getParams().getCurve().getField().getFieldSize();
-            String crv;
-            if (fieldSize == 256) {
-                crv = "P-256";
-            } else if (fieldSize == 384) {
-                crv = "P-384";
-            } else if (fieldSize == 521) {
-                crv = "P-521";
-            } else {
-                crv = "P-256"; // default
+            // For Ed25519, extract the 32-byte raw public key from X.509 encoding
+            // X.509 format: algorithm identifier (12 bytes) + raw key (32 bytes)
+            byte[] rawKey = new byte[32];
+            System.arraycopy(publicKeyBytes, publicKeyBytes.length - 32, rawKey, 0, 32);
+            
+            // Prepend multicodec prefix for Ed25519-pub (0xed01)
+            byte[] multicodecKey = new byte[34];
+            multicodecKey[0] = (byte) 0xed;
+            multicodecKey[1] = (byte) 0x01;
+            System.arraycopy(rawKey, 0, multicodecKey, 2, 32);
+            
+            // Base58 encode and prepend 'z' for base58btc multibase
+            return "z" + base58Encode(multicodecKey);
+        } catch (Exception e) {
+            LOG.error("Failed to convert public key to multibase", e);
+            return null;
+        }
+    }
+
+    /**
+     * Base58 encode (Bitcoin alphabet).
+     * 
+     * @param input Byte array to encode
+     * @return Base58 encoded string
+     */
+    private static String base58Encode(byte[] input) {
+        String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        if (input.length == 0) {
+            return "";
+        }
+
+        // Convert to base58
+        byte[] inputCopy = new byte[input.length];
+        System.arraycopy(input, 0, inputCopy, 0, input.length);
+        
+        // Count leading zeros
+        int zeros = 0;
+        while (zeros < inputCopy.length && inputCopy[zeros] == 0) {
+            zeros++;
+        }
+
+        // Convert to base58
+        byte[] encoded = new byte[inputCopy.length * 2];
+        int outputStart = encoded.length;
+        for (int inputStart = zeros; inputStart < inputCopy.length; ) {
+            encoded[--outputStart] = (byte) ALPHABET.charAt(divmod(inputCopy, inputStart, 256, 58));
+            if (inputCopy[inputStart] == 0) {
+                inputStart++;
             }
-            jwk.put("crv", crv);
-
-            // Get x and y coordinates
-            byte[] x = ecKey.getW().getAffineX().toByteArray();
-            byte[] y = ecKey.getW().getAffineY().toByteArray();
-
-            // Ensure 32 bytes for P-256 (remove sign byte if present)
-            x = ensureLength(x, 32);
-            y = ensureLength(y, 32);
-
-            jwk.put("x", base64UrlEncode(x));
-            jwk.put("y", base64UrlEncode(y));
-
-        } else if (keyPair.getPublic() instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) keyPair.getPublic();
-            jwk.put("kty", "RSA");
-            jwk.put("n", base64UrlEncode(rsaKey.getModulus().toByteArray()));
-            jwk.put("e", base64UrlEncode(rsaKey.getPublicExponent().toByteArray()));
         }
 
-        return jwk;
-    }
-
-    /**
-     * Convert JWK Map to JSON string.
-     * 
-     * @param jwk JWK as Map
-     * @return JSON string
-     */
-    public static String jwkToJson(Map<String, Object> jwk) {
-        return GSON.toJson(jwk);
-    }
-
-    /**
-     * Ensure byte array is exactly the specified length.
-     * Removes leading zero bytes or pads with zeros as needed.
-     * 
-     * @param bytes Input byte array
-     * @param length Desired length
-     * @return Adjusted byte array
-     */
-    private static byte[] ensureLength(byte[] bytes, int length) {
-        if (bytes.length == length) {
-            return bytes;
-        } else if (bytes.length > length) {
-            // Remove leading zeros (sign bytes)
-            int start = bytes.length - length;
-            byte[] result = new byte[length];
-            System.arraycopy(bytes, start, result, 0, length);
-            return result;
-        } else {
-            // Pad with leading zeros
-            byte[] result = new byte[length];
-            int start = length - bytes.length;
-            System.arraycopy(bytes, 0, result, start, bytes.length);
-            return result;
+        // Skip leading zeros in encoded result
+        while (outputStart < encoded.length && encoded[outputStart] == (byte) ALPHABET.charAt(0)) {
+            outputStart++;
         }
+
+        // Add original leading zeros
+        while (--zeros >= 0) {
+            encoded[--outputStart] = (byte) ALPHABET.charAt(0);
+        }
+
+        return new String(encoded, outputStart, encoded.length - outputStart);
     }
 
-    /**
-     * Base64 URL encode without padding.
-     * 
-     * @param data Byte array to encode
-     * @return Base64 URL encoded string
-     */
-    private static String base64UrlEncode(byte[] data) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(data);
+    private static byte divmod(byte[] number, int firstDigit, int base, int divisor) {
+        int remainder = 0;
+        for (int i = firstDigit; i < number.length; i++) {
+            int digit = (int) number[i] & 0xFF;
+            int temp = remainder * base + digit;
+            number[i] = (byte) (temp / divisor);
+            remainder = temp % divisor;
+        }
+        return (byte) remainder;
     }
 
     /**
@@ -195,7 +160,7 @@ public class DIDKeyManager {
      */
     public static KeyPair regenerateKeyPair(int tenantId) throws Exception {
         LOG.info("Regenerating key pair for tenant: " + tenantId);
-        KeyPair keyPair = generateES256KeyPair();
+        KeyPair keyPair = generateEd25519KeyPair();
         keyCache.put(tenantId, keyPair);
         return keyPair;
     }
