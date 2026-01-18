@@ -68,8 +68,8 @@ public class VPRequestServiceImpl implements VPRequestService {
      * Constructor for dependency injection.
      */
     public VPRequestServiceImpl(VPRequestDAO vpRequestDAO, VPRequestCache vpRequestCache,
-                                 PresentationDefinitionService presentationDefinitionService,
-                                 String baseUrl) {
+            PresentationDefinitionService presentationDefinitionService,
+            String baseUrl) {
         this.vpRequestDAO = vpRequestDAO;
         this.vpRequestCache = vpRequestCache;
         this.presentationDefinitionService = presentationDefinitionService;
@@ -79,7 +79,7 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public VPRequestResponseDTO createVPRequest(VPRequestCreateDTO requestCreateDTO, int tenantId)
             throws VPException {
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Creating VP request for client: " + requestCreateDTO.getClientId());
         }
@@ -89,10 +89,11 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Generate identifiers
         String requestId = OpenID4VPUtil.generateRequestId();
-        String transactionId = StringUtils.isNotBlank(requestCreateDTO.getTransactionId()) ?
-                requestCreateDTO.getTransactionId() : OpenID4VPUtil.generateTransactionId();
-        String nonce = StringUtils.isNotBlank(requestCreateDTO.getNonce()) ?
-                requestCreateDTO.getNonce() : OpenID4VPUtil.generateNonce();
+        String transactionId = StringUtils.isNotBlank(requestCreateDTO.getTransactionId())
+                ? requestCreateDTO.getTransactionId()
+                : OpenID4VPUtil.generateTransactionId();
+        String nonce = StringUtils.isNotBlank(requestCreateDTO.getNonce()) ? requestCreateDTO.getNonce()
+                : OpenID4VPUtil.generateNonce();
 
         // Resolve presentation definition
         String presentationDefinition = resolvePresentationDefinition(requestCreateDTO, tenantId);
@@ -154,18 +155,18 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public VPRequest getVPRequestById(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         // Try cache first
         VPRequest vpRequest = vpRequestCache.getByRequestId(requestId);
-        
+
         if (vpRequest == null) {
             // Fallback to database
             vpRequest = vpRequestDAO.getVPRequestById(requestId, tenantId);
-            
+
             if (vpRequest == null) {
                 throw new VPRequestNotFoundException(requestId);
             }
-            
+
             // Populate cache if still active
             if (vpRequest.getStatus() == VPRequestStatus.ACTIVE) {
                 vpRequestCache.put(vpRequest);
@@ -178,14 +179,14 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         // Try cache first
         VPRequest vpRequest = vpRequestCache.getByTransactionId(transactionId);
-        
+
         if (vpRequest == null) {
             // Fallback to database
             vpRequest = vpRequestDAO.getVPRequestByTransactionId(transactionId, tenantId);
-            
+
             if (vpRequest == null) {
                 throw new VPRequestNotFoundException("Transaction not found: " + transactionId);
             }
@@ -197,22 +198,22 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public VPRequestStatusDTO getVPRequestStatus(String transactionId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         VPRequest vpRequest = getVPRequestByTransactionId(transactionId, tenantId);
-        
+
         VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
         statusDTO.setStatus(vpRequest.getStatus());
         statusDTO.setRequestId(vpRequest.getRequestId());
-        
+
         return statusDTO;
     }
 
     @Override
     public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId)
             throws VPRequestNotFoundException, VPRequestExpiredException, VPException {
-        
+
         VPRequest vpRequest = getVPRequestById(requestId, tenantId);
-        
+
         // Check if expired
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
             throw new VPRequestExpiredException(requestId);
@@ -220,7 +221,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Update in database
         vpRequestDAO.updateVPRequestStatus(requestId, status, tenantId);
-        
+
         // Update cache if present
         VPRequest cachedRequest = vpRequestCache.getByRequestId(requestId);
         if (cachedRequest != null) {
@@ -236,19 +237,19 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public String getRequestUri(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         // Validate request exists
         getVPRequestById(requestId, tenantId);
-        
+
         return OpenID4VPUtil.buildRequestUri(baseUrl, requestId);
     }
 
     @Override
     public String getRequestJwt(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPRequestExpiredException, VPException {
-        
+
         VPRequest vpRequest = getVPRequestById(requestId, tenantId);
-        
+
         // Check if expired
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
             throw new VPRequestExpiredException(requestId);
@@ -264,11 +265,12 @@ public class VPRequestServiceImpl implements VPRequestService {
             return vpRequest.getRequestJwt();
         }
 
-        // Generate JWT (Note: Full JWT signing would require key management integration)
+        // Generate JWT (Note: Full JWT signing would require key management
+        // integration)
         // For now, return the request parameters as a simple structure
         // In production, this should be a signed JWT
         String requestJwt = buildRequestObjectJwt(vpRequest);
-        
+
         // Store generated JWT
         vpRequestDAO.updateVPRequestJwt(requestId, requestJwt, tenantId);
 
@@ -278,13 +280,13 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public void deleteVPRequest(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         // Validate exists
         getVPRequestById(requestId, tenantId);
-        
+
         // Delete from database
         vpRequestDAO.deleteVPRequest(requestId, tenantId);
-        
+
         // Remove from cache
         vpRequestCache.remove(requestId);
 
@@ -296,24 +298,24 @@ public class VPRequestServiceImpl implements VPRequestService {
     @Override
     public int processExpiredRequests(int tenantId) throws VPException {
         int count = vpRequestDAO.markExpiredRequests(tenantId);
-        
+
         if (count > 0 && log.isDebugEnabled()) {
             log.debug("Marked " + count + " VP requests as expired for tenant: " + tenantId);
         }
-        
+
         return count;
     }
 
     @Override
     public boolean isRequestActive(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
-        
+
         VPRequest vpRequest = getVPRequestById(requestId, tenantId);
-        
+
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
             return false;
         }
-        
+
         return vpRequest.getStatus() == VPRequestStatus.ACTIVE;
     }
 
@@ -324,14 +326,14 @@ public class VPRequestServiceImpl implements VPRequestService {
         if (requestCreateDTO == null) {
             throw new VPException("Request creation DTO cannot be null");
         }
-        
+
         if (StringUtils.isBlank(requestCreateDTO.getClientId())) {
             throw new VPException("Client ID is required");
         }
-        
+
         // Either presentation definition ID or inline definition required
         if (StringUtils.isBlank(requestCreateDTO.getPresentationDefinitionId()) &&
-            requestCreateDTO.getPresentationDefinition() == null) {
+                requestCreateDTO.getPresentationDefinition() == null) {
             throw new VPException("Either presentationDefinitionId or presentationDefinition is required");
         }
     }
@@ -341,7 +343,7 @@ public class VPRequestServiceImpl implements VPRequestService {
      */
     private String resolvePresentationDefinition(VPRequestCreateDTO requestCreateDTO, int tenantId)
             throws VPException {
-        
+
         // If inline definition provided, validate and use it
         if (requestCreateDTO.getPresentationDefinition() != null) {
             String definitionJson = requestCreateDTO.getPresentationDefinition().toString();
@@ -350,7 +352,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             }
             return definitionJson;
         }
-        
+
         // Otherwise, fetch from stored definitions
         String definitionId = requestCreateDTO.getPresentationDefinitionId();
         if (StringUtils.isNotBlank(definitionId)) {
@@ -358,14 +360,14 @@ public class VPRequestServiceImpl implements VPRequestService {
                     definitionId, tenantId);
             return definition.getDefinitionJson();
         }
-        
+
         // Fall back to default definition
         PresentationDefinition defaultDefinition = presentationDefinitionService.getDefaultPresentationDefinition(
                 tenantId);
         if (defaultDefinition != null) {
             return defaultDefinition.getDefinitionJson();
         }
-        
+
         throw new VPException("No presentation definition available");
     }
 
@@ -373,7 +375,7 @@ public class VPRequestServiceImpl implements VPRequestService {
      * Build authorization details DTO for by-value response mode.
      */
     private AuthorizationDetailsDTO buildAuthorizationDetails(VPRequest vpRequest,
-                                                               String presentationDefinition) {
+            String presentationDefinition) {
         AuthorizationDetailsDTO details = new AuthorizationDetailsDTO();
         details.setClientId(vpRequest.getClientId());
         details.setResponseType(OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN);
@@ -381,26 +383,27 @@ public class VPRequestServiceImpl implements VPRequestService {
         details.setResponseUri(vpRequest.getResponseUri());
         details.setNonce(vpRequest.getNonce());
         details.setState(vpRequest.getRequestId());
-        
+
         // Convert String to JsonObject for the DTO
         if (presentationDefinition != null) {
             JsonObject pdJson = JsonParser.parseString(presentationDefinition).getAsJsonObject();
             details.setPresentationDefinition(pdJson);
         }
-        
+
         return details;
     }
 
     /**
      * Build the request object as a JWT.
-     * Note: In production, this should be properly signed with the verifier's private key.
+     * Note: In production, this should be properly signed with the verifier's
+     * private key.
      */
     private String buildRequestObjectJwt(VPRequest vpRequest) {
         // This is a simplified version. In production:
         // 1. Create JWT header with alg (e.g., RS256) and kid
         // 2. Create JWT payload with all authorization request parameters
         // 3. Sign with private key
-        
+
         StringBuilder jwt = new StringBuilder();
         jwt.append("{");
         jwt.append("\"client_id\":\"").append(vpRequest.getClientId()).append("\",");
@@ -411,7 +414,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         jwt.append("\"state\":\"").append(vpRequest.getRequestId()).append("\",");
         jwt.append("\"presentation_definition\":").append(vpRequest.getPresentationDefinition());
         jwt.append("}");
-        
+
         // TODO: Sign this as proper JWT
         return jwt.toString();
     }
@@ -421,6 +424,6 @@ public class VPRequestServiceImpl implements VPRequestService {
      */
     private String getConfiguredBaseUrl() {
         // In production, this should come from identity.xml or deployment.toml
-        return "https://localhost:9443";
+        return "https://masked-unprofitably-ardith.ngrok-free.dev";
     }
 }
