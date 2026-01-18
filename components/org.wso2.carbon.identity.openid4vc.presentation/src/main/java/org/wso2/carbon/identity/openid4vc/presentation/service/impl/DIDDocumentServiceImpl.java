@@ -27,7 +27,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager;
 
-import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,7 +34,8 @@ import java.util.Map;
 
 /**
  * Implementation of DIDDocumentService.
- * Generates and manages DID Documents for WSO2 Identity Server using did:web method.
+ * Generates and manages DID Documents for WSO2 Identity Server using did:web
+ * method.
  */
 public class DIDDocumentServiceImpl implements DIDDocumentService {
 
@@ -60,7 +60,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             LOG.debug("Generating DID document for domain: " + domain + ", tenant: " + tenantId);
 
             // Get or generate keys
-            KeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
+            com.nimbusds.jose.jwk.OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
 
             // Build DID
             String did = getDID(domain);
@@ -68,7 +68,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             // Create DID Document
             DIDDocument doc = new DIDDocument();
             doc.setId(did);
-            
+
             // Set context
             doc.setContext(Arrays.asList(DID_CONTEXT_V1, ED25519_2020_CONTEXT));
 
@@ -102,10 +102,10 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     public String getDID(String domain) {
         // Clean domain: remove protocol, port encoding for did:web
         String cleanDomain = domain.replace("https://", "").replace("http://", "");
-        
+
         // For did:web, port numbers are encoded with %3A
         cleanDomain = cleanDomain.replace(":", "%3A");
-        
+
         return "did:web:" + cleanDomain;
     }
 
@@ -136,7 +136,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
      */
     private String convertToJson(DIDDocument doc) {
         Map<String, Object> jsonMap = new HashMap<>();
-        
+
         jsonMap.put("@context", doc.getContext());
         jsonMap.put("id", doc.getId());
 
@@ -156,7 +156,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
                 vmMap.put("id", vm.getId());
                 vmMap.put("type", vm.getType());
                 vmMap.put("controller", vm.getController());
-                
+
                 if (vm.getPublicKeyJwkMap() != null) {
                     vmMap.put("publicKeyJwk", vm.getPublicKeyJwkMap());
                 } else if (vm.getPublicKeyMultibase() != null) {
@@ -164,7 +164,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
                 } else if (vm.getPublicKeyBase58() != null) {
                     vmMap.put("publicKeyBase58", vm.getPublicKeyBase58());
                 }
-                
+
                 vmList.add(vmMap);
             }
             jsonMap.put("verificationMethod", vmList);
