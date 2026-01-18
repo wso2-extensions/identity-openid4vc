@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPDefinitionServl
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPRequestServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPResultServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPSubmissionServlet;
+import org.wso2.carbon.identity.openid4vc.presentation.servlet.WellKnownDIDServlet;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import javax.servlet.Servlet;
@@ -59,6 +60,7 @@ public class VPServletRegistrationComponent {
     private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/response";
     private static final String VP_RESULT_PATH = API_BASE_PATH + "/vp-result";
     private static final String PRESENTATION_DEFINITIONS_PATH = API_BASE_PATH + "/presentation-definitions";
+    private static final String WELL_KNOWN_DID_PATH = "/.well-known/did.json";
 
     private HttpService httpService;
 
@@ -110,6 +112,10 @@ public class VPServletRegistrationComponent {
         // Register Presentation Definition Servlet
         httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
         log.info("Registered VPDefinitionServlet at: " + PRESENTATION_DEFINITIONS_PATH);
+
+        // Register Well-Known DID Servlet
+        httpService.registerServlet(WELL_KNOWN_DID_PATH, new WellKnownDIDServlet(), null, null);
+        log.info("Registered WellKnownDIDServlet at: " + WELL_KNOWN_DID_PATH);
     }
 
     /**
@@ -153,6 +159,13 @@ public class VPServletRegistrationComponent {
             log.info("Unregistered servlet at: " + PRESENTATION_DEFINITIONS_PATH);
         } catch (Exception e) {
             log.debug("Error unregistering presentation definition servlet", e);
+        }
+
+        try {
+            httpService.unregister(WELL_KNOWN_DID_PATH);
+            log.info("Unregistered servlet at: " + WELL_KNOWN_DID_PATH);
+        } catch (Exception e) {
+            log.debug("Error unregistering well-known DID servlet", e);
         }
     }
 
