@@ -46,7 +46,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             .create();
 
     private static final String DID_CONTEXT_V1 = "https://www.w3.org/ns/did/v1";
-    private static final String JWS_2020_CONTEXT = "https://w3id.org/security/suites/jws-2020/v1";
+    private static final String ED25519_2020_CONTEXT = "https://w3id.org/security/suites/ed25519-2020/v1";
 
     @Override
     public String getDIDDocument(String domain, int tenantId) throws DIDDocumentException {
@@ -70,24 +70,23 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             doc.setId(did);
             
             // Set context
-            doc.setContext(Arrays.asList(DID_CONTEXT_V1, JWS_2020_CONTEXT));
+            doc.setContext(Arrays.asList(DID_CONTEXT_V1, ED25519_2020_CONTEXT));
 
             // Create verification method
             DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-            vm.setId(did + "#key-1");
-            vm.setType("JsonWebKey2020");
+            vm.setId(did + "#owner");
+            vm.setType("Ed25519VerificationKey2020");
             vm.setController(did);
 
-            // Convert public key to JWK
-            Map<String, Object> jwk = DIDKeyManager.publicKeyToJWK(keyPair, "key-1");
-            vm.setPublicKeyJwkMap(jwk);
-            vm.setPublicKeyJwk(DIDKeyManager.jwkToJson(jwk));
+            // Convert public key to multibase
+            String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
+            vm.setPublicKeyMultibase(multibase);
 
             doc.setVerificationMethod(Arrays.asList(vm));
 
             // Set verification relationships
-            doc.setAuthentication(Arrays.asList(did + "#key-1"));
-            doc.setAssertionMethod(Arrays.asList(did + "#key-1"));
+            doc.setAuthentication(Arrays.asList(did + "#owner"));
+            doc.setAssertionMethod(Arrays.asList(did + "#owner"));
 
             LOG.info("DID document generated successfully for: " + did);
             return doc;
