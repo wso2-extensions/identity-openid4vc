@@ -24,6 +24,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.crypto.Ed25519Verifier;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
@@ -31,14 +37,20 @@ import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultD
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
+import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
+import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiablePresentation;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.StatusListService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
+import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPLogger;
 import org.wso2.carbon.identity.openid4vc.presentation.util.SignatureVerifier;
+import org.wso2.carbon.user.api.UserStoreException;
+import org.wso2.carbon.user.core.service.RealmService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
@@ -1148,5 +1160,137 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         LOG.warn("Failed to parse date: " + dateString);
         return null;
+    }
+
+    @Override
+    public boolean verifyJWTVCIssuer(String vcJwt, String tenantDomain) throws CredentialVerificationException {
+        
+        try {
+            OpenID4VPLogger.logIssuerVerificationStart(LOG, "JWT");
+            
+            // 1. Decode JWT header and payload (without verification)
+            String[] parts = vcJwt.split("\\.");
+            if (parts.length != 3) {
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "Invalid JWT format");
+            }
+            
+            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]), 
+                    StandardCharsets.UTF_8);
+            JsonObject payload = JsonParser.parseString(payloadJson).getAsJsonObject();
+            
+            // 2. Extract issuer DID
+            String issuerDid = payload.get("iss").getAsString();
+            OpenID4VPLogger.logIssuerDID(LOG, "JWT", issuerDid);
+            
+            // 3. Check trusted allowlist
+            OpenID4VPLogger.logTrustPolicyCheck(LOG, issuerDid);
+            TrustedIssuerService trustedIssuerService = VPServiceDataHolder.getInstance()
+                    .getTrustedIssuerService();
+            
+            if (!trustedIssuerService.isIssuerTrusted(issuerDid, tenantDomain)) {
+                OpenID4VPLogger.logTrustPolicyRejected(LOG, issuerDid, null);
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "Untrusted issuer: " + issuerDid);
+            }
+            OpenID4VPLogger.logTrustPolicyAccepted(LOG);
+            
+            // 4. Verify signature using existing verification
+            OpenID4VPLogger.logSignatureVerificationStart(LOG, "JWT");
+            VCVerificationResultDTO result = verify(vcJwt, "application/vc+jwt");
+            
+            if (!result.isSuccess()) {
+                OpenID4VPLogger.logSignatureVerificationFailed(LOG, "JWT", "Invalid signature");
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "JWT signature verification failed");
+            }
+            
+            OpenID4VPLogger.logSignatureVerificationSuccess(LOG, "JWT");
+            return true;
+            
+        } catch (CredentialVerificationException e) {
+            throw e;
+        } catch (Exception e) {
+            OpenID4VPLogger.logError(LOG, "JWT VC Verification", e.getMessage());
+            throw new CredentialVerificationException(
+                    "JWT VC issuer verification failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean verifyJSONLDVCIssuer(JsonObject vcJsonObject, String tenantDomain) 
+            throws CredentialVerificationException {
+        
+        try {
+            OpenID4VPLogger.logIssuerVerificationStart(LOG, "JSON-LD");
+            
+            // 1. Extract issuer DID
+            String issuerDid;
+            if (vcJsonObject.has("issuer")) {
+                JsonElement issuerElement = vcJsonObject.get("issuer");
+                if (issuerElement.isJsonPrimitive()) {
+                    issuerDid = issuerElement.getAsString();
+                } else if (issuerElement.isJsonObject()) {
+                    issuerDid = issuerElement.getAsJsonObject().get("id").getAsString();
+                } else {
+                    throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                            "Invalid issuer format");
+                }
+            } else {
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "Missing issuer field");
+            }
+            OpenID4VPLogger.logIssuerDID(LOG, "JSON-LD", issuerDid);
+            
+            // 2. Check trusted allowlist
+            OpenID4VPLogger.logTrustPolicyCheck(LOG, issuerDid);
+            TrustedIssuerService trustedIssuerService = VPServiceDataHolder.getInstance()
+                    .getTrustedIssuerService();
+            
+            if (!trustedIssuerService.isIssuerTrusted(issuerDid, tenantDomain)) {
+                OpenID4VPLogger.logTrustPolicyRejected(LOG, issuerDid, null);
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "Untrusted issuer: " + issuerDid);
+            }
+            OpenID4VPLogger.logTrustPolicyAccepted(LOG);
+            
+            // 3. Verify using existing verification
+            OpenID4VPLogger.logSignatureVerificationStart(LOG, "JSON-LD");
+            String vcString = GSON.toJson(vcJsonObject);
+            VCVerificationResultDTO result = verify(vcString, "application/vc+ld+json");
+            
+            if (!result.isSuccess()) {
+                OpenID4VPLogger.logSignatureVerificationFailed(LOG, "JSON-LD", "Invalid signature");
+                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        "JSON-LD signature verification failed");
+            }
+            
+            OpenID4VPLogger.logSignatureVerificationSuccess(LOG, "JSON-LD");
+            return true;
+            
+        } catch (CredentialVerificationException e) {
+            throw e;
+        } catch (Exception e) {
+            OpenID4VPLogger.logError(LOG, "JSON-LD VC Verification", e.getMessage());
+            throw new CredentialVerificationException(
+                    "JSON-LD VC issuer verification failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Helper to get tenant ID from domain.
+     */
+    private int getTenantId(String tenantDomain) throws CredentialVerificationException {
+        try {
+            RealmService realmService = VPServiceDataHolder.getInstance().getRealmService();
+            if (realmService == null) {
+                // Default to super tenant if realm service not available
+                return -1234;
+            }
+            return realmService.getTenantManager().getTenantId(tenantDomain);
+        } catch (UserStoreException e) {
+            throw new CredentialVerificationException(
+                    "Failed to resolve tenant ID for domain: " + tenantDomain, e);
+        }
     }
 }
