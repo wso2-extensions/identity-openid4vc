@@ -65,6 +65,7 @@ public class QRCodeUtil {
         // OpenID4VP scheme with request_uri
         StringBuilder content = new StringBuilder();
         content.append(OpenID4VPConstants.Protocol.OPENID4VP_SCHEME);
+        content.append("authorize"); // Add authorize path as requested
         content.append("?");
 
         // Add client_id if present (as requested by user)
