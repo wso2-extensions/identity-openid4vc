@@ -19,11 +19,13 @@
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
+import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.TrustedIssuerServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VCVerificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -43,6 +45,7 @@ public class VPServiceDataHolder {
     private ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService;
     private TrustedIssuerService trustedIssuerService;
     private VCVerificationService vcVerificationService;
+    private DIDDocumentService didDocumentService;
 
     private VPServiceDataHolder() {
         // Private constructor for singleton
@@ -196,5 +199,26 @@ public class VPServiceDataHolder {
      */
     public void setVCVerificationService(VCVerificationService vcVerificationService) {
         this.vcVerificationService = vcVerificationService;
+    }
+
+    /**
+     * Get the DIDDocumentService.
+     * 
+     * @return DIDDocumentService instance
+     */
+    public DIDDocumentService getDIDDocumentService() {
+        if (didDocumentService == null) {
+            didDocumentService = new DIDDocumentServiceImpl();
+        }
+        return didDocumentService;
+    }
+
+    /**
+     * Set the DIDDocumentService.
+     * 
+     * @param didDocumentService DIDDocumentService instance
+     */
+    public void setDIDDocumentService(DIDDocumentService didDocumentService) {
+        this.didDocumentService = didDocumentService;
     }
 }

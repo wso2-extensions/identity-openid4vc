@@ -37,6 +37,12 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
+    <servlet>
+        <servlet-name>WellKnownDIDServlet</servlet-name>
+        <servlet-class>org.wso2.carbon.identity.openid4vc.presentation.servlet.WellKnownDIDServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <!-- Servlet Mappings -->
     <servlet-mapping>
         <servlet-name>WalletResponseServlet</servlet-name>
@@ -46,6 +52,11 @@
     <servlet-mapping>
         <servlet-name>WalletStatusServlet</servlet-name>
         <url-pattern>/status</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>WellKnownDIDServlet</servlet-name>
+        <url-pattern>/.well-known/did.json</url-pattern>
     </servlet-mapping>
 
     <!-- JSP Configuration -->
