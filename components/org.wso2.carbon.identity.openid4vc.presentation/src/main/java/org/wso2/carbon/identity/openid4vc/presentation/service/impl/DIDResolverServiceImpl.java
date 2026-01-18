@@ -36,7 +36,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECParameterSpec;
@@ -50,6 +53,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.util.Base64URL;
 
 /**
  * Implementation of DIDResolverService for resolving DIDs to DID Documents.
@@ -65,7 +72,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     private static final String METHOD_JWK = "jwk";
     private static final String METHOD_KEY = "key";
 
-    private static final String[] SUPPORTED_METHODS = {METHOD_WEB, METHOD_JWK, METHOD_KEY};
+    private static final String[] SUPPORTED_METHODS = { METHOD_WEB, METHOD_JWK, METHOD_KEY };
 
     // Cache for resolved DID documents
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -89,6 +96,12 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
         boolean isExpired() {
             return System.currentTimeMillis() > expiresAt;
+        }
+    }
+
+    static {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null) {
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
@@ -146,7 +159,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     @Override
     public PublicKey getPublicKey(String did, String keyId) throws DIDResolutionException {
         DIDDocument document = resolve(did);
-        
+
         DIDDocument.VerificationMethod method;
         if (keyId != null && !keyId.isEmpty()) {
             method = document.findVerificationMethod(keyId);
@@ -484,7 +497,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         if (json.has("publicKeyJwk")) {
             JsonObject jwk = json.getAsJsonObject("publicKeyJwk");
             method.setPublicKeyJwk(jwk.toString());
-            
+
             Map<String, Object> jwkMap = new HashMap<>();
             for (String key : jwk.keySet()) {
                 JsonElement value = jwk.get(key);
@@ -654,12 +667,10 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             KeyFactory factory = KeyFactory.getInstance("EdDSA");
             // Create the key spec using the raw bytes
             // This is simplified - actual implementation may need adjustments
-            java.security.spec.NamedParameterSpec paramSpec = 
-                new java.security.spec.NamedParameterSpec("Ed25519");
-            java.security.spec.EdECPublicKeySpec spec = 
-                new java.security.spec.EdECPublicKeySpec(paramSpec, 
-                    new java.security.spec.EdECPoint(false, 
-                        new BigInteger(1, reverseBytes(keyBytes))));
+            java.security.spec.NamedParameterSpec paramSpec = new java.security.spec.NamedParameterSpec("Ed25519");
+            java.security.spec.EdECPublicKeySpec spec = new java.security.spec.EdECPublicKeySpec(paramSpec,
+                    new java.security.spec.EdECPoint(false,
+                            new BigInteger(1, reverseBytes(keyBytes))));
             return factory.generatePublic(spec);
         } catch (Exception e) {
             LOG.warn("Native EdDSA not available, Ed25519 keys may not verify: " + e.getMessage());
@@ -702,12 +713,10 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             // Ed25519 key
             try {
                 KeyFactory factory = KeyFactory.getInstance("EdDSA");
-                java.security.spec.NamedParameterSpec paramSpec = 
-                    new java.security.spec.NamedParameterSpec("Ed25519");
-                java.security.spec.EdECPublicKeySpec spec = 
-                    new java.security.spec.EdECPublicKeySpec(paramSpec,
-                        new java.security.spec.EdECPoint(false, 
-                            new BigInteger(1, reverseBytes(keyBytes))));
+                java.security.spec.NamedParameterSpec paramSpec = new java.security.spec.NamedParameterSpec("Ed25519");
+                java.security.spec.EdECPublicKeySpec spec = new java.security.spec.EdECPublicKeySpec(paramSpec,
+                        new java.security.spec.EdECPoint(false,
+                                new BigInteger(1, reverseBytes(keyBytes))));
                 return factory.generatePublic(spec);
             } catch (Exception e) {
                 throw new DIDResolutionException("Ed25519 key support not available");
@@ -721,9 +730,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      */
     private ECParameterSpec getECParameterSpec(String curveName) throws Exception {
         // Get the EC parameter spec for standard curves
-        java.security.AlgorithmParameters parameters = 
-            java.security.AlgorithmParameters.getInstance("EC");
-        
+        java.security.AlgorithmParameters parameters = java.security.AlgorithmParameters.getInstance("EC");
+
         String stdName;
         switch (curveName) {
             case "P-256":
@@ -741,7 +749,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             default:
                 throw new DIDResolutionException("Unsupported EC curve: " + curveName);
         }
-        
+
         parameters.init(new java.security.spec.ECGenParameterSpec(stdName));
         return parameters.getParameterSpec(ECParameterSpec.class);
     }
@@ -752,19 +760,19 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     private String fetchUrl(String urlString) throws Exception {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        
+
         try {
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(CONNECTION_TIMEOUT_MS);
             conn.setReadTimeout(READ_TIMEOUT_MS);
             conn.setRequestProperty("Accept", "application/json");
-            
+
             int responseCode = conn.getResponseCode();
             if (responseCode != 200) {
                 throw new DIDResolutionException(
-                    "HTTP error fetching DID document: " + responseCode);
+                        "HTTP error fetching DID document: " + responseCode);
             }
-            
+
             StringBuilder response = new StringBuilder();
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
@@ -773,9 +781,9 @@ public class DIDResolverServiceImpl implements DIDResolverService {
                     response.append(line);
                 }
             }
-            
+
             return response.toString();
-            
+
         } finally {
             conn.disconnect();
         }
@@ -787,21 +795,21 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     private byte[] base58Decode(String base58) {
         // Base58 alphabet (Bitcoin)
         String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-        
+
         if (base58 == null || base58.isEmpty()) {
             return null;
         }
-        
+
         // Count leading zeros
         int zeros = 0;
         for (int i = 0; i < base58.length() && base58.charAt(i) == '1'; i++) {
             zeros++;
         }
-        
+
         // Decode
         BigInteger value = BigInteger.ZERO;
         BigInteger base = BigInteger.valueOf(58);
-        
+
         for (int i = 0; i < base58.length(); i++) {
             int index = alphabet.indexOf(base58.charAt(i));
             if (index < 0) {
@@ -809,21 +817,21 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             }
             value = value.multiply(base).add(BigInteger.valueOf(index));
         }
-        
+
         byte[] decoded = value.toByteArray();
-        
+
         // Remove leading zero if present (sign byte)
         if (decoded.length > 0 && decoded[0] == 0) {
             decoded = Arrays.copyOfRange(decoded, 1, decoded.length);
         }
-        
+
         // Add leading zeros back
         if (zeros > 0) {
             byte[] result = new byte[zeros + decoded.length];
             System.arraycopy(decoded, 0, result, zeros, decoded.length);
             return result;
         }
-        
+
         return decoded;
     }
 
@@ -836,5 +844,21 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             reversed[i] = bytes[bytes.length - 1 - i];
         }
         return reversed;
+    }
+
+    public static OctetKeyPair generateEd25519KeyPair() throws Exception {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+        KeyPair kp = kpg.generateKeyPair();
+
+        byte[] publicKeyBytes = kp.getPublic().getEncoded();
+        byte[] privateKeyBytes = kp.getPrivate().getEncoded();
+
+        OctetKeyPair okp = new OctetKeyPair.Builder(
+                Curve.Ed25519,
+                Base64URL.encode(publicKeyBytes))
+                .d(Base64URL.encode(privateKeyBytes))
+                .build();
+
+        return okp;
     }
 }

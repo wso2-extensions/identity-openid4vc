@@ -399,24 +399,78 @@ public class VPRequestServiceImpl implements VPRequestService {
      * private key.
      */
     private String buildRequestObjectJwt(VPRequest vpRequest) {
-        // This is a simplified version. In production:
-        // 1. Create JWT header with alg (e.g., RS256) and kid
-        // 2. Create JWT payload with all authorization request parameters
-        // 3. Sign with private key
+        try {
+            // Create claims set
+            com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
+                    .issuer("did:web:masked-unprofitably-ardith.ngrok-free.dev") // Fixed ISS
+                    .claim(OpenID4VPConstants.RequestParams.RESPONSE_TYPE,
+                            OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN)
+                    .claim(OpenID4VPConstants.RequestParams.RESPONSE_MODE, vpRequest.getResponseMode())
+                    .claim(OpenID4VPConstants.RequestParams.RESPONSE_URI, vpRequest.getResponseUri())
+                    .claim(OpenID4VPConstants.RequestParams.NONCE, vpRequest.getNonce())
+                    .claim(OpenID4VPConstants.RequestParams.STATE, vpRequest.getRequestId())
+                    .claim(OpenID4VPConstants.RequestParams.CLIENT_ID, vpRequest.getClientId())
+                    .issueTime(new java.util.Date())
+                    .jwtID(java.util.UUID.randomUUID().toString());
 
-        StringBuilder jwt = new StringBuilder();
-        jwt.append("{");
-        jwt.append("\"client_id\":\"").append(vpRequest.getClientId()).append("\",");
-        jwt.append("\"response_type\":\"").append(OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN).append("\",");
-        jwt.append("\"response_mode\":\"").append(vpRequest.getResponseMode()).append("\",");
-        jwt.append("\"response_uri\":\"").append(vpRequest.getResponseUri()).append("\",");
-        jwt.append("\"nonce\":\"").append(vpRequest.getNonce()).append("\",");
-        jwt.append("\"state\":\"").append(vpRequest.getRequestId()).append("\",");
-        jwt.append("\"presentation_definition\":").append(vpRequest.getPresentationDefinition());
-        jwt.append("}");
+            // Set expiration (10 minutes)
+            java.util.Date exp = new java.util.Date(System.currentTimeMillis() + 600000);
+            claimsBuilder.expirationTime(exp);
 
-        // TODO: Sign this as proper JWT
-        return jwt.toString();
+            // Add presentation definition JSON object
+            JsonObject pdJson = com.google.gson.JsonParser.parseString(vpRequest.getPresentationDefinition())
+                    .getAsJsonObject();
+            // Convert to Map for Nimbus
+            java.util.Map<String, Object> pdMap = new com.google.gson.Gson().fromJson(pdJson, java.util.Map.class);
+            claimsBuilder.claim("presentation_definition", pdMap);
+
+            // Add client_metadata
+            java.util.Map<String, Object> clientMetadata = new java.util.HashMap<>();
+            clientMetadata.put("client_name", "did:web:masked-unprofitably-ardith.ngrok-free.dev");
+
+            java.util.Map<String, Object> vpFormats = new java.util.HashMap<>();
+
+            java.util.Map<String, Object> ldpVp = new java.util.HashMap<>();
+            ldpVp.put("proof_type",
+                    java.util.Arrays.asList("Ed25519Signature2018", "Ed25519Signature2020", "RsaSignature2018"));
+            vpFormats.put("ldp_vp", ldpVp);
+
+            java.util.Map<String, Object> vcSdJwt = new java.util.HashMap<>();
+            vcSdJwt.put("sd-jwt_alg_values", java.util.Arrays.asList("RS256", "ES256", "ES256K", "EdDSA"));
+            vcSdJwt.put("kb-jwt_alg_values", java.util.Arrays.asList("RS256", "ES256", "ES256K", "EdDSA"));
+            vpFormats.put("vc+sd-jwt", vcSdJwt);
+
+            clientMetadata.put("vp_formats", vpFormats);
+            claimsBuilder.claim("client_metadata", clientMetadata);
+
+            com.nimbusds.jwt.JWTClaimsSet claimsSet = claimsBuilder.build();
+
+            // Create header with EdDSA
+            com.nimbusds.jose.JWSHeader header = new com.nimbusds.jose.JWSHeader.Builder(
+                    com.nimbusds.jose.JWSAlgorithm.EdDSA)
+                    .keyID("did:web:masked-unprofitably-ardith.ngrok-free.dev#owner")
+                    .type(new com.nimbusds.jose.JOSEObjectType("oauth-authz-req+jwt"))
+                    .build();
+
+            com.nimbusds.jose.JWSObject jwsObject = new com.nimbusds.jose.JWSObject(header,
+                    new com.nimbusds.jose.Payload(claimsSet.toJSONObject()));
+
+            // Retrieve the actual key pair used for the DID document
+            // This ensures the wallet can verify the signature against the public key in
+            // the DID document
+            com.nimbusds.jose.jwk.OctetKeyPair jwk = org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager
+                    .getOrGenerateKeyPair(vpRequest.getTenantId());
+            com.nimbusds.jose.JWSSigner signer = new org.wso2.carbon.identity.openid4vc.presentation.util.BCEd25519Signer(
+                    jwk);
+
+            jwsObject.sign(signer);
+
+            return jwsObject.serialize();
+
+        } catch (Exception e) {
+            log.error("Error building request object JWT", e);
+            throw new RuntimeException("Error building request object JWT", e);
+        }
     }
 
     /**
