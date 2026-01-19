@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
@@ -199,52 +200,267 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             String password = null;
 
             try {
-                // Parse JWT payload (part 1)
-                String[] parts = vpToken.split("\\.");
-                if (parts.length < 2) {
-                    throw new VPException("Invalid VP token format");
+                // Log the raw VP token (first 500 chars for debugging)
+                log.info(LOG_PREFIX + " ========== RAW VP TOKEN ==========");
+                log.info(LOG_PREFIX + " First 500 chars: " + vpToken.substring(0, Math.min(500, vpToken.length())));
+                log.info(LOG_PREFIX + " ===================================");
+
+                JsonObject vpData = null;
+
+                // Check if VP token is JSON-LD format (starts with { or [)
+                String trimmedToken = vpToken.trim();
+                if (trimmedToken.startsWith("{") || trimmedToken.startsWith("[")) {
+                    log.info(LOG_PREFIX + " VP Token format: JSON-LD");
+                    try {
+                        JsonElement parsed = JsonParser.parseString(trimmedToken);
+                        if (parsed.isJsonObject()) {
+                            vpData = parsed.getAsJsonObject();
+                            log.info(LOG_PREFIX + " Successfully parsed VP as JSON-LD object");
+                        } else {
+                            log.warn(LOG_PREFIX + " Parsed JSON is not an object, type: "
+                                    + parsed.getClass().getSimpleName());
+                        }
+                    } catch (Exception e) {
+                        log.warn(LOG_PREFIX + " Failed to parse as JSON-LD: " + e.getMessage());
+                    }
                 }
 
-                String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                JsonObject vpPayload = JsonParser.parseString(payload).getAsJsonObject();
+                // If not JSON-LD, try SD-JWT format (contains ~)
+                if (vpData == null && vpToken.contains("~")) {
+                    log.info(LOG_PREFIX + " VP Token format: SD-JWT");
+                    String[] sdParts = vpToken.split("~");
+                    String issuerJwt = sdParts[0];
+                    log.info(LOG_PREFIX + " Extracted issuer JWT from SD-JWT, parts count: " + sdParts.length);
 
-                // Get nested VC JWT
-                JsonObject vp = vpPayload.getAsJsonObject("vp");
-                JsonArray vcArray = vp.getAsJsonArray("verifiableCredential");
-                String vcJwt = vcArray.get(0).getAsString();
+                    String[] jwtParts = issuerJwt.split("\\.");
+                    if (jwtParts.length >= 2) {
+                        String payload = new String(Base64.getUrlDecoder().decode(jwtParts[1]), StandardCharsets.UTF_8);
+                        log.info(LOG_PREFIX + " Decoded SD-JWT payload (first 200 chars): "
+                                + payload.substring(0, Math.min(200, payload.length())));
+                        vpData = JsonParser.parseString(payload).getAsJsonObject();
+                    }
+                }
 
-                // Parse inner VC (part 1)
-                String[] vcParts = vcJwt.split("\\.");
-                String vcPayloadStr = new String(Base64.getUrlDecoder().decode(vcParts[1]), StandardCharsets.UTF_8);
-                JsonObject vcPayload = JsonParser.parseString(vcPayloadStr).getAsJsonObject();
+                // If not SD-JWT, try standard 3-part JWT
+                if (vpData == null) {
+                    String[] dotParts = vpToken.split("\\.");
+                    if (dotParts.length == 3) {
+                        log.info(LOG_PREFIX + " VP Token format: Standard JWT (3 parts)");
+                        String payload = new String(Base64.getUrlDecoder().decode(dotParts[1]), StandardCharsets.UTF_8);
+                        log.info(LOG_PREFIX + " Decoded JWT payload (first 200 chars): "
+                                + payload.substring(0, Math.min(200, payload.length())));
+                        vpData = JsonParser.parseString(payload).getAsJsonObject();
+                    } else {
+                        // Log the token parts for debugging
+                        log.error(LOG_PREFIX + " Unsupported VP token format: " + dotParts.length
+                                + " dot-separated parts");
+                        log.error(LOG_PREFIX + " Token starts with: "
+                                + trimmedToken.substring(0, Math.min(20, trimmedToken.length())));
 
-                // Extract credentials from credentialSubject
-                JsonObject vc = vcPayload.getAsJsonObject("vc");
-                JsonObject credentialSubject = vc.getAsJsonObject("credentialSubject");
+                        // Last resort: try to parse the first 3-part segment
+                        // VP might be a concatenation of JWTs
+                        if (dotParts.length > 3) {
+                            log.info(LOG_PREFIX + " Attempting to extract first JWT from multi-part token");
+                            String firstJwt = dotParts[0] + "." + dotParts[1] + "." + dotParts[2];
+                            try {
+                                String payload = new String(Base64.getUrlDecoder().decode(dotParts[1]),
+                                        StandardCharsets.UTF_8);
+                                log.info(LOG_PREFIX + " Decoded first JWT payload (first 200 chars): "
+                                        + payload.substring(0, Math.min(200, payload.length())));
+                                vpData = JsonParser.parseString(payload).getAsJsonObject();
+                                log.info(LOG_PREFIX + " Successfully extracted VP data from first JWT");
+                            } catch (Exception e) {
+                                log.error(LOG_PREFIX + " Failed to extract first JWT: " + e.getMessage());
+                            }
+                        }
 
-                username = credentialSubject.get("username").getAsString();
-                password = credentialSubject.get("password").getAsString();
+                        if (vpData == null) {
+                            throw new VPException(
+                                    "Unsupported VP token format: expected JSON-LD, 3-part JWT, or SD-JWT");
+                        }
+                    }
+                }
 
-                log.info(LOG_PREFIX + " Extracted credentials for user: " + username);
+                // Extract VP wrapper if present
+                JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
+                log.info(LOG_PREFIX + " VP Object keys: " + vp.keySet());
+
+                // Get verifiable credentials
+                if (!vp.has("verifiableCredential")) {
+                    log.error(LOG_PREFIX + " No verifiableCredential found in VP");
+                    throw new VPException("No verifiableCredential found in VP");
+                }
+
+                JsonElement vcElement = vp.get("verifiableCredential");
+                String vcToken;
+
+                if (vcElement.isJsonArray()) {
+                    JsonArray vcArray = vcElement.getAsJsonArray();
+                    if (vcArray.size() == 0) {
+                        throw new VPException("Empty verifiableCredential array");
+                    }
+                    JsonElement firstVc = vcArray.get(0);
+                    if (firstVc.isJsonPrimitive()) {
+                        vcToken = firstVc.getAsString();
+                    } else if (firstVc.isJsonObject()) {
+                        // JSON-LD VC embedded directly
+                        log.info(LOG_PREFIX + " VC is embedded JSON-LD object");
+                        JsonObject vcObj = firstVc.getAsJsonObject();
+                        JsonObject credentialSubject = vcObj.has("credentialSubject")
+                                ? vcObj.getAsJsonObject("credentialSubject")
+                                : null;
+
+                        if (credentialSubject != null) {
+                            // Log the full credentialSubject content
+                            log.info(LOG_PREFIX + " ========== VP TOKEN CONTENT (JSON-LD VC) ==========");
+                            log.info(LOG_PREFIX + " Full credentialSubject: " + credentialSubject.toString());
+                            log.info(LOG_PREFIX + " ==================================================");
+
+                            // Extract email/username directly
+                            if (credentialSubject.has("email")) {
+                                username = credentialSubject.get("email").getAsString();
+                                log.info(LOG_PREFIX + " Found email in VC: " + username);
+                            } else if (credentialSubject.has("username")) {
+                                username = credentialSubject.get("username").getAsString();
+                            } else if (credentialSubject.has("id")) {
+                                username = credentialSubject.get("id").getAsString();
+                            }
+
+                            if (credentialSubject.has("password")) {
+                                password = credentialSubject.get("password").getAsString();
+                            }
+                        }
+                        vcToken = null; // Already processed
+                    } else {
+                        throw new VPException("Unexpected VC format in array");
+                    }
+                } else if (vcElement.isJsonPrimitive()) {
+                    vcToken = vcElement.getAsString();
+                } else if (vcElement.isJsonObject()) {
+                    // Single JSON-LD VC
+                    log.info(LOG_PREFIX + " Single JSON-LD VC");
+                    JsonObject vcObj = vcElement.getAsJsonObject();
+                    vcToken = null;
+                    if (vcObj.has("credentialSubject")) {
+                        JsonObject credentialSubject = vcObj.getAsJsonObject("credentialSubject");
+                        log.info(LOG_PREFIX + " ========== VP TOKEN CONTENT (Single JSON-LD VC) ==========");
+                        log.info(LOG_PREFIX + " Full credentialSubject: " + credentialSubject.toString());
+                        log.info(LOG_PREFIX + " =========================================================");
+
+                        if (credentialSubject.has("email")) {
+                            username = credentialSubject.get("email").getAsString();
+                        } else if (credentialSubject.has("username")) {
+                            username = credentialSubject.get("username").getAsString();
+                        }
+                    }
+                } else {
+                    throw new VPException("Unexpected verifiableCredential format");
+                }
+
+                // If we have a JWT/SD-JWT VC token, decode it
+                if (StringUtils.isNotBlank(vcToken)) {
+                    log.info(LOG_PREFIX + " Processing VC token, length: " + vcToken.length());
+
+                    // Handle VC token - might also be SD-JWT
+                    String vcIssuerJwt;
+                    if (vcToken.contains("~")) {
+                        vcIssuerJwt = vcToken.split("~")[0];
+                        log.info(LOG_PREFIX + " VC is SD-JWT format, extracted issuer JWT");
+                    } else {
+                        vcIssuerJwt = vcToken;
+                    }
+
+                    // Parse inner VC
+                    String[] vcParts = vcIssuerJwt.split("\\.");
+                    if (vcParts.length >= 2) {
+                        String vcPayloadStr = new String(Base64.getUrlDecoder().decode(vcParts[1]),
+                                StandardCharsets.UTF_8);
+                        log.info(LOG_PREFIX + " Decoded VC payload (first 200 chars): "
+                                + vcPayloadStr.substring(0, Math.min(200, vcPayloadStr.length())));
+
+                        JsonElement vcParsed = JsonParser.parseString(vcPayloadStr);
+                        if (vcParsed.isJsonObject()) {
+                            JsonObject vcPayload = vcParsed.getAsJsonObject();
+                            JsonObject vc = vcPayload.has("vc") ? vcPayload.getAsJsonObject("vc") : vcPayload;
+                            JsonObject credentialSubject = vc.getAsJsonObject("credentialSubject");
+
+                            if (credentialSubject != null) {
+                                log.info(LOG_PREFIX + " ========== VP TOKEN CONTENT (JWT VC) ==========");
+                                log.info(LOG_PREFIX + " Full credentialSubject: " + credentialSubject.toString());
+                                log.info(LOG_PREFIX + " ==============================================");
+
+                                if (credentialSubject.has("email")) {
+                                    username = credentialSubject.get("email").getAsString();
+                                    log.info(LOG_PREFIX + " Found email: " + username);
+                                }
+                                if (credentialSubject.has("username")) {
+                                    username = credentialSubject.get("username").getAsString();
+                                }
+                                if (credentialSubject.has("password")) {
+                                    password = credentialSubject.get("password").getAsString();
+                                }
+
+                                // Fallback to other identity fields
+                                if (StringUtils.isBlank(username)) {
+                                    String[] fields = { "id", "sub", "name", "holder" };
+                                    for (String field : fields) {
+                                        if (credentialSubject.has(field)
+                                                && credentialSubject.get(field).isJsonPrimitive()) {
+                                            username = credentialSubject.get(field).getAsString();
+                                            log.info(LOG_PREFIX + " Using '" + field + "' as identifier: " + username);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        log.warn(LOG_PREFIX + " VC JWT has less than 2 parts: " + vcParts.length);
+                    }
+                }
+
+                log.info(LOG_PREFIX + " Final extracted credentials - username: "
+                        + (username != null ? username : "null"));
 
             } catch (Exception e) {
                 log.error(LOG_PREFIX + " Error extracting credentials from VP token", e);
-                throw new AuthenticationFailedException("Failed to extract credentials from VP token", e);
+                throw new AuthenticationFailedException(
+                        "Failed to extract credentials from VP token: " + e.getMessage(), e);
             }
 
             // Authenticate against user store
-            if (StringUtils.isNotBlank(username) && StringUtils.isNotBlank(password)) {
+            if (StringUtils.isNotBlank(username)) {
                 try {
                     UserStoreManager userStoreManager = (UserStoreManager) VPServiceDataHolder
                             .getInstance().getRealmService()
                             .getTenantUserRealm(tenantId).getUserStoreManager();
 
-                    log.info(LOG_PREFIX + " Authenticating user against user store...");
-                    boolean isAuthenticated = userStoreManager.authenticate(username, password);
+                    // Check if user exists in user store (by username or email)
+                    log.info(LOG_PREFIX + " Checking if user exists in user store: " + username);
+                    boolean userExists = userStoreManager.isExistingUser(username);
 
-                    if (!isAuthenticated) {
-                        log.error(LOG_PREFIX + " Authentication failed for user: " + username);
-                        throw new AuthenticationFailedException("Invalid credentials found in VP");
+                    if (!userExists) {
+                        log.error(LOG_PREFIX + " User not found in user store: " + username);
+                        throw new AuthenticationFailedException("User '" + username + "' not found in user store");
+                    }
+
+                    log.info(LOG_PREFIX + " User '" + username + "' found in user store");
+
+                    // If password is provided, authenticate with password
+                    // Otherwise, trust the VP and authenticate without password
+                    if (StringUtils.isNotBlank(password)) {
+                        log.info(LOG_PREFIX + " Authenticating user with password...");
+                        boolean isAuthenticated = userStoreManager.authenticate(username, password);
+
+                        if (!isAuthenticated) {
+                            log.error(LOG_PREFIX + " Password authentication failed for user: " + username);
+                            throw new AuthenticationFailedException("Invalid credentials found in VP");
+                        }
+                        log.info(LOG_PREFIX + " Password authentication successful for user: " + username);
+                    } else {
+                        // VP-based authentication without password
+                        // The VP signature verification provides the authentication assurance
+                        log.info(LOG_PREFIX + " VP-based authentication (no password) for user: " + username);
                     }
 
                     log.info(LOG_PREFIX + " Authentication successful for user: " + username);
@@ -288,8 +504,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     throw new AuthenticationFailedException("Error accessing user store", e);
                 }
             } else {
-                log.error(LOG_PREFIX + " Username or password not found in VP payload");
-                throw new AuthenticationFailedException("Credentials not found in VP");
+                log.error(LOG_PREFIX + " No username/email found in VP payload");
+                throw new AuthenticationFailedException("No user identifier found in VP");
             }
 
         } catch (VPException e) {

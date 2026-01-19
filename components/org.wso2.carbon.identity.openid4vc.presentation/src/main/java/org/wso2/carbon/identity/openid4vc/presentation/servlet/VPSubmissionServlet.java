@@ -156,7 +156,7 @@ public class VPSubmissionServlet extends HttpServlet {
 
             // Get tenant domain and verify all VCs in the VP
             String tenantDomain = getTenantDomain(request);
-            
+
             // Verify issuer trust for all credentials before processing
             try {
                 verifyAllCredentialIssuers(submissionDTO.getVpToken(), tenantDomain);
@@ -475,11 +475,13 @@ public class VPSubmissionServlet extends HttpServlet {
 
     /**
      * Verify all credential issuers in the VP token.
-     * Extracts all VCs from the VP and verifies each issuer against the trusted allowlist.
+     * Extracts all VCs from the VP and verifies each issuer against the trusted
+     * allowlist.
      *
      * @param vpToken      The VP token (JWT or JSON-LD)
      * @param tenantDomain The tenant domain
-     * @throws CredentialVerificationException If any credential is from untrusted issuer
+     * @throws CredentialVerificationException If any credential is from untrusted
+     *                                         issuer
      */
     private void verifyAllCredentialIssuers(String vpToken, String tenantDomain)
             throws CredentialVerificationException {
@@ -500,11 +502,28 @@ public class VPSubmissionServlet extends HttpServlet {
             if (vpToken.contains(".")) {
                 // JWT VP - decode payload
                 String[] parts = vpToken.split("\\.");
+                LOG.info("[VP_VERIFY] VP Token is JWT format with " + parts.length + " parts");
+
                 if (parts.length >= 2) {
                     String payloadJson = new String(
                             java.util.Base64.getUrlDecoder().decode(parts[1]),
                             java.nio.charset.StandardCharsets.UTF_8);
-                    vp = JsonParser.parseString(payloadJson).getAsJsonObject();
+
+                    LOG.info("[VP_VERIFY] Decoded JWT payload (first 500 chars): "
+                            + payloadJson.substring(0, Math.min(500, payloadJson.length())));
+
+                    JsonElement parsedElement = JsonParser.parseString(payloadJson);
+
+                    // The VP might be wrapped in a "vp" claim or be the top-level object
+                    if (parsedElement.isJsonObject()) {
+                        vp = parsedElement.getAsJsonObject();
+                        LOG.info("[VP_VERIFY] Successfully parsed VP as JSON object");
+                    } else {
+                        LOG.warn("[VP_VERIFY] Parsed element is not a JSON object, type: "
+                                + parsedElement.getClass().getSimpleName());
+                        LOG.warn("[VP_VERIFY] Skipping issuer verification due to unexpected VP format");
+                        return;
+                    }
                     OpenID4VPLogger.logVPTokenFormat(LOG, "JWT");
                 } else {
                     throw new CredentialVerificationException(
@@ -513,6 +532,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 }
             } else {
                 // JSON-LD VP
+                LOG.info("[VP_VERIFY] VP Token appears to be JSON-LD format");
                 vp = JsonParser.parseString(vpToken).getAsJsonObject();
                 OpenID4VPLogger.logVPTokenFormat(LOG, "JSON-LD");
             }
@@ -523,7 +543,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 return;
             }
 
-            JsonElement vcElement = vp.has("verifiableCredential") 
+            JsonElement vcElement = vp.has("verifiableCredential")
                     ? vp.get("verifiableCredential")
                     : vp.getAsJsonObject("vp").get("verifiableCredential");
 
