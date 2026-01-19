@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
@@ -46,6 +47,7 @@ public class VPServiceDataHolder {
     private TrustedIssuerService trustedIssuerService;
     private VCVerificationService vcVerificationService;
     private DIDDocumentService didDocumentService;
+    private ApplicationManagementService applicationManagementService;
 
     private VPServiceDataHolder() {
         // Private constructor for singleton
@@ -152,7 +154,8 @@ public class VPServiceDataHolder {
     /**
      * Set the ApplicationPresentationDefinitionMappingService.
      * 
-     * @param applicationPresentationDefinitionMappingService ApplicationPresentationDefinitionMappingService instance
+     * @param applicationPresentationDefinitionMappingService ApplicationPresentationDefinitionMappingService
+     *                                                        instance
      */
     public void setApplicationPresentationDefinitionMappingService(
             ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
@@ -220,5 +223,13 @@ public class VPServiceDataHolder {
      */
     public void setDIDDocumentService(DIDDocumentService didDocumentService) {
         this.didDocumentService = didDocumentService;
+    }
+
+    public ApplicationManagementService getApplicationManagementService() {
+        return applicationManagementService;
+    }
+
+    public void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
+        this.applicationManagementService = applicationManagementService;
     }
 }

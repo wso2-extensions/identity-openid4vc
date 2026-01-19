@@ -32,6 +32,8 @@ import org.wso2.carbon.identity.application.authentication.framework.exception.A
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.model.Property;
+import org.wso2.carbon.identity.application.common.model.ServiceProvider;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
@@ -489,17 +491,42 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
         try {
             // Step 1: Try application-specific mapping
-            log.debug(LOG_PREFIX + " Resolving presentation definition for application: " + applicationId);
+            // Note: The authenticator context provides the Service Provider NAME
+            // But the mapping service expects the Application Resource ID (UUID)
+
+            // Resolve Application UUID
+            String appResourceId = null;
+            try {
+                ApplicationManagementService applicationMgtService = VPServiceDataHolder.getInstance()
+                        .getApplicationManagementService();
+                if (applicationMgtService != null) {
+                    ServiceProvider serviceProvider = applicationMgtService.getServiceProvider(applicationId,
+                            context.getTenantDomain());
+                    if (serviceProvider != null) {
+                        appResourceId = serviceProvider.getApplicationResourceId();
+                        log.debug(LOG_PREFIX + " Resolved Application UUID: " + appResourceId + " for name: "
+                                + applicationId);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn(LOG_PREFIX + " Error resolving Application UUID for: " + applicationId, e);
+            }
+
+            // If we couldn't resolve the UUID, fallback to using the name (backward
+            // compatibility / legacy behavior)
+            String lookupId = StringUtils.isNotBlank(appResourceId) ? appResourceId : applicationId;
+
+            log.debug(LOG_PREFIX + " Resolving presentation definition for application: " + lookupId);
 
             String appDefinitionId = getApplicationPresentationDefinitionMappingService()
-                    .getApplicationPresentationDefinitionId(applicationId, tenantId);
+                    .getApplicationPresentationDefinitionId(lookupId, tenantId);
 
             if (StringUtils.isNotBlank(appDefinitionId)) {
                 log.info(LOG_PREFIX + " Found application-specific presentation definition: " + appDefinitionId);
                 return appDefinitionId;
             }
 
-            log.debug(LOG_PREFIX + " No application-specific mapping found for: " + applicationId);
+            log.debug(LOG_PREFIX + " No application-specific mapping found for: " + lookupId);
         } catch (Exception e) {
             log.warn(LOG_PREFIX + " Error looking up app-specific mapping, falling back to configuration", e);
         }
