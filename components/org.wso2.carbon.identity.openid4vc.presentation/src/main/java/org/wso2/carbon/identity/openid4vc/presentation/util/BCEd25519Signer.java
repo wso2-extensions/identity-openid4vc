@@ -43,6 +43,14 @@ public class BCEd25519Signer implements JWSSigner {
         try {
             // Extract private key bytes from JWK
             byte[] privateKeyBytes = privateKey.getD().decode();
+            byte[] publicKeyBytes = privateKey.getX().decode();
+
+            // Log for debugging
+            System.out.println("[BCEd25519Signer] Private Key (d) Hex: " + bytesToHex(privateKeyBytes));
+            System.out.println("[BCEd25519Signer] Public Key (x) Hex: " + bytesToHex(publicKeyBytes));
+            System.out.println("[BCEd25519Signer] Signing Input Length: " + signingInput.length);
+            System.out.println("[BCEd25519Signer] Signing Input: "
+                    + new String(signingInput, java.nio.charset.StandardCharsets.UTF_8));
 
             // Setup Bouncy Castle Ed25519 Signer
             Ed25519PrivateKeyParameters privateKeyParams = new Ed25519PrivateKeyParameters(privateKeyBytes, 0);
@@ -55,11 +63,22 @@ public class BCEd25519Signer implements JWSSigner {
             // Generate signature
             byte[] signature = signer.generateSignature();
 
+            System.out.println("[BCEd25519Signer] Signature (Hex): " + bytesToHex(signature));
+            System.out.println("[BCEd25519Signer] Signature (Base64URL): " + Base64URL.encode(signature).toString());
+
             return Base64URL.encode(signature);
 
         } catch (Exception e) {
             throw new JOSEException(e.getMessage(), e);
         }
+    }
+
+    private static String bytesToHex(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X", b));
+        }
+        return sb.toString();
     }
 
     @Override

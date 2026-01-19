@@ -82,6 +82,8 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
             vm.setPublicKeyMultibase(multibase);
 
+            LOG.info("Generated DID Document with Multibase Key: " + multibase);
+
             doc.setVerificationMethod(Arrays.asList(vm));
 
             // Set verification relationships

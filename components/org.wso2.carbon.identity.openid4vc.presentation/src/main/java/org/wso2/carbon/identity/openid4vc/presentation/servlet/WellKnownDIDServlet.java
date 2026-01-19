@@ -81,6 +81,8 @@ public class WellKnownDIDServlet extends HttpServlet {
             // Generate DID document
             String didDocument = didDocumentService.getDIDDocument(domain, tenantId);
 
+            LOG.info("Serving DID Document for domain: " + domain);
+
             // Send response
             response.setContentType("application/did+json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_OK);
@@ -113,7 +115,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     @Override
     protected void doOptions(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
+
         response.setHeader("Access-Control-Allow-Origin", "*");
         response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -121,24 +123,16 @@ public class WellKnownDIDServlet extends HttpServlet {
     }
 
     /**
-     * Extract domain from the request.
+     * Extract domain from the configuration.
      * Returns the host and port if present.
      * 
-     * @param request HTTP request
+     * @param request HTTP request (unused now)
      * @return Domain string (e.g., "example.com" or "localhost:9443")
      */
     private String extractDomain(HttpServletRequest request) {
-        String serverName = request.getServerName();
-        int serverPort = request.getServerPort();
-
-        // Standard HTTP/HTTPS ports don't need to be included
-        boolean isStandardPort = (serverPort == 80 || serverPort == 443);
-
-        if (isStandardPort) {
-            return serverName;
-        } else {
-            return serverName + ":" + serverPort;
-        }
+        String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPUtil.getBaseUrl();
+        // Remove protocol
+        return baseUrl.replace("https://", "").replace("http://", "");
     }
 
     /**
@@ -149,7 +143,7 @@ public class WellKnownDIDServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(statusCode);
 
-        String errorJson = String.format("{\"error\":\"%s\"}", 
+        String errorJson = String.format("{\"error\":\"%s\"}",
                 message.replace("\"", "\\\""));
 
         PrintWriter out = response.getWriter();
