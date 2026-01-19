@@ -35,10 +35,8 @@ public final class CORSUtil {
     private static final String HEADER_ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
 
     private static final String DEFAULT_ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
-    private static final String DEFAULT_ALLOWED_HEADERS = 
-            "Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Tenant-Id";
-    private static final String DEFAULT_EXPOSED_HEADERS = 
-            "Content-Type, X-Request-Id, X-Transaction-Id";
+    private static final String DEFAULT_ALLOWED_HEADERS = "Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Tenant-Id, X-CSRF-Token";
+    private static final String DEFAULT_EXPOSED_HEADERS = "Content-Type, X-Request-Id, X-Transaction-Id";
     private static final String DEFAULT_MAX_AGE = "86400"; // 24 hours
 
     private CORSUtil() {
@@ -53,7 +51,7 @@ public final class CORSUtil {
      */
     public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response) {
         String origin = request.getHeader(HEADER_ORIGIN);
-        
+
         if (origin != null && !origin.isEmpty()) {
             // Allow the requesting origin
             response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, origin);
@@ -77,7 +75,7 @@ public final class CORSUtil {
      * @param allowedMethods Comma-separated list of allowed HTTP methods
      */
     public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response,
-                                       String allowedMethods) {
+            String allowedMethods) {
         addCORSHeaders(request, response);
         response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_METHODS, allowedMethods);
     }
@@ -100,7 +98,7 @@ public final class CORSUtil {
      * @return true if this is a preflight request
      */
     public static boolean isPreflightRequest(HttpServletRequest request) {
-        return "OPTIONS".equalsIgnoreCase(request.getMethod()) 
+        return "OPTIONS".equalsIgnoreCase(request.getMethod())
                 && request.getHeader("Access-Control-Request-Method") != null;
     }
 

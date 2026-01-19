@@ -29,6 +29,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
+import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
@@ -50,10 +51,7 @@ import java.util.Hashtable;
  * 2. Registers the OpenID4VP authenticator with the authentication framework
  * 3. Initializes the VPServiceDataHolder with required services
  */
-@Component(
-        name = "org.wso2.carbon.identity.openid4vc.presentation.service.component",
-        immediate = true
-)
+@Component(name = "org.wso2.carbon.identity.openid4vc.presentation.service.component", immediate = true)
 public class VPServiceRegistrationComponent {
 
     private static final Log log = LogFactory.getLog(VPServiceRegistrationComponent.class);
@@ -67,43 +65,41 @@ public class VPServiceRegistrationComponent {
                 log.debug("OpenID4VP services already registered, skipping duplicate activation");
                 return;
             }
-            
+
             BundleContext bundleContext = context.getBundleContext();
-            
+
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
             VPSubmissionService vpSubmissionService = new VPSubmissionServiceImpl();
-            PresentationDefinitionService presentationDefinitionService = 
-                    new PresentationDefinitionServiceImpl();
-            ApplicationPresentationDefinitionMappingService mappingService = 
-                    new ApplicationPresentationDefinitionMappingServiceImpl();
-            
+            PresentationDefinitionService presentationDefinitionService = new PresentationDefinitionServiceImpl();
+            ApplicationPresentationDefinitionMappingService mappingService = new ApplicationPresentationDefinitionMappingServiceImpl();
+
             // Register services with OSGi
-            bundleContext.registerService(VPRequestService.class.getName(), 
+            bundleContext.registerService(VPRequestService.class.getName(),
                     vpRequestService, new Hashtable<>());
-            bundleContext.registerService(VPSubmissionService.class.getName(), 
+            bundleContext.registerService(VPSubmissionService.class.getName(),
                     vpSubmissionService, new Hashtable<>());
-            bundleContext.registerService(PresentationDefinitionService.class.getName(), 
+            bundleContext.registerService(PresentationDefinitionService.class.getName(),
                     presentationDefinitionService, new Hashtable<>());
             bundleContext.registerService(ApplicationPresentationDefinitionMappingService.class.getName(),
                     mappingService, new Hashtable<>());
-            
+
             // Set services in data holder
             VPServiceDataHolder.getInstance().setVPRequestService(vpRequestService);
             VPServiceDataHolder.getInstance().setVPSubmissionService(vpSubmissionService);
             VPServiceDataHolder.getInstance().setPresentationDefinitionService(presentationDefinitionService);
             VPServiceDataHolder.getInstance().setApplicationPresentationDefinitionMappingService(mappingService);
-            
+
             // Register OpenID4VP Authenticator
             OpenID4VPAuthenticator authenticator = new OpenID4VPAuthenticator();
             bundleContext.registerService(ApplicationAuthenticator.class.getName(),
                     authenticator, new Hashtable<>());
-            
+
             authenticatorRegistered = true;
-            
+
             log.info("OpenID4VP service registration component activated successfully");
             log.info("Registered OpenID4VPAuthenticator as local authenticator");
-            
+
         } catch (Exception e) {
             log.error("Error activating OpenID4VP service registration component", e);
         }
@@ -116,19 +112,13 @@ public class VPServiceRegistrationComponent {
         VPServiceDataHolder.getInstance().setVPSubmissionService(null);
         VPServiceDataHolder.getInstance().setPresentationDefinitionService(null);
         VPServiceDataHolder.getInstance().setApplicationPresentationDefinitionMappingService(null);
-        
+
         authenticatorRegistered = false;
-        
+
         log.info("OpenID4VP service registration component deactivated");
     }
 
-    @Reference(
-            name = "user.realm.service",
-            service = RealmService.class,
-            cardinality = ReferenceCardinality.MANDATORY,
-            policy = ReferencePolicy.DYNAMIC,
-            unbind = "unsetRealmService"
-    )
+    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {
@@ -140,6 +130,21 @@ public class VPServiceRegistrationComponent {
         VPServiceDataHolder.getInstance().setRealmService(null);
         if (log.isDebugEnabled()) {
             log.debug("RealmService unset in VPServiceRegistrationComponent");
+        }
+    }
+
+    @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
+    protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
+        VPServiceDataHolder.getInstance().setApplicationManagementService(applicationManagementService);
+        if (log.isDebugEnabled()) {
+            log.debug("ApplicationManagementService set in VPServiceRegistrationComponent");
+        }
+    }
+
+    protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
+        VPServiceDataHolder.getInstance().setApplicationManagementService(null);
+        if (log.isDebugEnabled()) {
+            log.debug("ApplicationManagementService unset in VPServiceRegistrationComponent");
         }
     }
 }
