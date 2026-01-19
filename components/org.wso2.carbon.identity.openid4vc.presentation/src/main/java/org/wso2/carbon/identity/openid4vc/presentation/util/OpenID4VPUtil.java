@@ -299,4 +299,18 @@ public class OpenID4VPUtil {
         }
         return "***" + data.substring(data.length() - showChars);
     }
+
+    /**
+     * Get the configured base URL.
+     *
+     * @return The base URL
+     */
+    public static String getBaseUrl() {
+        String baseUrl = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.BASE_URL);
+        if (StringUtils.isNotBlank(baseUrl)) {
+            return baseUrl;
+        }
+        // Fallback to the hardcoded value if not configured
+        return "https://masked-unprofitably-ardith.ngrok-free.dev";
+    }
 }

@@ -394,15 +394,29 @@ public class VPRequestServiceImpl implements VPRequestService {
     }
 
     /**
+     * Get configured base URL for building URIs.
+     */
+    private String getConfiguredBaseUrl() {
+        return OpenID4VPUtil.getBaseUrl();
+    }
+
+    /**
      * Build the request object as a JWT.
      * Note: In production, this should be properly signed with the verifier's
      * private key.
      */
     private String buildRequestObjectJwt(VPRequest vpRequest) {
         try {
+            String baseUrl = getConfiguredBaseUrl();
+            String did = new org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl()
+                    .getDID(baseUrl.replace("https://", "").replace("http://", ""));
+            String keyId = did + "#owner";
+
+            log.info("Building Request Object with DID: " + did + " and KeyID: " + keyId);
+
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
-                    .issuer("did:web:masked-unprofitably-ardith.ngrok-free.dev") // Fixed ISS
+                    .issuer(did)
                     .claim(OpenID4VPConstants.RequestParams.RESPONSE_TYPE,
                             OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN)
                     .claim(OpenID4VPConstants.RequestParams.RESPONSE_MODE, vpRequest.getResponseMode())
@@ -426,7 +440,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
             // Add client_metadata
             java.util.Map<String, Object> clientMetadata = new java.util.HashMap<>();
-            clientMetadata.put("client_name", "did:web:masked-unprofitably-ardith.ngrok-free.dev");
+            clientMetadata.put("client_name", did);
 
             java.util.Map<String, Object> vpFormats = new java.util.HashMap<>();
 
@@ -448,7 +462,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             // Create header with EdDSA
             com.nimbusds.jose.JWSHeader header = new com.nimbusds.jose.JWSHeader.Builder(
                     com.nimbusds.jose.JWSAlgorithm.EdDSA)
-                    .keyID("did:web:masked-unprofitably-ardith.ngrok-free.dev#owner")
+                    .keyID(keyId)
                     .type(new com.nimbusds.jose.JOSEObjectType("oauth-authz-req+jwt"))
                     .build();
 
@@ -471,13 +485,5 @@ public class VPRequestServiceImpl implements VPRequestService {
             log.error("Error building request object JWT", e);
             throw new RuntimeException("Error building request object JWT", e);
         }
-    }
-
-    /**
-     * Get configured base URL for building URIs.
-     */
-    private String getConfiguredBaseUrl() {
-        // In production, this should come from identity.xml or deployment.toml
-        return "https://masked-unprofitably-ardith.ngrok-free.dev";
     }
 }

@@ -199,6 +199,7 @@ public class OpenID4VPConstants {
         public static final String DID_SUPPORTED_METHODS = "OpenID4VP.DID.SupportedMethods";
         public static final String DID_CACHE_TTL_SECONDS = "OpenID4VP.DID.CacheTTLSeconds";
         public static final String DID_UNIVERSAL_RESOLVER_URL = "OpenID4VP.DID.UniversalResolverUrl";
+        public static final String BASE_URL = "OpenID4VP.BaseUrl";
 
         private ConfigKeys() {
         }
