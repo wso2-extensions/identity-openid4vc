@@ -45,7 +45,7 @@
 
                                     body {
                                         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
                                         min-height: 100vh;
                                         display: flex;
                                         align-items: center;
@@ -55,8 +55,8 @@
 
                                     .container {
                                         background: white;
-                                        border-radius: 20px;
-                                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                                        border-radius: 16px;
+                                        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
                                         padding: 40px;
                                         max-width: 450px;
                                         width: 100%;
@@ -67,13 +67,14 @@
                                         width: 80px;
                                         height: 80px;
                                         margin-bottom: 20px;
-                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        background: linear-gradient(135deg, #FF7300 0%, #FF5500 100%);
                                         border-radius: 16px;
                                         display: flex;
                                         align-items: center;
                                         justify-content: center;
                                         margin-left: auto;
                                         margin-right: auto;
+                                        box-shadow: 0 8px 24px rgba(255, 115, 0, 0.3);
                                     }
 
                                     .logo svg {
@@ -83,7 +84,7 @@
                                     }
 
                                     h1 {
-                                        color: #1a1a2e;
+                                        color: #1e1e2f;
                                         font-size: 24px;
                                         margin-bottom: 10px;
                                         font-weight: 600;
@@ -102,6 +103,7 @@
                                         padding: 30px;
                                         margin-bottom: 30px;
                                         position: relative;
+                                        border: 1px solid #eee;
                                     }
 
                                     #qrcode {
@@ -142,7 +144,7 @@
                                         width: 20px;
                                         height: 20px;
                                         border: 2px solid #ddd;
-                                        border-top-color: #667eea;
+                                        border-top-color: #FF7300;
                                         border-radius: 50%;
                                         animation: spin 1s linear infinite;
                                     }
@@ -160,14 +162,15 @@
                                     }
 
                                     .instructions {
-                                        background: #f0f4ff;
+                                        background: #fff8f0;
                                         border-radius: 12px;
                                         padding: 20px;
                                         margin-bottom: 20px;
+                                        border: 1px solid #ffe4cc;
                                     }
 
                                     .instructions h3 {
-                                        color: #667eea;
+                                        color: #FF7300;
                                         font-size: 14px;
                                         margin-bottom: 15px;
                                         font-weight: 600;
@@ -196,7 +199,7 @@
                                         align-items: center;
                                         justify-content: center;
                                         gap: 8px;
-                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        background: linear-gradient(135deg, #FF7300 0%, #FF5500 100%);
                                         color: white;
                                         text-decoration: none;
                                         padding: 12px 24px;
@@ -208,7 +211,7 @@
 
                                     .deep-link a:hover {
                                         transform: translateY(-2px);
-                                        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+                                        box-shadow: 0 6px 20px rgba(255, 115, 0, 0.4);
                                     }
 
                                     .deep-link p {
@@ -224,7 +227,7 @@
                                     }
 
                                     .timer.warning {
-                                        color: #f0ad4e;
+                                        color: #FF7300;
                                     }
 
                                     .timer.danger {
@@ -256,7 +259,7 @@
                                     }
 
                                     .retry-btn {
-                                        background: #dc3545;
+                                        background: linear-gradient(135deg, #FF7300 0%, #FF5500 100%);
                                         color: white;
                                         border: none;
                                         padding: 10px 20px;
@@ -264,15 +267,30 @@
                                         font-size: 14px;
                                         cursor: pointer;
                                         margin-top: 15px;
-                                        transition: background 0.2s;
+                                        transition: transform 0.2s, box-shadow 0.2s;
                                     }
 
                                     .retry-btn:hover {
-                                        background: #c82333;
+                                        transform: translateY(-2px);
+                                        box-shadow: 0 4px 16px rgba(255, 115, 0, 0.3);
                                     }
 
                                     .hidden-form {
                                         display: none;
+                                    }
+
+                                    /* WSO2 branding footer */
+                                    .branding {
+                                        margin-top: 30px;
+                                        padding-top: 20px;
+                                        border-top: 1px solid #eee;
+                                        font-size: 12px;
+                                        color: #999;
+                                    }
+
+                                    .branding a {
+                                        color: #FF7300;
+                                        text-decoration: none;
                                     }
 
                                     @media (max-width: 480px) {
