@@ -56,12 +56,9 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
  * Handler for SD-JWT VC format credentials.
  * <p>
  * This handler issues credentials in the SD-JWT format as specified in
- * draft-ietf-oauth-selective-disclosure-jwt. All claims from the credential
- * subject are made selectively disclosable.
+ * RFC 9901. All claims from the credential subject are made selectively disclosable.
  *
- * @see <a href=
- *      "https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/">SD-JWT
- *      Specification</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9901.html">RFC 9901 - SD-JWT Specification</a>
  */
 public class SdJwtVcFormatHandler implements CredentialFormatHandler {
 
@@ -201,7 +198,7 @@ public class SdJwtVcFormatHandler implements CredentialFormatHandler {
             Key privateKey = CredentialIssuanceUtil.getPrivateKey(tenantDomain);
             JWSSigner signer = OAuth2Util.createJWSSigner((RSAPrivateKey) privateKey);
 
-            // Build header with typ = "dc+sd-jwt"
+            // Build header with typ = "vc+sd-jwt"
             JWSHeader.Builder headerBuilder = new JWSHeader.Builder(JWSAlgorithm.RS256);
             headerBuilder.type(new JOSEObjectType(SDJWTConstants.TYP_VC_SD_JWT));
 

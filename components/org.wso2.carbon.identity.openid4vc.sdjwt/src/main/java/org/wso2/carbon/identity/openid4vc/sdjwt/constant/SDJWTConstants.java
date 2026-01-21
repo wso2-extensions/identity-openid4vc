@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.openid4vc.sdjwt.constant;
 
 /**
  * Constants for SD-JWT specification.
- * Based on draft-ietf-oauth-selective-disclosure-jwt-22.
+ * Based on RFC 9901.
  */
 public final class SDJWTConstants {
 
@@ -66,12 +66,17 @@ public final class SDJWTConstants {
     /**
      * OpenID4VCI format identifier for SD-JWT Verifiable Credentials.
      */
-    public static final String FORMAT_VC_SD_JWT = "dc+sd-jwt";
+    public static final String FORMAT_VC_SD_JWT = "vc+sd-jwt";
 
     /**
-     * JWT typ header value for SD-JWT VCs.
+     * JWT typ header value for SD-JWT VCs (Issuer-signed JWT).
      */
-    public static final String TYP_VC_SD_JWT = "dc+sd-jwt";
+    public static final String TYP_VC_SD_JWT = "vc+sd-jwt";
+
+    /**
+     * JWT typ header value for Key Binding JWT.
+     */
+    public static final String TYP_KB_JWT = "kb+jwt";
 
     /**
      * Separator character used between JWT and Disclosures in SD-JWT string representation.

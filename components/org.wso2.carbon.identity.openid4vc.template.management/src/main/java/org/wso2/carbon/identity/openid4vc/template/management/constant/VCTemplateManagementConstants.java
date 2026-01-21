@@ -35,7 +35,7 @@ public class VCTemplateManagementConstants {
     private VCTemplateManagementConstants() {}
 
     public static final String JWT_VC_FORMAT = "jwt_vc_json";
-    public static final String DC_SD_JWT_FORMAT = "dc+sd-jwt";
+    public static final String VC_SD_JWT_FORMAT = "vc+sd-jwt";
     public static final int MIN_EXPIRES_IN_SECONDS = 60;
     public static final String DEFAULT_SIGNING_ALGORITHM = "RS256";
     public static final String VC_DIALECT = "http://wso2.org/vc/claim";
@@ -47,7 +47,7 @@ public class VCTemplateManagementConstants {
             new java.util.HashSet<String>() {
                 {
                     add(JWT_VC_FORMAT);
-                    add(DC_SD_JWT_FORMAT);
+                    add(VC_SD_JWT_FORMAT);
                 }
             });
 

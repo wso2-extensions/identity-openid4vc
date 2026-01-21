@@ -38,7 +38,7 @@ import java.util.Map;
  * <p>
  * The Disclosure is base64url-encoded for transmission.
  *
- * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/">SD-JWT Specification</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9901.html">RFC 9901 - SD-JWT Specification</a>
  */
 public class Disclosure {
 
