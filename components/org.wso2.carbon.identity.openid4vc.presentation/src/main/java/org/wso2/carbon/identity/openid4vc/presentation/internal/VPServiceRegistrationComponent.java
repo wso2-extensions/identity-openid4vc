@@ -68,6 +68,10 @@ public class VPServiceRegistrationComponent {
 
             BundleContext bundleContext = context.getBundleContext();
 
+            // Initialize database schema (creates tables if they don't exist)
+            log.info("Initializing OpenID4VP database schema...");
+            DatabaseSchemaInitializer.initializeSchema();
+
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
             VPSubmissionService vpSubmissionService = new VPSubmissionServiceImpl();
