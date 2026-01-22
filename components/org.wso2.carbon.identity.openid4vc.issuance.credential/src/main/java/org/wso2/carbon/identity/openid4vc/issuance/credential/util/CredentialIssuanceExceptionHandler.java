@@ -18,7 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.credential.util;
 
-import org.apache.commons.lang.ArrayUtils;
+
+import org.apache.commons.lang3.ArrayUtils;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;

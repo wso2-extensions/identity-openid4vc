@@ -79,7 +79,8 @@ public class SDJWT {
      * Serialize the SD-JWT to its string representation.
      * <p>
      * Format without Key Binding: {@code <Issuer-signed JWT>~<Disclosure 1>~<Disclosure 2>~...~<Disclosure N>~}
-     * Format with Key Binding: {@code <Issuer-signed JWT>~<Disclosure 1>~<Disclosure 2>~...~<Disclosure N>~<Key Binding JWT>}
+     * Format with Key Binding:
+     *  {@code <Issuer-signed JWT>~<Disclosure 1>~<Disclosure 2>~...~<Disclosure N>~<Key Binding JWT>}
      *
      * @return The serialized SD-JWT string
      */

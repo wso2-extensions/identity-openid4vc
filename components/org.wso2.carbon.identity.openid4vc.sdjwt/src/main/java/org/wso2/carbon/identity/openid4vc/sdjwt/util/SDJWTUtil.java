@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.sdjwt.util;
 
-import com.sun.tools.javac.util.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.sdjwt.constant.SDJWTConstants;
 import org.wso2.carbon.identity.openid4vc.sdjwt.exception.SDJWTException;
 
@@ -111,7 +111,7 @@ public final class SDJWTUtil {
             throw new SDJWTException("Hash algorithm cannot be null");
         }
 
-        switch (StringUtils.toLowerCase(ianaAlgorithm)) {
+        switch (StringUtils.lowerCase(ianaAlgorithm)) {
             case SDJWTConstants.HASH_ALG_SHA256:
                 return "SHA-256";
             case SDJWTConstants.HASH_ALG_SHA384:
@@ -119,7 +119,7 @@ public final class SDJWTUtil {
             case SDJWTConstants.HASH_ALG_SHA512:
                 return "SHA-512";
             default:
-                throw new SDJWTException("Unknown hash algorithm: " + ianaAlgorithm);
+                throw new SDJWTException("Unsupported hash algorithm: " + ianaAlgorithm);
         }
     }
 

@@ -188,6 +188,8 @@ public class Disclosure {
             } else {
                 throw new SDJWTException("Disclosure array must have 2 or 3 elements, found: " + array.size());
             }
+        } catch (IllegalArgumentException e) {
+            throw new SDJWTException("Invalid base64url encoding in disclosure: " + e.getMessage(), e);
         } catch (JsonSyntaxException e) {
             throw new SDJWTException("Invalid JSON in disclosure: " + e.getMessage(), e);
         } catch (IllegalStateException e) {
