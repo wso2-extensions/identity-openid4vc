@@ -27,11 +27,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
-import org.wso2.carbon.identity.application.authentication.framework.LocalApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
+import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
@@ -56,6 +57,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +84,7 @@ import javax.servlet.http.HttpServletResponse;
  * - direct_post.jwt: Wallet posts signed JWT response
  */
 public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
-        implements LocalApplicationAuthenticator {
+        implements FederatedApplicationAuthenticator {
 
     private static final Log log = LogFactory.getLog(OpenID4VPAuthenticator.class);
     private static final long serialVersionUID = 1L;
@@ -421,102 +423,42 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     }
                 }
 
-                log.info(LOG_PREFIX + " Final extracted credentials - username: "
-                        + (username != null ? username : "null"));
-
             } catch (Exception e) {
                 log.error(LOG_PREFIX + " Error extracting credentials from VP token", e);
                 throw new AuthenticationFailedException(
                         "Failed to extract credentials from VP token: " + e.getMessage(), e);
             }
 
-            // Authenticate against user store
-            if (StringUtils.isNotBlank(username)) {
-                try {
-                    UserStoreManager userStoreManager = (UserStoreManager) VPServiceDataHolder
-                            .getInstance().getRealmService()
-                            .getTenantUserRealm(tenantId).getUserStoreManager();
+            log.info(LOG_PREFIX + " Final extracted credentials - username (subject): "
+                    + (username != null ? username : "null"));
 
-                    // Check if user exists in user store (by username or email)
-                    log.info(LOG_PREFIX + " Checking if user exists in user store: " + username);
-                    boolean userExists = userStoreManager.isExistingUser(username);
-
-                    if (!userExists) {
-                        log.error(LOG_PREFIX + " User not found in user store: " + username);
-                        throw new AuthenticationFailedException("User '" + username + "' not found in user store");
-                    }
-
-                    log.info(LOG_PREFIX + " User '" + username + "' found in user store");
-
-                    // If password is provided, authenticate with password
-                    // Otherwise, trust the VP and authenticate without password
-                    if (StringUtils.isNotBlank(password)) {
-                        log.info(LOG_PREFIX + " Authenticating user with password...");
-                        boolean isAuthenticated = userStoreManager.authenticate(username, password);
-
-                        if (!isAuthenticated) {
-                            log.error(LOG_PREFIX + " Password authentication failed for user: " + username);
-                            throw new AuthenticationFailedException("Invalid credentials found in VP");
-                        }
-                        log.info(LOG_PREFIX + " Password authentication successful for user: " + username);
-                    } else {
-                        // VP-based authentication without password
-                        // The VP signature verification provides the authentication assurance
-                        log.info(LOG_PREFIX + " VP-based authentication (no password) for user: " + username);
-                    }
-
-                    log.info(LOG_PREFIX + " Authentication successful for user: " + username);
-
-                    // Set authenticated user
-                    AuthenticatedUser authenticatedUser = new AuthenticatedUser();
-                    authenticatedUser.setUserName(username);
-                    authenticatedUser.setAuthenticatedSubjectIdentifier(username);
-                    authenticatedUser.setTenantDomain(context.getTenantDomain());
-
-                    // Explicitly set user store domain (required for some WSO2 versions to resolve
-                    // ID)
-                    if (StringUtils.isBlank(authenticatedUser.getUserStoreDomain())) {
-                        authenticatedUser.setUserStoreDomain("PRIMARY");
-                    }
-
-                    // Resolve and set User ID (Required for IS 7.0+)
-                    try {
-                        String userId = userStoreManager.getUserClaimValue(username,
-                                "http://wso2.org/claims/userid", null);
-                        if (StringUtils.isBlank(userId)) {
-                            userId = userStoreManager.getUserClaimValue(username,
-                                    "http://wso2.org/claims/id", null);
-                        }
-
-                        if (StringUtils.isNotBlank(userId)) {
-                            authenticatedUser.setUserId(userId);
-                            log.info(LOG_PREFIX + " Resolved User ID for " + username + ": " + userId);
-                        } else {
-                            log.warn(LOG_PREFIX + " User ID claim not found for user: " + username);
-                        }
-                    } catch (org.wso2.carbon.user.api.UserStoreException e) {
-                        log.warn(LOG_PREFIX + " Could not resolve User ID for user: " + username +
-                                ". Post-authentication steps might fail.", e);
-                    }
-
-                    context.setSubject(authenticatedUser);
-
-                    // Cleanup VP data after successful authentication (OID4VP data minimization)
-                    cleanupVPData(requestId, tenantId);
-                    log.info(LOG_PREFIX + " processAuthenticationResponse() - END (SUCCESS)");
-
-                } catch (UserStoreException e) {
-                    // Cleanup VP data on failure
-                    cleanupVPData(requestId, tenantId);
-                    log.error(LOG_PREFIX + " Error accessing user store", e);
-                    throw new AuthenticationFailedException("Error accessing user store", e);
-                }
-            } else {
-                log.error(LOG_PREFIX + " No username/email found in VP payload");
-                // Cleanup VP data on failure
+            if (StringUtils.isBlank(username)) {
+                log.error(LOG_PREFIX + " No user identifier found in VP payload");
                 cleanupVPData(requestId, tenantId);
                 throw new AuthenticationFailedException("No user identifier found in VP");
             }
+
+            // Create Federated Authenticated User
+            AuthenticatedUser authenticatedUser = AuthenticatedUser
+                    .createFederateAuthenticatedUserFromSubjectIdentifier(username);
+            authenticatedUser.setFederatedUser(true);
+
+            if (context.getExternalIdP() != null) {
+                authenticatedUser.setFederatedIdPName(context.getExternalIdP().getIdPName());
+                log.info(LOG_PREFIX + " Created federated user for IdP: " + context.getExternalIdP().getIdPName());
+            }
+
+            authenticatedUser.setTenantDomain(context.getTenantDomain());
+
+            // Extract and set user claims/attributes from VP
+            Map<ClaimMapping, String> userAttributes = extractClaimsFromVP(submission.getVpToken());
+            authenticatedUser.setUserAttributes(userAttributes);
+
+            context.setSubject(authenticatedUser);
+
+            // Cleanup VP data after successful authentication (OID4VP data minimization)
+            cleanupVPData(requestId, tenantId);
+            log.info(LOG_PREFIX + " processAuthenticationResponse() - END (SUCCESS - FEDERATED)");
 
         } catch (VPException e) {
             log.error(LOG_PREFIX + " Error processing VP submission", e);
@@ -957,6 +899,70 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             // Log but don't fail authentication due to cleanup errors
             log.warn(LOG_PREFIX + " Error during VP data cleanup (non-fatal): " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Extract claims from VP token for federated user attributes.
+     * 
+     * @param vpToken Raw VP token (JWT or JSON-LD)
+     * @return Map of claim mappings to values
+     */
+    private Map<ClaimMapping, String> extractClaimsFromVP(String vpToken) {
+        Map<ClaimMapping, String> claims = new HashMap<>();
+
+        try {
+            JsonObject vpData = null;
+            String trimmedToken = vpToken.trim();
+
+            // Minimal parsing logic to find credentialSubject (simplified for this
+            // migration)
+            if (trimmedToken.startsWith("{") || trimmedToken.startsWith("[")) {
+                JsonElement parsed = JsonParser.parseString(trimmedToken);
+                if (parsed.isJsonObject()) {
+                    vpData = parsed.getAsJsonObject();
+                }
+            } else {
+                String[] parts = vpToken.split("\\.");
+                if (parts.length >= 2) {
+                    String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                    vpData = JsonParser.parseString(payload).getAsJsonObject();
+                }
+            }
+
+            if (vpData == null) {
+                return claims;
+            }
+
+            // Look for credentialSubject
+            JsonObject vc = null;
+            if (vpData.has("vc")) {
+                vc = vpData.getAsJsonObject("vc");
+            } else if (vpData.has("verifiableCredential")) {
+                JsonElement vcElem = vpData.get("verifiableCredential");
+                if (vcElem.isJsonArray()) {
+                    vc = vcElem.getAsJsonArray().get(0).getAsJsonObject();
+                } else if (vcElem.isJsonObject()) {
+                    vc = vcElem.getAsJsonObject();
+                }
+            } else {
+                vc = vpData;
+            }
+
+            if (vc != null && vc.has("credentialSubject")) {
+                JsonObject subject = vc.getAsJsonObject("credentialSubject");
+                for (Map.Entry<String, JsonElement> entry : subject.entrySet()) {
+                    if (entry.getValue().isJsonPrimitive()) {
+                        String claimUri = "http://wso2.org/claims/" + entry.getKey();
+                        claims.put(ClaimMapping.build(claimUri, entry.getKey(), null, false),
+                                entry.getValue().getAsString());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn(LOG_PREFIX + " Error extracting claims for federated user: " + e.getMessage());
+        }
+
+        return claims;
     }
 
     @Override

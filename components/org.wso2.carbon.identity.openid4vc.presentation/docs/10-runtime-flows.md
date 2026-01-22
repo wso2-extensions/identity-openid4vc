@@ -83,7 +83,15 @@ sequenceDiagram
     IS->>IS: 43. Extract credentialSubject
     IS->>IS: 44. Find user by email/username
     IS->>IS: 45. Set authenticated user
-    IS-->>Browser: 46. Redirect to application
+    end
+
+    rect rgb(255, 255, 240)
+    note right of User: Phase 5: Data Cleanup (OID4VP Compliance)
+    IS->>IS: 46. cleanupVPData(requestId, tenantId)
+    IS->>DB: 47. DELETE VP submission
+    IS->>DB: 48. DELETE VP request
+    IS->>IS: 49. Clear cache entries
+    IS-->>Browser: 50. Redirect to application
     end
 ```
 
@@ -130,7 +138,15 @@ flowchart TD
     
     Z --> AA[Store in database]
     AA --> AB[Update request status]
-    AB --> AC[200 OK]
+    AB --> AC[Notify status listeners]
+    AC --> AD[200 OK to Wallet]
+    
+    AD --> AE{Auth completes?}
+    AE -->|Success| AF[cleanupVPData]
+    AE -->|Failure| AF
+    AF --> AG[DELETE submission from DB]
+    AG --> AH[DELETE request from DB]
+    AH --> AI[Clear cache entries]
 ```
 
 ---
@@ -247,6 +263,11 @@ stateDiagram-v2
         Contains submissionId
         for result lookup
     end note
+    
+    note left of Authenticated
+        VP data deleted after
+        authentication completes
+    end note
 ```
 
 ---
@@ -297,3 +318,50 @@ flowchart TD
 | `/openid4vp/v1/status/{id}` | GET | Poll status | 200 | 404 |
 | `/openid4vp/v1/result/{id}` | GET | Get result | 200 | 404 |
 | `/.well-known/did.json` | GET | Verifier DID doc | 200 | 500 |
+
+---
+
+## Flow 7: VP Data Cleanup
+
+Data cleanup occurs after authentication completes (success or failure) to comply with OID4VP data minimization principles.
+
+```mermaid
+sequenceDiagram
+    participant Auth as OpenID4VPAuthenticator
+    participant SubSvc as VPSubmissionService
+    participant ReqSvc as VPRequestService
+    participant Cache as Cache Layer
+    participant DB as Database
+
+    Note over Auth: processAuthenticationResponse() ends
+    
+    Auth->>Auth: cleanupVPData(requestId, tenantId)
+    
+    Auth->>SubSvc: deleteSubmissionsForRequest()
+    SubSvc->>Cache: Clear submission from WalletDataCache
+    SubSvc->>DB: DELETE FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ?
+    DB-->>SubSvc: OK
+    
+    Auth->>ReqSvc: deleteVPRequest()
+    ReqSvc->>Cache: Clear from VPRequestCache
+    ReqSvc->>DB: DELETE FROM IDN_VP_REQUEST WHERE REQUEST_ID = ?
+    DB-->>ReqSvc: OK
+    
+    Auth->>Cache: VPRequestCache.remove(requestId)
+    Auth->>Cache: WalletDataCache.retrieveSubmission(requestId)
+    
+    Note over Auth: Cleanup complete - data minimization achieved
+```
+
+### Cleanup Triggers
+
+| Scenario | Cleanup Called? | Location |
+|----------|-----------------|----------|
+| Successful authentication | ✅ Yes | After `context.setSubject()` |
+| User not found in user store | ✅ Yes | In `UserStoreException` catch block |
+| No username in VP payload | ✅ Yes | Before throwing exception |
+| VP processing error | ✅ Yes | In `VPException` catch block |
+| Request expired | ❌ No | Handled by status polling |
+
+> [!NOTE]
+> Cleanup errors are logged but do NOT fail authentication. The `cleanupVPData()` method is wrapped in a try-catch to ensure authentication completes even if cleanup fails.
