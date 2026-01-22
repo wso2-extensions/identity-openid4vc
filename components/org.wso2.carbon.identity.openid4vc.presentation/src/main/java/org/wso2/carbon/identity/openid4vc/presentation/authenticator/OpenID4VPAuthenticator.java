@@ -46,6 +46,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
@@ -499,17 +501,28 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
                     context.setSubject(authenticatedUser);
 
+                    // Cleanup VP data after successful authentication (OID4VP data minimization)
+                    cleanupVPData(requestId, tenantId);
+                    log.info(LOG_PREFIX + " processAuthenticationResponse() - END (SUCCESS)");
+
                 } catch (UserStoreException e) {
+                    // Cleanup VP data on failure
+                    cleanupVPData(requestId, tenantId);
                     log.error(LOG_PREFIX + " Error accessing user store", e);
                     throw new AuthenticationFailedException("Error accessing user store", e);
                 }
             } else {
                 log.error(LOG_PREFIX + " No username/email found in VP payload");
+                // Cleanup VP data on failure
+                cleanupVPData(requestId, tenantId);
                 throw new AuthenticationFailedException("No user identifier found in VP");
             }
 
         } catch (VPException e) {
             log.error(LOG_PREFIX + " Error processing VP submission", e);
+            // Cleanup VP data on failure
+            String reqId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
+            cleanupVPData(reqId, getTenantId(context));
             throw new AuthenticationFailedException("Failed to process VP submission", e);
         }
     }
@@ -906,6 +919,44 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      */
     private VPSubmissionService getVPSubmissionService() {
         return VPServiceDataHolder.getInstance().getVPSubmissionService();
+    }
+
+    /**
+     * Cleanup VP request and submission data after authentication flow.
+     * Called after both successful and failed authentication to comply with
+     * OID4VP data minimization principles.
+     *
+     * @param requestId Request ID to cleanup
+     * @param tenantId  Tenant ID
+     */
+    private void cleanupVPData(String requestId, int tenantId) {
+        if (StringUtils.isBlank(requestId)) {
+            log.debug(LOG_PREFIX + " No request ID to cleanup");
+            return;
+        }
+
+        try {
+            log.info(LOG_PREFIX + " Cleaning up VP data for request: " + requestId);
+
+            // Delete submission first (foreign key consideration)
+            VPSubmissionService submissionService = getVPSubmissionService();
+            submissionService.deleteSubmissionsForRequest(requestId, tenantId);
+            log.debug(LOG_PREFIX + " Deleted VP submission for request: " + requestId);
+
+            // Delete VP request
+            VPRequestService requestService = getVPRequestService();
+            requestService.deleteVPRequest(requestId, tenantId);
+            log.debug(LOG_PREFIX + " Deleted VP request: " + requestId);
+
+            // Clear from caches
+            VPRequestCache.getInstance().remove(requestId);
+            WalletDataCache.getInstance().retrieveSubmission(requestId);
+
+            log.info(LOG_PREFIX + " VP data cleanup completed for request: " + requestId);
+        } catch (Exception e) {
+            // Log but don't fail authentication due to cleanup errors
+            log.warn(LOG_PREFIX + " Error during VP data cleanup (non-fatal): " + e.getMessage(), e);
+        }
     }
 
     @Override
