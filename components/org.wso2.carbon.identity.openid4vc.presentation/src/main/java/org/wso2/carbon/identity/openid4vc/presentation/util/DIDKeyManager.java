@@ -25,10 +25,14 @@ import org.wso2.carbon.identity.openid4vc.presentation.dao.DIDKeysDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.DIDKeysDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDKey;
 import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator;
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.KeyType;
 import com.nimbusds.jose.util.Base64URL;
 import java.util.concurrent.ConcurrentHashMap;
+import com.nimbusds.jose.JWSAlgorithm;
 
 /**
  * Manages cryptographic keys for DID documents.
