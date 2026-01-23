@@ -34,8 +34,9 @@ import java.util.Map;
 
 /**
  * Implementation of DIDDocumentService.
- * Generates and manages DID Documents for WSO2 Identity Server using did:web
- * method.
+ * Generates and manages DID Documents for WSO2 Identity Server using did:key
+ * method. The did:key method is self-contained - the public key is encoded
+ * directly in the DID identifier.
  */
 public class DIDDocumentServiceImpl implements DIDDocumentService {
 
@@ -57,13 +58,13 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     @Override
     public DIDDocument getDIDDocumentObject(String domain, int tenantId) throws DIDDocumentException {
         try {
-            LOG.debug("Generating DID document for domain: " + domain + ", tenant: " + tenantId);
+            LOG.debug("Generating DID document for tenant: " + tenantId);
 
             // Get or generate keys
             com.nimbusds.jose.jwk.OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
 
-            // Build DID
-            String did = getDID(domain);
+            // Build DID using did:key method
+            String did = DIDKeyManager.generateDIDKey(keyPair);
 
             // Create DID Document
             DIDDocument doc = new DIDDocument();
@@ -74,27 +75,27 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
 
             // Create verification method
             DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-            vm.setId(did + "#owner");
+
+            // For did:key, the fragment is the multibase-encoded public key
+            String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
+            vm.setId(did + "#" + multibase);
             vm.setType("Ed25519VerificationKey2020");
             vm.setController(did);
-
-            // Convert public key to multibase
-            String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
             vm.setPublicKeyMultibase(multibase);
 
-            LOG.info("Generated DID Document with Multibase Key: " + multibase);
+            LOG.info("Generated DID Document with did:key: " + did);
 
             doc.setVerificationMethod(Arrays.asList(vm));
 
             // Set verification relationships
-            doc.setAuthentication(Arrays.asList(did + "#owner"));
-            doc.setAssertionMethod(Arrays.asList(did + "#owner"));
+            doc.setAuthentication(Arrays.asList(did + "#" + multibase));
+            doc.setAssertionMethod(Arrays.asList(did + "#" + multibase));
 
             LOG.info("DID document generated successfully for: " + did);
             return doc;
 
         } catch (Exception e) {
-            String errorMsg = "Failed to generate DID document for domain: " + domain;
+            String errorMsg = "Failed to generate DID document for tenant: " + tenantId;
             LOG.error(errorMsg, e);
             throw new DIDDocumentException(errorMsg, e);
         }
@@ -102,13 +103,32 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
 
     @Override
     public String getDID(String domain) {
-        // Clean domain: remove protocol, port encoding for did:web
-        String cleanDomain = domain.replace("https://", "").replace("http://", "");
+        // For did:key, we need the tenant ID to get the key pair
+        // This method now returns did:key for default tenant
+        try {
+            return DIDKeyManager.generateDIDKey(-1234); // Default tenant
+        } catch (Exception e) {
+            LOG.error("Failed to generate did:key", e);
+            // Fallback to did:web for backward compatibility
+            String cleanDomain = domain.replace("https://", "").replace("http://", "");
+            cleanDomain = cleanDomain.replace(":", "%3A");
+            return "did:web:" + cleanDomain;
+        }
+    }
 
-        // For did:web, port numbers are encoded with %3A
-        cleanDomain = cleanDomain.replace(":", "%3A");
-
-        return "did:web:" + cleanDomain;
+    /**
+     * Get DID for a specific tenant using did:key method.
+     * 
+     * @param tenantId The tenant ID
+     * @return did:key identifier
+     * @throws DIDDocumentException if key generation fails
+     */
+    public String getDID(int tenantId) throws DIDDocumentException {
+        try {
+            return DIDKeyManager.generateDIDKey(tenantId);
+        } catch (Exception e) {
+            throw new DIDDocumentException("Failed to generate did:key for tenant: " + tenantId, e);
+        }
     }
 
     @Override
