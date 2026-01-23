@@ -42,11 +42,11 @@ public class DIDKeyManager {
 
     private static final Log LOG = LogFactory.getLog(DIDKeyManager.class);
     private static final ConcurrentHashMap<Integer, OctetKeyPair> keyCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, ECKey> ecKeyCache = new ConcurrentHashMap<>();
     private static final DIDKeysDAO didKeysDAO = new DIDKeysDAOImpl();
 
     /**
-     * Get or generate a key pair for the given tenant.
-     * Uses Ed25519 by default.
+     * Get or generate Ed25519 key pair for the given tenant (Default).
      * 
      * @param tenantId The tenant ID
      * @return OctetKeyPair for the tenant
@@ -60,15 +60,25 @@ public class DIDKeyManager {
 
         // 2. Try DB
         try {
-            DIDKey existingKey = didKeysDAO.getDIDKeyByTenant(tenantId);
+            DIDKey existingKey = didKeysDAO.getDIDKeyByTenantAndAlgo(tenantId, "Ed25519");
+            // Fallback for backward compatibility (if algo was not saved or generic
+            // retrieval needed)
+            if (existingKey == null) {
+                existingKey = didKeysDAO.getDIDKeyByTenant(tenantId);
+                // Verify it's Ed25519 by length or algo field
+                if (existingKey != null && !"Ed25519".equals(existingKey.getAlgorithm())
+                        && existingKey.getAlgorithm() != null) {
+                    existingKey = null; // Found a key but not Ed25519
+                }
+            }
+
             if (existingKey != null) {
-                // Reconstruct OctetKeyPair
                 Base64URL x = Base64URL.encode(existingKey.getPublicKey());
                 Base64URL d = Base64URL.encode(existingKey.getPrivateKey());
                 OctetKeyPair keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
 
                 keyCache.put(tenantId, keyPair);
-                LOG.info("Loaded DID key from DB for tenant: " + tenantId);
+                LOG.info("Loaded Ed25519 key from DB for tenant: " + tenantId);
                 return keyPair;
             }
         } catch (Exception e) {
@@ -80,21 +90,7 @@ public class DIDKeyManager {
         OctetKeyPair keyPair = generateEd25519KeyPair();
 
         // 4. Save to DB
-        try {
-            String didKeyString = generateDIDKey(keyPair); // e.g. did:key:z6Mk...
-            DIDKey newDidKey = new DIDKey(
-                    didKeyString,
-                    tenantId,
-                    "Ed25519",
-                    keyPair.getX().decode(),
-                    keyPair.getD().decode());
-            didKeysDAO.addDIDKey(newDidKey);
-            LOG.info("Persisted new DID key for tenant: " + tenantId);
-        } catch (Exception e) {
-            LOG.error("Error persisting DID key: " + e.getMessage(), e);
-            // We still return the key pair so the operation can continue,
-            // but it won't be persisted (transient for this run)
-        }
+        saveEd25519Key(tenantId, keyPair);
 
         // 5. Cache
         keyCache.put(tenantId, keyPair);
@@ -102,13 +98,189 @@ public class DIDKeyManager {
     }
 
     /**
-     * Generate a new Ed25519 key pair using Nimbus Generator.
+     * Get or generate EC (P-256) key pair for the given tenant.
      * 
-     * @return OctetKeyPair
-     * @throws Exception if generation fails
+     * @param tenantId The tenant ID
+     * @return ECKey for the tenant
+     * @throws Exception if key generation fails
      */
+    public static ECKey getOrGenerateECKeyPair(int tenantId) throws Exception {
+        // 1. Try Cache
+        if (ecKeyCache.containsKey(tenantId)) {
+            return ecKeyCache.get(tenantId);
+        }
+
+        // 2. Try DB
+        try {
+            DIDKey existingKey = didKeysDAO.getDIDKeyByTenantAndAlgo(tenantId, "ES256");
+            if (existingKey != null) {
+                // Reconstruct ECKey
+                byte[] pubKey = existingKey.getPublicKey();
+                byte[] privKey = existingKey.getPrivateKey();
+
+                // Public key stored as X (32) + Y (32)
+                if (pubKey.length == 64) {
+                    byte[] xBytes = java.util.Arrays.copyOfRange(pubKey, 0, 32);
+                    byte[] yBytes = java.util.Arrays.copyOfRange(pubKey, 32, 64);
+
+                    Base64URL x = Base64URL.encode(xBytes);
+                    Base64URL y = Base64URL.encode(yBytes);
+                    Base64URL d = Base64URL.encode(privKey);
+
+                    ECKey ecKey = new ECKey.Builder(Curve.P_256, x, y).d(d).build();
+                    ecKeyCache.put(tenantId, ecKey);
+                    LOG.info("Loaded ES256 key from DB for tenant: " + tenantId);
+                    return ecKey;
+                }
+            }
+        } catch (Exception e) {
+            LOG.warn("Error checking DB for EC keys, proceeding to generate new one: " + e.getMessage());
+        }
+
+        // 3. Generate New
+        LOG.info("Generating NEW P-256 Key Pair for tenant: " + tenantId);
+        ECKey ecKey = generateECKeyPair();
+
+        // 4. Save to DB
+        saveECKey(tenantId, ecKey);
+
+        // 5. Cache
+        ecKeyCache.put(tenantId, ecKey);
+        return ecKey;
+    }
+
     private static OctetKeyPair generateEd25519KeyPair() throws Exception {
         return new OctetKeyPairGenerator(Curve.Ed25519).generate();
+    }
+
+    private static ECKey generateECKeyPair() throws Exception {
+        return new ECKeyGenerator(Curve.P_256).generate();
+    }
+
+    private static void saveEd25519Key(int tenantId, OctetKeyPair keyPair) {
+        try {
+            String didKeyString = generateDIDKey(keyPair);
+            DIDKey newDidKey = new DIDKey(
+                    didKeyString,
+                    tenantId,
+                    "Ed25519",
+                    keyPair.getX().decode(),
+                    keyPair.getD().decode());
+            didKeysDAO.addDIDKey(newDidKey);
+            LOG.info("Persisted new Ed25519 key for tenant: " + tenantId);
+        } catch (Exception e) {
+            LOG.error("Error persisting Ed25519 key: " + e.getMessage(), e);
+        }
+    }
+
+    private static void saveECKey(int tenantId, ECKey keyPair) {
+        try {
+            String didKeyString = generateDIDKey(keyPair);
+
+            // Concatenate X and Y for public key
+            byte[] xBytes = keyPair.getX().decode();
+            byte[] yBytes = keyPair.getY().decode();
+            byte[] pubKey = new byte[xBytes.length + yBytes.length];
+            System.arraycopy(xBytes, 0, pubKey, 0, xBytes.length);
+            System.arraycopy(yBytes, 0, pubKey, xBytes.length, yBytes.length);
+
+            DIDKey newDidKey = new DIDKey(
+                    didKeyString,
+                    tenantId,
+                    "ES256", // Using algorithm name
+                    pubKey,
+                    keyPair.getD().decode());
+            didKeysDAO.addDIDKey(newDidKey);
+            LOG.info("Persisted new ES256 key for tenant: " + tenantId);
+        } catch (Exception e) {
+            LOG.error("Error persisting ES256 key: " + e.getMessage(), e);
+        }
+
+    /**
+     * Convert Ed25519 public key to multibase format.
+     * Format: z + base58btc(0xed01 + public key bytes)
+     */
+    public static String publicKeyToMultibase(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
+        try {
+            byte[] publicKeyBytes = keyPair.getX().decode();
+            // Prepend multicodec prefix for Ed25519-pub (0xed01)
+            byte[] multicodecKey = new byte[34];
+            multicodecKey[0] = (byte) 0xed;
+            multicodecKey[1] = (byte) 0x01;
+            System.arraycopy(publicKeyBytes, 0, multicodecKey, 2, 32);
+
+            return "z" + base58Encode(multicodecKey);
+        } catch (Exception e) {
+            LOG.error("Failed to convert public key to multibase", e);
+            return null;
+        }
+    }
+
+    /**
+     * Convert P-256 public key to multibase format.
+     * Format: z + base58btc(0x1200 + compressed point)
+     * P-256 multicodec is 0x1200
+     */
+    public static String publicKeyToMultibase(com.nimbusds.jose.jwk.ECKey keyPair) {
+        try {
+            // Needed: Compressed point (33 bytes: 0x02/0x03 + X)
+            byte[] xBytes = keyPair.getX().decode();
+            byte[] yBytes = keyPair.getY().decode();
+
+            byte[] compressed = new byte[33];
+            // 0x02 if Y is even, 0x03 if Y is odd
+            // BigInteger check for oddness usually checks lowest bit
+            java.math.BigInteger yBigInt = new java.math.BigInteger(1, yBytes);
+            compressed[0] = yBigInt.testBit(0) ? (byte) 0x03 : (byte) 0x02;
+            System.arraycopy(xBytes, 0, compressed, 1, 32);
+
+            // Multicodec Prefix for p256-pub is 0x1200 (varint encoded?)
+            // According to multicodec table: p256-pub is 0x1200
+            // Varint encoding of 0x1200 -> 0x1200 -> 1001 000 0000 000
+            // Wait, standard did:key for P-256 uses 0x1200.
+            // 0x1200 = 0001 0010 0000 0000
+            // Varint:
+            // 0x80 | 0x00? No.
+            // Let's use standard table. 0x1200.
+            // 2 bytes: 0x80 0x24 (Wait, 0x1200 is 4608 decimal)
+            // 4608 = 1001000000000
+            // 7-bit groups: 0000000 (0), 0100100 (36 = 0x24)
+            // So: 0x80 (continuation) 0x24.
+
+            // Let's verify with known impl or spec.
+            // W3C CCG did-method-key: P-256 is 0x1200.
+            // Varint(0x1200) = [0x80, 0x24]
+
+            byte[] multicodecKey = new byte[35]; // 2 header + 33 data
+            multicodecKey[0] = (byte) 0x80;
+            multicodecKey[1] = (byte) 0x24; // 0x24 = 36
+            System.arraycopy(compressed, 0, multicodecKey, 2, 33);
+
+            return "z" + base58Encode(multicodecKey);
+        } catch (Exception e) {
+            LOG.error("Failed to convert public key to multibase", e);
+            return null;
+        }
+    }
+
+    /**
+     * Generate did:key for OctetKeyPair (Ed25519).
+     */
+    public static String generateDIDKey(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
+        String multibase = publicKeyToMultibase(keyPair);
+        String didKey = "did:key:" + multibase;
+        LOG.info("Generated did:key (Ed25519): " + didKey);
+        return didKey;
+    }
+
+    /**
+     * Generate did:key for ECKey (P-256).
+     */
+    public static String generateDIDKey(com.nimbusds.jose.jwk.ECKey keyPair) {
+        String multibase = publicKeyToMultibase(keyPair);
+        String didKey = "did:key:" + multibase;
+        LOG.info("Generated did:key (P-256): " + didKey);
+        return didKey;
     }
 
     private static byte[] extractRawPublicKey(java.security.PublicKey publicKey) {

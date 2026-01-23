@@ -63,6 +63,16 @@ public interface DIDKeysDAO {
     DIDKey getDIDKeyByTenant(int tenantId) throws VPException;
 
     /**
+     * Get the latest DID key for a tenant with specified algorithm.
+     *
+     * @param tenantId  Tenant ID
+     * @param algorithm Algorithm (e.g. Ed25519, ES256)
+     * @return DIDKey object or null if not found
+     * @throws VPException if retrieval fails
+     */
+    DIDKey getDIDKeyByTenantAndAlgo(int tenantId, String algorithm) throws VPException;
+
+    /**
      * Check if a DID key exists.
      *
      * @param keyId    Key ID
