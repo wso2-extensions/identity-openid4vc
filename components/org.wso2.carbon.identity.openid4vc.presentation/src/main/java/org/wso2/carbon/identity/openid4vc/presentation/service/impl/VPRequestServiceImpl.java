@@ -301,7 +301,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         // For now, return the request parameters as a simple structure
         // In production, this should be a signed JWT
         // If JWT is missing (legacy records), attempt to build it with default did:web
-        String requestJwt = buildRequestObjectJwt(vpRequest, "web");
+        String requestJwt = buildRequestObjectJwt(vpRequest, "web", "RS256");
 
         // Store generated JWT
         vpRequestDAO.updateVPRequestJwt(requestId, requestJwt, tenantId);
