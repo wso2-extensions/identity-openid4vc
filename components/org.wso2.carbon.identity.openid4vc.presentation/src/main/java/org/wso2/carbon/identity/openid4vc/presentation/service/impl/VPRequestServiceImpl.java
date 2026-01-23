@@ -99,6 +99,26 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Resolve presentation definition
         String presentationDefinition = resolvePresentationDefinition(requestCreateDTO, tenantId);
+        String didMethod = requestCreateDTO.getDidMethod();
+
+        // Extract and clean internal configuration
+        if (StringUtils.isNotBlank(presentationDefinition)) {
+            try {
+                JsonObject pdJson = JsonParser.parseString(presentationDefinition).getAsJsonObject();
+                if (pdJson.has("_internal")) {
+                    JsonObject internal = pdJson.getAsJsonObject("_internal");
+                    // Only override if not already set in DTO
+                    if (StringUtils.isBlank(didMethod) && internal.has("did_method")) {
+                        didMethod = internal.get("did_method").getAsString();
+                    }
+                    // Remove internal config to keep spec compliant
+                    pdJson.remove("_internal");
+                    presentationDefinition = pdJson.toString();
+                }
+            } catch (Exception e) {
+                log.warn("Error parsing presentation definition internally", e);
+            }
+        }
 
         // Calculate timestamps
         long createdAt = System.currentTimeMillis();
@@ -125,7 +145,6 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Generate and set the Request JWT immediately
         // This ensures the DID method preference is respected at creation time
-        String didMethod = requestCreateDTO.getDidMethod();
         String requestJwt = buildRequestObjectJwt(vpRequest, didMethod);
         vpRequest.setRequestJwt(requestJwt);
 
