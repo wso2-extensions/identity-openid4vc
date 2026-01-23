@@ -44,6 +44,9 @@ public class VPRequestCreateDTO {
     @SerializedName("responseMode")
     private String responseMode;
 
+    @SerializedName("didMethod")
+    private String didMethod;
+
     /**
      * Default constructor.
      */
@@ -107,6 +110,14 @@ public class VPRequestCreateDTO {
 
     public void setResponseMode(String responseMode) {
         this.responseMode = responseMode;
+    }
+
+    public String getDidMethod() {
+        return didMethod;
+    }
+
+    public void setDidMethod(String didMethod) {
+        this.didMethod = didMethod;
     }
 
     /**

@@ -58,6 +58,7 @@ public class DatabaseSchemaInitializer {
             createVPSubmissionTable(connection);
             createPresentationDefinitionTable(connection);
             createApplicationPresentationDefinitionTable(connection);
+            createDIDKeysTable(connection);
 
             LOG.info("[OPENID4VP] Database schema initialization completed successfully");
 
@@ -228,6 +229,28 @@ public class DatabaseSchemaInitializer {
         executeSQL(connection,
                 "CREATE INDEX IF NOT EXISTS IDX_APP_PRES_DEF_TENANT ON IDN_APPLICATION_PRESENTATION_DEFINITION(TENANT_ID)",
                 "IDX_APP_PRES_DEF_TENANT");
+    }
+
+    /**
+     * Create IDN_DID_KEYS table.
+     */
+    private static void createDIDKeysTable(Connection connection) throws SQLException {
+        if (tableExists(connection, "IDN_DID_KEYS")) {
+            LOG.debug("[OPENID4VP] Table IDN_DID_KEYS already exists");
+            return;
+        }
+
+        String sql = "CREATE TABLE IF NOT EXISTS IDN_DID_KEYS (" +
+                "TENANT_ID INTEGER NOT NULL, " +
+                "KEY_ID VARCHAR(255) NOT NULL, " +
+                "ALGORITHM VARCHAR(50) NOT NULL, " +
+                "PUBLIC_KEY BLOB, " +
+                "PRIVATE_KEY BLOB, " +
+                "CREATED_AT BIGINT NOT NULL, " +
+                "PRIMARY KEY (TENANT_ID, KEY_ID)" +
+                ")";
+
+        executeSQL(connection, sql, "IDN_DID_KEYS");
     }
 
     /**

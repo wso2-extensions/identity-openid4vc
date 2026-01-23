@@ -21,6 +21,13 @@ package org.wso2.carbon.identity.openid4vc.presentation.util;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.wso2.carbon.identity.openid4vc.presentation.dao.DIDKeysDAO;
+import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.DIDKeysDAOImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.model.DIDKey;
+import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.util.Base64URL;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -30,7 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DIDKeyManager {
 
     private static final Log LOG = LogFactory.getLog(DIDKeyManager.class);
-    private static final ConcurrentHashMap<Integer, com.nimbusds.jose.jwk.OctetKeyPair> keyCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, OctetKeyPair> keyCache = new ConcurrentHashMap<>();
+    private static final DIDKeysDAO didKeysDAO = new DIDKeysDAOImpl();
 
     /**
      * Get or generate a key pair for the given tenant.
@@ -40,36 +48,63 @@ public class DIDKeyManager {
      * @return OctetKeyPair for the tenant
      * @throws Exception if key generation fails
      */
-    public static com.nimbusds.jose.jwk.OctetKeyPair getOrGenerateKeyPair(int tenantId) throws Exception {
-        // ALWAYS return the fixed test key to ensure consistency
-        // This bypasses the cache to avoid using stale random keys
-        LOG.info("Returning FIXED Ed25519 Test Key Pair for tenant: " + tenantId);
-        return generateEd25519KeyPair();
+    public static OctetKeyPair getOrGenerateKeyPair(int tenantId) throws Exception {
+        // 1. Try Cache
+        if (keyCache.containsKey(tenantId)) {
+            return keyCache.get(tenantId);
+        }
+
+        // 2. Try DB
+        try {
+            DIDKey existingKey = didKeysDAO.getDIDKeyByTenant(tenantId);
+            if (existingKey != null) {
+                // Reconstruct OctetKeyPair
+                Base64URL x = Base64URL.encode(existingKey.getPublicKey());
+                Base64URL d = Base64URL.encode(existingKey.getPrivateKey());
+                OctetKeyPair keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
+
+                keyCache.put(tenantId, keyPair);
+                LOG.info("Loaded DID key from DB for tenant: " + tenantId);
+                return keyPair;
+            }
+        } catch (Exception e) {
+            LOG.warn("Error checking DB for DID keys, proceeding to generate new one: " + e.getMessage());
+        }
+
+        // 3. Generate New
+        LOG.info("Generating NEW Ed25519 Key Pair for tenant: " + tenantId);
+        OctetKeyPair keyPair = generateEd25519KeyPair();
+
+        // 4. Save to DB
+        try {
+            String didKeyString = generateDIDKey(keyPair); // e.g. did:key:z6Mk...
+            DIDKey newDidKey = new DIDKey(
+                    didKeyString,
+                    tenantId,
+                    "Ed25519",
+                    keyPair.getX().decode(),
+                    keyPair.getD().decode());
+            didKeysDAO.addDIDKey(newDidKey);
+            LOG.info("Persisted new DID key for tenant: " + tenantId);
+        } catch (Exception e) {
+            LOG.error("Error persisting DID key: " + e.getMessage(), e);
+            // We still return the key pair so the operation can continue,
+            // but it won't be persisted (transient for this run)
+        }
+
+        // 5. Cache
+        keyCache.put(tenantId, keyPair);
+        return keyPair;
     }
 
     /**
-     * Generate a new Ed25519 key pair.
+     * Generate a new Ed25519 key pair using Nimbus Generator.
      * 
      * @return OctetKeyPair
      * @throws Exception if generation fails
      */
-    private static com.nimbusds.jose.jwk.OctetKeyPair generateEd25519KeyPair() throws Exception {
-        // Use a fixed VALID key pair for testing
-        // Generated using @noble/ed25519 - verified to be a valid Ed25519 pair
-        // d (private): YZIGkDMQP67xxjqMXQ0QnYN_9ehW8k0tD7uOWwqXtGo
-        // x (public): kAYP8zpwH-gO7lHegu-9urMxRspJPKIMCREHCFI6HXM
-
-        LOG.info("Using FIXED Ed25519 Test Key Pair");
-
-        com.nimbusds.jose.util.Base64URL d = new com.nimbusds.jose.util.Base64URL(
-                "YZIGkDMQP67xxjqMXQ0QnYN_9ehW8k0tD7uOWwqXtGo");
-        com.nimbusds.jose.util.Base64URL x = new com.nimbusds.jose.util.Base64URL(
-                "kAYP8zpwH-gO7lHegu-9urMxRspJPKIMCREHCFI6HXM");
-
-        return new com.nimbusds.jose.jwk.OctetKeyPair.Builder(
-                com.nimbusds.jose.jwk.Curve.Ed25519, x)
-                .d(d)
-                .build();
+    private static OctetKeyPair generateEd25519KeyPair() throws Exception {
+        return new OctetKeyPairGenerator(Curve.Ed25519).generate();
     }
 
     private static byte[] extractRawPublicKey(java.security.PublicKey publicKey) {
