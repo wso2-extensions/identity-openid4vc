@@ -41,6 +41,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefin
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 
 /**
  * Implementation of VPRequestService for managing VP authorization requests.
@@ -120,6 +122,12 @@ public class VPRequestServiceImpl implements VPRequestService {
                 .expiresAt(expiresAt)
                 .tenantId(tenantId)
                 .build();
+
+        // Generate and set the Request JWT immediately
+        // This ensures the DID method preference is respected at creation time
+        String didMethod = requestCreateDTO.getDidMethod();
+        String requestJwt = buildRequestObjectJwt(vpRequest, didMethod);
+        vpRequest.setRequestJwt(requestJwt);
 
         // Persist to database
         vpRequestDAO.createVPRequest(vpRequest);
@@ -269,7 +277,8 @@ public class VPRequestServiceImpl implements VPRequestService {
         // integration)
         // For now, return the request parameters as a simple structure
         // In production, this should be a signed JWT
-        String requestJwt = buildRequestObjectJwt(vpRequest);
+        // If JWT is missing (legacy records), attempt to build it with default did:web
+        String requestJwt = buildRequestObjectJwt(vpRequest, "web");
 
         // Store generated JWT
         vpRequestDAO.updateVPRequestJwt(requestId, requestJwt, tenantId);
@@ -405,18 +414,16 @@ public class VPRequestServiceImpl implements VPRequestService {
      * Note: In production, this should be properly signed with the verifier's
      * private key.
      */
-    private String buildRequestObjectJwt(VPRequest vpRequest) {
+    private String buildRequestObjectJwt(VPRequest vpRequest, String didMethod) {
         try {
-            // Get did:key using DIDKeyManager directly (simpler than using
-            // DIDDocumentService)
+            DIDProvider provider = DIDProviderFactory.getProvider(didMethod);
             int tenantId = vpRequest.getTenantId();
-            String did = org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager.generateDIDKey(tenantId);
+            String baseUrl = getConfiguredBaseUrl();
 
-            // For did:key, the fragment is the multibase portion
-            String multibase = did.substring(8); // Remove "did:key:"
-            String keyId = did + "#" + multibase;
+            String did = provider.getDID(tenantId, baseUrl);
+            String keyId = provider.getSigningKeyId(tenantId, baseUrl);
 
-            log.info("Building Request Object with did:key: " + did + " and KeyID: " + keyId);
+            log.info("Building Request Object with DID details - Method: " + provider.getName() + ", DID: " + did);
 
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
@@ -463,9 +470,9 @@ public class VPRequestServiceImpl implements VPRequestService {
 
             com.nimbusds.jwt.JWTClaimsSet claimsSet = claimsBuilder.build();
 
-            // Create header with EdDSA
+            // Create header
             com.nimbusds.jose.JWSHeader header = new com.nimbusds.jose.JWSHeader.Builder(
-                    com.nimbusds.jose.JWSAlgorithm.EdDSA)
+                    provider.getSigningAlgorithm())
                     .keyID(keyId)
                     .type(new com.nimbusds.jose.JOSEObjectType("oauth-authz-req+jwt"))
                     .build();
@@ -473,14 +480,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             com.nimbusds.jose.JWSObject jwsObject = new com.nimbusds.jose.JWSObject(header,
                     new com.nimbusds.jose.Payload(claimsSet.toJSONObject()));
 
-            // Retrieve the actual key pair used for the DID document
-            // This ensures the wallet can verify the signature against the public key in
-            // the DID document
-            com.nimbusds.jose.jwk.OctetKeyPair jwk = org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager
-                    .getOrGenerateKeyPair(vpRequest.getTenantId());
-            com.nimbusds.jose.JWSSigner signer = new org.wso2.carbon.identity.openid4vc.presentation.util.BCEd25519Signer(
-                    jwk);
-
+            // Sign using provider logic
+            com.nimbusds.jose.JWSSigner signer = provider.getSigner(tenantId);
             jwsObject.sign(signer);
 
             return jwsObject.serialize();

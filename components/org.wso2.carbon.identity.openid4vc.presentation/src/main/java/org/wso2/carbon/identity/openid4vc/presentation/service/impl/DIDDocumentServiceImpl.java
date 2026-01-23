@@ -26,9 +26,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentExce
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,9 +47,6 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             .disableHtmlEscaping()
             .create();
 
-    private static final String DID_CONTEXT_V1 = "https://www.w3.org/ns/did/v1";
-    private static final String ED25519_2020_CONTEXT = "https://w3id.org/security/suites/ed25519-2020/v1";
-
     @Override
     public String getDIDDocument(String domain, int tenantId) throws DIDDocumentException {
         DIDDocument doc = getDIDDocumentObject(domain, tenantId);
@@ -58,42 +56,9 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     @Override
     public DIDDocument getDIDDocumentObject(String domain, int tenantId) throws DIDDocumentException {
         try {
-            LOG.debug("Generating DID document for tenant: " + tenantId);
-
-            // Get or generate keys
-            com.nimbusds.jose.jwk.OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
-
-            // Build DID using did:key method
-            String did = DIDKeyManager.generateDIDKey(keyPair);
-
-            // Create DID Document
-            DIDDocument doc = new DIDDocument();
-            doc.setId(did);
-
-            // Set context
-            doc.setContext(Arrays.asList(DID_CONTEXT_V1, ED25519_2020_CONTEXT));
-
-            // Create verification method
-            DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-
-            // For did:key, the fragment is the multibase-encoded public key
-            String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
-            vm.setId(did + "#" + multibase);
-            vm.setType("Ed25519VerificationKey2020");
-            vm.setController(did);
-            vm.setPublicKeyMultibase(multibase);
-
-            LOG.info("Generated DID Document with did:key: " + did);
-
-            doc.setVerificationMethod(Arrays.asList(vm));
-
-            // Set verification relationships
-            doc.setAuthentication(Arrays.asList(did + "#" + multibase));
-            doc.setAssertionMethod(Arrays.asList(did + "#" + multibase));
-
-            LOG.info("DID document generated successfully for: " + did);
-            return doc;
-
+            // Since this method backs the .well-known/did.json endpoint, it implies did:web
+            DIDProvider provider = DIDProviderFactory.getProvider("web");
+            return provider.getDIDDocument(tenantId, domain);
         } catch (Exception e) {
             String errorMsg = "Failed to generate DID document for tenant: " + tenantId;
             LOG.error(errorMsg, e);
@@ -103,42 +68,46 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
 
     @Override
     public String getDID(String domain) {
-        // For did:key, we need the tenant ID to get the key pair
-        // This method now returns did:key for default tenant
         try {
-            return DIDKeyManager.generateDIDKey(-1234); // Default tenant
+            // Default to did:web for domain-based lookup
+            DIDProvider provider = DIDProviderFactory.getProvider("web");
+            return provider.getDID(-1234, domain);
         } catch (Exception e) {
-            LOG.error("Failed to generate did:key", e);
-            // Fallback to did:web for backward compatibility
-            String cleanDomain = domain.replace("https://", "").replace("http://", "");
-            cleanDomain = cleanDomain.replace(":", "%3A");
-            return "did:web:" + cleanDomain;
+            LOG.error("Failed to generate DID", e);
+            return "did:web:" + domain.replace(":", "%3A");
         }
     }
 
     /**
-     * Get DID for a specific tenant using did:key method.
+     * Get DID for a specific tenant.
      * 
      * @param tenantId The tenant ID
-     * @return did:key identifier
-     * @throws DIDDocumentException if key generation fails
+     * @return DID identifier (defaults to did:web)
+     * @throws DIDDocumentException if generation fails
      */
     public String getDID(int tenantId) throws DIDDocumentException {
         try {
-            return DIDKeyManager.generateDIDKey(tenantId);
+            // Default to did:web
+            String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPUtil.getBaseUrl();
+            DIDProvider provider = DIDProviderFactory.getProvider("web");
+            return provider.getDID(tenantId, baseUrl);
         } catch (Exception e) {
-            throw new DIDDocumentException("Failed to generate did:key for tenant: " + tenantId, e);
+            throw new DIDDocumentException("Failed to generate DID for tenant: " + tenantId, e);
         }
     }
 
     @Override
     public String regenerateKeys(String domain, int tenantId) throws DIDDocumentException {
+        // This is specific to internal key management (did:key/did:jwk)
+        // did:web keys are managed via Keystore usually
         try {
-            LOG.info("Regenerating keys for domain: " + domain + ", tenant: " + tenantId);
+            LOG.info("Regenerating Ed25519 keys for tenant: " + tenantId);
             DIDKeyManager.regenerateKeyPair(tenantId);
-            return getDIDDocument(domain, tenantId);
+            // Return did:key representation of new keys
+            DIDProvider provider = DIDProviderFactory.getProvider("key");
+            return provider.getDID(tenantId, null);
         } catch (Exception e) {
-            String errorMsg = "Failed to regenerate keys for domain: " + domain;
+            String errorMsg = "Failed to regenerate keys for tenant: " + tenantId;
             LOG.error(errorMsg, e);
             throw new DIDDocumentException(errorMsg, e);
         }
