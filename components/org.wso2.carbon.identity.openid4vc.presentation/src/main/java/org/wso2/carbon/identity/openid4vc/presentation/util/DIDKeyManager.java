@@ -284,6 +284,18 @@ public class DIDKeyManager {
         return didKey;
     }
 
+    /**
+     * Generate a did:key identifier for the given tenant (Default Ed25519).
+     * 
+     * @param tenantId The tenant ID
+     * @return did:key identifier
+     * @throws Exception if key generation fails
+     */
+    public static String generateDIDKey(int tenantId) throws Exception {
+        com.nimbusds.jose.jwk.OctetKeyPair keyPair = getOrGenerateKeyPair(tenantId);
+        return generateDIDKey(keyPair);
+    }
+
     private static byte[] extractRawPublicKey(java.security.PublicKey publicKey) {
         // Ed25519 keys are X.509 encoded. The raw key is the last 32 bytes
         byte[] encoded = publicKey.getEncoded();
