@@ -559,6 +559,13 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             createDTO.setDidMethod(didMethod);
         }
 
+        // Set client ID from config or generate from tenant
+        String clientId = authenticatorProperties.get(PROP_CLIENT_ID);
+        if (StringUtils.isBlank(clientId)) {
+            clientId = buildClientId(context);
+        }
+        createDTO.setClientId(clientId);
+
         // NEW: Use per-application presentation definition mapping
         // Resolution order:
         // 1. Check application-specific mapping in
