@@ -437,14 +437,14 @@ public class VPRequestServiceImpl implements VPRequestService {
      * Note: In production, this should be properly signed with the verifier's
      * private key.
      */
-    private String buildRequestObjectJwt(VPRequest vpRequest, String didMethod) {
+    private String buildRequestObjectJwt(VPRequest vpRequest, String didMethod, String signingAlgorithm) {
         try {
             DIDProvider provider = DIDProviderFactory.getProvider(didMethod);
             int tenantId = vpRequest.getTenantId();
             String baseUrl = getConfiguredBaseUrl();
 
-            String did = provider.getDID(tenantId, baseUrl);
-            String keyId = provider.getSigningKeyId(tenantId, baseUrl);
+            String did = provider.getDID(tenantId, baseUrl, signingAlgorithm);
+            String keyId = provider.getSigningKeyId(tenantId, baseUrl, signingAlgorithm);
 
             log.info("Building Request Object with DID details - Method: " + provider.getName() + ", DID: " + did);
 
@@ -495,7 +495,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
             // Create header
             com.nimbusds.jose.JWSHeader header = new com.nimbusds.jose.JWSHeader.Builder(
-                    provider.getSigningAlgorithm())
+                    provider.getSigningAlgorithm(signingAlgorithm))
                     .keyID(keyId)
                     .type(new com.nimbusds.jose.JOSEObjectType("oauth-authz-req+jwt"))
                     .build();
@@ -504,7 +504,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                     new com.nimbusds.jose.Payload(claimsSet.toJSONObject()));
 
             // Sign using provider logic
-            com.nimbusds.jose.JWSSigner signer = provider.getSigner(tenantId);
+            com.nimbusds.jose.JWSSigner signer = provider.getSigner(tenantId, signingAlgorithm);
             jwsObject.sign(signer);
 
             return jwsObject.serialize();
