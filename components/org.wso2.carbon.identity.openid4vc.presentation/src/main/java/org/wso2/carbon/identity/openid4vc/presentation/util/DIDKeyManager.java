@@ -195,6 +195,7 @@ public class DIDKeyManager {
         } catch (Exception e) {
             LOG.error("Error persisting ES256 key: " + e.getMessage(), e);
         }
+    }
 
     /**
      * Convert Ed25519 public key to multibase format.
@@ -313,52 +314,6 @@ public class DIDKeyManager {
      * @param keyPair The key pair containing the Ed25519 public key
      * @return Multibase encoded string (z-prefix for base58btc)
      */
-    public static String publicKeyToMultibase(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
-        try {
-            byte[] publicKeyBytes = keyPair.getX().decode();
-            LOG.info("Multibase Conversion - Raw Public Key (Hex): " + bytesToHex(publicKeyBytes));
-
-            // Prepend multicodec prefix for Ed25519-pub (0xed01)
-            byte[] multicodecKey = new byte[34];
-            multicodecKey[0] = (byte) 0xed;
-            multicodecKey[1] = (byte) 0x01;
-            System.arraycopy(publicKeyBytes, 0, multicodecKey, 2, 32);
-
-            // Base58 encode and prepend 'z' for base58btc multibase
-            String multibase = "z" + base58Encode(multicodecKey);
-            LOG.info("Multibase Conversion - Result: " + multibase);
-            return multibase;
-        } catch (Exception e) {
-            LOG.error("Failed to convert public key to multibase", e);
-            return null;
-        }
-    }
-
-    /**
-     * Generate a did:key identifier from the key pair.
-     * Format: did:key: + multibase(0xed01 + public key)
-     * 
-     * @param keyPair The Ed25519 key pair
-     * @return did:key identifier
-     */
-    public static String generateDIDKey(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
-        String multibase = publicKeyToMultibase(keyPair);
-        String didKey = "did:key:" + multibase;
-        LOG.info("Generated did:key: " + didKey);
-        return didKey;
-    }
-
-    /**
-     * Generate a did:key identifier for the given tenant.
-     * 
-     * @param tenantId The tenant ID
-     * @return did:key identifier
-     * @throws Exception if key generation fails
-     */
-    public static String generateDIDKey(int tenantId) throws Exception {
-        com.nimbusds.jose.jwk.OctetKeyPair keyPair = getOrGenerateKeyPair(tenantId);
-        return generateDIDKey(keyPair);
-    }
 
     /**
      * Extract public key bytes from a did:key identifier.
