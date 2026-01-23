@@ -100,6 +100,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         // Resolve presentation definition
         String presentationDefinition = resolvePresentationDefinition(requestCreateDTO, tenantId);
         String didMethod = requestCreateDTO.getDidMethod();
+        String signingAlgorithm = null;
 
         // Extract and clean internal configuration
         if (StringUtils.isNotBlank(presentationDefinition)) {
@@ -110,6 +111,9 @@ public class VPRequestServiceImpl implements VPRequestService {
                     // Only override if not already set in DTO
                     if (StringUtils.isBlank(didMethod) && internal.has("did_method")) {
                         didMethod = internal.get("did_method").getAsString();
+                    }
+                    if (internal.has("signing_algorithm")) {
+                        signingAlgorithm = internal.get("signing_algorithm").getAsString();
                     }
                     // Remove internal config to keep spec compliant
                     pdJson.remove("_internal");
@@ -145,7 +149,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Generate and set the Request JWT immediately
         // This ensures the DID method preference is respected at creation time
-        String requestJwt = buildRequestObjectJwt(vpRequest, didMethod);
+        String requestJwt = buildRequestObjectJwt(vpRequest, didMethod, signingAlgorithm);
         vpRequest.setRequestJwt(requestJwt);
 
         // Persist to database

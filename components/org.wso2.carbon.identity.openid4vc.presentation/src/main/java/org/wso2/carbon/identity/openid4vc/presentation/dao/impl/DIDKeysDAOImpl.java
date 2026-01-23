@@ -40,6 +40,7 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
     private static final String SQL_INSERT_DID_KEY = "INSERT INTO IDN_DID_KEYS (TENANT_ID, KEY_ID, ALGORITHM, PUBLIC_KEY, PRIVATE_KEY, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?)";
     private static final String SQL_SELECT_DID_KEY = "SELECT * FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
     private static final String SQL_SELECT_DID_KEY_BY_TENANT = "SELECT * FROM IDN_DID_KEYS WHERE TENANT_ID = ? ORDER BY CREATED_AT DESC LIMIT 1";
+    private static final String SQL_SELECT_DID_KEY_BY_TENANT_AND_ALGO = "SELECT * FROM IDN_DID_KEYS WHERE TENANT_ID = ? AND ALGORITHM = ? ORDER BY CREATED_AT DESC LIMIT 1";
     private static final String SQL_DELETE_DID_KEY = "DELETE FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
     private static final String SQL_CHECK_DID_KEY_EXISTS = "SELECT 1 FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
 
@@ -115,6 +116,30 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
             }
         } catch (SQLException e) {
             throw new VPException("Error retrieving DID key for tenant: " + tenantId, e);
+        }
+        return null;
+    }
+
+    @Override
+    public DIDKey getDIDKeyByTenantAndAlgo(int tenantId, String algorithm) throws VPException {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_DID_KEY_BY_TENANT_AND_ALGO)) {
+                ps.setInt(1, tenantId);
+                ps.setString(2, algorithm);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return new DIDKey(
+                                rs.getString("KEY_ID"),
+                                rs.getInt("TENANT_ID"),
+                                rs.getString("ALGORITHM"),
+                                rs.getBytes("PUBLIC_KEY"),
+                                rs.getBytes("PRIVATE_KEY"));
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new VPException("Error retrieving DID key for tenant: " + tenantId + " and algo: " + algorithm, e);
         }
         return null;
     }
