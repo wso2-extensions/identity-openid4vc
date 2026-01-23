@@ -407,12 +407,16 @@ public class VPRequestServiceImpl implements VPRequestService {
      */
     private String buildRequestObjectJwt(VPRequest vpRequest) {
         try {
-            String baseUrl = getConfiguredBaseUrl();
-            String did = new org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl()
-                    .getDID(baseUrl.replace("https://", "").replace("http://", ""));
-            String keyId = did + "#owner";
+            // Get did:key using DIDKeyManager directly (simpler than using
+            // DIDDocumentService)
+            int tenantId = vpRequest.getTenantId();
+            String did = org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager.generateDIDKey(tenantId);
 
-            log.info("Building Request Object with DID: " + did + " and KeyID: " + keyId);
+            // For did:key, the fragment is the multibase portion
+            String multibase = did.substring(8); // Remove "did:key:"
+            String keyId = did + "#" + multibase;
+
+            log.info("Building Request Object with did:key: " + did + " and KeyID: " + keyId);
 
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()

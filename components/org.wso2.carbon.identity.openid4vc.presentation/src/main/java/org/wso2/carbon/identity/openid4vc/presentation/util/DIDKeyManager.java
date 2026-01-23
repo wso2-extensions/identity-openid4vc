@@ -124,6 +124,120 @@ public class DIDKeyManager {
     }
 
     /**
+     * Generate a did:key identifier from the key pair.
+     * Format: did:key: + multibase(0xed01 + public key)
+     * 
+     * @param keyPair The Ed25519 key pair
+     * @return did:key identifier
+     */
+    public static String generateDIDKey(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
+        String multibase = publicKeyToMultibase(keyPair);
+        String didKey = "did:key:" + multibase;
+        LOG.info("Generated did:key: " + didKey);
+        return didKey;
+    }
+
+    /**
+     * Generate a did:key identifier for the given tenant.
+     * 
+     * @param tenantId The tenant ID
+     * @return did:key identifier
+     * @throws Exception if key generation fails
+     */
+    public static String generateDIDKey(int tenantId) throws Exception {
+        com.nimbusds.jose.jwk.OctetKeyPair keyPair = getOrGenerateKeyPair(tenantId);
+        return generateDIDKey(keyPair);
+    }
+
+    /**
+     * Extract public key bytes from a did:key identifier.
+     * 
+     * @param didKey The did:key string (e.g., did:key:z6Mkf5rGMo...)
+     * @return Raw 32-byte Ed25519 public key
+     * @throws IllegalArgumentException if the did:key format is invalid
+     */
+    public static byte[] extractPublicKeyFromDIDKey(String didKey) {
+        if (didKey == null || !didKey.startsWith("did:key:z")) {
+            throw new IllegalArgumentException("Invalid did:key format: " + didKey);
+        }
+
+        // Remove "did:key:" prefix
+        String multibase = didKey.substring(8);
+
+        // Remove 'z' prefix (base58btc multibase indicator)
+        String base58Part = multibase.substring(1);
+
+        // Decode base58
+        byte[] decoded = base58Decode(base58Part);
+
+        // Verify multicodec prefix (0xed01 for Ed25519)
+        if (decoded.length < 34 || decoded[0] != (byte) 0xed || decoded[1] != (byte) 0x01) {
+            throw new IllegalArgumentException("Invalid Ed25519 multicodec prefix in did:key");
+        }
+
+        // Extract public key (skip 2-byte prefix)
+        byte[] publicKey = java.util.Arrays.copyOfRange(decoded, 2, decoded.length);
+        LOG.info("Extracted public key from did:key, length: " + publicKey.length);
+        return publicKey;
+    }
+
+    /**
+     * Base58 decode (Bitcoin alphabet).
+     * 
+     * @param input Base58 encoded string
+     * @return Decoded byte array
+     */
+    public static byte[] base58Decode(String input) {
+        String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        int[] INDEXES = new int[128];
+        java.util.Arrays.fill(INDEXES, -1);
+        for (int i = 0; i < ALPHABET.length(); i++) {
+            INDEXES[ALPHABET.charAt(i)] = i;
+        }
+
+        if (input.length() == 0) {
+            return new byte[0];
+        }
+
+        // Convert base58 string to big integer
+        byte[] input58 = new byte[input.length()];
+        for (int i = 0; i < input.length(); i++) {
+            char c = input.charAt(i);
+            int digit = c < 128 ? INDEXES[c] : -1;
+            if (digit < 0) {
+                throw new IllegalArgumentException("Invalid Base58 character: " + c);
+            }
+            input58[i] = (byte) digit;
+        }
+
+        // Count leading zeros
+        int zeros = 0;
+        while (zeros < input58.length && input58[zeros] == 0) {
+            zeros++;
+        }
+
+        // Convert from base58 to base256
+        byte[] decoded = new byte[input.length()];
+        int outputStart = decoded.length;
+        for (int inputStart = zeros; inputStart < input58.length;) {
+            decoded[--outputStart] = divmod(input58, inputStart, 58, 256);
+            if (input58[inputStart] == 0) {
+                inputStart++;
+            }
+        }
+
+        // Skip leading zeros in decoded
+        while (outputStart < decoded.length && decoded[outputStart] == 0) {
+            outputStart++;
+        }
+
+        // Build result with leading zeros
+        byte[] result = new byte[zeros + (decoded.length - outputStart)];
+        System.arraycopy(decoded, outputStart, result, zeros, decoded.length - outputStart);
+        return result;
+    }
+
+    /**
      * Convert public key to JWK Map.
      * 
      * @param keyPair The key pair
