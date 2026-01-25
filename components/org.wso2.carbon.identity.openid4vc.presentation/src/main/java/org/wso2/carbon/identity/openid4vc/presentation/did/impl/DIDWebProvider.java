@@ -22,6 +22,8 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.ECDSASigner;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -35,12 +37,16 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * DID Provider implementation for 'did:web' method.
  * Supports RSA (default via KeyStore), EdDSA and ES256 (via DIDKeyManager).
  */
 public class DIDWebProvider implements DIDProvider {
+
+    private static final Log LOG = LogFactory.getLog(DIDWebProvider.class);
 
     @Override
     public String getName() {
@@ -130,68 +136,98 @@ public class DIDWebProvider implements DIDProvider {
     public DIDDocument getDIDDocument(int tenantId, String baseUrl, String algorithm) throws VPException {
         try {
             String did = getDID(tenantId, baseUrl);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Generating DID Document for " + did + " with requested algorithm: "
+                        + (algorithm == null ? "ALL" : algorithm));
+            }
+
             DIDDocument didDocument = new DIDDocument();
             didDocument.setId(did);
 
-            java.util.List<DIDDocument.VerificationMethod> verificationMethods = new java.util.ArrayList<>();
-            java.util.List<String> relationships = new java.util.ArrayList<>();
+            List<DIDDocument.VerificationMethod> verificationMethods = new ArrayList<>();
+            List<String> relationships = new ArrayList<>();
 
             boolean includeAll = (algorithm == null);
 
             // 1. Add RSA Key (Default)
             if (includeAll || "RS256".equals(algorithm)) {
-                String keyId = getSigningKeyId(tenantId, baseUrl, "RS256");
-                KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                Certificate certificate = keyStoreManager.getDefaultPrimaryCertificate();
-                RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
+                try {
+                    String keyId = getSigningKeyId(tenantId, baseUrl, "RS256");
+                    KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
+                    Certificate certificate = keyStoreManager.getDefaultPrimaryCertificate();
+                    RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
 
-                com.nimbusds.jose.jwk.RSAKey rsaKey = new com.nimbusds.jose.jwk.RSAKey.Builder(publicKey)
-                        .keyID(keyId)
-                        .build();
+                    com.nimbusds.jose.jwk.RSAKey rsaKey = new com.nimbusds.jose.jwk.RSAKey.Builder(publicKey)
+                            .keyID(keyId)
+                            .build();
 
-                DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                vm.setId(keyId);
-                vm.setController(did);
-                vm.setType("JsonWebKey2020");
-                vm.setPublicKeyJwkMap(rsaKey.toJSONObject());
+                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
+                    vm.setId(keyId);
+                    vm.setController(did);
+                    vm.setType("JsonWebKey2020");
+                    vm.setPublicKeyJwkMap(rsaKey.toJSONObject());
 
-                verificationMethods.add(vm);
-                relationships.add(keyId);
+                    verificationMethods.add(vm);
+                    relationships.add(keyId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Added RSA verification method: " + keyId);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Error adding RSA key to DID document", e);
+                }
             }
 
             // 2. Add EdDSA Key
             if (includeAll || "EdDSA".equals(algorithm)) {
-                String keyId = getSigningKeyId(tenantId, baseUrl, "EdDSA");
-                OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
+                try {
+                    String keyId = getSigningKeyId(tenantId, baseUrl, "EdDSA");
+                    OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
 
-                DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                vm.setId(keyId);
-                vm.setController(did);
-                vm.setType("JsonWebKey2020");
-                vm.setPublicKeyJwkMap(keyPair.toPublicJWK().toJSONObject());
+                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
+                    vm.setId(keyId);
+                    vm.setController(did);
+                    vm.setType("JsonWebKey2020");
+                    vm.setPublicKeyJwkMap(keyPair.toPublicJWK().toJSONObject());
 
-                verificationMethods.add(vm);
-                relationships.add(keyId);
+                    verificationMethods.add(vm);
+                    relationships.add(keyId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Added EdDSA verification method: " + keyId);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Error adding EdDSA key to DID document", e);
+                }
             }
 
             // 3. Add ES256 Key
             if (includeAll || "ES256".equals(algorithm)) {
-                String keyId = getSigningKeyId(tenantId, baseUrl, "ES256");
-                ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
+                try {
+                    String keyId = getSigningKeyId(tenantId, baseUrl, "ES256");
+                    ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
 
-                DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                vm.setId(keyId);
-                vm.setController(did);
-                vm.setType("JsonWebKey2020");
-                vm.setPublicKeyJwkMap(key.toPublicJWK().toJSONObject());
+                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
+                    vm.setId(keyId);
+                    vm.setController(did);
+                    vm.setType("JsonWebKey2020");
+                    vm.setPublicKeyJwkMap(key.toPublicJWK().toJSONObject());
 
-                verificationMethods.add(vm);
-                relationships.add(keyId);
+                    verificationMethods.add(vm);
+                    relationships.add(keyId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Added ES256 verification method: " + keyId);
+                    }
+                } catch (Exception e) {
+                    LOG.error("Error adding ES256 key to DID document", e);
+                }
             }
 
             didDocument.setVerificationMethod(verificationMethods);
             didDocument.setAuthentication(relationships);
             didDocument.setAssertionMethod(relationships);
+
+            LOG.info("Generated DID Document for " + did + " with " + verificationMethods.size()
+                    + " verification methods.");
 
             return didDocument;
 

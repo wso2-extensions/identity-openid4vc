@@ -150,7 +150,21 @@ public class DIDKeyManager {
     }
 
     private static OctetKeyPair generateEd25519KeyPair() throws Exception {
-        return new OctetKeyPairGenerator(Curve.Ed25519).generate();
+        // Use Bouncy Castle directly to avoid Nimbus dependency on Google Tink which is
+        // missing in OSGi
+        org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator gen = new org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator();
+        gen.init(new org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters(new java.security.SecureRandom()));
+        org.bouncycastle.crypto.AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
+
+        org.bouncycastle.crypto.params.Ed25519PublicKeyParameters publicParams = (org.bouncycastle.crypto.params.Ed25519PublicKeyParameters) keyPair
+                .getPublic();
+        org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters privateParams = (org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters) keyPair
+                .getPrivate();
+
+        Base64URL x = Base64URL.encode(publicParams.getEncoded());
+        Base64URL d = Base64URL.encode(privateParams.getEncoded());
+
+        return new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
     }
 
     private static ECKey generateECKeyPair() throws Exception {
