@@ -48,7 +48,8 @@ public class CredentialIssuerTest {
     private static final String TEST_CREDENTIAL =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature";
     private static final String TEST_SD_JWT_CREDENTIAL =
-            "eyJhbGciOiJSUzI1NiIsInR5cCI6InZjK3NkLWp3dCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIn0.sig~WyJzYWx0IiwiZW1haWwiLCJ0ZXN0QGV4YW1wbGUuY29tIl0";
+            "eyJhbGciOiJSUzI1NiIsInR5cCI6InZjK3NkLWp3dCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIn0.sig" +
+                    "~WyJzYWx0IiwiZW1haWwiLCJ0ZXN0QGV4YW1wbGUuY29tIl0";
 
     private CredentialIssuer credentialIssuer;
 
