@@ -38,13 +38,6 @@
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
         </dependency>
-        <dependency>
-            <groupId>commons-logging</groupId>
-            <artifactId>commons-logging</artifactId>
-            <version>1.2</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.testng</groupId>
@@ -57,7 +50,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
+            <groupId>org.wso2.orbit.org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
     </dependencies>
@@ -80,7 +73,6 @@
                         <Import-Package>
                             com.google.gson;version="${com.google.code.gson.osgi.version.range}",
                             org.apache.commons.logging;version="${import.package.version.commons.logging}",
-                            *;resolution:=optional
                         </Import-Package>
                     </instructions>
                 </configuration>

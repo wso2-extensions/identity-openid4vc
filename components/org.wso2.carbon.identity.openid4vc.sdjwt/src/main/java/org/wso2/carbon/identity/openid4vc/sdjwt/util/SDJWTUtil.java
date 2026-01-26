@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.sdjwt.util;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.wso2.carbon.identity.openid4vc.sdjwt.constant.SDJWTConstants;
 import org.wso2.carbon.identity.openid4vc.sdjwt.exception.SDJWTException;
 

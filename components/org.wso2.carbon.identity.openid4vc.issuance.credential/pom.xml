@@ -71,10 +71,6 @@
             <groupId>org.wso2.orbit.com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
         <!-- Test dependencies -->
         <dependency>
             <groupId>org.jacoco</groupId>
@@ -127,7 +123,7 @@
                             org.wso2.carbon.identity.oauth.*; version="${carbon.identity.oauth.package.import.version.range}",
                             org.wso2.carbon.identity.oauth2.*; version="${carbon.identity.oauth.package.import.version.range}",
                             org.apache.commons.logging; version="${commons-logging.osgi.version.range}",
-                            org.apache.commons.lang3; version="${commons-lang3.wso2.osgi.version.range}",
+                            org.apache.commons.lang; version="${commons-lang.wso2.osgi.version.range}",
                             com.nimbusds.jose.*; version="${nimbusds.osgi.version.range}",
                             com.nimbusds.jwt; version="${nimbusds.osgi.version.range}",
                             org.wso2.carbon.identity.openid4vc.issuance.common.*; version="${identity.oid4vc.pkg.version}",
