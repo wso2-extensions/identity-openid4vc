@@ -145,12 +145,20 @@ public class DIDWebProvider implements DIDProvider {
             DIDDocument didDocument = new DIDDocument();
             didDocument.setId(did);
 
+            // Add Standard Contexts
+            List<String> contexts = new ArrayList<>();
+            contexts.add("https://www.w3.org/ns/did/v1");
+            contexts.add("https://w3id.org/security/suites/ed25519-2020/v1");
+            contexts.add("https://w3id.org/security/suites/ecdsa-secp256r1-2019/v1");
+            contexts.add("https://w3id.org/security/suites/rsa-2018/v1");
+            didDocument.setContext(contexts);
+
             List<DIDDocument.VerificationMethod> verificationMethods = new ArrayList<>();
             List<String> relationships = new ArrayList<>();
 
             boolean includeAll = (algorithm == null);
 
-            // 1. Add RSA Key (Default)
+            // 1. Add RSA Key (RsaVerificationKey2018)
             if (includeAll || "RS256".equals(algorithm)) {
                 try {
                     String keyId = getSigningKeyId(tenantId, baseUrl, "RS256");
@@ -165,7 +173,7 @@ public class DIDWebProvider implements DIDProvider {
                     DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
                     vm.setId(keyId);
                     vm.setController(did);
-                    vm.setType("JsonWebKey2020");
+                    vm.setType("RsaVerificationKey2018");
                     vm.setPublicKeyJwkMap(rsaKey.toJSONObject());
 
                     verificationMethods.add(vm);
@@ -178,7 +186,7 @@ public class DIDWebProvider implements DIDProvider {
                 }
             }
 
-            // 2. Add EdDSA Key
+            // 2. Add EdDSA Key (Ed25519VerificationKey2020)
             if (includeAll || "EdDSA".equals(algorithm)) {
                 try {
                     String keyId = getSigningKeyId(tenantId, baseUrl, "EdDSA");
@@ -187,8 +195,17 @@ public class DIDWebProvider implements DIDProvider {
                     DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
                     vm.setId(keyId);
                     vm.setController(did);
-                    vm.setType("JsonWebKey2020");
-                    vm.setPublicKeyJwkMap(keyPair.toPublicJWK().toJSONObject());
+                    vm.setType("Ed25519VerificationKey2020");
+
+                    // Ed25519VerificationKey2020 requires publicKeyMultibase
+                    String multibase = DIDKeyManager.publicKeyToMultibase(keyPair);
+                    vm.setPublicKeyMultibase(multibase.substring(1)); // Remove 'z' prefix as sometimes library expects
+                                                                      // raw, but standard is multibase with z.
+                    // Wait, standard uses z. DIDKeyManager.publicKeyToMultibase returns with 'z'.
+                    // DIDKeyProvider does: verifyMethod.setPublicKeyMultibase(did.substring(8));
+                    // did:key:z... -> substring(8) -> z...
+                    // So we should keep the 'z'.
+                    vm.setPublicKeyMultibase(multibase);
 
                     verificationMethods.add(vm);
                     relationships.add(keyId);
@@ -200,7 +217,7 @@ public class DIDWebProvider implements DIDProvider {
                 }
             }
 
-            // 3. Add ES256 Key
+            // 3. Add ES256 Key (EcdsaSecp256r1VerificationKey2019)
             if (includeAll || "ES256".equals(algorithm)) {
                 try {
                     String keyId = getSigningKeyId(tenantId, baseUrl, "ES256");
@@ -209,7 +226,7 @@ public class DIDWebProvider implements DIDProvider {
                     DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
                     vm.setId(keyId);
                     vm.setController(did);
-                    vm.setType("JsonWebKey2020");
+                    vm.setType("EcdsaSecp256r1VerificationKey2019");
                     vm.setPublicKeyJwkMap(key.toPublicJWK().toJSONObject());
 
                     verificationMethods.add(vm);
