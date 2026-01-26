@@ -24,6 +24,7 @@
             <class name="org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceServiceTest"/>
             <class name="org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerTest"/>
             <class name="org.wso2.carbon.identity.openid4vc.issuance.credential.response.CredentialIssuanceResponseTest"/>
+            <class name="org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceExceptionHandlerTest"/>
         </classes>
     </test>
 </suite>
