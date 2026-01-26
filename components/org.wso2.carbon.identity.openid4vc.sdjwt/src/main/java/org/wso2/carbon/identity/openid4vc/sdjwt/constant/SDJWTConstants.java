@@ -64,11 +64,6 @@ public final class SDJWTConstants {
     public static final String DEFAULT_HASH_ALGORITHM = HASH_ALG_SHA256;
 
     /**
-     * OpenID4VCI format identifier for SD-JWT Verifiable Credentials.
-     */
-    public static final String FORMAT_VC_SD_JWT = "vc+sd-jwt";
-
-    /**
      * JWT typ header value for SD-JWT VCs (Issuer-signed JWT).
      */
     public static final String TYP_VC_SD_JWT = "vc+sd-jwt";

@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CONTEXT_OPENID4VCI;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.FORMAT_VC_SD_JWT;
 
 /**
  * Handler for SD-JWT VC format credentials.
@@ -63,7 +64,7 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class SdJwtVcFormatHandler implements CredentialFormatHandler {
 
     private static final Log LOG = LogFactory.getLog(SdJwtVcFormatHandler.class);
-    private static final String FORMAT = SDJWTConstants.FORMAT_VC_SD_JWT;
+    private static final String FORMAT = FORMAT_VC_SD_JWT;
 
     @Override
     public String getFormat() {

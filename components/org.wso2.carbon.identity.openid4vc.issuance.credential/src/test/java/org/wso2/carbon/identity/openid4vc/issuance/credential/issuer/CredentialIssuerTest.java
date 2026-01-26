@@ -42,10 +42,13 @@ import static org.mockito.Mockito.when;
 public class CredentialIssuerTest {
 
     private static final String TEST_FORMAT = "jwt_vc_json";
+    private static final String TEST_FORMAT_VC_SD_JWT = "vc+sd-jwt";
     private static final String TEST_TEMPLATE_ID = "test-config-123";
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_CREDENTIAL =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature";
+    private static final String TEST_SD_JWT_CREDENTIAL =
+            "eyJhbGciOiJSUzI1NiIsInR5cCI6InZjK3NkLWp3dCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIn0.sig~WyJzYWx0IiwiZW1haWwiLCJ0ZXN0QGV4YW1wbGUuY29tIl0";
 
     private CredentialIssuer credentialIssuer;
 
@@ -80,6 +83,32 @@ public class CredentialIssuerTest {
         // Verify
         Assert.assertNotNull(credential, "Credential should not be null");
         Assert.assertEquals(credential, TEST_CREDENTIAL, "Credential should match expected value");
+    }
+
+    @Test(priority = 2, description = "Test successful credential issuance with vc+sd-jwt format")
+    public void testIssueCredentialWithVcSdJwtFormat() throws CredentialIssuanceException {
+        // Create template with vc+sd-jwt format
+        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT_VC_SD_JWT);
+
+        // Create issuer context
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Mock format handler for vc+sd-jwt
+        CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
+        when(mockHandler.getFormat()).thenReturn(TEST_FORMAT_VC_SD_JWT);
+        when(mockHandler.issueCredential(any(CredentialIssuerContext.class)))
+                .thenReturn(TEST_SD_JWT_CREDENTIAL);
+
+        // Register the handler
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
+
+        // Execute test
+        String credential = credentialIssuer.issueCredential(context);
+
+        // Verify
+        Assert.assertNotNull(credential, "Credential should not be null");
+        Assert.assertEquals(credential, TEST_SD_JWT_CREDENTIAL, "Credential should match expected SD-JWT value");
+        Assert.assertTrue(credential.contains("~"), "SD-JWT credential should contain disclosure separator");
     }
 
     @Test(priority = 3, description = "Test credential issuance when handler not found",
