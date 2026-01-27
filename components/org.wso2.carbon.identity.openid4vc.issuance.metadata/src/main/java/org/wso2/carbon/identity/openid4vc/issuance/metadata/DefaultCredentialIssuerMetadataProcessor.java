@@ -130,10 +130,16 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                         .format(configuration.getFormat())
                         .scope(configuration.getIdentifier())
                         .signingAlgorithm(configuration.getSigningAlgorithm())
-                        .type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
                         .display(configuration.getDisplayName())
-                        .type(configuration.getIdentifier())
                         .claims(configuration.getClaims());
+
+                // For SD-JWT VC format, use vct instead of type
+                if (Constants.FORMAT_VC_SD_JWT.equals(configuration.getFormat())) {
+                    builder.vct(configuration.getIdentifier());
+                } else {
+                    builder.type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
+                           .type(configuration.getIdentifier());
+                }
 
                 configurationsMap.put(configuration.getIdentifier(), builder.build());
             }

@@ -40,6 +40,7 @@ public class CredentialConfigurationMetadataBuilder {
     private String scope;
     private List<String> signingAlgorithms = new ArrayList<>();
     private List<String> types = new ArrayList<>();
+    private String vct;
     private Object display = Collections.emptyList();
     private List<String> claims;
 
@@ -108,6 +109,19 @@ public class CredentialConfigurationMetadataBuilder {
     }
 
     /**
+     * Set the VCT (Verifiable Credential Type) for SD-JWT VC format.
+     * This is used instead of types array for SD-JWT VCs.
+     *
+     * @param vct the verifiable credential type identifier
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder vct(String vct) {
+
+        this.vct = vct;
+        return this;
+    }
+
+    /**
      * Set the display.
      *
      * @param displayName the display name
@@ -159,6 +173,12 @@ public class CredentialConfigurationMetadataBuilder {
         config.put(Constants.CredentialIssuerMetadata.CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED,
                 signingAlgorithms);
 
+        // Add vct at config level for SD-JWT VC format
+        if (vct != null) {
+            config.put(Constants.CredentialIssuerMetadata.VCT, vct);
+        }
+
+        // Add credential_definition with type array
         if (!types.isEmpty()) {
             Map<String, Object> credentialDefinition = new LinkedHashMap<>();
             credentialDefinition.put(Constants.W3CVCDataModel.TYPE, types);
@@ -175,6 +195,8 @@ public class CredentialConfigurationMetadataBuilder {
 
     /**
      * Convert a list of claim names to the OpenID4VCI claims structure.
+     * For SD-JWT VC format, claims are at the top level of the JWT payload.
+     * For JWT VC JSON format, claims are under credentialSubject.
      *
      * @param claims the list of claim names
      * @return the list of claim objects with path
@@ -187,8 +209,14 @@ public class CredentialConfigurationMetadataBuilder {
         return claims.stream().map(claim -> {
             Map<String, Object> claimMap = new LinkedHashMap<>();
             List<String> path = new ArrayList<>();
-            path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
+
+            // SD-JWT VC: claims are at top level (no credentialSubject prefix)
+            // JWT VC JSON: claims are under credentialSubject
+            if (!Constants.FORMAT_VC_SD_JWT.equals(format)) {
+                path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
+            }
             path.add(claim);
+
             claimMap.put(Constants.CredentialIssuerMetadata.PATH, path);
             return claimMap;
         }).collect(Collectors.toList());
