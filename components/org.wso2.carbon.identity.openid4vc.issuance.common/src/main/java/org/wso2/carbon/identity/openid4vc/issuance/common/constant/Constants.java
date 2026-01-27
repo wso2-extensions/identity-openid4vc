@@ -69,6 +69,7 @@ public class Constants {
         public static final String NAME = "name";
         public static final String PATH = "path";
         public static final String SUBJECT_IDENTIFIER = "sub";
+        public static final String VCT = "vct";
     }
 
     /**
