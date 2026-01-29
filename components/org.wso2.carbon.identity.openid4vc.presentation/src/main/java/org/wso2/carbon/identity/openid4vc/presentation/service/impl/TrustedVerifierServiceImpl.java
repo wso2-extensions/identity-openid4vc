@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Implementation of TrustedVerifierService.
@@ -298,7 +297,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
         if (requestedCredentialTypes != null && !requestedCredentialTypes.isEmpty()) {
             for (String credentialType : requestedCredentialTypes) {
                 if (!verifier.allowsCredentialType(credentialType)) {
-                    LOG.warn("Verifier " + verifierDid + " is not allowed to request credential type: " + 
+                    LOG.warn("Verifier " + verifierDid + " is not allowed to request credential type: " +
                             credentialType);
                     return false;
                 }
@@ -356,7 +355,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
 
             TrustedVerifier verifier = verifierOpt.get();
             String organizationUrl = verifier.getOrganizationUrl();
-            
+
             if (StringUtils.isBlank(organizationUrl)) {
                 return true; // No organization URL to validate against
             }
@@ -364,13 +363,13 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
             try {
                 URI redirectUriParsed = new URI(redirectUri);
                 URI organizationUriParsed = new URI(organizationUrl);
-                
+
                 String redirectHost = redirectUriParsed.getHost();
                 String organizationHost = organizationUriParsed.getHost();
-                
+
                 // Check if redirect host matches or is subdomain of organization
-                return redirectHost.equals(organizationHost) || 
-                       redirectHost.endsWith("." + organizationHost);
+                return redirectHost.equals(organizationHost) ||
+                        redirectHost.endsWith("." + organizationHost);
             } catch (Exception e) {
                 LOG.warn("Failed to parse URIs for validation", e);
                 return false;
@@ -382,7 +381,8 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
 
     @Override
     public void clearCache() {
-        // No separate cache in this implementation, but method is available for future use
+        // No separate cache in this implementation, but method is available for future
+        // use
         LOG.info("Cache cleared");
     }
 
@@ -392,24 +392,22 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
      * Set strict verification mode for a tenant.
      *
      * @param tenantDomain the tenant domain
-     * @param strictMode true to enable strict mode
+     * @param strictMode   true to enable strict mode
      */
     public void setStrictVerificationEnabled(String tenantDomain, boolean strictMode) {
         tenantConfigs
-                .computeIfAbsent(tenantDomain, k -> new TenantConfig())
-                .strictMode = strictMode;
+                .computeIfAbsent(tenantDomain, k -> new TenantConfig()).strictMode = strictMode;
     }
 
     /**
      * Set redirect URI validation mode for a tenant.
      *
      * @param tenantDomain the tenant domain
-     * @param mode the validation mode
+     * @param mode         the validation mode
      */
     public void setRedirectUriValidationMode(String tenantDomain, RedirectUriValidationMode mode) {
         tenantConfigs
-                .computeIfAbsent(tenantDomain, k -> new TenantConfig())
-                .redirectUriMode = mode;
+                .computeIfAbsent(tenantDomain, k -> new TenantConfig()).redirectUriMode = mode;
     }
 
     /**

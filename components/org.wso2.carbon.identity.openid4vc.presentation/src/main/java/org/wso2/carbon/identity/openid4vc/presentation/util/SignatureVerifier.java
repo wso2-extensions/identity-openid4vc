@@ -32,14 +32,13 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Base64;
 
 /**
- * Utility class for verifying cryptographic signatures in Verifiable Credentials.
+ * Utility class for verifying cryptographic signatures in Verifiable
+ * Credentials.
  * Supports JWT signatures and JSON-LD Linked Data signatures.
  */
 public class SignatureVerifier {
 
     private static final Log LOG = LogFactory.getLog(SignatureVerifier.class);
-
-    private final DIDResolverService didResolverService;
 
     /**
      * Constructor with DID resolver service.
@@ -47,7 +46,8 @@ public class SignatureVerifier {
      * @param didResolverService Service for resolving DIDs to get public keys
      */
     public SignatureVerifier(DIDResolverService didResolverService) {
-        this.didResolverService = didResolverService;
+        // didResolverService is not currently used in this class but kept for API
+        // stability
     }
 
     /**
@@ -103,15 +103,16 @@ public class SignatureVerifier {
     /**
      * Verify a Linked Data signature (JSON-LD).
      *
-     * @param document    The JSON-LD document (without proof)
-     * @param publicKey   The public key for verification
-     * @param proofType   The proof type (Ed25519Signature2020, JsonWebSignature2020, etc.)
-     * @param proofValue  The proof value or JWS
+     * @param document   The JSON-LD document (without proof)
+     * @param publicKey  The public key for verification
+     * @param proofType  The proof type (Ed25519Signature2020, JsonWebSignature2020,
+     *                   etc.)
+     * @param proofValue The proof value or JWS
      * @return true if signature is valid
      * @throws CredentialVerificationException if verification fails
      */
     public boolean verifyLinkedDataSignature(String document, PublicKey publicKey,
-                                              String proofType, String proofValue)
+            String proofType, String proofValue)
             throws CredentialVerificationException {
 
         if (document == null || publicKey == null || proofType == null || proofValue == null) {
@@ -251,7 +252,7 @@ public class SignatureVerifier {
      * Generic signature verification fallback.
      */
     private boolean verifyGenericSignature(String document, PublicKey publicKey,
-                                            String proofValue, String proofType)
+            String proofValue, String proofType)
             throws Exception {
 
         byte[] signatureBytes;

@@ -37,7 +37,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPSubmissionServl
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.WellKnownDIDServlet;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import javax.servlet.Servlet;
 import javax.servlet.ServletException;
 
 /**

@@ -30,11 +30,11 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerServ
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.service.RealmService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation of TrustedIssuerService for managing trusted credential issuers.
+ * Implementation of TrustedIssuerService for managing trusted credential
+ * issuers.
  * Provides allowlist-based issuer verification.
  */
 public class TrustedIssuerServiceImpl implements TrustedIssuerService {
@@ -69,8 +69,8 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         }
 
         if (!isTrustEnforcementEnabled(tenantDomain)) {
-            LOG.debug("Trust enforcement is disabled for tenant: " + tenantDomain + 
-                     ". Accepting all issuers.");
+            LOG.debug("Trust enforcement is disabled for tenant: " + tenantDomain +
+                    ". Accepting all issuers.");
             return true;
         }
 
@@ -92,9 +92,9 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     }
 
     @Override
-    public void addTrustedIssuer(String issuerDid, String tenantDomain, String addedBy, String description) 
+    public void addTrustedIssuer(String issuerDid, String tenantDomain, String addedBy, String description)
             throws VPException {
-        
+
         if (issuerDid == null || issuerDid.trim().isEmpty()) {
             throw new VPException("Issuer DID cannot be null or empty");
         }
@@ -116,7 +116,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
 
         trustedIssuerDAO.addTrustedIssuer(trustedIssuer);
 
-        LOG.info(String.format("Added trusted issuer: %s for tenant: %s by user: %s", 
+        LOG.info(String.format("Added trusted issuer: %s for tenant: %s by user: %s",
                 issuerDid, tenantDomain, addedBy));
     }
 
@@ -142,26 +142,27 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     public List<TrustedIssuer> getTrustedIssuersWithDetails(String tenantDomain) throws VPException {
         int tenantId = getTenantId(tenantDomain);
         List<TrustedIssuer> issuers = trustedIssuerDAO.getTrustedIssuersWithDetails(tenantId);
-        
+
         // Set tenant domain for each issuer
         for (TrustedIssuer issuer : issuers) {
             issuer.setTenantDomain(tenantDomain);
         }
-        
+
         return issuers;
     }
 
     @Override
     public boolean isTrustEnforcementEnabled(String tenantDomain) {
-        // For now, return default. In production, this would check tenant-specific configuration
+        // For now, return default. In production, this would check tenant-specific
+        // configuration
         // from identity.xml or deployment.toml
         return DEFAULT_TRUST_ENFORCEMENT;
     }
 
     @Override
-    public void updateTrustedIssuerDescription(String issuerDid, String tenantDomain, String description) 
+    public void updateTrustedIssuerDescription(String issuerDid, String tenantDomain, String description)
             throws VPException {
-        
+
         if (issuerDid == null || issuerDid.trim().isEmpty()) {
             throw new VPException("Issuer DID cannot be null or empty");
         }
@@ -169,7 +170,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         int tenantId = getTenantId(tenantDomain);
         trustedIssuerDAO.updateTrustedIssuerDescription(issuerDid.trim(), tenantId, description);
 
-        LOG.info(String.format("Updated description for trusted issuer: %s for tenant: %s", 
+        LOG.info(String.format("Updated description for trusted issuer: %s for tenant: %s",
                 issuerDid, tenantDomain));
     }
 
@@ -188,7 +189,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
             }
 
             RealmService realmService = VPServiceDataHolder.getInstance().getRealmService();
-            
+
             if (realmService == null) {
                 throw new VPException("RealmService is not available");
             }
@@ -204,14 +205,14 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
      * Pre-populate trusted issuers for a tenant.
      * Useful for initial setup or migration.
      *
-     * @param issuerDids List of issuer DIDs to trust
+     * @param issuerDids   List of issuer DIDs to trust
      * @param tenantDomain Tenant domain
-     * @param addedBy User adding the trust
+     * @param addedBy      User adding the trust
      * @throws VPException if population fails
      */
-    public void populateTrustedIssuers(List<String> issuerDids, String tenantDomain, String addedBy) 
+    public void populateTrustedIssuers(List<String> issuerDids, String tenantDomain, String addedBy)
             throws VPException {
-        
+
         LOG.info("Populating " + issuerDids.size() + " trusted issuers for tenant: " + tenantDomain);
 
         int successCount = 0;

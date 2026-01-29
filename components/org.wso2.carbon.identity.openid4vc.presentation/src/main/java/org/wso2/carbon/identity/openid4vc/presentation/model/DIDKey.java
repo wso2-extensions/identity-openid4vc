@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.model;
 
-import java.util.Arrays;
-
 /**
  * Model class for DID Keys.
  */
