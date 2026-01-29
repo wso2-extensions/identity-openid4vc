@@ -124,7 +124,9 @@ public final class VPSubmissionValidator {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Valid error response received: " + error);
+            // Sanitize to prevent CRLF injection
+            String sanitizedError = error.replace('\n', '_').replace('\r', '_');
+            LOG.debug("Valid error response received: " + sanitizedError);
         }
     }
 
@@ -207,9 +209,8 @@ public final class VPSubmissionValidator {
             throws VPSubmissionValidationException {
 
         try {
-            com.google.gson.JsonArray array =
-                    com.google.gson.JsonParser.parseString(vpTokenArray)
-                            .getAsJsonArray();
+            com.google.gson.JsonArray array = com.google.gson.JsonParser.parseString(vpTokenArray)
+                    .getAsJsonArray();
 
             if (array.size() == 0) {
                 throw new VPSubmissionValidationException(
@@ -422,7 +423,7 @@ public final class VPSubmissionValidator {
      * @throws VPSubmissionValidationException If validation fails
      */
     private static void validateDescriptorMap(final DescriptorMapDTO descriptor,
-                                              final int index)
+            final int index)
             throws VPSubmissionValidationException {
 
         if (descriptor == null) {

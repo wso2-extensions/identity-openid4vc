@@ -25,7 +25,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -112,8 +111,8 @@ public class StatusNotificationService {
      * @param errorDescription Error description
      */
     public void notifySubmissionError(final String requestId,
-                                       final String error,
-                                       final String errorDescription) {
+            final String error,
+            final String errorDescription) {
 
         if (requestId == null) {
             LOG.warn("Cannot notify submission error: null request ID");
@@ -179,7 +178,7 @@ public class StatusNotificationService {
      * @param submission The VP submission with verification results
      */
     public void notifyVerificationComplete(final String requestId,
-                                            final VPSubmission submission) {
+            final VPSubmission submission) {
 
         if (requestId == null) {
             LOG.warn("Cannot notify verification complete: null request ID");
@@ -236,8 +235,8 @@ public class StatusNotificationService {
      * Notify all registered status change listeners.
      */
     private void notifyStatusChangeListeners(final String requestId,
-                                              final VPRequestStatus newStatus,
-                                              final VPSubmission submission) {
+            final VPRequestStatus newStatus,
+            final VPSubmission submission) {
 
         for (StatusChangeListener listener : statusChangeListeners) {
             try {

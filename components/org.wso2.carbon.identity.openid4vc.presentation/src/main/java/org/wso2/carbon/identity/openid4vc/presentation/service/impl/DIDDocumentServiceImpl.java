@@ -22,12 +22,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
+import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager;
-import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
-import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;

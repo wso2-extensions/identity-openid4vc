@@ -25,7 +25,7 @@ import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
+
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
@@ -44,7 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
 
 /**
- * Implementation of StatusListService for checking credential revocation status.
+ * Implementation of StatusListService for checking credential revocation
+ * status.
  * Supports StatusList2021 and BitstringStatusList.
  */
 public class StatusListServiceImpl implements StatusListService {
@@ -96,7 +97,7 @@ public class StatusListServiceImpl implements StatusListService {
 
     @Override
     public RevocationCheckResult checkStatusList2021(String statusListCredentialUrl, int statusListIndex,
-                                                      String statusPurpose) throws RevocationCheckException {
+            String statusPurpose) throws RevocationCheckException {
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("Checking StatusList2021 at " + statusListCredentialUrl + " index " + statusListIndex);
@@ -135,21 +136,22 @@ public class StatusListServiceImpl implements StatusListService {
             throw e;
         } catch (Exception e) {
             LOG.error("Error checking StatusList2021", e);
-            throw new RevocationCheckException("Failed to check status list: " + e.getMessage(), 
+            throw new RevocationCheckException("Failed to check status list: " + e.getMessage(),
                     statusListCredentialUrl, statusListIndex, e);
         }
     }
 
     @Override
     public RevocationCheckResult checkBitstringStatusList(String statusCredentialUrl, int statusIndex,
-                                                           String statusPurpose) throws RevocationCheckException {
-        // BitstringStatusList uses the same mechanism as StatusList2021 but with different encoding
+            String statusPurpose) throws RevocationCheckException {
+        // BitstringStatusList uses the same mechanism as StatusList2021 but with
+        // different encoding
         return checkStatusList2021(statusCredentialUrl, statusIndex, statusPurpose);
     }
 
     @Override
     public byte[] fetchAndDecodeStatusList(String statusListCredentialUrl) throws RevocationCheckException {
-        
+
         // Check cache first
         CachedStatusList cached = statusListCache.get(statusListCredentialUrl);
         if (cached != null && !cached.isExpired()) {
@@ -193,7 +195,7 @@ public class StatusListServiceImpl implements StatusListService {
         int bitIndex = index % 8;
 
         if (byteIndex >= bitstring.length) {
-            LOG.warn("Bit index " + index + " is out of bounds for bitstring of length " + 
+            LOG.warn("Bit index " + index + " is out of bounds for bitstring of length " +
                     (bitstring.length * 8) + " bits");
             return false;
         }
@@ -229,8 +231,8 @@ public class StatusListServiceImpl implements StatusListService {
      * Check if the status type is StatusList2021.
      */
     private boolean isStatusList2021(String statusType) {
-        return "StatusList2021Entry".equals(statusType) || 
-               "StatusList2021".equals(statusType);
+        return "StatusList2021Entry".equals(statusType) ||
+                "StatusList2021".equals(statusType);
     }
 
     /**
@@ -238,7 +240,7 @@ public class StatusListServiceImpl implements StatusListService {
      */
     private boolean isBitstringStatusList(String statusType) {
         return "BitstringStatusListEntry".equals(statusType) ||
-               "BitstringStatusList".equals(statusType);
+                "BitstringStatusList".equals(statusType);
     }
 
     /**
@@ -278,7 +280,8 @@ public class StatusListServiceImpl implements StatusListService {
     private RevocationCheckResult checkBitstringStatusListFromCredentialStatus(
             VerifiableCredential.CredentialStatus credentialStatus) throws RevocationCheckException {
 
-        // BitstringStatusList uses statusListCredential and statusListIndex same as StatusList2021
+        // BitstringStatusList uses statusListCredential and statusListIndex same as
+        // StatusList2021
         String statusCredential = credentialStatus.getStatusListCredential();
         if (StringUtils.isBlank(statusCredential)) {
             return RevocationCheckResult.unknown("No statusListCredential URL");
@@ -319,13 +322,13 @@ public class StatusListServiceImpl implements StatusListService {
 
             int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw RevocationCheckException.networkError(url, 
+                throw RevocationCheckException.networkError(url,
                         new IOException("HTTP " + responseCode + " response"));
             }
 
             try (InputStream is = connection.getInputStream();
-                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-                
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
                 byte[] buffer = new byte[4096];
                 int bytesRead;
                 while ((bytesRead = is.read(buffer)) != -1) {
@@ -360,7 +363,7 @@ public class StatusListServiceImpl implements StatusListService {
             // Get credentialSubject
             JsonElement subjectElement = credential.get("credentialSubject");
             JsonObject credentialSubject;
-            
+
             if (subjectElement.isJsonArray()) {
                 JsonArray subjectArray = subjectElement.getAsJsonArray();
                 if (subjectArray.size() == 0) {
@@ -373,13 +376,11 @@ public class StatusListServiceImpl implements StatusListService {
 
             // Extract encodedList
             String encodedList = null;
-            
+
             // Try StatusList2021 format
             if (credentialSubject.has("encodedList")) {
                 encodedList = credentialSubject.get("encodedList").getAsString();
-            }
-            // Try BitstringStatusList format
-            else if (credentialSubject.has("encodedList")) {
+            } else if (credentialSubject.has("encodedList")) {
                 encodedList = credentialSubject.get("encodedList").getAsString();
             }
 
@@ -406,8 +407,8 @@ public class StatusListServiceImpl implements StatusListService {
 
             // GZIP decompress
             try (ByteArrayInputStream bais = new ByteArrayInputStream(compressed);
-                 GZIPInputStream gzis = new GZIPInputStream(bais);
-                 ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+                    GZIPInputStream gzis = new GZIPInputStream(bais);
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
                 byte[] buffer = new byte[4096];
                 int bytesRead;

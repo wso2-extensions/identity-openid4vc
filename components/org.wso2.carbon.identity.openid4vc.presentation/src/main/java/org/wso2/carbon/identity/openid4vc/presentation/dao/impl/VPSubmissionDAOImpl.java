@@ -42,25 +42,29 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     private static final Log log = LogFactory.getLog(VPSubmissionDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_VP_SUBMISSION = "INSERT INTO IDN_VP_SUBMISSION (SUBMISSION_ID, REQUEST_ID, VP_TOKEN, "
+    private static final String SQL_INSERT_VP_SUBMISSION = "INSERT INTO IDN_VP_SUBMISSION (SUBMISSION_ID, REQUEST_ID, "
             +
-            "PRESENTATION_SUBMISSION, ERROR, ERROR_DESCRIPTION, VERIFICATION_STATUS, " +
-            "VERIFICATION_RESULT, SUBMITTED_AT, TENANT_ID) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "VP_TOKEN, PRESENTATION_SUBMISSION, ERROR, ERROR_DESCRIPTION, VERIFICATION_STATUS, VERIFICATION_RESULT, " +
+            "SUBMITTED_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_VP_SUBMISSION_BY_ID = "SELECT * FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_SELECT_VP_SUBMISSION_BY_REQUEST_ID = "SELECT * FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_UPDATE_VERIFICATION_STATUS = "UPDATE IDN_VP_SUBMISSION SET VERIFICATION_STATUS = ?, VERIFICATION_RESULT = ? "
-            +
+    private static final String SQL_SELECT_VP_SUBMISSION_BY_ID = "SELECT * FROM IDN_VP_SUBMISSION " +
             "WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_SUBMISSION = "DELETE FROM IDN_VP_SUBMISSION WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_SUBMISSION_BY_REQUEST_ID = "SELECT * FROM IDN_VP_SUBMISSION " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_SUBMISSIONS_BY_REQUEST_ID = "DELETE FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VERIFICATION_STATUS = "UPDATE IDN_VP_SUBMISSION SET VERIFICATION_STATUS = ?"
+            +
+            ", VERIFICATION_RESULT = ? WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_CHECK_SUBMISSION_EXISTS = "SELECT 1 FROM IDN_VP_SUBMISSION WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_VP_SUBMISSION = "DELETE FROM IDN_VP_SUBMISSION " +
+            "WHERE SUBMISSION_ID = ? AND TENANT_ID = ?";
+
+    private static final String SQL_DELETE_VP_SUBMISSIONS_BY_REQUEST_ID = "DELETE FROM IDN_VP_SUBMISSION " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+
+    private static final String SQL_CHECK_SUBMISSION_EXISTS = "SELECT 1 FROM IDN_VP_SUBMISSION " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
     @Override
     public void createVPSubmission(VPSubmission vpSubmission) throws VPException {

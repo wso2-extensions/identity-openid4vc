@@ -37,6 +37,8 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestResponseDTO;
@@ -45,13 +47,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHol
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
-import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
-import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.api.UserStoreManager;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -684,9 +683,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @return ApplicationPresentationDefinitionMappingService
      * @throws VPException If service is not available
      */
-    private org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService()
+    private ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService()
             throws VPException {
-        org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService service = VPServiceDataHolder
+        ApplicationPresentationDefinitionMappingService service = VPServiceDataHolder
                 .getInstance().getApplicationPresentationDefinitionMappingService();
 
         if (service == null) {
