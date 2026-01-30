@@ -25,15 +25,31 @@ public class DIDDocumentException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
-    public DIDDocumentException(String message) {
+    /**
+     * Constructor with message.
+     *
+     * @param message Error message
+     */
+    public DIDDocumentException(final String message) {
         super(message);
     }
 
-    public DIDDocumentException(String message, Throwable cause) {
+    /**
+     * Constructor with message and cause.
+     *
+     * @param message Error message
+     * @param cause   Underlying cause
+     */
+    public DIDDocumentException(final String message, final Throwable cause) {
         super(message, cause);
     }
 
-    public DIDDocumentException(Throwable cause) {
+    /**
+     * Constructor with cause.
+     *
+     * @param cause Underlying cause
+     */
+    public DIDDocumentException(final Throwable cause) {
         super(cause);
     }
 }

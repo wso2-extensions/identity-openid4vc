@@ -24,32 +24,45 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPSubmissionNotFoundException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "VP_SUBMISSION_NOT_FOUND";
 
+    /**
+     * The transaction ID that was not found.
+     */
     private String transactionId;
+
+    /**
+     * The request ID that was not found.
+     */
     private String requestId;
 
     /**
      * Constructor with transaction ID.
      *
-     * @param transactionId The transaction ID that was not found
+     * @param txn The transaction ID that was not found
      */
-    public VPSubmissionNotFoundException(String transactionId) {
-        super(DEFAULT_ERROR_CODE, "VP submission not found for transaction: " + transactionId);
-        this.transactionId = transactionId;
+    public VPSubmissionNotFoundException(final String txn) {
+        super(DEFAULT_ERROR_CODE,
+                "VP submission not found for transaction: " + txn);
+        this.transactionId = txn;
     }
 
     /**
      * Constructor with transaction ID and request ID.
      *
-     * @param transactionId Transaction ID
-     * @param requestId     Request ID
+     * @param txn The transaction ID
+     * @param req The request ID
      */
-    public VPSubmissionNotFoundException(String transactionId, String requestId) {
-        super(DEFAULT_ERROR_CODE, 
-            "VP submission not found for transaction: " + transactionId + ", request: " + requestId);
-        this.transactionId = transactionId;
-        this.requestId = requestId;
+    public VPSubmissionNotFoundException(final String txn, final String req) {
+        super(DEFAULT_ERROR_CODE,
+                "VP submission not found for transaction: " + txn
+                        + ", request: " + req);
+        this.transactionId = txn;
+        this.requestId = req;
     }
 
     /**

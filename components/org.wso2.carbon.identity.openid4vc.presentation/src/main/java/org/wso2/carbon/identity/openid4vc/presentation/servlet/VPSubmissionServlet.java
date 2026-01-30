@@ -25,7 +25,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -188,8 +187,7 @@ public class VPSubmissionServlet extends HttpServlet {
             LOG.info("[VP_SUBMISSION_SERVLET] ========== VP SUBMISSION SERVLET COMPLETED SUCCESSFULLY ==========");
             LOG.info("[VP_SUBMISSION_SERVLET] Submission ID: " + submission.getSubmissionId());
             LOG.info("[VP_SUBMISSION_SERVLET] Request ID: " + submissionDTO.getState());
-            LOG.info(
-                    "[VP_SUBMISSION_SERVLET] ============================================================================");
+            LOG.info("[VP_SUBMISSION_SERVLET] ======================================================================");
 
         } catch (VPRequestNotFoundException e) {
             LOG.warn("VP submission for unknown request: " + e.getMessage());

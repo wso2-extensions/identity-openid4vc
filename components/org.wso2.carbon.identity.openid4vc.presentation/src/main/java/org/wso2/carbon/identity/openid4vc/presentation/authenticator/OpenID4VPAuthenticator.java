@@ -95,7 +95,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     // Request parameter names
     private static final String PARAM_VP_REQUEST_ID = "vp_request_id";
-    private static final String PARAM_TRANSACTION_ID = "transaction_id";
+
     private static final String PARAM_STATUS = "status";
     private static final String PARAM_POLL = "poll";
 
@@ -110,6 +110,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private static final String PROP_CLIENT_ID = "ClientId";
     private static final String PROP_DID_METHOD = "DIDMethod";
     private static final String PROP_SUBJECT_CLAIM = "SubjectClaim";
+
+    private static final int DISPLAY_ORDER_3 = 3;
+    private static final int DISPLAY_ORDER_4 = 4;
+    private static final int DISPLAY_ORDER_5 = 5;
+    private static final int SUPER_TENANT_ID_PLACEHOLDER = -1234;
 
     @Override
     public String getName() {
@@ -635,26 +640,36 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     }
                 }
             } catch (Exception e) {
-                log.warn(LOG_PREFIX + " Error resolving Application UUID for: " + applicationId, e);
+                log.warn(LOG_PREFIX + " Error resolving Application UUID for: "
+                        + applicationId, e);
             }
 
             // If we couldn't resolve the UUID, fallback to using the name (backward
             // compatibility / legacy behavior)
-            String lookupId = StringUtils.isNotBlank(appResourceId) ? appResourceId : applicationId;
+            String lookupId = StringUtils.isNotBlank(appResourceId)
+                    ? appResourceId
+                    : applicationId;
 
-            log.debug(LOG_PREFIX + " Resolving presentation definition for application: " + lookupId);
+            log.debug(LOG_PREFIX
+                    + " Resolving presentation definition for application: "
+                    + lookupId);
 
             String appDefinitionId = getApplicationPresentationDefinitionMappingService()
                     .getApplicationPresentationDefinitionId(lookupId, tenantId);
 
             if (StringUtils.isNotBlank(appDefinitionId)) {
-                log.info(LOG_PREFIX + " Found application-specific presentation definition: " + appDefinitionId);
+                log.info(LOG_PREFIX
+                        + " Found application-specific presentation definition: "
+                        + appDefinitionId);
                 return appDefinitionId;
             }
 
-            log.debug(LOG_PREFIX + " No application-specific mapping found for: " + lookupId);
+            log.debug(LOG_PREFIX + " No application-specific mapping found for: "
+                    + lookupId);
         } catch (Exception e) {
-            log.warn(LOG_PREFIX + " Error looking up app-specific mapping, falling back to configuration", e);
+            log.warn(LOG_PREFIX
+                    + " Error looking up app-specific mapping, falling back to configuration",
+                    e);
         }
 
         // Step 2: Fall back to authenticator configuration
@@ -663,17 +678,22 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             String configId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
 
             if (StringUtils.isNotBlank(configId)) {
-                log.debug(LOG_PREFIX + " Using authenticator-configured presentation definition: " + configId);
+                log.debug(LOG_PREFIX
+                        + " Using authenticator-configured presentation definition: "
+                        + configId);
                 return configId;
             }
 
-            log.debug(LOG_PREFIX + " No presentation definition in authenticator configuration");
+            log.debug(LOG_PREFIX
+                    + " No presentation definition in authenticator configuration");
         } catch (Exception e) {
-            log.warn(LOG_PREFIX + " Error checking authenticator configuration", e);
+            log.warn(LOG_PREFIX + " Error checking authenticator configuration",
+                    e);
         }
 
         // Step 3: Will use inline default
-        log.debug(LOG_PREFIX + " No presentation definition configured, will use inline default");
+        log.debug(LOG_PREFIX
+                + " No presentation definition configured, will use inline default");
         return null;
     }
 
@@ -689,7 +709,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 .getInstance().getApplicationPresentationDefinitionMappingService();
 
         if (service == null) {
-            throw new VPException("Application Presentation Definition Mapping Service not available");
+            throw new VPException(
+                    "Application Presentation Definition Mapping Service not available");
         }
         return service;
     }
@@ -703,14 +724,16 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         JsonObject presentationDef = new JsonObject();
         presentationDef.addProperty("id", "default-wallet-auth");
         presentationDef.addProperty("name", "Wallet Authentication");
-        presentationDef.addProperty("purpose", "Authenticate using your digital wallet");
+        presentationDef.addProperty("purpose",
+                "Authenticate using your digital wallet");
 
         // Create input descriptors - accepts any VC
         JsonArray inputDescriptors = new JsonArray();
         JsonObject descriptor = new JsonObject();
         descriptor.addProperty("id", "any-credential");
         descriptor.addProperty("name", "Any Verifiable Credential");
-        descriptor.addProperty("purpose", "Present any verifiable credential from your wallet");
+        descriptor.addProperty("purpose",
+                "Present any verifiable credential from your wallet");
 
         // Add constraints - accept any type of credential
         JsonObject constraints = new JsonObject();
@@ -730,24 +753,29 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
         inputDescriptors.add(descriptor);
         presentationDef.add("input_descriptors", inputDescriptors);
-
         return presentationDef;
     }
 
     /**
-     * Build client ID from context.
+     * Build client ID for the request.
+     *
+     * @param context Authentication context
+     * @return Client ID
      */
-    private String buildClientId(AuthenticationContext context) {
+    private String buildClientId(final AuthenticationContext context) {
         // Use fixed DID for demo purposes as requested
         return "did:web:masked-unprofitably-ardith.ngrok-free.dev";
     }
 
     /**
      * Get tenant ID from authentication context.
+     *
+     * @param context Authentication context
+     * @return Tenant ID
      */
-    private int getTenantId(AuthenticationContext context) {
+    private int getTenantId(final AuthenticationContext context) {
         // Default to super tenant
-        int tenantId = -1234;
+        int tenantId = SUPER_TENANT_ID_PLACEHOLDER;
 
         String tenantDomain = context.getTenantDomain();
         if (StringUtils.isNotBlank(tenantDomain)) {
@@ -755,7 +783,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 // In production, use TenantManager to resolve tenant ID
                 // For now, use simple mapping
                 if ("carbon.super".equals(tenantDomain)) {
-                    tenantId = -1234;
+                    tenantId = SUPER_TENANT_ID_PLACEHOLDER;
                 }
             } catch (Exception e) {
                 log.warn("Error resolving tenant ID for domain: " + tenantDomain, e);
@@ -767,8 +795,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     /**
      * Get login page URL.
+     *
+     * @param context Authentication context
+     * @return Login page URL
      */
-    private String getLoginPage(AuthenticationContext context) {
+    private String getLoginPage(final AuthenticationContext context) {
         String loginPage = IdentityUtil.getProperty("OpenID4VP.LoginPage");
         if (StringUtils.isBlank(loginPage)) {
             loginPage = "/authenticationendpoint/wallet_login.jsp";
@@ -777,17 +808,26 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     /**
-     * Build query parameters for login page redirect.
+     * Build query parameters for the redirect.
+     *
+     * @param vpRequestResponse VP request response
+     * @param qrContent         QR content
+     * @param context           Authentication context
+     * @return Query parameters string
      */
-    private String buildQueryParams(VPRequestResponseDTO vpRequestResponse,
-            String qrContent,
-            AuthenticationContext context) {
+    private String buildQueryParams(final VPRequestResponseDTO vpRequestResponse,
+            final String qrContent,
+            final AuthenticationContext context) {
         StringBuilder params = new StringBuilder();
         params.append("?");
-        params.append("sessionDataKey=").append(context.getContextIdentifier());
-        params.append("&requestId=").append(vpRequestResponse.getRequestId());
-        params.append("&transactionId=").append(vpRequestResponse.getTransactionId());
-        params.append("&requestUri=").append(urlEncode(vpRequestResponse.getRequestUri()));
+        params.append("sessionDataKey=")
+                .append(context.getContextIdentifier());
+        params.append("&requestId=")
+                .append(vpRequestResponse.getRequestId());
+        params.append("&transactionId=").append(
+                vpRequestResponse.getTransactionId());
+        params.append("&requestUri=").append(urlEncode(
+                vpRequestResponse.getRequestUri()));
         params.append("&qrContent=").append(urlEncode(qrContent));
 
         return params.toString();
@@ -837,22 +877,26 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
             // Delete submission first (foreign key consideration)
             VPSubmissionService submissionService = getVPSubmissionService();
-            submissionService.deleteSubmissionsForRequest(requestId, tenantId);
-            log.debug(LOG_PREFIX + " Deleted VP submission for request: " + requestId);
-
+            submissionService.deleteSubmissionsForRequest(requestId,
+                    tenantId);
+            log.debug(LOG_PREFIX + " Deleted VP submission for request: "
+                    + requestId);
             // Delete VP request
             VPRequestService requestService = getVPRequestService();
             requestService.deleteVPRequest(requestId, tenantId);
-            log.debug(LOG_PREFIX + " Deleted VP request: " + requestId);
+            log.debug(LOG_PREFIX + " Deleted VP request: "
+                    + requestId);
 
             // Clear from caches
             VPRequestCache.getInstance().remove(requestId);
             WalletDataCache.getInstance().retrieveSubmission(requestId);
 
-            log.info(LOG_PREFIX + " VP data cleanup completed for request: " + requestId);
+            log.info(LOG_PREFIX + " VP data cleanup completed for request: "
+                    + requestId);
         } catch (Exception e) {
             // Log but don't fail authentication due to cleanup errors
-            log.warn(LOG_PREFIX + " Error during VP data cleanup (non-fatal): " + e.getMessage(), e);
+            log.warn(LOG_PREFIX + " Error during VP data cleanup (non-fatal): "
+                    + e.getMessage(), e);
         }
     }
 
@@ -862,15 +906,16 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param vpToken Raw VP token (JWT or JSON-LD)
      * @return Map of claim mappings to values
      */
-    private Map<ClaimMapping, String> extractClaimsFromVP(String vpToken) {
+    private Map<ClaimMapping, String> extractClaimsFromVP(
+            final String vpToken) {
         Map<ClaimMapping, String> claims = new HashMap<>();
 
         try {
             JsonObject vpData = null;
             String trimmedToken = vpToken.trim();
 
-            // Minimal parsing logic to find credentialSubject (simplified for this
-            // migration)
+            // Minimal parsing logic to find credentialSubject
+            // (simplified for this migration)
             if (trimmedToken.startsWith("{") || trimmedToken.startsWith("[")) {
                 JsonElement parsed = JsonParser.parseString(trimmedToken);
                 if (parsed.isJsonObject()) {
@@ -879,7 +924,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             } else {
                 String[] parts = vpToken.split("\\.");
                 if (parts.length >= 2) {
-                    String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+                    String payload = new String(Base64.getUrlDecoder()
+                            .decode(parts[1]), StandardCharsets.UTF_8);
                     vpData = JsonParser.parseString(payload).getAsJsonObject();
                 }
             }
@@ -907,31 +953,52 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 JsonObject subject = vc.getAsJsonObject("credentialSubject");
                 for (Map.Entry<String, JsonElement> entry : subject.entrySet()) {
                     if (entry.getValue().isJsonPrimitive()) {
-                        String claimUri = "http://wso2.org/claims/" + entry.getKey();
-                        claims.put(ClaimMapping.build(claimUri, entry.getKey(), null, false),
+                        String claimUri = "http://wso2.org/claims/"
+                                + entry.getKey();
+                        claims.put(ClaimMapping.build(claimUri, entry.getKey(),
+                                null, false),
                                 entry.getValue().getAsString());
                     }
                 }
             }
         } catch (Exception e) {
-            log.warn(LOG_PREFIX + " Error extracting claims for federated user: " + e.getMessage());
+            log.warn(LOG_PREFIX
+                    + " Error extracting claims for federated user: "
+                    + e.getMessage());
         }
 
         return claims;
     }
 
+    /**
+     * Check if retry authentication is enabled.
+     *
+     * @return False
+     */
     @Override
     protected boolean retryAuthenticationEnabled() {
         return false;
     }
 
+    /**
+     * Get the context identifier.
+     *
+     * @param request HTTP request
+     * @return Context identifier
+     */
     @Override
-    public String getContextIdentifier(HttpServletRequest request) {
+    public String getContextIdentifier(final HttpServletRequest request) {
         return request.getParameter("sessionDataKey");
     }
 
+    /**
+     * Check if the authenticator can handle the request.
+     *
+     * @param request HTTP request
+     * @return True if can handle
+     */
     @Override
-    public boolean canHandle(HttpServletRequest request) {
+    public boolean canHandle(final HttpServletRequest request) {
         String sessionDataKey = request.getParameter("sessionDataKey");
         String vpRequestId = request.getParameter(PARAM_VP_REQUEST_ID);
         String poll = request.getParameter(PARAM_POLL);
@@ -948,19 +1015,22 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         log.info(LOG_PREFIX + " ========================================");
 
         // Handle polling requests from login page
-        if (StringUtils.isNotBlank(poll) && StringUtils.isNotBlank(sessionDataKey)) {
+        if (StringUtils.isNotBlank(poll)
+                && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (polling request)");
             return true;
         }
 
         // Handle status callbacks
-        if (StringUtils.isNotBlank(status) && StringUtils.isNotBlank(sessionDataKey)) {
+        if (StringUtils.isNotBlank(status)
+                && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (status callback)");
             return true;
         }
 
         // Handle VP request callbacks
-        if (StringUtils.isNotBlank(vpRequestId) && StringUtils.isNotBlank(sessionDataKey)) {
+        if (StringUtils.isNotBlank(vpRequestId)
+                && StringUtils.isNotBlank(sessionDataKey)) {
             log.info(LOG_PREFIX + " canHandle=true (VP request callback)");
             return true;
         }
@@ -969,6 +1039,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         return false;
     }
 
+    /**
+     * Get configuration properties.
+     *
+     * @return List of properties
+     */
     @Override
     public List<Property> getConfigurationProperties() {
         List<Property> configProperties = new ArrayList<>();
@@ -976,7 +1051,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         Property presentationDefId = new Property();
         presentationDefId.setName(PROP_PRESENTATION_DEFINITION_ID);
         presentationDefId.setDisplayName("Presentation Definition ID");
-        presentationDefId.setDescription("ID of the presentation definition to use for VP requests");
+        presentationDefId.setDescription(
+                "ID of the presentation definition to use for VP requests");
         presentationDefId.setDisplayOrder(1);
         presentationDefId.setRequired(false);
         configProperties.add(presentationDefId);
@@ -984,7 +1060,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         Property responseMode = new Property();
         responseMode.setName(PROP_RESPONSE_MODE);
         responseMode.setDisplayName("Response Mode");
-        responseMode.setDescription("Response mode for VP submissions (direct_post or direct_post.jwt)");
+        responseMode.setDescription(
+                "Response mode for VP submissions "
+                        + "(direct_post or direct_post.jwt)");
         responseMode.setDisplayOrder(2);
         responseMode.setDefaultValue("direct_post");
         responseMode.setRequired(false);
@@ -994,7 +1072,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         timeout.setName(PROP_TIMEOUT_SECONDS);
         timeout.setDisplayName("Timeout (seconds)");
         timeout.setDescription("Timeout for VP requests in seconds");
-        timeout.setDisplayOrder(3);
+        timeout.setDisplayOrder(DISPLAY_ORDER_3);
         timeout.setDefaultValue("300");
         timeout.setRequired(false);
         configProperties.add(timeout);
@@ -1002,16 +1080,19 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         Property clientId = new Property();
         clientId.setName(PROP_CLIENT_ID);
         clientId.setDisplayName("Client ID");
-        clientId.setDescription("Client ID to use in VP requests (auto-generated if not specified)");
-        clientId.setDisplayOrder(4);
+        clientId.setDescription(
+                "Client ID to use in VP requests "
+                        + "(auto-generated if not specified)");
+        clientId.setDisplayOrder(DISPLAY_ORDER_4);
         clientId.setRequired(false);
         configProperties.add(clientId);
 
         Property subjectClaim = new Property();
         subjectClaim.setName(PROP_SUBJECT_CLAIM);
         subjectClaim.setDisplayName("Subject Claim");
-        subjectClaim.setDescription("Claim path to use as the authenticated subject identifier");
-        subjectClaim.setDisplayOrder(5);
+        subjectClaim.setDescription(
+                "Claim path to use as the authenticated subject identifier");
+        subjectClaim.setDisplayOrder(DISPLAY_ORDER_5);
         subjectClaim.setDefaultValue("credentialSubject.id");
         subjectClaim.setRequired(false);
         configProperties.add(subjectClaim);

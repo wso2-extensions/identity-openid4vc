@@ -168,7 +168,8 @@ public class VPServletRegistrationComponent {
         }
     }
 
-    @Reference(name = "osgi.http.service", service = HttpService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetHttpService")
+    @Reference(name = "osgi.http.service", service = HttpService.class, cardinality = 
+    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetHttpService")
     protected void setHttpService(HttpService httpService) {
         this.httpService = httpService;
         if (log.isDebugEnabled()) {
@@ -183,7 +184,8 @@ public class VPServletRegistrationComponent {
         }
     }
 
-    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
+    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
+    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {

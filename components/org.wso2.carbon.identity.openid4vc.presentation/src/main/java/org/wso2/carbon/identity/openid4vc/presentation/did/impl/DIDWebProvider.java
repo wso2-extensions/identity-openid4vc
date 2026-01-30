@@ -20,8 +20,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.did.impl;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.OctetKeyPair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.core.util.KeyStoreManager;
@@ -30,15 +32,12 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.util.BCEd25519Signer;
 import org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.OctetKeyPair;
 
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Collections;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * DID Provider implementation for 'did:web' method.
@@ -93,10 +92,12 @@ public class DIDWebProvider implements DIDProvider {
 
     @Override
     public JWSAlgorithm getSigningAlgorithm(String algorithm) {
-        if ("EdDSA".equals(algorithm))
+        if ("EdDSA".equals(algorithm)) {
             return JWSAlgorithm.EdDSA;
-        if ("ES256".equals(algorithm))
+        }
+        if ("ES256".equals(algorithm)) {
             return JWSAlgorithm.ES256;
+        }
         return JWSAlgorithm.RS256;
     }
 

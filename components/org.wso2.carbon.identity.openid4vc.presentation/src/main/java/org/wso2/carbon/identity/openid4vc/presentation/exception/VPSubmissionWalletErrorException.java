@@ -25,6 +25,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPSubmissionWalletErrorException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "WALLET_ERROR";
 
     /**
@@ -54,7 +58,7 @@ public class VPSubmissionWalletErrorException extends VPException {
      * @param description Error description from wallet
      */
     public VPSubmissionWalletErrorException(final String error,
-                                            final String description) {
+            final String description) {
 
         super(DEFAULT_ERROR_CODE, description != null ? description
                 : "Wallet returned an error: " + error);

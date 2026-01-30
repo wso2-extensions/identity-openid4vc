@@ -37,12 +37,16 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
 
     private static final Log log = LogFactory.getLog(DIDKeysDAOImpl.class);
 
-    private static final String SQL_INSERT_DID_KEY = "INSERT INTO IDN_DID_KEYS (TENANT_ID, KEY_ID, ALGORITHM, PUBLIC_KEY, PRIVATE_KEY, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?)";
+    private static final String SQL_INSERT_DID_KEY = "INSERT INTO IDN_DID_KEYS " +
+            "(TENANT_ID, KEY_ID, ALGORITHM, PUBLIC_KEY, PRIVATE_KEY, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?)";
     private static final String SQL_SELECT_DID_KEY = "SELECT * FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
-    private static final String SQL_SELECT_DID_KEY_BY_TENANT = "SELECT * FROM IDN_DID_KEYS WHERE TENANT_ID = ? ORDER BY CREATED_AT DESC LIMIT 1";
-    private static final String SQL_SELECT_DID_KEY_BY_TENANT_AND_ALGO = "SELECT * FROM IDN_DID_KEYS WHERE TENANT_ID = ? AND ALGORITHM = ? ORDER BY CREATED_AT DESC LIMIT 1";
+    private static final String SQL_SELECT_DID_KEY_BY_TENANT = "SELECT * FROM IDN_DID_KEYS " +
+            "WHERE TENANT_ID = ? ORDER BY CREATED_AT DESC LIMIT 1";
+    private static final String SQL_SELECT_DID_KEY_BY_TENANT_AND_ALGO = "SELECT * FROM IDN_DID_KEYS " +
+            "WHERE TENANT_ID = ? AND ALGORITHM = ? ORDER BY CREATED_AT DESC LIMIT 1";
     private static final String SQL_DELETE_DID_KEY = "DELETE FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
-    private static final String SQL_CHECK_DID_KEY_EXISTS = "SELECT 1 FROM IDN_DID_KEYS WHERE KEY_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_CHECK_DID_KEY_EXISTS = "SELECT 1 FROM IDN_DID_KEYS " +
+            "WHERE KEY_ID = ? AND TENANT_ID = ?";
 
     @Override
     public void addDIDKey(DIDKey didKey) throws VPException {
@@ -139,7 +143,8 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error retrieving DID key for tenant: " + tenantId + " and algo: " + algorithm, e);
+            throw new VPException("Error retrieving DID key for tenant: " + tenantId + " and algo: " + algorithm,
+                    e);
         }
         return null;
     }

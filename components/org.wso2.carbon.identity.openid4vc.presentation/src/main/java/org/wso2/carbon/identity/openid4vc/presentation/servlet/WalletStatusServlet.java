@@ -23,12 +23,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
-import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
-import org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult;
+import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
-import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -53,7 +53,6 @@ public class WalletStatusServlet extends HttpServlet {
     private static final String PARAM_LONG_POLL = "long_poll";
 
     // Log prefix for easy filtering
-    private static final String LOG_PREFIX = "[WALLET-STATUS]";
 
     /**
      * Default tenant ID.

@@ -190,7 +190,8 @@ public class OpenID4VPConstants {
         public static final String LONG_POLLING_TIMEOUT_SECONDS = "OpenID4VP.LongPollingTimeoutSeconds";
         public static final String LONG_POLLING_ENABLED = "OpenID4VP.LongPollingEnabled";
         // Credential verification config keys
-        public static final String SIGNATURE_VERIFICATION_ENABLED = "OpenID4VP.Verification.SignatureVerificationEnabled";
+        public static final String SIGNATURE_VERIFICATION_ENABLED = 
+        "OpenID4VP.Verification.SignatureVerificationEnabled";
         public static final String EXPIRATION_CHECK_ENABLED = "OpenID4VP.Verification.ExpirationCheckEnabled";
         public static final String SUPPORTED_PROOF_TYPES = "OpenID4VP.Verification.SupportedProofTypes";
         public static final String SUPPORTED_ALGORITHMS = "OpenID4VP.Verification.SupportedAlgorithms";

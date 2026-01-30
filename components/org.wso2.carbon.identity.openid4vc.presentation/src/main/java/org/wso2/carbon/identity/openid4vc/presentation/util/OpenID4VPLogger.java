@@ -140,14 +140,16 @@ public class OpenID4VPLogger {
 
     public static void logCredentialCount(Log log, int count) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("\n=== [Issuer Verification] Starting issuer verification for all credentials ==="));
+            log.debug(String.format(
+                    "\n=== [Issuer Verification] Starting issuer verification for all credentials ==="));
             log.debug(String.format("[Issuer Verification] Found %d credential(s) to verify", count));
         }
     }
 
     public static void logCredentialIndex(Log log, int current, int total) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("\n[Issuer Verification] ========== Credential %d/%d ==========", current, total));
+            log.debug(String.format(
+                    "\n[Issuer Verification] ========== Credential %d/%d ==========", current, total));
         }
     }
 
@@ -157,7 +159,8 @@ public class OpenID4VPLogger {
         }
     }
 
-    public static void logCredentialVerificationSuccess(Log log, int credentialNum, String issuer, String verificationMethod) {
+    public static void logCredentialVerificationSuccess(Log log, int credentialNum, String issuer,
+            String verificationMethod) {
         if (log.isDebugEnabled()) {
             log.debug(String.format("[Issuer Verification] ✓ Credential %d verified successfully", credentialNum));
             log.debug(String.format("[Issuer Verification] Issuer: %s", issuer));
@@ -171,7 +174,8 @@ public class OpenID4VPLogger {
 
     public static void logAllCredentialsVerified(Log log, int count) {
         if (log.isDebugEnabled()) {
-            log.debug(String.format("\n[Issuer Verification] ✓✓✓ All %d credential(s) verified successfully! ✓✓✓\n", count));
+            log.debug(String.format(
+                    "\n[Issuer Verification] ✓✓✓ All %d credential(s) verified successfully! ✓✓✓\n", count));
         }
     }
 

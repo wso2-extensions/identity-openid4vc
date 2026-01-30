@@ -25,7 +25,6 @@ import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;

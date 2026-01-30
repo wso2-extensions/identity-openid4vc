@@ -394,8 +394,8 @@ public class VPRequestServiceImpl implements VPRequestService {
         }
 
         // Fall back to default definition
-        PresentationDefinition defaultDefinition = presentationDefinitionService.getDefaultPresentationDefinition(
-                tenantId);
+        PresentationDefinition defaultDefinition = presentationDefinitionService
+                .getDefaultPresentationDefinition(tenantId);
         if (defaultDefinition != null) {
             return defaultDefinition.getDefinitionJson();
         }
@@ -446,7 +446,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             String did = provider.getDID(tenantId, baseUrl, signingAlgorithm);
             String keyId = provider.getSigningKeyId(tenantId, baseUrl, signingAlgorithm);
 
-            log.info("Building Request Object with DID details - Method: " + provider.getName() + ", DID: " + did);
+            log.info("Building Request Object with DID details - Method: " + provider.getName() +
+                    ", DID: " + did);
 
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
@@ -469,7 +470,9 @@ public class VPRequestServiceImpl implements VPRequestService {
             JsonObject pdJson = com.google.gson.JsonParser.parseString(vpRequest.getPresentationDefinition())
                     .getAsJsonObject();
             // Convert to Map for Nimbus
-            java.util.Map<String, Object> pdMap = new com.google.gson.Gson().fromJson(pdJson, java.util.Map.class);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> pdMap = new com.google.gson.Gson()
+                    .fromJson(pdJson, java.util.Map.class);
             claimsBuilder.claim("presentation_definition", pdMap);
 
             // Add client_metadata

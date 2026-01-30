@@ -26,43 +26,56 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatu
 public class CredentialVerificationException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "CREDENTIAL_VERIFICATION_FAILED";
 
+    /**
+     * The verification status that caused the failure.
+     */
     private VCVerificationStatus verificationStatus;
-    private int vcIndex;
+
+    /**
+     * Index of the VC specifically that failed (if applicable).
+     */
+    private int vcIndex = -1;
 
     /**
      * Constructor with message.
      *
      * @param message Error message
      */
-    public CredentialVerificationException(String message) {
+    public CredentialVerificationException(final String message) {
         super(DEFAULT_ERROR_CODE, message);
     }
 
     /**
      * Constructor with verification status and message.
      *
-     * @param verificationStatus The verification status that caused the failure
-     * @param message            Error message
+     * @param status  The verification status that caused the failure
+     * @param message Error message
      */
-    public CredentialVerificationException(VCVerificationStatus verificationStatus, String message) {
+    public CredentialVerificationException(final VCVerificationStatus status,
+            final String message) {
         super(DEFAULT_ERROR_CODE, message);
-        this.verificationStatus = verificationStatus;
+        this.verificationStatus = status;
     }
 
     /**
      * Constructor with verification status, VC index, and message.
      *
-     * @param verificationStatus The verification status
-     * @param vcIndex            Index of the VC that failed
-     * @param message            Error message
+     * @param status  The verification status
+     * @param index   Index of the VC that failed
+     * @param message Error message
      */
-    public CredentialVerificationException(VCVerificationStatus verificationStatus, 
-                                            int vcIndex, String message) {
+    public CredentialVerificationException(final VCVerificationStatus status,
+            final int index,
+            final String message) {
         super(DEFAULT_ERROR_CODE, message);
-        this.verificationStatus = verificationStatus;
-        this.vcIndex = vcIndex;
+        this.verificationStatus = status;
+        this.vcIndex = index;
     }
 
     /**
@@ -71,7 +84,8 @@ public class CredentialVerificationException extends VPException {
      * @param message Error message
      * @param cause   Underlying cause
      */
-    public CredentialVerificationException(String message, Throwable cause) {
+    public CredentialVerificationException(final String message,
+            final Throwable cause) {
         super(DEFAULT_ERROR_CODE, message, cause);
     }
 

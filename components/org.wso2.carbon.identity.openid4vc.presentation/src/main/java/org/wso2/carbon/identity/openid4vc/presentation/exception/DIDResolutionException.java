@@ -24,9 +24,20 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class DIDResolutionException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "DID_RESOLUTION_FAILED";
 
+    /**
+     * The DID that failed resolution.
+     */
     private String did;
+
+    /**
+     * The DID method.
+     */
     private String method;
 
     /**
@@ -34,20 +45,20 @@ public class DIDResolutionException extends VPException {
      *
      * @param message Error message
      */
-    public DIDResolutionException(String message) {
+    public DIDResolutionException(final String message) {
         super(DEFAULT_ERROR_CODE, message);
     }
 
     /**
      * Constructor with DID and message.
      *
-     * @param did     The DID that failed resolution
-     * @param message Error message
+     * @param didValue The DID that failed resolution
+     * @param message  Error message
      */
-    public DIDResolutionException(String did, String message) {
+    public DIDResolutionException(final String didValue, final String message) {
         super(DEFAULT_ERROR_CODE, message);
-        this.did = did;
-        extractMethod(did);
+        this.did = didValue;
+        extractMethod(didValue);
     }
 
     /**
@@ -56,44 +67,46 @@ public class DIDResolutionException extends VPException {
      * @param message Error message
      * @param cause   Underlying cause
      */
-    public DIDResolutionException(String message, Throwable cause) {
+    public DIDResolutionException(final String message, final Throwable cause) {
         super(DEFAULT_ERROR_CODE, message, cause);
     }
 
     /**
      * Constructor with DID, message, and cause.
      *
-     * @param did     The DID that failed resolution
-     * @param message Error message
-     * @param cause   Underlying cause
+     * @param didValue The DID that failed resolution
+     * @param message  Error message
+     * @param cause    Underlying cause
      */
-    public DIDResolutionException(String did, String message, Throwable cause) {
+    public DIDResolutionException(final String didValue, final String message,
+            final Throwable cause) {
         super(DEFAULT_ERROR_CODE, message, cause);
-        this.did = did;
-        extractMethod(did);
+        this.did = didValue;
+        extractMethod(didValue);
     }
 
     /**
      * Constructor with error code, DID, and message.
      *
      * @param errorCode Error code
-     * @param did       The DID that failed resolution
+     * @param didValue  The DID that failed resolution
      * @param message   Error message
      */
-    public DIDResolutionException(String errorCode, String did, String message) {
+    public DIDResolutionException(final String errorCode, final String didValue,
+            final String message) {
         super(errorCode, message);
-        this.did = did;
-        extractMethod(did);
+        this.did = didValue;
+        extractMethod(didValue);
     }
 
     /**
      * Extract the DID method from the DID string.
      *
-     * @param did The DID string
+     * @param didValue The DID string
      */
-    private void extractMethod(String did) {
-        if (did != null && did.startsWith("did:")) {
-            String[] parts = did.split(":");
+    private void extractMethod(final String didValue) {
+        if (didValue != null && didValue.startsWith("did:")) {
+            String[] parts = didValue.split(":");
             if (parts.length >= 2) {
                 this.method = parts[1];
             }
@@ -121,59 +134,64 @@ public class DIDResolutionException extends VPException {
     /**
      * Create an exception for unsupported DID method.
      *
-     * @param did    The DID
-     * @param method The unsupported method
+     * @param didValue The DID
+     * @param method   The unsupported method
      * @return DIDResolutionException
      */
-    public static DIDResolutionException unsupportedMethod(String did, String method) {
-        return new DIDResolutionException("UNSUPPORTED_DID_METHOD", did,
+    public static DIDResolutionException unsupportedMethod(
+            final String didValue, final String method) {
+        return new DIDResolutionException("UNSUPPORTED_DID_METHOD", didValue,
                 "Unsupported DID method: " + method);
     }
 
     /**
      * Create an exception for network errors during resolution.
      *
-     * @param did   The DID
-     * @param cause The underlying cause
+     * @param didValue The DID
+     * @param cause    The underlying cause
      * @return DIDResolutionException
      */
-    public static DIDResolutionException networkError(String did, Throwable cause) {
-        return new DIDResolutionException(did, 
-                "Network error while resolving DID: " + did, cause);
+    public static DIDResolutionException networkError(final String didValue,
+            final Throwable cause) {
+        return new DIDResolutionException(didValue,
+                "Network error while resolving DID: " + didValue, cause);
     }
 
     /**
      * Create an exception for invalid DID document.
      *
-     * @param did     The DID
-     * @param message Details about the invalid document
+     * @param didValue The DID
+     * @param message  Details about the invalid document
      * @return DIDResolutionException
      */
-    public static DIDResolutionException invalidDocument(String did, String message) {
-        return new DIDResolutionException("INVALID_DID_DOCUMENT", did,
-                "Invalid DID document for " + did + ": " + message);
+    public static DIDResolutionException invalidDocument(final String didValue,
+            final String message) {
+        return new DIDResolutionException("INVALID_DID_DOCUMENT", didValue,
+                "Invalid DID document for " + didValue + ": " + message);
     }
 
     /**
      * Create an exception for key not found.
      *
-     * @param did   The DID
-     * @param keyId The key ID that was not found
+     * @param didValue The DID
+     * @param keyId    The key ID that was not found
      * @return DIDResolutionException
      */
-    public static DIDResolutionException keyNotFound(String did, String keyId) {
-        return new DIDResolutionException("KEY_NOT_FOUND", did,
-                "Key not found in DID document: " + (keyId != null ? keyId : "default key"));
+    public static DIDResolutionException keyNotFound(final String didValue,
+            final String keyId) {
+        return new DIDResolutionException("KEY_NOT_FOUND", didValue,
+                "Key not found in DID document: "
+                        + (keyId != null ? keyId : "default key"));
     }
 
     /**
      * Create an exception for invalid DID format.
      *
-     * @param did The invalid DID
+     * @param didValue The invalid DID
      * @return DIDResolutionException
      */
-    public static DIDResolutionException invalidFormat(String did) {
-        return new DIDResolutionException("INVALID_DID_FORMAT", did,
-                "Invalid DID format: " + did);
+    public static DIDResolutionException invalidFormat(final String didValue) {
+        return new DIDResolutionException("INVALID_DID_FORMAT", didValue,
+                "Invalid DID format: " + didValue);
     }
 }
