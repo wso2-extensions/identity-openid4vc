@@ -24,6 +24,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPTokenExpiredException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "VP_TOKEN_EXPIRED";
 
     /**

@@ -24,6 +24,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class PresentationDefinitionNotFoundException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "DEFINITION_NOT_FOUND";
 
     /**
@@ -50,7 +54,7 @@ public class PresentationDefinitionNotFoundException extends VPException {
      * @param msg   Custom error message
      */
     public PresentationDefinitionNotFoundException(final String defId,
-                                                   final String msg) {
+            final String msg) {
 
         super(DEFAULT_ERROR_CODE, msg);
         this.definitionId = defId;

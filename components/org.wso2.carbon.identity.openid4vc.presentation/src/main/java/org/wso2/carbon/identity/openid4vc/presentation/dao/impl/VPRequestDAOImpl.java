@@ -41,29 +41,36 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     private static final Log log = LogFactory.getLog(VPRequestDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, CLIENT_ID, NONCE, "
-            +
-            "PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
-            "REQUEST_JWT, STATUS, CREATED_AT, EXPIRES_AT, TENANT_ID) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, " +
+            "CLIENT_ID, NONCE, PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
+            "REQUEST_JWT, STATUS, CREATED_AT, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID = "SELECT * FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID = "SELECT * FROM IDN_VP_REQUEST " +
+            "WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID = "SELECT REQUEST_ID FROM IDN_VP_REQUEST WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID = "SELECT REQUEST_ID FROM IDN_VP_REQUEST " +
+            "WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_VP_REQUEST_STATUS = "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VP_REQUEST_STATUS = "UPDATE IDN_VP_REQUEST SET STATUS = ? " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_UPDATE_VP_REQUEST_JWT = "UPDATE IDN_VP_REQUEST SET REQUEST_JWT = ? WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_UPDATE_VP_REQUEST_JWT = "UPDATE IDN_VP_REQUEST SET REQUEST_JWT = ? " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_VP_REQUEST = "DELETE FROM IDN_VP_REQUEST WHERE REQUEST_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_VP_REQUEST = "DELETE FROM IDN_VP_REQUEST " +
+            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_EXPIRED_VP_REQUESTS = "SELECT * FROM IDN_VP_REQUEST WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_EXPIRED_VP_REQUESTS = "SELECT * FROM IDN_VP_REQUEST " +
+            "WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
 
-    private static final String SQL_MARK_EXPIRED_REQUESTS = "UPDATE IDN_VP_REQUEST SET STATUS = ? WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_MARK_EXPIRED_REQUESTS = "UPDATE IDN_VP_REQUEST SET STATUS = ? " +
+            "WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_VP_REQUESTS_BY_STATUS = "SELECT * FROM IDN_VP_REQUEST WHERE STATUS = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_VP_REQUESTS_BY_STATUS = "SELECT * FROM IDN_VP_REQUEST " +
+            "WHERE STATUS = ? AND TENANT_ID = ?";
 
     @Override
     public void createVPRequest(VPRequest vpRequest) throws VPException {

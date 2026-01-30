@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -26,7 +25,6 @@ import com.google.gson.JsonParser;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -64,7 +62,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DIDResolverServiceImpl implements DIDResolverService {
 
     private static final Log LOG = LogFactory.getLog(DIDResolverServiceImpl.class);
-    private static final Gson GSON = new Gson();
 
     // Supported DID methods
     private static final String METHOD_WEB = "web";
@@ -364,7 +361,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
             // Get multicodec prefix to determine key type
             int codecPrefix = (decoded[0] & 0xFF) | ((decoded[1] & 0xFF) << 8);
-            byte[] keyBytes = Arrays.copyOfRange(decoded, 2, decoded.length);
 
             DIDDocument document = new DIDDocument();
             document.setId(did);
@@ -658,22 +654,11 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             throw new DIDResolutionException("Unsupported OKP curve: " + crv);
         }
 
-        byte[] keyBytes = Base64.getUrlDecoder().decode(x);
-
-        // Try to use BouncyCastle or native Ed25519 support
         try {
-            // For Java 15+, EdDSA is supported natively
-            KeyFactory factory = KeyFactory.getInstance("EdDSA");
-            // Create the key spec using the raw bytes
-            // This is simplified - actual implementation may need adjustments
-            java.security.spec.NamedParameterSpec paramSpec = new java.security.spec.NamedParameterSpec("Ed25519");
-            java.security.spec.EdECPublicKeySpec spec = new java.security.spec.EdECPublicKeySpec(paramSpec,
-                    new java.security.spec.EdECPoint(false,
-                            new BigInteger(1, reverseBytes(keyBytes))));
-            return factory.generatePublic(spec);
+            // Use Nimbus to handle Ed25519 keys (works on Java 8/11 with Bouncy Castle)
+            OctetKeyPair okp = new OctetKeyPair.Builder(Curve.Ed25519, new Base64URL(x)).build();
+            return okp.toPublicKey();
         } catch (Exception e) {
-            LOG.warn("Native EdDSA not available, Ed25519 keys may not verify: " + e.getMessage());
-            // Return null or throw exception based on requirements
             throw new DIDResolutionException("Ed25519 key support not available: " + e.getMessage());
         }
     }
@@ -711,14 +696,11 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         if (keyType != null && keyType.contains("Ed25519")) {
             // Ed25519 key
             try {
-                KeyFactory factory = KeyFactory.getInstance("EdDSA");
-                java.security.spec.NamedParameterSpec paramSpec = new java.security.spec.NamedParameterSpec("Ed25519");
-                java.security.spec.EdECPublicKeySpec spec = new java.security.spec.EdECPublicKeySpec(paramSpec,
-                        new java.security.spec.EdECPoint(false,
-                                new BigInteger(1, reverseBytes(keyBytes))));
-                return factory.generatePublic(spec);
+                // Use Nimbus to convert raw bytes to PublicKey
+                OctetKeyPair okp = new OctetKeyPair.Builder(Curve.Ed25519, Base64URL.encode(keyBytes)).build();
+                return okp.toPublicKey();
             } catch (Exception e) {
-                throw new DIDResolutionException("Ed25519 key support not available");
+                throw new DIDResolutionException("Ed25519 key conversion failed: " + e.getMessage());
             }
         }
         throw new DIDResolutionException("Unsupported key type for byte conversion: " + keyType);
@@ -836,6 +818,11 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
     /**
      * Reverse byte array (for Ed25519 little-endian format).
+     */
+    /**
+     * Reverse byte array (for Ed25519 little-endian format).
+     * 
+     * @deprecated Not used with Nimbus OctetKeyPair implementation
      */
     private byte[] reverseBytes(byte[] bytes) {
         byte[] reversed = new byte[bytes.length];

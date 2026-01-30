@@ -42,7 +42,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     private static final Log LOG = LogFactory.getLog(TrustedIssuerServiceImpl.class);
 
     private final TrustedIssuerDAO trustedIssuerDAO;
-    private static final String TRUST_ENFORCEMENT_ENABLED_PROPERTY = "OpenID4VP.TrustEnforcementEnabled";
+
     private static final boolean DEFAULT_TRUST_ENFORCEMENT = true;
 
     /**

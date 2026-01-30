@@ -30,14 +30,11 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPSubmissionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPResultService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPResultServiceImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.charset.StandardCharsets;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -67,13 +64,12 @@ public class VPResultServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234;
 
-    private VPSubmissionService vpSubmissionService;
     private VPResultService vpResultService;
 
     @Override
     public void init() throws ServletException {
         super.init();
-        this.vpSubmissionService = new VPSubmissionServiceImpl();
+
         this.vpResultService = new VPResultServiceImpl();
     }
 

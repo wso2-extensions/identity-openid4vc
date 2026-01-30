@@ -38,7 +38,7 @@ public interface ApplicationPresentationDefinitionMappingDAO {
      * Get the presentation definition ID for a specific application.
      *
      * @param applicationId The application ID
-     * @param tenantId The tenant ID
+     * @param tenantId      The tenant ID
      * @return The presentation definition ID or null if not found
      * @throws VPException If an error occurs
      */
@@ -48,17 +48,18 @@ public interface ApplicationPresentationDefinitionMappingDAO {
      * Get the mapping for an application.
      *
      * @param applicationId The application ID
-     * @param tenantId The tenant ID
+     * @param tenantId      The tenant ID
      * @return The mapping or null if not found
      * @throws VPException If an error occurs
      */
-    ApplicationPresentationDefinitionMapping getMappingByApplicationId(String applicationId, int tenantId) throws VPException;
+    ApplicationPresentationDefinitionMapping getMappingByApplicationId(String applicationId, int tenantId)
+            throws VPException;
 
     /**
      * Delete the mapping for an application.
      *
      * @param applicationId The application ID
-     * @param tenantId The tenant ID
+     * @param tenantId      The tenant ID
      * @throws VPException If an error occurs
      */
     void deleteMapping(String applicationId, int tenantId) throws VPException;
@@ -67,7 +68,7 @@ public interface ApplicationPresentationDefinitionMappingDAO {
      * Check if a mapping exists for an application.
      *
      * @param applicationId The application ID
-     * @param tenantId The tenant ID
+     * @param tenantId      The tenant ID
      * @return True if mapping exists, false otherwise
      * @throws VPException If an error occurs
      */

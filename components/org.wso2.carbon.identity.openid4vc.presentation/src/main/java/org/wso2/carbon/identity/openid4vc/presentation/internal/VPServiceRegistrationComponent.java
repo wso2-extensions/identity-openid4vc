@@ -76,7 +76,8 @@ public class VPServiceRegistrationComponent {
             VPRequestService vpRequestService = new VPRequestServiceImpl();
             VPSubmissionService vpSubmissionService = new VPSubmissionServiceImpl();
             PresentationDefinitionService presentationDefinitionService = new PresentationDefinitionServiceImpl();
-            ApplicationPresentationDefinitionMappingService mappingService = new ApplicationPresentationDefinitionMappingServiceImpl();
+            ApplicationPresentationDefinitionMappingService mappingService = 
+            new ApplicationPresentationDefinitionMappingServiceImpl();
 
             // Register services with OSGi
             bundleContext.registerService(VPRequestService.class.getName(),
@@ -85,7 +86,8 @@ public class VPServiceRegistrationComponent {
                     vpSubmissionService, new Hashtable<>());
             bundleContext.registerService(PresentationDefinitionService.class.getName(),
                     presentationDefinitionService, new Hashtable<>());
-            bundleContext.registerService(ApplicationPresentationDefinitionMappingService.class.getName(),
+            bundleContext.registerService(
+                    ApplicationPresentationDefinitionMappingService.class.getName(),
                     mappingService, new Hashtable<>());
 
             // Set services in data holder
@@ -122,7 +124,8 @@ public class VPServiceRegistrationComponent {
         log.info("OpenID4VP service registration component deactivated");
     }
 
-    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
+    @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
+    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {
@@ -137,7 +140,8 @@ public class VPServiceRegistrationComponent {
         }
     }
 
-    @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
+    @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = 
+    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
     protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(applicationManagementService);
         if (log.isDebugEnabled()) {

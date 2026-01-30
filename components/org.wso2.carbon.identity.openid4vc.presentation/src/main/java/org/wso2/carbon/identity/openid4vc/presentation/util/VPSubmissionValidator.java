@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.util;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,7 +28,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstan
 import org.wso2.carbon.identity.openid4vc.presentation.dto.DescriptorMapDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.PresentationSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
 

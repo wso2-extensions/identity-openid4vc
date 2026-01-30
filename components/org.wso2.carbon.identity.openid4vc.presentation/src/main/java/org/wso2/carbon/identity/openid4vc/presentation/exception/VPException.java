@@ -25,6 +25,9 @@ public class VPException extends Exception {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Error code.
+     */
     private String errorCode;
 
     /**
@@ -32,19 +35,19 @@ public class VPException extends Exception {
      *
      * @param message Error message
      */
-    public VPException(String message) {
+    public VPException(final String message) {
         super(message);
     }
 
     /**
      * Constructor with message and error code.
      *
-     * @param errorCode Error code
-     * @param message   Error message
+     * @param code    Error code
+     * @param message Error message
      */
-    public VPException(String errorCode, String message) {
+    public VPException(final String code, final String message) {
         super(message);
-        this.errorCode = errorCode;
+        this.errorCode = code;
     }
 
     /**
@@ -53,20 +56,22 @@ public class VPException extends Exception {
      * @param message Error message
      * @param cause   Underlying cause
      */
-    public VPException(String message, Throwable cause) {
+    public VPException(final String message,
+            final Throwable cause) {
         super(message, cause);
     }
 
     /**
      * Constructor with error code, message, and cause.
      *
-     * @param errorCode Error code
-     * @param message   Error message
-     * @param cause     Underlying cause
+     * @param code    Error code
+     * @param message Error message
+     * @param cause   Underlying cause
      */
-    public VPException(String errorCode, String message, Throwable cause) {
+    public VPException(final String code, final String message,
+            final Throwable cause) {
         super(message, cause);
-        this.errorCode = errorCode;
+        this.errorCode = code;
     }
 
     /**
@@ -81,9 +86,9 @@ public class VPException extends Exception {
     /**
      * Set the error code.
      *
-     * @param errorCode Error code
+     * @param code Error code
      */
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
+    public void setErrorCode(final String code) {
+        this.errorCode = code;
     }
 }

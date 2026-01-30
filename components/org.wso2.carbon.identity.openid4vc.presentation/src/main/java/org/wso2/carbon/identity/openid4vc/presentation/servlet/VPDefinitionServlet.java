@@ -57,9 +57,12 @@ import javax.servlet.http.HttpServletResponse;
  * - DELETE /openid4vp/v1/presentation-definitions/{id} - Delete definition
  *
  * Application Mapping Endpoints:
- * - GET /openid4vp/v1/presentation-definitions/mapping/{applicationId} - Get mapping for application
- * - POST /openid4vp/v1/presentation-definitions/mapping - Create/update application mapping
- * - DELETE /openid4vp/v1/presentation-definitions/mapping/{applicationId} - Delete application mapping
+ * - GET /openid4vp/v1/presentation-definitions/mapping/{applicationId} - Get
+ * mapping for application
+ * - POST /openid4vp/v1/presentation-definitions/mapping - Create/update
+ * application mapping
+ * - DELETE /openid4vp/v1/presentation-definitions/mapping/{applicationId} -
+ * Delete application mapping
  */
 public class VPDefinitionServlet extends HttpServlet {
 
@@ -84,7 +87,8 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle GET requests - List or get presentation definitions, or get application mappings.
+     * Handle GET requests - List or get presentation definitions, or get
+     * application mappings.
      */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -108,7 +112,8 @@ public class VPDefinitionServlet extends HttpServlet {
                 // Handle application mapping requests
                 String applicationId = pathInfo.substring("/mapping/".length());
                 if (log.isDebugEnabled()) {
-                    log.debug("Getting application mapping for applicationId: " + applicationId + ", tenantId: " + tenantId);
+                    log.debug("Getting application mapping for applicationId: " + applicationId +
+                            ", tenantId: " + tenantId);
                 }
                 handleGetApplicationMapping(request, response, applicationId, tenantId);
             } else {
@@ -138,7 +143,8 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle POST requests - Create new presentation definition or application mapping.
+     * Handle POST requests - Create new presentation definition or application
+     * mapping.
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -240,7 +246,8 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle DELETE requests - Delete presentation definition or application mapping.
+     * Handle DELETE requests - Delete presentation definition or application
+     * mapping.
      */
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
@@ -258,7 +265,8 @@ public class VPDefinitionServlet extends HttpServlet {
                 // Handle application mapping deletion
                 String applicationId = pathInfo.substring("/mapping/".length());
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleting application mapping for applicationId: " + applicationId + ", tenantId: " + tenantId);
+                    log.debug("Deleting application mapping for applicationId: " + applicationId + ", tenantId: "
+                            + tenantId);
                 }
                 handleDeleteApplicationMapping(request, response, applicationId, tenantId);
             } else {
@@ -346,7 +354,8 @@ public class VPDefinitionServlet extends HttpServlet {
 
             if (mapping != null) {
                 if (log.isDebugEnabled()) {
-                    log.debug("Found mapping: " + mapping.getApplicationId() + " -> " + mapping.getPresentationDefinitionId());
+                    log.debug("Found mapping: " + mapping.getApplicationId() + " -> " +
+                            mapping.getPresentationDefinitionId());
                 }
                 sendJsonResponse(request, response, HttpServletResponse.SC_OK, mapping);
             } else {
@@ -358,7 +367,8 @@ public class VPDefinitionServlet extends HttpServlet {
                         "No mapping found for application: " + applicationId);
             }
         } catch (Exception e) {
-            log.error("Error retrieving application mapping for applicationId: " + applicationId + ", tenantId: " + tenantId, e);
+            log.error("Error retrieving application mapping for applicationId: " + applicationId +
+                    ", tenantId: " + tenantId, e);
             throw e;
         }
     }
@@ -406,7 +416,8 @@ public class VPDefinitionServlet extends HttpServlet {
         }
 
         if (StringUtils.isBlank(mappingRequest.getPresentationDefinitionId())) {
-            log.warn("Missing presentationDefinitionId in request for applicationId: " + mappingRequest.getApplicationId());
+            log.warn("Missing presentationDefinitionId in request for applicationId: " +
+                    mappingRequest.getApplicationId());
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "presentationDefinitionId is required");
             return;
@@ -414,7 +425,7 @@ public class VPDefinitionServlet extends HttpServlet {
 
         if (log.isDebugEnabled()) {
             log.debug("Creating/updating mapping: " + mappingRequest.getApplicationId() + " -> " +
-                     mappingRequest.getPresentationDefinitionId() + " for tenantId: " + tenantId);
+                    mappingRequest.getPresentationDefinitionId() + " for tenantId: " + tenantId);
         }
 
         try {
@@ -425,7 +436,8 @@ public class VPDefinitionServlet extends HttpServlet {
                     tenantId);
 
             if (log.isDebugEnabled()) {
-                log.debug("Successfully created/updated mapping for applicationId: " + mappingRequest.getApplicationId());
+                log.debug("Successfully created/updated mapping for applicationId: " +
+                        mappingRequest.getApplicationId());
             }
 
             // Send success response
@@ -434,7 +446,8 @@ public class VPDefinitionServlet extends HttpServlet {
             sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, successResponse);
 
         } catch (Exception e) {
-            log.error("Error creating/updating application mapping for applicationId: " + mappingRequest.getApplicationId(), e);
+            log.error("Error creating/updating application mapping for applicationId: " +
+                    mappingRequest.getApplicationId(), e);
             throw e;
         }
     }
@@ -446,7 +459,8 @@ public class VPDefinitionServlet extends HttpServlet {
             String applicationId, int tenantId) throws Exception {
 
         if (log.isDebugEnabled()) {
-            log.debug("Deleting application mapping for applicationId: " + applicationId + ", tenantId: " + tenantId);
+            log.debug("Deleting application mapping for applicationId: " + applicationId +
+                    ", tenantId: " + tenantId);
         }
 
         try {
@@ -460,7 +474,8 @@ public class VPDefinitionServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 
         } catch (Exception e) {
-            log.error("Error deleting application mapping for applicationId: " + applicationId + ", tenantId: " + tenantId, e);
+            log.error("Error deleting application mapping for applicationId: " + applicationId +
+                    ", tenantId: " + tenantId, e);
             throw e;
         }
     }
@@ -656,12 +671,19 @@ public class VPDefinitionServlet extends HttpServlet {
      */
     private static class PresentationDefinitionResponseDTO {
 
+        @SuppressWarnings("unused")
         private String definitionId;
+        @SuppressWarnings("unused")
         private String name;
+        @SuppressWarnings("unused")
         private String description;
+        @SuppressWarnings("unused")
         private String definitionJson;
+        @SuppressWarnings("unused")
         private boolean isDefault;
+        @SuppressWarnings("unused")
         private long createdAt;
+        @SuppressWarnings("unused")
         private Long updatedAt;
 
         public void setDefinitionId(String definitionId) {
@@ -721,8 +743,5 @@ public class VPDefinitionServlet extends HttpServlet {
             this.message = message;
         }
 
-        public String getMessage() {
-            return message;
-        }
     }
 }

@@ -24,31 +24,44 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPRequestExpiredException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "VP_REQUEST_EXPIRED";
 
+    /**
+     * The request ID that has expired.
+     */
     private String requestId;
+
+    /**
+     * The expiry timestamp.
+     */
     private long expiredAt;
 
     /**
      * Constructor with request ID.
      *
-     * @param requestId The request ID that has expired
+     * @param request The request ID that has expired
      */
-    public VPRequestExpiredException(String requestId) {
-        super(DEFAULT_ERROR_CODE, "VP request has expired: " + requestId);
-        this.requestId = requestId;
+    public VPRequestExpiredException(final String request) {
+        super(DEFAULT_ERROR_CODE, "VP request has expired: " + request);
+        this.requestId = request;
     }
 
     /**
      * Constructor with request ID and expiry time.
      *
-     * @param requestId Request ID
-     * @param expiredAt Expiry timestamp
+     * @param request  Request ID
+     * @param expiryTs Expiry timestamp
      */
-    public VPRequestExpiredException(String requestId, long expiredAt) {
-        super(DEFAULT_ERROR_CODE, "VP request has expired: " + requestId + " at " + expiredAt);
-        this.requestId = requestId;
-        this.expiredAt = expiredAt;
+    public VPRequestExpiredException(final String request,
+            final long expiryTs) {
+        super(DEFAULT_ERROR_CODE,
+                "VP request has expired: " + request + " at " + expiryTs);
+        this.requestId = request;
+        this.expiredAt = expiryTs;
     }
 
     /**

@@ -24,16 +24,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
-
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
@@ -44,8 +41,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerServ
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPLogger;
 import org.wso2.carbon.identity.openid4vc.presentation.util.SignatureVerifier;
-import org.wso2.carbon.user.api.UserStoreException;
-import org.wso2.carbon.user.core.service.RealmService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.PublicKey;
@@ -1275,17 +1270,5 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Helper to get tenant ID from domain.
      */
-    private int getTenantId(String tenantDomain) throws CredentialVerificationException {
-        try {
-            RealmService realmService = VPServiceDataHolder.getInstance().getRealmService();
-            if (realmService == null) {
-                // Default to super tenant if realm service not available
-                return -1234;
-            }
-            return realmService.getTenantManager().getTenantId(tenantDomain);
-        } catch (UserStoreException e) {
-            throw new CredentialVerificationException(
-                    "Failed to resolve tenant ID for domain: " + tenantDomain, e);
-        }
-    }
+
 }

@@ -41,34 +41,31 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
     private static final Log LOG = LogFactory.getLog(TrustedIssuerDAOImpl.class);
 
     // SQL Queries
-    private static final String IS_ISSUER_TRUSTED =
-            "SELECT ID FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE ISSUER_DID = ? AND TENANT_ID = ? AND ACTIVE = 1";
+    private static final String IS_ISSUER_TRUSTED = "SELECT ID FROM IDN_OPENID4VP_TRUSTED_ISSUER " +
+            "WHERE ISSUER_DID = ? AND TENANT_ID = ? AND ACTIVE = 1";
 
-    private static final String ADD_TRUSTED_ISSUER =
-            "INSERT INTO IDN_OPENID4VP_TRUSTED_ISSUER (ISSUER_DID, TENANT_ID, ADDED_BY, ADDED_TIME, DESCRIPTION, ACTIVE) " +
-            "VALUES (?, ?, ?, ?, ?, ?)";
+    private static final String ADD_TRUSTED_ISSUER = "INSERT INTO IDN_OPENID4VP_TRUSTED_ISSUER " +
+            "(ISSUER_DID, TENANT_ID, ADDED_BY, ADDED_TIME, DESCRIPTION, ACTIVE) VALUES (?, ?, ?, ?, ?, ?)";
 
-    private static final String REMOVE_TRUSTED_ISSUER =
-            "DELETE FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE ISSUER_DID = ? AND TENANT_ID = ?";
+    private static final String REMOVE_TRUSTED_ISSUER = "DELETE FROM IDN_OPENID4VP_TRUSTED_ISSUER " +
+            "WHERE ISSUER_DID = ? AND TENANT_ID = ?";
 
-    private static final String GET_TRUSTED_ISSUERS =
-            "SELECT ISSUER_DID FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE TENANT_ID = ? AND ACTIVE = 1";
+    private static final String GET_TRUSTED_ISSUERS = "SELECT ISSUER_DID FROM IDN_OPENID4VP_TRUSTED_ISSUER " +
+            "WHERE TENANT_ID = ? AND ACTIVE = 1";
 
-    private static final String GET_TRUSTED_ISSUERS_WITH_DETAILS =
-            "SELECT ISSUER_DID, TENANT_ID, ADDED_BY, ADDED_TIME, DESCRIPTION, ACTIVE " +
-            "FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE TENANT_ID = ? AND ACTIVE = 1";
+    private static final String GET_TRUSTED_ISSUERS_WITH_DETAILS = "SELECT ISSUER_DID, TENANT_ID, ADDED_BY, " +
+            "ADDED_TIME, DESCRIPTION, ACTIVE FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE TENANT_ID = ? AND ACTIVE = 1";
 
-    private static final String UPDATE_DESCRIPTION =
-            "UPDATE IDN_OPENID4VP_TRUSTED_ISSUER SET DESCRIPTION = ? WHERE ISSUER_DID = ? AND TENANT_ID = ?";
+    private static final String UPDATE_DESCRIPTION = "UPDATE IDN_OPENID4VP_TRUSTED_ISSUER SET DESCRIPTION = ? " +
+            "WHERE ISSUER_DID = ? AND TENANT_ID = ?";
 
-    private static final String GET_TRUSTED_ISSUER =
-            "SELECT ISSUER_DID, TENANT_ID, ADDED_BY, ADDED_TIME, DESCRIPTION, ACTIVE " +
-            "FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE ISSUER_DID = ? AND TENANT_ID = ?";
+    private static final String GET_TRUSTED_ISSUER = "SELECT ISSUER_DID, TENANT_ID, ADDED_BY, ADDED_TIME, " +
+            "DESCRIPTION, ACTIVE FROM IDN_OPENID4VP_TRUSTED_ISSUER WHERE ISSUER_DID = ? AND TENANT_ID = ?";
 
     @Override
     public boolean isIssuerTrusted(String issuerDid, int tenantId) throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-             PreparedStatement statement = connection.prepareStatement(IS_ISSUER_TRUSTED)) {
+                PreparedStatement statement = connection.prepareStatement(IS_ISSUER_TRUSTED)) {
 
             statement.setString(1, issuerDid);
             statement.setInt(2, tenantId);
@@ -90,7 +87,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
         }
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true);
-             PreparedStatement statement = connection.prepareStatement(ADD_TRUSTED_ISSUER)) {
+                PreparedStatement statement = connection.prepareStatement(ADD_TRUSTED_ISSUER)) {
 
             statement.setString(1, trustedIssuer.getIssuerDid());
             statement.setInt(2, trustedIssuer.getTenantId());
@@ -102,7 +99,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
             statement.executeUpdate();
             IdentityDatabaseUtil.commitTransaction(connection);
 
-            LOG.info("Added trusted issuer: " + trustedIssuer.getIssuerDid() + 
+            LOG.info("Added trusted issuer: " + trustedIssuer.getIssuerDid() +
                     " for tenant ID: " + trustedIssuer.getTenantId());
 
         } catch (SQLException e) {
@@ -113,7 +110,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
     @Override
     public void removeTrustedIssuer(String issuerDid, int tenantId) throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true);
-             PreparedStatement statement = connection.prepareStatement(REMOVE_TRUSTED_ISSUER)) {
+                PreparedStatement statement = connection.prepareStatement(REMOVE_TRUSTED_ISSUER)) {
 
             statement.setString(1, issuerDid);
             statement.setInt(2, tenantId);
@@ -137,7 +134,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
         List<String> issuers = new ArrayList<>();
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-             PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUERS)) {
+                PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUERS)) {
 
             statement.setInt(1, tenantId);
 
@@ -159,7 +156,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
         List<TrustedIssuer> issuers = new ArrayList<>();
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-             PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUERS_WITH_DETAILS)) {
+                PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUERS_WITH_DETAILS)) {
 
             statement.setInt(1, tenantId);
 
@@ -184,10 +181,10 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
     }
 
     @Override
-    public void updateTrustedIssuerDescription(String issuerDid, int tenantId, String description) 
+    public void updateTrustedIssuerDescription(String issuerDid, int tenantId, String description)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true);
-             PreparedStatement statement = connection.prepareStatement(UPDATE_DESCRIPTION)) {
+                PreparedStatement statement = connection.prepareStatement(UPDATE_DESCRIPTION)) {
 
             statement.setString(1, description);
             statement.setString(2, issuerDid);
@@ -210,7 +207,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
     @Override
     public TrustedIssuer getTrustedIssuer(String issuerDid, int tenantId) throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-             PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUER)) {
+                PreparedStatement statement = connection.prepareStatement(GET_TRUSTED_ISSUER)) {
 
             statement.setString(1, issuerDid);
             statement.setInt(2, tenantId);

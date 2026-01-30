@@ -236,7 +236,8 @@ public class QRCodeUtil {
      */
     public static String generateQRCodeScript(String containerId, String content, int size) {
         StringBuilder script = new StringBuilder();
-        script.append("new QRCode(document.getElementById('").append(escapeJs(containerId)).append("'), {");
+        script.append("new QRCode(document.getElementById('").append(escapeJs(containerId))
+                .append("'), {");
         script.append("text: '").append(escapeJs(content)).append("',");
         script.append("width: ").append(size).append(",");
         script.append("height: ").append(size).append(",");

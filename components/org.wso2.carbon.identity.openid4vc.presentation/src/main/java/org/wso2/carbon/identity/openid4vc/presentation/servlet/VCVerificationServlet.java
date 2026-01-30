@@ -60,8 +60,6 @@ public class VCVerificationServlet extends HttpServlet {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private static final String CONTENT_TYPE_JSON = "application/json";
-    private static final String PATH_VC_VERIFICATION = "/vc-verification";
-    private static final String PATH_VP_VERIFICATION = "/vp-verification";
 
     private VCVerificationService verificationService;
 
@@ -125,7 +123,7 @@ public class VCVerificationServlet extends HttpServlet {
      * Handle single VC verification.
      */
     private void handleVCVerification(HttpServletRequest request, HttpServletResponse response,
-                                       String requestBody, String contentType)
+            String requestBody, String contentType)
             throws IOException {
 
         LOG.debug("Processing VC verification request");
@@ -159,7 +157,7 @@ public class VCVerificationServlet extends HttpServlet {
      * Handle VP (Verifiable Presentation) verification.
      */
     private void handleVPVerification(HttpServletRequest request, HttpServletResponse response,
-                                       String requestBody, String contentType)
+            String requestBody, String contentType)
             throws IOException {
 
         LOG.debug("Processing VP verification request");
@@ -182,7 +180,7 @@ public class VCVerificationServlet extends HttpServlet {
      * Send VC verification response.
      */
     private void sendVerificationResponse(HttpServletResponse response,
-                                           VCVerificationResultDTO result)
+            VCVerificationResultDTO result)
             throws IOException {
 
         JsonObject jsonResponse = new JsonObject();
@@ -213,7 +211,7 @@ public class VCVerificationServlet extends HttpServlet {
      * Send VP verification response (multiple credentials).
      */
     private void sendVPVerificationResponse(HttpServletResponse response,
-                                             List<VCVerificationResultDTO> results)
+            List<VCVerificationResultDTO> results)
             throws IOException {
 
         JsonObject jsonResponse = new JsonObject();
@@ -266,7 +264,7 @@ public class VCVerificationServlet extends HttpServlet {
      * Send error response.
      */
     private void sendErrorResponse(HttpServletResponse response, int status,
-                                    String error, String errorDescription)
+            String error, String errorDescription)
             throws IOException {
 
         JsonObject jsonResponse = new JsonObject();

@@ -25,8 +25,19 @@ public class RevocationCheckException extends VPException {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * URL of the status list.
+     */
     private String statusListUrl;
+
+    /**
+     * Index in the status list.
+     */
     private Integer statusIndex;
+
+    /**
+     * Type of status check.
+     */
     private String statusType;
 
     /**
@@ -34,7 +45,7 @@ public class RevocationCheckException extends VPException {
      *
      * @param message Error message
      */
-    public RevocationCheckException(String message) {
+    public RevocationCheckException(final String message) {
         super(message);
     }
 
@@ -44,36 +55,38 @@ public class RevocationCheckException extends VPException {
      * @param message Error message
      * @param cause   Original exception
      */
-    public RevocationCheckException(String message, Throwable cause) {
+    public RevocationCheckException(final String message,
+            final Throwable cause) {
         super(message, cause);
     }
 
     /**
      * Constructor with all details.
      *
-     * @param message       Error message
-     * @param statusListUrl The status list URL being checked
-     * @param statusIndex   The index being checked
+     * @param message Error message
+     * @param listUrl The status list URL being checked
+     * @param index   The index being checked
      */
-    public RevocationCheckException(String message, String statusListUrl, Integer statusIndex) {
+    public RevocationCheckException(final String message, final String listUrl,
+            final Integer index) {
         super(message);
-        this.statusListUrl = statusListUrl;
-        this.statusIndex = statusIndex;
+        this.statusListUrl = listUrl;
+        this.statusIndex = index;
     }
 
     /**
      * Constructor with all details and cause.
      *
-     * @param message       Error message
-     * @param statusListUrl The status list URL being checked
-     * @param statusIndex   The index being checked
-     * @param cause         Original exception
+     * @param message Error message
+     * @param listUrl The status list URL being checked
+     * @param index   The index being checked
+     * @param cause   Original exception
      */
-    public RevocationCheckException(String message, String statusListUrl, Integer statusIndex,
-                                     Throwable cause) {
+    public RevocationCheckException(final String message, final String listUrl,
+            final Integer index, final Throwable cause) {
         super(message, cause);
-        this.statusListUrl = statusListUrl;
-        this.statusIndex = statusIndex;
+        this.statusListUrl = listUrl;
+        this.statusIndex = index;
     }
 
     // Static factory methods
@@ -85,7 +98,8 @@ public class RevocationCheckException extends VPException {
      * @param cause The network error
      * @return RevocationCheckException
      */
-    public static RevocationCheckException networkError(String url, Throwable cause) {
+    public static RevocationCheckException networkError(final String url,
+            final Throwable cause) {
         RevocationCheckException ex = new RevocationCheckException(
                 "Failed to fetch status list from: " + url, cause);
         ex.setStatusListUrl(url);
@@ -99,7 +113,8 @@ public class RevocationCheckException extends VPException {
      * @param reason The reason it's invalid
      * @return RevocationCheckException
      */
-    public static RevocationCheckException invalidStatusList(String url, String reason) {
+    public static RevocationCheckException invalidStatusList(final String url,
+            final String reason) {
         RevocationCheckException ex = new RevocationCheckException(
                 "Invalid status list credential at " + url + ": " + reason);
         ex.setStatusListUrl(url);
@@ -109,26 +124,29 @@ public class RevocationCheckException extends VPException {
     /**
      * Create exception for unsupported status type.
      *
-     * @param statusType The unsupported type
+     * @param type The unsupported type
      * @return RevocationCheckException
      */
-    public static RevocationCheckException unsupportedStatusType(String statusType) {
+    public static RevocationCheckException unsupportedStatusType(
+            final String type) {
         RevocationCheckException ex = new RevocationCheckException(
-                "Unsupported credential status type: " + statusType);
-        ex.setStatusType(statusType);
+                "Unsupported credential status type: " + type);
+        ex.setStatusType(type);
         return ex;
     }
 
     /**
      * Create exception for invalid status index.
      *
-     * @param index       The invalid index
+     * @param index           The invalid index
      * @param bitstringLength The length of the bitstring
      * @return RevocationCheckException
      */
-    public static RevocationCheckException invalidIndex(int index, int bitstringLength) {
+    public static RevocationCheckException invalidIndex(final int index,
+            final int bitstringLength) {
         RevocationCheckException ex = new RevocationCheckException(
-                "Status index " + index + " is out of bounds (bitstring length: " + bitstringLength + ")");
+                "Status index " + index + " is out of bounds "
+                        + "(bitstring length: " + bitstringLength + ")");
         ex.setStatusIndex(index);
         return ex;
     }
@@ -139,34 +157,65 @@ public class RevocationCheckException extends VPException {
      * @param cause The decoding error
      * @return RevocationCheckException
      */
-    public static RevocationCheckException decodingError(Throwable cause) {
+    public static RevocationCheckException decodingError(
+            final Throwable cause) {
         return new RevocationCheckException(
                 "Failed to decode status list: " + cause.getMessage(), cause);
     }
 
     // Getters and Setters
 
+    /**
+     * Get the status list URL.
+     *
+     * @return Status list URL
+     */
     public String getStatusListUrl() {
         return statusListUrl;
     }
 
-    public void setStatusListUrl(String statusListUrl) {
-        this.statusListUrl = statusListUrl;
+    /**
+     * Set the status list URL.
+     *
+     * @param listUrl Status list URL
+     */
+    public void setStatusListUrl(final String listUrl) {
+        this.statusListUrl = listUrl;
     }
 
+    /**
+     * Get the status index.
+     *
+     * @return Status index
+     */
     public Integer getStatusIndex() {
         return statusIndex;
     }
 
-    public void setStatusIndex(Integer statusIndex) {
-        this.statusIndex = statusIndex;
+    /**
+     * Set the status index.
+     *
+     * @param index Status index
+     */
+    public void setStatusIndex(final Integer index) {
+        this.statusIndex = index;
     }
 
+    /**
+     * Get the status type.
+     *
+     * @return Status type
+     */
     public String getStatusType() {
         return statusType;
     }
 
-    public void setStatusType(String statusType) {
-        this.statusType = statusType;
+    /**
+     * Set the status type.
+     *
+     * @param type Status type
+     */
+    public void setStatusType(final String type) {
+        this.statusType = type;
     }
 }

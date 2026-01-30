@@ -35,7 +35,8 @@ public final class CORSUtil {
     private static final String HEADER_ACCESS_CONTROL_EXPOSE_HEADERS = "Access-Control-Expose-Headers";
 
     private static final String DEFAULT_ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
-    private static final String DEFAULT_ALLOWED_HEADERS = "Content-Type, Authorization, X-Requested-With, Accept, Origin, X-Tenant-Id, X-CSRF-Token";
+    private static final String DEFAULT_ALLOWED_HEADERS = "Content-Type, Authorization, X-Requested-With, Accept, " +
+            "Origin, X-Tenant-Id, X-CSRF-Token";
     private static final String DEFAULT_EXPOSED_HEADERS = "Content-Type, X-Request-Id, X-Transaction-Id";
     private static final String DEFAULT_MAX_AGE = "86400"; // 24 hours
 

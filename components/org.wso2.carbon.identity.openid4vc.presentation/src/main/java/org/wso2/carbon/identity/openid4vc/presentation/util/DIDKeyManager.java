@@ -18,21 +18,23 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.OctetKeyPair;
+import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
+import com.nimbusds.jose.util.Base64URL;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
+import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
+import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
+import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.DIDKeysDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.DIDKeysDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDKey;
-import com.nimbusds.jose.jwk.gen.OctetKeyPairGenerator;
-import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
-import com.nimbusds.jose.jwk.Curve;
-import com.nimbusds.jose.jwk.OctetKeyPair;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.KeyType;
-import com.nimbusds.jose.util.Base64URL;
+
 import java.util.concurrent.ConcurrentHashMap;
-import com.nimbusds.jose.JWSAlgorithm;
 
 /**
  * Manages cryptographic keys for DID documents.
@@ -152,14 +154,12 @@ public class DIDKeyManager {
     private static OctetKeyPair generateEd25519KeyPair() throws Exception {
         // Use Bouncy Castle directly to avoid Nimbus dependency on Google Tink which is
         // missing in OSGi
-        org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator gen = new org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator();
-        gen.init(new org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters(new java.security.SecureRandom()));
-        org.bouncycastle.crypto.AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
+        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+        gen.init(new Ed25519KeyGenerationParameters(new java.security.SecureRandom()));
+        AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
 
-        org.bouncycastle.crypto.params.Ed25519PublicKeyParameters publicParams = (org.bouncycastle.crypto.params.Ed25519PublicKeyParameters) keyPair
-                .getPublic();
-        org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters privateParams = (org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters) keyPair
-                .getPrivate();
+        Ed25519PublicKeyParameters publicParams = (Ed25519PublicKeyParameters) keyPair.getPublic();
+        Ed25519PrivateKeyParameters privateParams = (Ed25519PrivateKeyParameters) keyPair.getPrivate();
 
         Base64URL x = Base64URL.encode(publicParams.getEncoded());
         Base64URL d = Base64URL.encode(privateParams.getEncoded());
@@ -314,8 +314,9 @@ public class DIDKeyManager {
         // Ed25519 keys are X.509 encoded. The raw key is the last 32 bytes
         byte[] encoded = publicKey.getEncoded();
         int length = encoded.length;
-        if (length < 32)
+        if (length < 32) {
             return encoded;
+        }
         return java.util.Arrays.copyOfRange(encoded, length - 32, length);
     }
 
@@ -328,8 +329,9 @@ public class DIDKeyManager {
         // standard Ed25519 encodings.
         byte[] encoded = privateKey.getEncoded();
         int length = encoded.length;
-        if (length < 32)
+        if (length < 32) {
             return encoded;
+        }
         return java.util.Arrays.copyOfRange(encoded, length - 32, length);
     }
 
@@ -380,11 +382,11 @@ public class DIDKeyManager {
      * @return Decoded byte array
      */
     public static byte[] base58Decode(String input) {
-        String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-        int[] INDEXES = new int[128];
-        java.util.Arrays.fill(INDEXES, -1);
-        for (int i = 0; i < ALPHABET.length(); i++) {
-            INDEXES[ALPHABET.charAt(i)] = i;
+        String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        int[] indexes = new int[128];
+        java.util.Arrays.fill(indexes, -1);
+        for (int i = 0; i < alphabet.length(); i++) {
+            indexes[alphabet.charAt(i)] = i;
         }
 
         if (input.length() == 0) {
@@ -395,7 +397,7 @@ public class DIDKeyManager {
         byte[] input58 = new byte[input.length()];
         for (int i = 0; i < input.length(); i++) {
             char c = input.charAt(i);
-            int digit = c < 128 ? INDEXES[c] : -1;
+            int digit = c < 128 ? indexes[c] : -1;
             if (digit < 0) {
                 throw new IllegalArgumentException("Invalid Base58 character: " + c);
             }
@@ -446,7 +448,7 @@ public class DIDKeyManager {
      * @return Base58 encoded string
      */
     private static String base58Encode(byte[] input) {
-        String ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
         if (input.length == 0) {
             return "";
         }
@@ -465,20 +467,20 @@ public class DIDKeyManager {
         byte[] encoded = new byte[inputCopy.length * 2];
         int outputStart = encoded.length;
         for (int inputStart = zeros; inputStart < inputCopy.length;) {
-            encoded[--outputStart] = (byte) ALPHABET.charAt(divmod(inputCopy, inputStart, 256, 58));
+            encoded[--outputStart] = (byte) alphabet.charAt(divmod(inputCopy, inputStart, 256, 58));
             if (inputCopy[inputStart] == 0) {
                 inputStart++;
             }
         }
 
         // Skip leading zeros in encoded result
-        while (outputStart < encoded.length && encoded[outputStart] == (byte) ALPHABET.charAt(0)) {
+        while (outputStart < encoded.length && encoded[outputStart] == (byte) alphabet.charAt(0)) {
             outputStart++;
         }
 
         // Add original leading zeros
         while (--zeros >= 0) {
-            encoded[--outputStart] = (byte) ALPHABET.charAt(0);
+            encoded[--outputStart] = (byte) alphabet.charAt(0);
         }
 
         return new String(encoded, outputStart, encoded.length - outputStart);

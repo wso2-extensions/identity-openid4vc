@@ -33,37 +33,31 @@ import java.sql.SQLException;
 /**
  * Implementation of ApplicationPresentationDefinitionMappingDAO using JDBC.
  */
-public class ApplicationPresentationDefinitionMappingDAOImpl 
+public class ApplicationPresentationDefinitionMappingDAOImpl
         implements ApplicationPresentationDefinitionMappingDAO {
 
     private static final Log log = LogFactory.getLog(ApplicationPresentationDefinitionMappingDAOImpl.class);
 
     // SQL Queries
-    private static final String SQL_INSERT_MAPPING = 
-            "INSERT INTO IDN_APPLICATION_PRESENTATION_DEFINITION " +
+    private static final String SQL_INSERT_MAPPING = "INSERT INTO IDN_APPLICATION_PRESENTATION_DEFINITION " +
             "(APPLICATION_ID, PRESENTATION_DEFINITION_ID, TENANT_ID, CREATED_AT, UPDATED_AT) " +
             "VALUES (?, ?, ?, ?, ?)";
 
-    private static final String SQL_UPDATE_MAPPING =
-            "UPDATE IDN_APPLICATION_PRESENTATION_DEFINITION SET " +
+    private static final String SQL_UPDATE_MAPPING = "UPDATE IDN_APPLICATION_PRESENTATION_DEFINITION SET " +
             "PRESENTATION_DEFINITION_ID = ?, UPDATED_AT = ? " +
             "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_MAPPING_BY_APP_ID =
-            "SELECT APPLICATION_ID, PRESENTATION_DEFINITION_ID, TENANT_ID, CREATED_AT, UPDATED_AT " +
-            "FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
+    private static final String SQL_SELECT_MAPPING_BY_APP_ID = "SELECT APPLICATION_ID, " +
+            "PRESENTATION_DEFINITION_ID, TENANT_ID, CREATED_AT, UPDATED_AT " +
+            "FROM IDN_APPLICATION_PRESENTATION_DEFINITION WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
+
+    private static final String SQL_SELECT_PRES_DEF_ID = "SELECT PRESENTATION_DEFINITION_ID " +
+            "FROM IDN_APPLICATION_PRESENTATION_DEFINITION WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
+
+    private static final String SQL_DELETE_MAPPING = "DELETE FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
             "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_PRES_DEF_ID =
-            "SELECT PRESENTATION_DEFINITION_ID FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
-            "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_DELETE_MAPPING =
-            "DELETE FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
-            "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_CHECK_MAPPING_EXISTS =
-            "SELECT 1 FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
+    private static final String SQL_CHECK_MAPPING_EXISTS = "SELECT 1 FROM IDN_APPLICATION_PRESENTATION_DEFINITION " +
             "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
 
     @Override
@@ -79,9 +73,9 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                     createMapping(connection, mapping);
                 }
                 IdentityDatabaseUtil.commitTransaction(connection);
-                
+
                 if (log.isDebugEnabled()) {
-                    log.debug("Mapping created/updated successfully for application: " + 
+                    log.debug("Mapping created/updated successfully for application: " +
                             mapping.getApplicationId());
                 }
             } catch (SQLException e) {
@@ -94,7 +88,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
     }
 
     @Override
-    public String getPresentationDefinitionIdByApplicationId(String applicationId, int tenantId) 
+    public String getPresentationDefinitionIdByApplicationId(String applicationId, int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_PRES_DEF_ID)) {
@@ -108,15 +102,15 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error retrieving presentation definition ID for application: " + 
+            throw new VPException("Error retrieving presentation definition ID for application: " +
                     applicationId, e);
         }
         return null;
     }
 
     @Override
-    public ApplicationPresentationDefinitionMapping getMappingByApplicationId(String applicationId, 
-                                                                               int tenantId) 
+    public ApplicationPresentationDefinitionMapping getMappingByApplicationId(String applicationId,
+            int tenantId)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_MAPPING_BY_APP_ID)) {
@@ -146,7 +140,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Mapping deleted for application: " + applicationId + 
+                    log.debug("Mapping deleted for application: " + applicationId +
                             ". Rows affected: " + deleted);
                 }
             } catch (SQLException e) {
@@ -170,7 +164,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error checking if mapping exists for application: " + 
+            throw new VPException("Error checking if mapping exists for application: " +
                     applicationId, e);
         }
     }
@@ -178,8 +172,8 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
     /**
      * Create a new mapping in the database.
      */
-    private void createMapping(Connection connection, 
-                               ApplicationPresentationDefinitionMapping mapping) throws SQLException {
+    private void createMapping(Connection connection,
+            ApplicationPresentationDefinitionMapping mapping) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_MAPPING)) {
             ps.setString(1, mapping.getApplicationId());
             ps.setString(2, mapping.getPresentationDefinitionId());
@@ -194,8 +188,8 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
     /**
      * Update an existing mapping in the database.
      */
-    private void updateMapping(Connection connection, 
-                               ApplicationPresentationDefinitionMapping mapping) throws SQLException {
+    private void updateMapping(Connection connection,
+            ApplicationPresentationDefinitionMapping mapping) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_MAPPING)) {
             ps.setString(1, mapping.getPresentationDefinitionId());
             ps.setLong(2, System.currentTimeMillis());
@@ -209,7 +203,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
     /**
      * Map ResultSet to ApplicationPresentationDefinitionMapping.
      */
-    private ApplicationPresentationDefinitionMapping mapResultSetToMapping(ResultSet rs) 
+    private ApplicationPresentationDefinitionMapping mapResultSetToMapping(ResultSet rs)
             throws SQLException {
         return new ApplicationPresentationDefinitionMapping.Builder()
                 .applicationId(rs.getString("APPLICATION_ID"))

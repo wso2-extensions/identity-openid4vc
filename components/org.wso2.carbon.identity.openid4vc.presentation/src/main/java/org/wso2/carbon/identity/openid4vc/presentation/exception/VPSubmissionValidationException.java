@@ -24,6 +24,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.exception;
 public class VPSubmissionValidationException extends VPException {
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Default error code.
+     */
     private static final String DEFAULT_ERROR_CODE = "VP_SUBMISSION_VALIDATION_ERROR";
 
     /**
@@ -41,7 +45,8 @@ public class VPSubmissionValidationException extends VPException {
      * @param msg   Error message
      * @param cause Root cause
      */
-    public VPSubmissionValidationException(final String msg, final Throwable cause) {
+    public VPSubmissionValidationException(final String msg,
+            final Throwable cause) {
         super(DEFAULT_ERROR_CODE, msg, cause);
     }
 }

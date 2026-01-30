@@ -54,77 +54,76 @@ public class VPRequestBuilder {
     /**
      * Build authorization request as JSON object.
      * 
-     * @param vpRequest The VP request
+     * @param vpRequest              The VP request
      * @param presentationDefinition The presentation definition
      * @return JSON string of the authorization request
      */
-    public String buildAuthorizationRequestJson(VPRequest vpRequest, 
-                                                  PresentationDefinition presentationDefinition) {
+    public String buildAuthorizationRequestJson(VPRequest vpRequest,
+            PresentationDefinition presentationDefinition) {
         JsonObject request = new JsonObject();
-        
+
         // Required parameters
         request.addProperty(OpenID4VPConstants.RequestParams.CLIENT_ID, vpRequest.getClientId());
-        request.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_TYPE, 
+        request.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_TYPE,
                 OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN);
         request.addProperty(OpenID4VPConstants.RequestParams.NONCE, vpRequest.getNonce());
-        
+
         // Response mode
-        request.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_MODE, 
+        request.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_MODE,
                 vpRequest.getResponseMode());
-        
+
         // Response URI (for direct_post)
         String responseUri = buildResponseUri(vpRequest);
         request.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_URI, responseUri);
-        
+
         // State (request ID for correlation)
         request.addProperty(OpenID4VPConstants.RequestParams.STATE, vpRequest.getRequestId());
-        
+
         // Presentation definition
-        if (presentationDefinition != null && 
-            StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
+        if (presentationDefinition != null &&
+                StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
             // Embed the presentation definition
-            com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
-            JsonObject pdJson = parser.parse(presentationDefinition.getDefinitionJson())
+            JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
                     .getAsJsonObject();
             request.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
         }
-        
+
         // Client metadata
         JsonObject clientMetadata = buildClientMetadata(vpRequest);
         if (clientMetadata != null) {
             request.add("client_metadata", clientMetadata);
         }
-        
+
         return gson.toJson(request);
     }
 
     /**
      * Build authorization request as JWT.
      * 
-     * @param vpRequest The VP request
+     * @param vpRequest              The VP request
      * @param presentationDefinition The presentation definition
      * @return JWT string of the signed authorization request
      * @throws VPException If JWT creation fails
      */
     public String buildAuthorizationRequestJwt(VPRequest vpRequest,
-                                                 PresentationDefinition presentationDefinition)
+            PresentationDefinition presentationDefinition)
             throws VPException {
-        
+
         try {
             // Build header
             JsonObject header = new JsonObject();
             header.addProperty("alg", "RS256");
             header.addProperty("typ", "oauth-authz-req+jwt");
-            
+
             // Add key ID if available
             String keyId = getSigningKeyId();
             if (StringUtils.isNotBlank(keyId)) {
                 header.addProperty("kid", keyId);
             }
-            
+
             // Build payload
             JsonObject payload = new JsonObject();
-            
+
             // Standard JWT claims
             payload.addProperty("iss", vpRequest.getClientId());
             payload.addProperty("aud", "https://self-issued.me/v2");
@@ -133,46 +132,45 @@ public class VPRequestBuilder {
             long expSeconds = (vpRequest.getExpiresAt() - System.currentTimeMillis()) / 1000;
             payload.addProperty("exp", now + expSeconds);
             payload.addProperty("jti", UUID.randomUUID().toString());
-            
+
             // OAuth parameters
-            payload.addProperty(OpenID4VPConstants.RequestParams.CLIENT_ID, 
+            payload.addProperty(OpenID4VPConstants.RequestParams.CLIENT_ID,
                     vpRequest.getClientId());
-            payload.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_TYPE, 
+            payload.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_TYPE,
                     OpenID4VPConstants.Protocol.RESPONSE_TYPE_VP_TOKEN);
             payload.addProperty(OpenID4VPConstants.RequestParams.NONCE, vpRequest.getNonce());
-            payload.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_MODE, 
+            payload.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_MODE,
                     vpRequest.getResponseMode());
-            
+
             String responseUri = buildResponseUri(vpRequest);
             payload.addProperty(OpenID4VPConstants.RequestParams.RESPONSE_URI, responseUri);
             payload.addProperty(OpenID4VPConstants.RequestParams.STATE, vpRequest.getRequestId());
-            
+
             // Presentation definition
-            if (presentationDefinition != null && 
-                StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-                com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
-                JsonObject pdJson = parser.parse(presentationDefinition.getDefinitionJson())
+            if (presentationDefinition != null &&
+                    StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
+                JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
                         .getAsJsonObject();
                 payload.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
             }
-            
+
             // Client metadata
             JsonObject clientMetadata = buildClientMetadata(vpRequest);
             if (clientMetadata != null) {
                 payload.add("client_metadata", clientMetadata);
             }
-            
+
             // Encode and sign
             String headerBase64 = Base64.getUrlEncoder().withoutPadding()
                     .encodeToString(gson.toJson(header).getBytes(StandardCharsets.UTF_8));
             String payloadBase64 = Base64.getUrlEncoder().withoutPadding()
                     .encodeToString(gson.toJson(payload).getBytes(StandardCharsets.UTF_8));
-            
+
             String signingInput = headerBase64 + "." + payloadBase64;
             String signature = sign(signingInput);
-            
+
             return signingInput + "." + signature;
-            
+
         } catch (Exception e) {
             log.error("Error building authorization request JWT", e);
             throw new VPException("Failed to build authorization request JWT", e);
@@ -182,28 +180,27 @@ public class VPRequestBuilder {
     /**
      * Build authorization details DTO for frontend.
      * 
-     * @param vpRequest The VP request
+     * @param vpRequest              The VP request
      * @param presentationDefinition The presentation definition
      * @return AuthorizationDetailsDTO
      */
     public AuthorizationDetailsDTO buildAuthorizationDetails(VPRequest vpRequest,
-                                                               PresentationDefinition presentationDefinition) {
+            PresentationDefinition presentationDefinition) {
         AuthorizationDetailsDTO dto = new AuthorizationDetailsDTO();
-        
+
         dto.setClientId(vpRequest.getClientId());
         dto.setNonce(vpRequest.getNonce());
         dto.setState(vpRequest.getRequestId());
         dto.setResponseMode(vpRequest.getResponseMode());
         dto.setResponseUri(buildResponseUri(vpRequest));
-        
-        if (presentationDefinition != null && 
-            StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-            com.google.gson.JsonParser parser = new com.google.gson.JsonParser();
-            JsonObject pdJson = parser.parse(presentationDefinition.getDefinitionJson())
+
+        if (presentationDefinition != null &&
+                StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
+            JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
                     .getAsJsonObject();
             dto.setPresentationDefinition(pdJson);
         }
-        
+
         return dto;
     }
 
@@ -220,22 +217,22 @@ public class VPRequestBuilder {
      */
     private JsonObject buildClientMetadata(VPRequest vpRequest) {
         JsonObject metadata = new JsonObject();
-        
+
         // Verifier name
         String verifierName = IdentityUtil.getProperty("OpenID4VP.VerifierName");
         if (StringUtils.isNotBlank(verifierName)) {
             metadata.addProperty("client_name", verifierName);
         }
-        
+
         // Logo URI
         String logoUri = IdentityUtil.getProperty("OpenID4VP.LogoUri");
         if (StringUtils.isNotBlank(logoUri)) {
             metadata.addProperty("logo_uri", logoUri);
         }
-        
+
         // VP formats supported
         JsonObject vpFormats = new JsonObject();
-        
+
         // JWT VP
         JsonObject jwtVp = new JsonObject();
         com.google.gson.JsonArray jwtAlgs = new com.google.gson.JsonArray();
@@ -243,7 +240,7 @@ public class VPRequestBuilder {
         jwtAlgs.add("RS256");
         jwtVp.add("alg", jwtAlgs);
         vpFormats.add("jwt_vp_json", jwtVp);
-        
+
         // LDP VP
         JsonObject ldpVp = new JsonObject();
         com.google.gson.JsonArray ldpProofs = new com.google.gson.JsonArray();
@@ -251,9 +248,9 @@ public class VPRequestBuilder {
         ldpProofs.add("JsonWebSignature2020");
         ldpVp.add("proof_type", ldpProofs);
         vpFormats.add("ldp_vp", ldpVp);
-        
+
         metadata.add("vp_formats", vpFormats);
-        
+
         return metadata;
     }
 
@@ -273,23 +270,23 @@ public class VPRequestBuilder {
     private String sign(String signingInput) throws Exception {
         // Get signing key from configuration
         String privateKeyBase64 = IdentityUtil.getProperty("OpenID4VP.SigningKey");
-        
+
         if (StringUtils.isBlank(privateKeyBase64)) {
             // Return empty signature if no key configured
             // In production, this should throw an error
             log.warn("No signing key configured for OpenID4VP");
             return "";
         }
-        
+
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         PrivateKey privateKey = kf.generatePrivate(spec);
-        
+
         Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(privateKey);
         signature.update(signingInput.getBytes(StandardCharsets.UTF_8));
-        
+
         byte[] signatureBytes = signature.sign();
         return Base64.getUrlEncoder().withoutPadding().encodeToString(signatureBytes);
     }
