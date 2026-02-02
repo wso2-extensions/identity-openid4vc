@@ -155,7 +155,6 @@
                 <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
                     <failOnError>false</failOnError>
-                    <excludeFilterFile>spotbugs-exclude.xml</excludeFilterFile>
                 </configuration>
             </plugin>
             <plugin>
