@@ -23,9 +23,12 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatu
 
 /**
  * Data Transfer Object for individual VC verification result.
- * Provides comprehensive information about each credential's verification status.
+ * Provides comprehensive information about each credential's verification
+ * status.
  */
 public class VCVerificationResultDTO {
+
+    private static final long serialVersionUID = 1L;
 
     @SerializedName("vcIndex")
     private int vcIndex;
@@ -90,7 +93,7 @@ public class VCVerificationResultDTO {
      * @param issuer             Issuer of the credential
      */
     public VCVerificationResultDTO(int vcIndex, VCVerificationStatus verificationStatus,
-                                    String credentialType, String issuer) {
+            String credentialType, String issuer) {
         this.vcIndex = vcIndex;
         this.verificationStatus = verificationStatus.getValue();
         this.credentialType = credentialType;
