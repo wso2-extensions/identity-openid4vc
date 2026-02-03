@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 public class CredentialIssuerTest {
 
     private static final String TEST_FORMAT = "jwt_vc_json";
-    private static final String TEST_FORMAT_VC_SD_JWT = "vc+sd-jwt";
+    private static final String TEST_VC_SD_JWT_FORMAT = "vc+sd-jwt";
     private static final String TEST_TEMPLATE_ID = "test-config-123";
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_CREDENTIAL =
@@ -89,14 +89,14 @@ public class CredentialIssuerTest {
     @Test(priority = 2, description = "Test successful credential issuance with vc+sd-jwt format")
     public void testIssueCredentialWithVcSdJwtFormat() throws CredentialIssuanceException {
         // Create template with vc+sd-jwt format
-        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT_VC_SD_JWT);
+        VCTemplate credentialConfig = createVCTemplate(TEST_VC_SD_JWT_FORMAT);
 
         // Create issuer context
         CredentialIssuerContext context = createIssuerContext(credentialConfig);
 
         // Mock format handler for vc+sd-jwt
         CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
-        when(mockHandler.getFormat()).thenReturn(TEST_FORMAT_VC_SD_JWT);
+        when(mockHandler.getFormat()).thenReturn(TEST_VC_SD_JWT_FORMAT);
         when(mockHandler.issueCredential(any(CredentialIssuerContext.class)))
                 .thenReturn(TEST_SD_JWT_CREDENTIAL);
 
@@ -196,7 +196,7 @@ public class CredentialIssuerTest {
 
         // Register multiple handlers with different formats
         CredentialFormatHandler mockHandler1 = mock(CredentialFormatHandler.class);
-        when(mockHandler1.getFormat()).thenReturn(TEST_FORMAT_VC_SD_JWT);
+        when(mockHandler1.getFormat()).thenReturn(TEST_VC_SD_JWT_FORMAT);
         when(mockHandler1.issueCredential(any(CredentialIssuerContext.class)))
                 .thenReturn(TEST_SD_JWT_CREDENTIAL);
 

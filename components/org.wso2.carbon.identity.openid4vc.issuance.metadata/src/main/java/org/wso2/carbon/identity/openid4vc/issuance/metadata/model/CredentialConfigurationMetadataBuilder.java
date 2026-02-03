@@ -212,7 +212,7 @@ public class CredentialConfigurationMetadataBuilder {
 
             // SD-JWT VC: claims are at top level (no credentialSubject prefix)
             // JWT VC JSON: claims are under credentialSubject
-            if (!Constants.FORMAT_VC_SD_JWT.equals(format)) {
+            if (!Constants.VC_SD_JWT_FORMAT.equals(format)) {
                 path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
             }
             path.add(claim);

@@ -134,7 +134,7 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                         .claims(configuration.getClaims());
 
                 // For SD-JWT VC format, use vct instead of type
-                if (Constants.FORMAT_VC_SD_JWT.equals(configuration.getFormat())) {
+                if (Constants.VC_SD_JWT_FORMAT.equals(configuration.getFormat())) {
                     builder.vct(configuration.getIdentifier());
                 } else {
                     builder.type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
