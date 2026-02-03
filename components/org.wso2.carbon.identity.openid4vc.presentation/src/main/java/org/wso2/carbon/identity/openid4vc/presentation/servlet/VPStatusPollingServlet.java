@@ -22,8 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPStatusResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
@@ -50,8 +48,6 @@ import javax.servlet.http.HttpServletResponse;
 public class VPStatusPollingServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log LOG = LogFactory.getLog(VPStatusPollingServlet.class);
-
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -132,10 +128,7 @@ public class VPStatusPollingServlet extends HttpServlet {
             int tenantId = getTenantId(request);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Status poll for requestId: " + requestId
-                        + ", longPoll: " + enableLongPoll
-                        + ", timeout: " + timeoutSeconds + "s");
-            }
+                            }
 
             if (enableLongPoll) {
                 // Use async processing for long polling
@@ -146,8 +139,7 @@ public class VPStatusPollingServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            LOG.error("Error processing status poll", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR,
                     "Internal server error");
         }
@@ -308,8 +300,7 @@ public class VPStatusPollingServlet extends HttpServlet {
                     return MAX_TIMEOUT_SECONDS;
                 }
             } catch (NumberFormatException e) {
-                LOG.debug("Invalid timeout parameter: " + timeoutParam);
-            }
+                            }
         }
         return DEFAULT_TIMEOUT_SECONDS;
     }
@@ -324,8 +315,7 @@ public class VPStatusPollingServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                LOG.debug("Invalid tenant ID header: " + tenantHeader);
-            }
+                            }
         }
         return DEFAULT_TENANT_ID;
     }

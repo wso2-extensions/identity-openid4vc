@@ -21,8 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.handler;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.AuthorizationDetailsDTO;
@@ -48,7 +46,6 @@ import java.util.UUID;
  */
 public class VPRequestBuilder {
 
-    private static final Log log = LogFactory.getLog(VPRequestBuilder.class);
     private static final Gson gson = new Gson();
 
     /**
@@ -172,8 +169,7 @@ public class VPRequestBuilder {
             return signingInput + "." + signature;
 
         } catch (Exception e) {
-            log.error("Error building authorization request JWT", e);
-            throw new VPException("Failed to build authorization request JWT", e);
+                        throw new VPException("Failed to build authorization request JWT", e);
         }
     }
 
@@ -274,8 +270,7 @@ public class VPRequestBuilder {
         if (StringUtils.isBlank(privateKeyBase64)) {
             // Return empty signature if no key configured
             // In production, this should throw an error
-            log.warn("No signing key configured for OpenID4VP");
-            return "";
+                        return "";
         }
 
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);

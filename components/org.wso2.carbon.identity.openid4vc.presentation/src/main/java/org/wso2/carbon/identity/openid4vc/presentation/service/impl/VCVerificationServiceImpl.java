@@ -24,8 +24,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
@@ -61,7 +59,6 @@ import java.util.TimeZone;
  */
 public class VCVerificationServiceImpl implements VCVerificationService {
 
-    private static final Log LOG = LogFactory.getLog(VCVerificationServiceImpl.class);
     private static final Gson GSON = new Gson();
 
     // Content type constants
@@ -152,8 +149,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("Error verifying credential", e);
-            throw new CredentialVerificationException(VCVerificationStatus.INVALID,
+                        throw new CredentialVerificationException(VCVerificationStatus.INVALID,
                     "Verification failed: " + e.getMessage());
         }
     }
@@ -173,34 +169,24 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         String credentialType = credential.getPrimaryType();
         String issuer = credential.getIssuerId();
 
-        LOG.info("[VC_VERIFICATION] Starting verification for credential ID: " + credential.getId() +
-                ", Type: " + credentialType + ", Issuer: " + issuer);
-
+        
         // 1. Check expiration
         if (credential.getExpirationDate() != null && isExpired(credential)) {
-            LOG.warn("[VC_VERIFICATION] Credential has expired: " + credential.getId());
-            LOG.debug("Credential has expired: " + credential.getId());
-            return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.EXPIRED,
+                                    return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.EXPIRED,
                     "Credential has expired");
         }
         credential.setExpirationChecked(true);
-        LOG.info("[VC_VERIFICATION] Expiration check passed for credential: " + credential.getId());
-
+        
         // 2. Verify signature
         try {
             boolean signatureValid = verifySignature(credential);
             if (!signatureValid) {
-                LOG.error("[VC_VERIFICATION] Credential signature verification failed: " + credential.getId());
-                LOG.debug("Credential signature verification failed: " + credential.getId());
-                return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
+                                                return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
                         "Cryptographic signature verification failed");
             }
             credential.setSignatureVerified(true);
-            LOG.info("[VC_VERIFICATION] Signature verification passed for credential: " + credential.getId());
-        } catch (CredentialVerificationException e) {
-            LOG.error("[VC_VERIFICATION] Signature verification error: " + e.getMessage());
-            LOG.debug("Signature verification error: " + e.getMessage());
-            return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
+                    } catch (CredentialVerificationException e) {
+                                    return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.INVALID,
                     "Signature verification error: " + e.getMessage());
         }
 
@@ -208,26 +194,18 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         if (credential.hasCredentialStatus()) {
             try {
                 if (isRevoked(credential)) {
-                    LOG.info("[VC_VERIFICATION] Credential has been revoked: " + credential.getId());
-                    LOG.debug("Credential has been revoked: " + credential.getId());
-                    return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.REVOKED,
+                                                            return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.REVOKED,
                             "Credential has been revoked");
                 }
                 credential.setRevocationChecked(true);
-                LOG.info("[VC_VERIFICATION] Revocation check passed for credential: " + credential.getId());
-            } catch (CredentialVerificationException e) {
-                LOG.warn("[VC_VERIFICATION] Revocation check failed, continuing: " + e.getMessage());
-                // Continue without failing - revocation check is optional
+                            } catch (CredentialVerificationException e) {
+                                // Continue without failing - revocation check is optional
             }
         } else {
-            LOG.info("[VC_VERIFICATION] No revocation status found - skipping check for credential: "
-                    + credential.getId());
-        }
+                    }
 
         // All checks passed
-        LOG.info("[VC_VERIFICATION] Credential verification COMPLETED successfully: " + credential.getId());
-        LOG.debug("Credential verification successful: " + credential.getId());
-        return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.SUCCESS,
+                        return new VCVerificationResultDTO(vcIndex, VCVerificationStatus.SUCCESS,
                 credentialType, issuer);
     }
 
@@ -251,13 +229,10 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         if (presentation.getVerifiableCredentials() == null ||
                 presentation.getVerifiableCredentials().isEmpty()) {
-            LOG.error("[VC_VERIFICATION] No verifiable credentials found in presentation");
-            throw new CredentialVerificationException("No verifiable credentials found in presentation");
+                        throw new CredentialVerificationException("No verifiable credentials found in presentation");
         }
 
-        LOG.info("[VC_VERIFICATION] Verifying presentation with " +
-                presentation.getVerifiableCredentials().size() + " credentials");
-
+        
         // Verify each credential
         int index = 0;
         for (VerifiableCredential credential : presentation.getVerifiableCredentials()) {
@@ -265,16 +240,13 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 VCVerificationResultDTO result = verifyCredentialInternal(credential, index);
                 results.add(result);
             } catch (CredentialVerificationException e) {
-                LOG.error("[VC_VERIFICATION] Verification failed for credential at index " + index + ": "
-                        + e.getMessage());
-                results.add(new VCVerificationResultDTO(index, VCVerificationStatus.INVALID,
+                                results.add(new VCVerificationResultDTO(index, VCVerificationStatus.INVALID,
                         e.getMessage()));
             }
             index++;
         }
 
-        LOG.info("[VC_VERIFICATION] Presentation verification completed. Total Results: " + results.size());
-        return results;
+                return results;
     }
 
     @Override
@@ -332,8 +304,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             }
 
             if (issuer == null || !issuer.startsWith("did:")) {
-                LOG.warn("Cannot determine issuer DID for signature verification");
-                // For non-DID issuers, we cannot verify without additional configuration
+                                // For non-DID issuers, we cannot verify without additional configuration
                 return true; // Skip verification for non-DID issuers
             }
 
@@ -451,13 +422,11 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             RevocationCheckResult result = statusListService.checkRevocationStatus(status);
 
             if (result.getStatus() == RevocationCheckResult.Status.SKIPPED) {
-                LOG.debug("Revocation check skipped: " + result.getMessage());
-                return false;
+                                return false;
             }
 
             if (result.getStatus() == RevocationCheckResult.Status.UNKNOWN) {
-                LOG.warn("Revocation check returned unknown status: " + result.getMessage());
-                return false;
+                                return false;
             }
 
             // Return true if REVOKED or SUSPENDED
@@ -465,8 +434,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                     result.getStatus() == RevocationCheckResult.Status.SUSPENDED;
 
         } catch (RevocationCheckException e) {
-            LOG.error("Error checking revocation status", e);
-            throw new CredentialVerificationException(
+                        throw new CredentialVerificationException(
                     "Error checking revocation status: " + e.getMessage(), e);
         }
     }
@@ -688,8 +656,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                     claims.put(claimName, parseJsonElement(claimValue));
                 }
             } catch (Exception e) {
-                LOG.warn("Failed to parse disclosure: " + e.getMessage());
-            }
+                            }
         }
     }
 
@@ -1148,8 +1115,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             }
         }
 
-        LOG.warn("Failed to parse date: " + dateString);
-        return null;
+                return null;
     }
 
     @Override

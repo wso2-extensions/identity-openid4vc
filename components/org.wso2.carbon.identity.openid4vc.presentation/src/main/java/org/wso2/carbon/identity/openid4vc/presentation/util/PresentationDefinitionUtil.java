@@ -26,8 +26,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 
@@ -38,7 +36,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
  */
 public class PresentationDefinitionUtil {
 
-    private static final Log log = LogFactory.getLog(PresentationDefinitionUtil.class);
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private PresentationDefinitionUtil() {
@@ -61,26 +58,22 @@ public class PresentationDefinitionUtil {
             
             // Check required fields
             if (!definition.has(OpenID4VPConstants.PresentationDef.ID)) {
-                log.debug("Presentation definition missing 'id' field");
-                return false;
+                                return false;
             }
             
             if (!definition.has(OpenID4VPConstants.PresentationDef.INPUT_DESCRIPTORS)) {
-                log.debug("Presentation definition missing 'input_descriptors' field");
-                return false;
+                                return false;
             }
 
             JsonElement inputDescriptors = definition.get(
                 OpenID4VPConstants.PresentationDef.INPUT_DESCRIPTORS);
             if (!inputDescriptors.isJsonArray()) {
-                log.debug("'input_descriptors' must be an array");
-                return false;
+                                return false;
             }
 
             JsonArray descriptorsArray = inputDescriptors.getAsJsonArray();
             if (descriptorsArray.size() == 0) {
-                log.debug("'input_descriptors' array is empty");
-                return false;
+                                return false;
             }
 
             // Validate each input descriptor
@@ -92,8 +85,7 @@ public class PresentationDefinitionUtil {
 
             return true;
         } catch (JsonParseException e) {
-            log.debug("Invalid JSON in presentation definition: " + e.getMessage());
-            return false;
+                        return false;
         }
     }
 
@@ -105,23 +97,20 @@ public class PresentationDefinitionUtil {
      */
     private static boolean isValidInputDescriptor(JsonElement element) {
         if (!element.isJsonObject()) {
-            log.debug("Input descriptor must be a JSON object");
-            return false;
+                        return false;
         }
 
         JsonObject descriptor = element.getAsJsonObject();
         
         if (!descriptor.has(OpenID4VPConstants.PresentationDef.ID)) {
-            log.debug("Input descriptor missing 'id' field");
-            return false;
+                        return false;
         }
 
         // Constraints are optional but if present, must be valid
         if (descriptor.has(OpenID4VPConstants.PresentationDef.CONSTRAINTS)) {
             JsonElement constraints = descriptor.get(OpenID4VPConstants.PresentationDef.CONSTRAINTS);
             if (!constraints.isJsonObject()) {
-                log.debug("'constraints' must be a JSON object");
-                return false;
+                                return false;
             }
         }
 
@@ -299,8 +288,7 @@ public class PresentationDefinitionUtil {
             OpenID4VPConstants.PresentationSubmission.DEFINITION_ID).getAsString();
         
         if (!defId.equals(submissionDefId)) {
-            log.debug("Submission definition_id does not match presentation definition id");
-            return false;
+                        return false;
         }
 
         // Get input descriptors from definition
@@ -327,8 +315,7 @@ public class PresentationDefinitionUtil {
             }
             
             if (!found) {
-                log.debug("Required input descriptor not found in submission: " + descriptorId);
-                return false;
+                                return false;
             }
         }
 

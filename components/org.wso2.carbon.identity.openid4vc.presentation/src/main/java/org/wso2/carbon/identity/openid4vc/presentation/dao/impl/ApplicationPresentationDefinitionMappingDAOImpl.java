@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.ApplicationPresentationDefinitionMappingDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -35,8 +33,6 @@ import java.sql.SQLException;
  */
 public class ApplicationPresentationDefinitionMappingDAOImpl
         implements ApplicationPresentationDefinitionMappingDAO {
-
-    private static final Log log = LogFactory.getLog(ApplicationPresentationDefinitionMappingDAOImpl.class);
 
     // SQL Queries
     private static final String SQL_INSERT_MAPPING = "INSERT INTO IDN_APPLICATION_PRESENTATION_DEFINITION " +
@@ -75,9 +71,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Mapping created/updated successfully for application: " +
-                            mapping.getApplicationId());
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -140,9 +134,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Mapping deleted for application: " + applicationId +
-                            ". Rows affected: " + deleted);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

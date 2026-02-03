@@ -25,8 +25,6 @@ import com.google.gson.JsonParser;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
@@ -60,8 +58,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Supports did:web, did:jwk, and did:key methods.
  */
 public class DIDResolverServiceImpl implements DIDResolverService {
-
-    private static final Log LOG = LogFactory.getLog(DIDResolverServiceImpl.class);
 
     // Supported DID methods
     private static final String METHOD_WEB = "web";
@@ -121,8 +117,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         if (useCache) {
             CacheEntry entry = cache.get(did);
             if (entry != null && !entry.isExpired()) {
-                LOG.debug("Returning cached DID document for: " + did);
-                return entry.document;
+                                return entry.document;
             }
         }
 
@@ -275,8 +270,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
                 url = "https://" + path + "/.well-known/did.json";
             }
 
-            LOG.debug("Resolving did:web from URL: " + url);
-
+            
             // Fetch the DID document
             String jsonResponse = fetchUrl(url);
             return parseDIDDocument(did, jsonResponse);
@@ -384,8 +378,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
                     method.setPublicKeyMultibase(identifier);
                     break;
                 default:
-                    LOG.warn("Unknown multicodec prefix: 0x" + Integer.toHexString(codecPrefix));
-                    method.setType("VerificationMethod");
+                                        method.setType("VerificationMethod");
                     method.setPublicKeyMultibase(identifier);
             }
 

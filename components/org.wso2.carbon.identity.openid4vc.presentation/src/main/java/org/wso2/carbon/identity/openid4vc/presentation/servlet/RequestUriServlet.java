@@ -21,8 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestExpiredException;
@@ -54,8 +52,6 @@ import javax.servlet.http.HttpServletResponse;
 public class RequestUriServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(RequestUriServlet.class);
-
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -69,8 +65,7 @@ public class RequestUriServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.vpRequestService = new VPRequestServiceImpl();
-        log.info("RequestUriServlet initialized");
-    }
+            }
 
     /**
      * Handle GET requests to retrieve the authorization request object.
@@ -89,8 +84,7 @@ public class RequestUriServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
 
         if (log.isDebugEnabled()) {
-            log.debug("Request URI endpoint called with path: " + pathInfo);
-        }
+                    }
 
         // Validate path
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
@@ -113,15 +107,13 @@ public class RequestUriServlet extends HttpServlet {
 
         try {
             if (log.isDebugEnabled()) {
-                log.debug("Fetching authorization request object for request ID: " + requestId);
-            }
+                            }
 
             // Get the request JWT/object from service
             String authzRequest = vpRequestService.getRequestJwt(requestId, tenantId);
 
             if (StringUtils.isBlank(authzRequest)) {
-                log.error("Authorization request object is empty for request ID: " + requestId);
-                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                         ErrorDTO.ErrorCode.INTERNAL_ERROR, "Failed to generate authorization request");
                 return;
             }
@@ -134,11 +126,9 @@ public class RequestUriServlet extends HttpServlet {
             // Check if it's a JWT (starts with "eyJ")
             if (authzRequest.startsWith("eyJ")) {
                 response.setContentType("application/oauth-authz-req+jwt");
-                log.debug("Returning authorization request as JWT");
-            } else {
+                            } else {
                 response.setContentType("application/json");
-                log.debug("Returning authorization request as JSON");
-            }
+                            }
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader("Cache-Control", "no-store");
@@ -149,24 +139,19 @@ public class RequestUriServlet extends HttpServlet {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Successfully returned authorization request for request ID: " + requestId);
-            }
+                            }
 
         } catch (VPRequestNotFoundException e) {
-            log.warn("Request not found: " + requestId);
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+                        sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND, "Request not found or has been consumed");
         } catch (VPRequestExpiredException e) {
-            log.warn("Request expired: " + requestId);
-            sendErrorResponse(response, HttpServletResponse.SC_GONE,
+                        sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     ErrorDTO.ErrorCode.VP_REQUEST_EXPIRED, "Request has expired");
         } catch (VPException e) {
-            log.error("Error retrieving authorization request for request ID: " + requestId, e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error processing request URI: " + requestId, e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -202,8 +187,6 @@ public class RequestUriServlet extends HttpServlet {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug(String.format("Sent error response: %s - %s", 
-                    errorCode.getError(), errorDescription));
-        }
+                    }
     }
 }

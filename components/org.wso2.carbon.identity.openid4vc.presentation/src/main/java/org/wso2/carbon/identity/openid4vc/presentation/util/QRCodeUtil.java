@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.AuthorizationDetailsDTO;
@@ -39,8 +37,6 @@ import java.nio.charset.StandardCharsets;
  * 3. An OpenID4VP deep link for mobile wallets
  */
 public class QRCodeUtil {
-
-    private static final Log log = LogFactory.getLog(QRCodeUtil.class);
 
     // Default QR code settings
     private static final int DEFAULT_QR_SIZE = 300;
@@ -180,9 +176,7 @@ public class QRCodeUtil {
         // For now, return a placeholder that indicates QR generation is needed
         // The actual QR can be generated on the client side using JavaScript libraries
         if (log.isDebugEnabled()) {
-            log.debug("QR code generation requested for content length: " + content.length() +
-                    ", size: " + size);
-        }
+                    }
 
         // Return a JSON object that the frontend can use to generate the QR code
         return createQRCodePlaceholder(content, size);

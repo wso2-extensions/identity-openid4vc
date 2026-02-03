@@ -24,8 +24,6 @@ import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -44,8 +42,6 @@ import java.util.List;
  * Supports RSA (default via KeyStore), EdDSA and ES256 (via DIDKeyManager).
  */
 public class DIDWebProvider implements DIDProvider {
-
-    private static final Log LOG = LogFactory.getLog(DIDWebProvider.class);
 
     @Override
     public String getName() {
@@ -139,9 +135,7 @@ public class DIDWebProvider implements DIDProvider {
             String did = getDID(tenantId, baseUrl);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Generating DID Document for " + did + " with requested algorithm: "
-                        + (algorithm == null ? "ALL" : algorithm));
-            }
+                            }
 
             DIDDocument didDocument = new DIDDocument();
             didDocument.setId(did);
@@ -180,11 +174,9 @@ public class DIDWebProvider implements DIDProvider {
                     verificationMethods.add(vm);
                     relationships.add(keyId);
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Added RSA verification method: " + keyId);
-                    }
+                                            }
                 } catch (Exception e) {
-                    LOG.error("Error adding RSA key to DID document", e);
-                }
+                                    }
             }
 
             // 2. Add EdDSA Key (Ed25519VerificationKey2020)
@@ -211,11 +203,9 @@ public class DIDWebProvider implements DIDProvider {
                     verificationMethods.add(vm);
                     relationships.add(keyId);
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Added EdDSA verification method: " + keyId);
-                    }
+                                            }
                 } catch (Exception e) {
-                    LOG.error("Error adding EdDSA key to DID document", e);
-                }
+                                    }
             }
 
             // 3. Add ES256 Key (EcdsaSecp256r1VerificationKey2019)
@@ -233,20 +223,16 @@ public class DIDWebProvider implements DIDProvider {
                     verificationMethods.add(vm);
                     relationships.add(keyId);
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("Added ES256 verification method: " + keyId);
-                    }
+                                            }
                 } catch (Exception e) {
-                    LOG.error("Error adding ES256 key to DID document", e);
-                }
+                                    }
             }
 
             didDocument.setVerificationMethod(verificationMethods);
             didDocument.setAuthentication(relationships);
             didDocument.setAssertionMethod(relationships);
 
-            LOG.info("Generated DID Document for " + did + " with " + verificationMethods.size()
-                    + " verification methods.");
-
+            
             return didDocument;
 
         } catch (Exception e) {

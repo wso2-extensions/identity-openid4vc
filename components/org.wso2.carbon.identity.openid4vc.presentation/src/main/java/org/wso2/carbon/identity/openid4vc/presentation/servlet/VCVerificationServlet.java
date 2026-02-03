@@ -21,8 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
@@ -56,7 +54,6 @@ import javax.servlet.http.HttpServletResponse;
 public class VCVerificationServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log LOG = LogFactory.getLog(VCVerificationServlet.class);
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     private static final String CONTENT_TYPE_JSON = "application/json";
@@ -67,8 +64,7 @@ public class VCVerificationServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.verificationService = new VCVerificationServiceImpl();
-        LOG.info("VCVerificationServlet initialized");
-    }
+            }
 
     /**
      * Set the verification service (for testing).
@@ -88,8 +84,7 @@ public class VCVerificationServlet extends HttpServlet {
             pathInfo = request.getServletPath();
         }
 
-        LOG.debug("VC/VP verification request received. Path: " + pathInfo);
-
+        
         try {
             // Read request body
             String requestBody = readRequestBody(request);
@@ -113,8 +108,7 @@ public class VCVerificationServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            LOG.error("Error processing verification request", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "server_error", "Internal server error: " + e.getMessage());
         }
     }
@@ -126,8 +120,7 @@ public class VCVerificationServlet extends HttpServlet {
             String requestBody, String contentType)
             throws IOException {
 
-        LOG.debug("Processing VC verification request");
-
+        
         try {
             // Check if content type is supported
             if (!verificationService.isContentTypeSupported(contentType)) {
@@ -145,8 +138,7 @@ public class VCVerificationServlet extends HttpServlet {
             sendVerificationResponse(response, result);
 
         } catch (CredentialVerificationException e) {
-            LOG.debug("VC verification failed: " + e.getMessage());
-            VCVerificationResultDTO result = new VCVerificationResultDTO(
+                        VCVerificationResultDTO result = new VCVerificationResultDTO(
                     0, e.getVerificationStatus() != null ? e.getVerificationStatus() : VCVerificationStatus.INVALID,
                     e.getMessage());
             sendVerificationResponse(response, result);
@@ -160,8 +152,7 @@ public class VCVerificationServlet extends HttpServlet {
             String requestBody, String contentType)
             throws IOException {
 
-        LOG.debug("Processing VP verification request");
-
+        
         try {
             // VP verification
             List<VCVerificationResultDTO> results = verificationService.verifyVPToken(requestBody);
@@ -170,8 +161,7 @@ public class VCVerificationServlet extends HttpServlet {
             sendVPVerificationResponse(response, results);
 
         } catch (CredentialVerificationException e) {
-            LOG.debug("VP verification failed: " + e.getMessage());
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     "verification_failed", e.getMessage());
         }
     }

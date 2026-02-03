@@ -20,8 +20,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
@@ -46,7 +44,6 @@ import javax.servlet.http.HttpServletResponse;
 public class WalletStatusServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log LOG = LogFactory.getLog(WalletStatusServlet.class);
     private static final String CONTENT_TYPE_JSON = "application/json";
     private static final String PARAM_STATE = "state";
     private static final String PARAM_TIMEOUT = "timeout";
@@ -91,12 +88,10 @@ public class WalletStatusServlet extends HttpServlet {
             String state = request.getParameter(PARAM_STATE);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("WalletStatusServlet.doGet called, state: " + state);
-            }
+                            }
 
             if (StringUtils.isBlank(state)) {
-                LOG.warn("Missing required parameter: state");
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         "Missing required parameter: state");
                 return;
             }
@@ -113,8 +108,7 @@ public class WalletStatusServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-            LOG.error("Error checking wallet status", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
     }
@@ -140,37 +134,30 @@ public class WalletStatusServlet extends HttpServlet {
                 VPRequestService requestService = VPServiceDataHolder.getInstance().getVPRequestService();
                 if (requestService != null) {
                     if (LOG.isDebugEnabled()) {
-                        LOG.debug("DB Fallback: VPRequestService found, checking state: " + state);
-                    }
+                                            }
                     VPRequest vpRequest = requestService.getVPRequestById(state, DEFAULT_TENANT_ID);
                     if (vpRequest != null) {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("DB Fallback: Request found. Status: " + vpRequest.getStatus());
-                        }
+                                                    }
                         if (vpRequest.getStatus() == VPRequestStatus.VP_SUBMITTED ||
                                 vpRequest.getStatus() == VPRequestStatus.COMPLETED) {
                             tokenReceived = true;
                             if (LOG.isDebugEnabled()) {
-                                LOG.debug("Token received detected via Database fallback for state: " + state);
-                            }
+                                                            }
                         }
                     } else {
                         if (LOG.isDebugEnabled()) {
-                            LOG.debug("DB Fallback: No request found for state: " + state);
-                        }
+                                                    }
                     }
                 } else {
-                    LOG.warn("DB Fallback: VPRequestService is NULL in DataHolder");
-                }
+                                    }
             } catch (Exception e) {
                 // Log but don't fail the request, just treat as not received
-                LOG.error("Error checking DB status in fallback for state: " + state, e);
-            }
+                            }
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Immediate status for state " + state + ": tokenReceived=" + tokenReceived);
-        }
+                    }
 
         sendStatusResponse(response, tokenReceived, "ACTIVE");
     }
@@ -187,8 +174,7 @@ public class WalletStatusServlet extends HttpServlet {
         int tenantId = getTenantId(request);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Long poll for state: " + state + ", timeout: " + timeoutSeconds + "s");
-        }
+                    }
 
         // Use synchronous long poll (blocking)
         handleSyncLongPoll(response, state, timeoutMs, tenantId);
@@ -275,8 +261,7 @@ public class WalletStatusServlet extends HttpServlet {
                     return MAX_TIMEOUT_SECONDS;
                 }
             } catch (NumberFormatException e) {
-                LOG.debug("Invalid timeout parameter: " + timeoutParam);
-            }
+                            }
         }
         return DEFAULT_TIMEOUT_SECONDS;
     }
@@ -291,8 +276,7 @@ public class WalletStatusServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                LOG.debug("Invalid tenant ID header: " + tenantHeader);
-            }
+                            }
         }
         return DEFAULT_TENANT_ID;
     }

@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 
@@ -33,7 +31,6 @@ import java.util.UUID;
  */
 public class OpenID4VPUtil {
 
-    private static final Log log = LogFactory.getLog(OpenID4VPUtil.class);
     private static final SecureRandom secureRandom = new SecureRandom();
 
     private OpenID4VPUtil() {
@@ -100,9 +97,7 @@ public class OpenID4VPUtil {
             try {
                 return Integer.parseInt(configValue);
             } catch (NumberFormatException e) {
-                log.warn("Invalid VP request expiry configuration: " + configValue +
-                        ". Using default value.");
-            }
+                            }
         }
         return OpenID4VPConstants.Defaults.VP_REQUEST_EXPIRY_SECONDS;
     }

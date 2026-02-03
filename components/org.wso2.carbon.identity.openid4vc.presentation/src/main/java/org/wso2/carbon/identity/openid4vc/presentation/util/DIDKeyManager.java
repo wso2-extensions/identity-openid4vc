@@ -23,8 +23,6 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.util.Base64URL;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
@@ -42,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DIDKeyManager {
 
-    private static final Log LOG = LogFactory.getLog(DIDKeyManager.class);
     private static final ConcurrentHashMap<Integer, OctetKeyPair> keyCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, ECKey> ecKeyCache = new ConcurrentHashMap<>();
     private static final DIDKeysDAO didKeysDAO = new DIDKeysDAOImpl();
@@ -80,16 +77,13 @@ public class DIDKeyManager {
                 OctetKeyPair keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
 
                 keyCache.put(tenantId, keyPair);
-                LOG.info("Loaded Ed25519 key from DB for tenant: " + tenantId);
-                return keyPair;
+                                return keyPair;
             }
         } catch (Exception e) {
-            LOG.warn("Error checking DB for DID keys, proceeding to generate new one: " + e.getMessage());
-        }
+                    }
 
         // 3. Generate New
-        LOG.info("Generating NEW Ed25519 Key Pair for tenant: " + tenantId);
-        OctetKeyPair keyPair = generateEd25519KeyPair();
+                OctetKeyPair keyPair = generateEd25519KeyPair();
 
         // 4. Save to DB
         saveEd25519Key(tenantId, keyPair);
@@ -131,17 +125,14 @@ public class DIDKeyManager {
 
                     ECKey ecKey = new ECKey.Builder(Curve.P_256, x, y).d(d).build();
                     ecKeyCache.put(tenantId, ecKey);
-                    LOG.info("Loaded ES256 key from DB for tenant: " + tenantId);
-                    return ecKey;
+                                        return ecKey;
                 }
             }
         } catch (Exception e) {
-            LOG.warn("Error checking DB for EC keys, proceeding to generate new one: " + e.getMessage());
-        }
+                    }
 
         // 3. Generate New
-        LOG.info("Generating NEW P-256 Key Pair for tenant: " + tenantId);
-        ECKey ecKey = generateECKeyPair();
+                ECKey ecKey = generateECKeyPair();
 
         // 4. Save to DB
         saveECKey(tenantId, ecKey);
@@ -181,10 +172,8 @@ public class DIDKeyManager {
                     keyPair.getX().decode(),
                     keyPair.getD().decode());
             didKeysDAO.addDIDKey(newDidKey);
-            LOG.info("Persisted new Ed25519 key for tenant: " + tenantId);
-        } catch (Exception e) {
-            LOG.error("Error persisting Ed25519 key: " + e.getMessage(), e);
-        }
+                    } catch (Exception e) {
+                    }
     }
 
     private static void saveECKey(int tenantId, ECKey keyPair) {
@@ -205,10 +194,8 @@ public class DIDKeyManager {
                     pubKey,
                     keyPair.getD().decode());
             didKeysDAO.addDIDKey(newDidKey);
-            LOG.info("Persisted new ES256 key for tenant: " + tenantId);
-        } catch (Exception e) {
-            LOG.error("Error persisting ES256 key: " + e.getMessage(), e);
-        }
+                    } catch (Exception e) {
+                    }
     }
 
     /**
@@ -226,8 +213,7 @@ public class DIDKeyManager {
 
             return "z" + base58Encode(multicodecKey);
         } catch (Exception e) {
-            LOG.error("Failed to convert public key to multibase", e);
-            return null;
+                        return null;
         }
     }
 
@@ -273,8 +259,7 @@ public class DIDKeyManager {
 
             return "z" + base58Encode(multicodecKey);
         } catch (Exception e) {
-            LOG.error("Failed to convert public key to multibase", e);
-            return null;
+                        return null;
         }
     }
 
@@ -284,8 +269,7 @@ public class DIDKeyManager {
     public static String generateDIDKey(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
         String multibase = publicKeyToMultibase(keyPair);
         String didKey = "did:key:" + multibase;
-        LOG.info("Generated did:key (Ed25519): " + didKey);
-        return didKey;
+                return didKey;
     }
 
     /**
@@ -294,8 +278,7 @@ public class DIDKeyManager {
     public static String generateDIDKey(com.nimbusds.jose.jwk.ECKey keyPair) {
         String multibase = publicKeyToMultibase(keyPair);
         String didKey = "did:key:" + multibase;
-        LOG.info("Generated did:key (P-256): " + didKey);
-        return didKey;
+                return didKey;
     }
 
     /**
@@ -371,8 +354,7 @@ public class DIDKeyManager {
 
         // Extract public key (skip 2-byte prefix)
         byte[] publicKey = java.util.Arrays.copyOfRange(decoded, 2, decoded.length);
-        LOG.info("Extracted public key from did:key, length: " + publicKey.length);
-        return publicKey;
+                return publicKey;
     }
 
     /**
@@ -505,8 +487,7 @@ public class DIDKeyManager {
      * @throws Exception if generation fails
      */
     public static com.nimbusds.jose.jwk.OctetKeyPair regenerateKeyPair(int tenantId) throws Exception {
-        LOG.info("Regenerating key pair for tenant: " + tenantId);
-        com.nimbusds.jose.jwk.OctetKeyPair keyPair = generateEd25519KeyPair();
+                com.nimbusds.jose.jwk.OctetKeyPair keyPair = generateEd25519KeyPair();
         keyCache.put(tenantId, keyPair);
         return keyPair;
     }
@@ -528,8 +509,7 @@ public class DIDKeyManager {
      */
     public static void removeKeys(int tenantId) {
         keyCache.remove(tenantId);
-        LOG.info("Removed keys for tenant: " + tenantId);
-    }
+            }
 
     private static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();

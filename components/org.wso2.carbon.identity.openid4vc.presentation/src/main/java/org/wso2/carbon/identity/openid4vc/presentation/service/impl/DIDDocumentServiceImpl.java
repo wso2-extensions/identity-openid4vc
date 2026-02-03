@@ -20,8 +20,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
@@ -41,7 +39,6 @@ import java.util.Map;
  */
 public class DIDDocumentServiceImpl implements DIDDocumentService {
 
-    private static final Log LOG = LogFactory.getLog(DIDDocumentServiceImpl.class);
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -61,8 +58,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             return provider.getDIDDocument(tenantId, domain);
         } catch (Exception e) {
             String errorMsg = "Failed to generate DID document for tenant: " + tenantId;
-            LOG.error(errorMsg, e);
-            throw new DIDDocumentException(errorMsg, e);
+                        throw new DIDDocumentException(errorMsg, e);
         }
     }
 
@@ -73,8 +69,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(-1234, domain);
         } catch (Exception e) {
-            LOG.error("Failed to generate DID", e);
-            return "did:web:" + domain.replace(":", "%3A");
+                        return "did:web:" + domain.replace(":", "%3A");
         }
     }
 
@@ -101,15 +96,13 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
         // This is specific to internal key management (did:key/did:jwk)
         // did:web keys are managed via Keystore usually
         try {
-            LOG.info("Regenerating Ed25519 keys for tenant: " + tenantId);
-            DIDKeyManager.regenerateKeyPair(tenantId);
+                        DIDKeyManager.regenerateKeyPair(tenantId);
             // Return did:key representation of new keys
             DIDProvider provider = DIDProviderFactory.getProvider("key");
             return provider.getDID(tenantId, null);
         } catch (Exception e) {
             String errorMsg = "Failed to regenerate keys for tenant: " + tenantId;
-            LOG.error(errorMsg, e);
-            throw new DIDDocumentException(errorMsg, e);
+                        throw new DIDDocumentException(errorMsg, e);
         }
     }
 

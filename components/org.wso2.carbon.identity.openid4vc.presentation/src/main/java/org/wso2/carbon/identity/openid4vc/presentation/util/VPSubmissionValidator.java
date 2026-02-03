@@ -22,8 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.DescriptorMapDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.PresentationSubmissionDTO;
@@ -41,8 +39,6 @@ import java.util.Set;
  * Performs various validation checks on VP tokens and presentation submissions.
  */
 public final class VPSubmissionValidator {
-
-    private static final Log LOG = LogFactory.getLog(VPSubmissionValidator.class);
 
     private static final Gson GSON = new Gson();
 
@@ -124,8 +120,7 @@ public final class VPSubmissionValidator {
         if (LOG.isDebugEnabled()) {
             // Sanitize to prevent CRLF injection
             String sanitizedError = error.replace('\n', '_').replace('\r', '_');
-            LOG.debug("Valid error response received: " + sanitizedError);
-        }
+                    }
     }
 
     /**

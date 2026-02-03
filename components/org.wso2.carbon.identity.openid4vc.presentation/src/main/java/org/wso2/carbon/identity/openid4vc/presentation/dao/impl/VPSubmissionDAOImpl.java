@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPSubmissionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -38,8 +36,6 @@ import java.util.List;
  * Implementation of VPSubmissionDAO using JDBC.
  */
 public class VPSubmissionDAOImpl implements VPSubmissionDAO {
-
-    private static final Log log = LogFactory.getLog(VPSubmissionDAOImpl.class);
 
     // SQL Queries
     private static final String SQL_INSERT_VP_SUBMISSION = "INSERT INTO IDN_VP_SUBMISSION (SUBMISSION_ID, REQUEST_ID, "
@@ -68,11 +64,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
     @Override
     public void createVPSubmission(VPSubmission vpSubmission) throws VPException {
-        log.info("[VP_SUBMISSION_DAO] Creating VP submission in database...");
-        log.info("[VP_SUBMISSION_DAO] Submission ID: " + vpSubmission.getSubmissionId());
-        log.info("[VP_SUBMISSION_DAO] Request ID: " + vpSubmission.getRequestId());
-        log.info("[VP_SUBMISSION_DAO] Tenant ID: " + vpSubmission.getTenantId());
-
+                                
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_VP_SUBMISSION)) {
                 ps.setString(1, vpSubmission.getSubmissionId());
@@ -91,16 +83,12 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 int rowsAffected = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                log.info("[VP_SUBMISSION_DAO] VP submission created successfully - Rows affected: " + rowsAffected);
-            } catch (SQLException e) {
-                log.error("[VP_SUBMISSION_DAO] SQL error creating VP submission: " + e.getMessage(), e);
-                IdentityDatabaseUtil.rollbackTransaction(connection);
+                            } catch (SQLException e) {
+                                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-            log.error("[VP_SUBMISSION_DAO] Database error creating VP submission: " +
-                    vpSubmission.getSubmissionId(), e);
-            throw new VPException("Error creating VP submission: " +
+                        throw new VPException("Error creating VP submission: " +
                     vpSubmission.getSubmissionId(), e);
         }
     }
@@ -108,8 +96,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     @Override
     public VPSubmission getVPSubmissionById(String submissionId, int tenantId) throws VPException {
         if (log.isDebugEnabled()) {
-            log.debug("[VP_SUBMISSION_DAO] Querying VP submission by ID: " + submissionId);
-        }
+                    }
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_VP_SUBMISSION_BY_ID)) {
@@ -119,19 +106,16 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         if (log.isDebugEnabled()) {
-                            log.debug("[VP_SUBMISSION_DAO] VP submission found: " + submissionId);
-                        }
+                                                    }
                         return mapResultSetToVPSubmission(rs);
                     } else {
                         if (log.isDebugEnabled()) {
-                            log.debug("[VP_SUBMISSION_DAO] VP submission not found: " + submissionId);
-                        }
+                                                    }
                     }
                 }
             }
         } catch (SQLException e) {
-            log.error("[VP_SUBMISSION_DAO] Database error retrieving VP submission: " + submissionId, e);
-            throw new VPException("Error retrieving VP submission: " + submissionId, e);
+                        throw new VPException("Error retrieving VP submission: " + submissionId, e);
         }
         return null;
     }
@@ -140,8 +124,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     public VPSubmission getVPSubmissionByRequestId(String requestId, int tenantId)
             throws VPException {
         if (log.isDebugEnabled()) {
-            log.debug("[VP_SUBMISSION_DAO] Querying VP submission by request ID: " + requestId);
-        }
+                    }
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -152,19 +135,16 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         if (log.isDebugEnabled()) {
-                            log.debug("[VP_SUBMISSION_DAO] VP submission found for request: " + requestId);
-                        }
+                                                    }
                         return mapResultSetToVPSubmission(rs);
                     } else {
                         if (log.isDebugEnabled()) {
-                            log.debug("[VP_SUBMISSION_DAO] No VP submission found for request: " + requestId);
-                        }
+                                                    }
                     }
                 }
             }
         } catch (SQLException e) {
-            log.error("[VP_SUBMISSION_DAO] Database error retrieving VP submission for request: " + requestId, e);
-            throw new VPException("Error retrieving VP submission for request: " + requestId, e);
+                        throw new VPException("Error retrieving VP submission for request: " + requestId, e);
         }
         return null;
     }
@@ -221,9 +201,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Updated verification status for submission: " + submissionId +
-                            " to " + verificationStatus + ", rows affected: " + updated);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -244,9 +222,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted VP submission: " + submissionId +
-                            ", rows affected: " + deleted);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -268,9 +244,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted VP submissions for request: " + requestId +
-                            ", rows affected: " + deleted);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

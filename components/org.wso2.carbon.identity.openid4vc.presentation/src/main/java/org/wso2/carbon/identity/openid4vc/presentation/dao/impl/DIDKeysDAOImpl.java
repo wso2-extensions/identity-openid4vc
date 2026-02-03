@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.DIDKeysDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -34,8 +32,6 @@ import java.sql.SQLException;
  * Implementation of DIDKeysDAO using JDBC.
  */
 public class DIDKeysDAOImpl implements DIDKeysDAO {
-
-    private static final Log log = LogFactory.getLog(DIDKeysDAOImpl.class);
 
     private static final String SQL_INSERT_DID_KEY = "INSERT INTO IDN_DID_KEYS " +
             "(TENANT_ID, KEY_ID, ALGORITHM, PUBLIC_KEY, PRIVATE_KEY, CREATED_AT) VALUES (?, ?, ?, ?, ?, ?)";
@@ -63,8 +59,7 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Added DID key: " + didKey.getKeyId() + " for tenant: " + didKey.getTenantId());
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -160,8 +155,7 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted DID key: " + keyId + " for tenant: " + tenantId);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

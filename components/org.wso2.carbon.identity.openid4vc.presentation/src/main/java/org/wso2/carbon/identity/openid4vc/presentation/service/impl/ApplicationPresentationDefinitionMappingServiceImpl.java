@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.ApplicationPresentationDefinitionMappingDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.ApplicationPresentationDefinitionMappingDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -31,8 +29,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresen
  */
 public class ApplicationPresentationDefinitionMappingServiceImpl 
         implements ApplicationPresentationDefinitionMappingService {
-
-    private static final Log log = LogFactory.getLog(ApplicationPresentationDefinitionMappingServiceImpl.class);
 
     private final ApplicationPresentationDefinitionMappingDAO mappingDAO;
 
@@ -59,9 +55,7 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
                                                         int tenantId) throws VPException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Mapping presentation definition '" + presentationDefinitionId + 
-                    "' to application '" + applicationId + "' for tenant: " + tenantId);
-        }
+                    }
 
         ApplicationPresentationDefinitionMapping mapping = new ApplicationPresentationDefinitionMapping.Builder()
                 .applicationId(applicationId)
@@ -74,9 +68,7 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
         mappingDAO.createOrUpdateMapping(mapping);
 
         if (log.isInfoEnabled()) {
-            log.info("Successfully mapped presentation definition '" + presentationDefinitionId + 
-                    "' to application '" + applicationId + "'");
-        }
+                    }
     }
 
     @Override
@@ -84,17 +76,13 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
             throws VPException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Retrieving presentation definition ID for application '" + applicationId + 
-                    "' in tenant: " + tenantId);
-        }
+                    }
 
         String presentationDefinitionId = mappingDAO.getPresentationDefinitionIdByApplicationId(
                 applicationId, tenantId);
 
         if (log.isDebugEnabled()) {
-            log.debug("Retrieved presentation definition ID: " + 
-                    (presentationDefinitionId != null ? presentationDefinitionId : "NOT FOUND"));
-        }
+                    }
 
         return presentationDefinitionId;
     }
@@ -104,16 +92,13 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
                                                                           int tenantId) throws VPException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Retrieving mapping for application '" + applicationId + 
-                    "' in tenant: " + tenantId);
-        }
+                    }
 
         ApplicationPresentationDefinitionMapping mapping = mappingDAO.getMappingByApplicationId(
                 applicationId, tenantId);
 
         if (log.isDebugEnabled()) {
-            log.debug("Retrieved mapping: " + (mapping != null ? "FOUND" : "NOT FOUND"));
-        }
+                    }
 
         return mapping;
     }
@@ -123,25 +108,19 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
             throws VPException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Removing presentation definition mapping for application '" + applicationId + 
-                    "' in tenant: " + tenantId);
-        }
+                    }
 
         mappingDAO.deleteMapping(applicationId, tenantId);
 
         if (log.isInfoEnabled()) {
-            log.info("Successfully removed presentation definition mapping for application '" + 
-                    applicationId + "'");
-        }
+                    }
     }
 
     @Override
     public boolean isApplicationMappingExists(String applicationId, int tenantId) throws VPException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Checking if mapping exists for application '" + applicationId + 
-                    "' in tenant: " + tenantId);
-        }
+                    }
 
         return mappingDAO.mappingExists(applicationId, tenantId);
     }
