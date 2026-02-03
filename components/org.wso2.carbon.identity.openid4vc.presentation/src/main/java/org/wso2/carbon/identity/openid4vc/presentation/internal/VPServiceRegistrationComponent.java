@@ -59,13 +59,13 @@ public class VPServiceRegistrationComponent {
         try {
             // Only register once to avoid duplicates
             if (authenticatorRegistered) {
-                                return;
+                return;
             }
 
             BundleContext bundleContext = context.getBundleContext();
 
             // Initialize database schema (creates tables if they don't exist)
-                        DatabaseSchemaInitializer.initializeSchema();
+            DatabaseSchemaInitializer.initializeSchema();
 
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
@@ -98,9 +98,8 @@ public class VPServiceRegistrationComponent {
 
             authenticatorRegistered = true;
 
-                        
         } catch (Exception e) {
-                    }
+        }
     }
 
     @Deactivate
@@ -113,33 +112,31 @@ public class VPServiceRegistrationComponent {
 
         authenticatorRegistered = false;
 
-            }
+    }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
-    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
+    ReferenceCardinality.MANDATORY, policy = 
+    ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     protected void unsetRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(null);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = 
-    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
+    ReferenceCardinality.MANDATORY, policy = 
+    ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
     protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(applicationManagementService);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(null);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 }

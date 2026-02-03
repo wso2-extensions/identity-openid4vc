@@ -43,12 +43,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 /**
- * Servlet handling VP (Verifiable Presentation) authorization request operations.
+ * Servlet handling VP (Verifiable Presentation) authorization request
+ * operations.
  * 
  * Endpoints:
- * - POST /api/identity/openid4vp/v1/vp-request - Create a new VP authorization request
- * - GET /api/identity/openid4vp/v1/vp-request/{requestId} - Get authorization request JWT
- * - GET /api/identity/openid4vp/v1/vp-request/{requestId}/status - Get request status (with polling)
+ * - POST /api/identity/openid4vp/v1/vp-request - Create a new VP authorization
+ * request
+ * - GET /api/identity/openid4vp/v1/vp-request/{requestId} - Get authorization
+ * request JWT
+ * - GET /api/identity/openid4vp/v1/vp-request/{requestId}/status - Get request
+ * status (with polling)
  */
 public class VPRequestServlet extends HttpServlet {
 
@@ -57,7 +61,7 @@ public class VPRequestServlet extends HttpServlet {
             .setPrettyPrinting()
             .disableHtmlEscaping()
             .create();
-    
+
     private static final long DEFAULT_POLL_TIMEOUT_MS = 60000; // 1 minute
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant
 
@@ -75,14 +79,11 @@ public class VPRequestServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        
-        if (log.isDebugEnabled()) {
-                    }
 
         try {
             // Read request body
             String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
-            
+
             if (StringUtils.isBlank(requestBody)) {
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "Request body is required");
@@ -115,14 +116,11 @@ public class VPRequestServlet extends HttpServlet {
             // Send success response
             sendJsonResponse(response, HttpServletResponse.SC_CREATED, responseDTO);
 
-            if (log.isDebugEnabled()) {
-                            }
-
         } catch (VPException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -135,7 +133,7 @@ public class VPRequestServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
-        
+
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Request ID is required in path");
@@ -144,7 +142,7 @@ public class VPRequestServlet extends HttpServlet {
 
         // Parse path: /{requestId} or /{requestId}/status
         String[] pathParts = pathInfo.split("/");
-        
+
         if (pathParts.length < 2) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid path format");
@@ -168,10 +166,10 @@ public class VPRequestServlet extends HttpServlet {
             sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     ErrorDTO.ErrorCode.VP_REQUEST_EXPIRED, e.getMessage());
         } catch (VPException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -179,17 +177,14 @@ public class VPRequestServlet extends HttpServlet {
     /**
      * Handle request JWT retrieval (for request_uri flow).
      */
-    private void handleRequestJwtRequest(HttpServletResponse response, String requestId, 
-                                          int tenantId) throws Exception {
-        
-        if (log.isDebugEnabled()) {
-                    }
+    private void handleRequestJwtRequest(HttpServletResponse response, String requestId,
+            int tenantId) throws Exception {
 
         String requestJwt = vpRequestService.getRequestJwt(requestId, tenantId);
-        
+
         // For now, return as JSON. In production, this should return JWT format
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
-        
+
         try (PrintWriter writer = response.getWriter()) {
             writer.write(requestJwt);
         }
@@ -199,10 +194,7 @@ public class VPRequestServlet extends HttpServlet {
      * Handle status polling request.
      */
     private void handleStatusRequest(HttpServletRequest request, HttpServletResponse response,
-                                      String requestId, int tenantId) throws Exception {
-        
-        if (log.isDebugEnabled()) {
-                    }
+            String requestId, int tenantId) throws Exception {
 
         // Get timeout parameter for long polling
         String timeoutParam = request.getParameter("timeout");
@@ -216,9 +208,10 @@ public class VPRequestServlet extends HttpServlet {
         }
 
         // Get request by ID to check status
-        // Note: For true long-polling, this should use async servlets with DeferredResult
+        // Note: For true long-polling, this should use async servlets with
+        // DeferredResult
         VPRequestStatusDTO statusDTO = pollForStatus(requestId, tenantId, timeout);
-        
+
         sendJsonResponse(response, HttpServletResponse.SC_OK, statusDTO);
     }
 
@@ -227,26 +220,25 @@ public class VPRequestServlet extends HttpServlet {
      * Note: This is a simplified polling implementation. For production,
      * consider using async servlets with DeferredResult pattern.
      */
-    private VPRequestStatusDTO pollForStatus(String requestId, int tenantId, long timeout) 
+    private VPRequestStatusDTO pollForStatus(String requestId, int tenantId, long timeout)
             throws Exception {
-        
+
         long startTime = System.currentTimeMillis();
         long pollInterval = 1000; // 1 second
-        
+
         while (System.currentTimeMillis() - startTime < timeout) {
             // Check current status
-            org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = 
-                    vpRequestService.getVPRequestById(requestId, tenantId);
-            
+            org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = vpRequestService
+                    .getVPRequestById(requestId, tenantId);
+
             // If not ACTIVE (i.e., VP_SUBMITTED, EXPIRED, COMPLETED), return immediately
-            if (vpRequest.getStatus() != 
-                    org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.ACTIVE) {
+            if (vpRequest.getStatus() != org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.ACTIVE) {
                 VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
                 statusDTO.setStatus(vpRequest.getStatus());
                 statusDTO.setRequestId(requestId);
                 return statusDTO;
             }
-            
+
             // Wait before next poll
             try {
                 Thread.sleep(pollInterval);
@@ -255,10 +247,10 @@ public class VPRequestServlet extends HttpServlet {
                 break;
             }
         }
-        
+
         // Timeout - return current status
-        org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = 
-                vpRequestService.getVPRequestById(requestId, tenantId);
+        org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = vpRequestService
+                .getVPRequestById(requestId, tenantId);
         VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
         statusDTO.setStatus(vpRequest.getStatus());
         statusDTO.setRequestId(requestId);
@@ -270,10 +262,10 @@ public class VPRequestServlet extends HttpServlet {
      */
     private void sendJsonResponse(HttpServletResponse response, int statusCode, Object data)
             throws IOException {
-        
+
         response.setStatus(statusCode);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
-        
+
         try (PrintWriter writer = response.getWriter()) {
             writer.write(gson.toJson(data));
         }
@@ -283,9 +275,9 @@ public class VPRequestServlet extends HttpServlet {
      * Send error response.
      */
     private void sendErrorResponse(HttpServletResponse response, int statusCode,
-                                    ErrorDTO.ErrorCode errorCode, String message) 
+            ErrorDTO.ErrorCode errorCode, String message)
             throws IOException {
-        
+
         ErrorDTO errorDTO = new ErrorDTO(errorCode, message, null);
         sendJsonResponse(response, statusCode, errorDTO);
     }

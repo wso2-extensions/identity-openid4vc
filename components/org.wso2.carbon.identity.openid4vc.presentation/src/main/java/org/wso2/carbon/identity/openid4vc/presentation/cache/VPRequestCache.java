@@ -38,7 +38,7 @@ import java.util.concurrent.TimeUnit;
 public class VPRequestCache {
 
     private static volatile VPRequestCache instance;
-    
+
     private final Map<String, VPRequestCacheEntry> cacheByRequestId;
     private final Map<String, String> transactionToRequestIdMap;
     private final ScheduledExecutorService cleanupExecutor;
@@ -77,7 +77,7 @@ public class VPRequestCache {
      */
     private VPRequestCache() {
         this(OpenID4VPConstants.Defaults.CACHE_ENTRY_EXPIRY_SECONDS * 1000L,
-             OpenID4VPConstants.Defaults.MAX_CACHE_ENTRIES);
+                OpenID4VPConstants.Defaults.MAX_CACHE_ENTRIES);
     }
 
     /**
@@ -101,8 +101,6 @@ public class VPRequestCache {
         });
         this.cleanupExecutor.scheduleAtFixedRate(this::cleanup, 1, 1, TimeUnit.MINUTES);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -128,15 +126,14 @@ public class VPRequestCache {
      */
     public void put(VPRequest vpRequest) {
         if (vpRequest == null || vpRequest.getRequestId() == null) {
-                        return;
+            return;
         }
 
         // Check cache size limit
         if (cacheByRequestId.size() >= maxEntries) {
-            if (log.isDebugEnabled()) {
-                            }
+
             cleanup();
-            
+
             // If still at limit after cleanup, evict oldest entries
             if (cacheByRequestId.size() >= maxEntries) {
                 evictOldestEntries(maxEntries / 10); // Evict 10% of entries
@@ -145,13 +142,11 @@ public class VPRequestCache {
 
         VPRequestCacheEntry entry = new VPRequestCacheEntry(vpRequest, expiryTimeMillis);
         cacheByRequestId.put(vpRequest.getRequestId(), entry);
-        
+
         if (vpRequest.getTransactionId() != null) {
             transactionToRequestIdMap.put(vpRequest.getTransactionId(), vpRequest.getRequestId());
         }
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -172,8 +167,7 @@ public class VPRequestCache {
 
         if (entry.isExpired()) {
             remove(requestId);
-            if (log.isDebugEnabled()) {
-                            }
+
             return null;
         }
 
@@ -214,8 +208,6 @@ public class VPRequestCache {
             transactionToRequestIdMap.remove(entry.getVPRequest().getTransactionId());
         }
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -231,8 +223,7 @@ public class VPRequestCache {
         String requestId = transactionToRequestIdMap.remove(transactionId);
         if (requestId != null) {
             cacheByRequestId.remove(requestId);
-            if (log.isDebugEnabled()) {
-                            }
+
         }
     }
 
@@ -261,18 +252,16 @@ public class VPRequestCache {
     public void clear() {
         cacheByRequestId.clear();
         transactionToRequestIdMap.clear();
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     /**
      * Cleanup expired entries from the cache.
      */
     private void cleanup() {
-        int removed = 0;
-        Iterator<Map.Entry<String, VPRequestCacheEntry>> iterator = 
-            cacheByRequestId.entrySet().iterator();
-        
+
+        Iterator<Map.Entry<String, VPRequestCacheEntry>> iterator = cacheByRequestId.entrySet().iterator();
+
         while (iterator.hasNext()) {
             Map.Entry<String, VPRequestCacheEntry> entry = iterator.next();
             if (entry.getValue().isExpired()) {
@@ -281,12 +270,10 @@ public class VPRequestCache {
                     transactionToRequestIdMap.remove(transactionId);
                 }
                 iterator.remove();
-                removed++;
+
             }
         }
 
-        if (removed > 0 && log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -295,14 +282,12 @@ public class VPRequestCache {
      * @param count Number of entries to evict
      */
     private void evictOldestEntries(int count) {
-        List<Map.Entry<String, VPRequestCacheEntry>> entries = 
-            new ArrayList<>(cacheByRequestId.entrySet());
-        
+        List<Map.Entry<String, VPRequestCacheEntry>> entries = new ArrayList<>(cacheByRequestId.entrySet());
+
         // Sort by creation time (oldest first)
         entries.sort((e1, e2) -> Long.compare(
-            e1.getValue().getExpiresAt(), 
-            e2.getValue().getExpiresAt()
-        ));
+                e1.getValue().getExpiresAt(),
+                e2.getValue().getExpiresAt()));
 
         int evicted = 0;
         for (Map.Entry<String, VPRequestCacheEntry> entry : entries) {
@@ -313,8 +298,6 @@ public class VPRequestCache {
             evicted++;
         }
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -332,5 +315,5 @@ public class VPRequestCache {
             Thread.currentThread().interrupt();
         }
         clear();
-            }
+    }
 }

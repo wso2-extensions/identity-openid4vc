@@ -42,7 +42,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationSer
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.status.StatusNotificationService;
-import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPLogger;
 import org.wso2.carbon.identity.openid4vc.presentation.util.VPSubmissionValidator;
 
 import java.io.IOException;
@@ -123,10 +122,6 @@ public class VPSubmissionServlet extends HttpServlet {
             final HttpServletResponse response)
             throws ServletException, IOException {
 
-                                                
-        if (LOG.isDebugEnabled()) {
-                    }
-
         try {
             // Parse submission parameters
             VPSubmissionDTO submissionDTO = parseSubmission(request);
@@ -135,7 +130,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 VPSubmissionValidator.validateSubmission(submissionDTO);
             } catch (VPSubmissionValidationException e) {
-                                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
                         e.getMessage());
                 return;
@@ -148,7 +143,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 verifyAllCredentialIssuers(submissionDTO.getVpToken(), tenantDomain);
             } catch (CredentialVerificationException e) {
-                                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
                         "untrusted_issuer",
                         "Credential from untrusted issuer: " + e.getMessage());
                 return;
@@ -161,25 +156,24 @@ public class VPSubmissionServlet extends HttpServlet {
             VPSubmission submission = vpSubmissionService.processVPSubmission(
                     submissionDTO, tenantId);
 
-                        // Notify status listeners for long polling
+            // Notify status listeners for long polling
             notifyStatusListeners(submissionDTO.getState(), submission);
-            
-                        // Send success response
+
+            // Send success response
             sendSuccessResponse(response, submission);
-            
-                                                
+
         } catch (VPRequestNotFoundException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
                     OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
                     "Request not found: " + e.getRequestId());
         } catch (VPRequestExpiredException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_GONE,
+            sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     "expired_request", e.getMessage());
         } catch (VPException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     OpenID4VPConstants.ErrorCodes.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR, "Internal server error");
         }
     }
@@ -233,7 +227,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 dto.setPresentationSubmission(
                         JsonParser.parseString(presSubStr).getAsJsonObject());
             } catch (JsonSyntaxException e) {
-                            }
+            }
         }
 
         dto.setState(getDecodedParameter(request,
@@ -274,7 +268,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
             } catch (Exception e) {
-                                return value;
+                return value;
             }
         }
         return value;
@@ -289,40 +283,39 @@ public class VPSubmissionServlet extends HttpServlet {
     private void notifyStatusListeners(final String requestId,
             final VPSubmission submission) {
 
-                                
         if (StringUtils.isBlank(requestId)) {
-                        return;
+            return;
         }
 
         // Store submission in wallet data cache for status checks
         if (walletDataCache != null) {
-                        walletDataCache.storeSubmission(requestId, submission);
-                    } else {
-                    }
+            walletDataCache.storeSubmission(requestId, submission);
+        } else {
+        }
 
         // Use the centralized notification service
         if (statusNotificationService != null) {
-                        if (StringUtils.isNotBlank(submission.getError())) {
-                                statusNotificationService.notifySubmissionError(
+            if (StringUtils.isNotBlank(submission.getError())) {
+                statusNotificationService.notifySubmissionError(
                         requestId,
                         submission.getError(),
                         submission.getErrorDescription());
             } else {
-                                statusNotificationService.notifyVPSubmitted(requestId, submission);
+                statusNotificationService.notifyVPSubmitted(requestId, submission);
             }
-                    } else if (statusListenerCache != null) {
+        } else if (statusListenerCache != null) {
             // Fallback to direct notification
-                        String status;
+            String status;
             if (StringUtils.isNotBlank(submission.getError())) {
                 status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
             } else {
                 status = VPRequestStatus.VP_SUBMITTED.name();
             }
-                        statusListenerCache.notifyListeners(requestId, status);
-                    } else {
-                    }
+            statusListenerCache.notifyListeners(requestId, status);
+        } else {
+        }
 
-            }
+    }
 
     /**
      * Send success response to wallet.
@@ -335,7 +328,6 @@ public class VPSubmissionServlet extends HttpServlet {
             final VPSubmission submission)
             throws IOException {
 
-                        
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON
                 + ";charset=UTF-8");
@@ -351,12 +343,12 @@ public class VPSubmissionServlet extends HttpServlet {
         }
 
         String responseJson = GSON.toJson(responseObj);
-        
+
         try (PrintWriter writer = response.getWriter()) {
             writer.write(responseJson);
         }
 
-            }
+    }
 
     /**
      * Send error response per OAuth 2.0 spec.
@@ -401,7 +393,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                            }
+            }
         }
         return DEFAULT_TENANT_ID;
     }
@@ -434,10 +426,8 @@ public class VPSubmissionServlet extends HttpServlet {
             throws CredentialVerificationException {
 
         if (StringUtils.isBlank(vpToken)) {
-                        return;
+            return;
         }
-
-        OpenID4VPLogger.logVPSubmissionStart(LOG);
 
         try {
             VCVerificationService vcVerifier = VPServiceDataHolder.getInstance()
@@ -448,22 +438,21 @@ public class VPSubmissionServlet extends HttpServlet {
             if (vpToken.contains(".")) {
                 // JWT VP - decode payload
                 String[] parts = vpToken.split("\\.");
-                
+
                 if (parts.length >= 2) {
                     String payloadJson = new String(
                             java.util.Base64.getUrlDecoder().decode(parts[1]),
                             java.nio.charset.StandardCharsets.UTF_8);
 
-                    
                     JsonElement parsedElement = JsonParser.parseString(payloadJson);
 
                     // The VP might be wrapped in a "vp" claim or be the top-level object
                     if (parsedElement.isJsonObject()) {
                         vp = parsedElement.getAsJsonObject();
-                                            } else {
-                                                                        return;
+                    } else {
+                        return;
                     }
-                    OpenID4VPLogger.logVPTokenFormat(LOG, "JWT");
+
                 } else {
                     throw new CredentialVerificationException(
                             org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
@@ -471,13 +460,13 @@ public class VPSubmissionServlet extends HttpServlet {
                 }
             } else {
                 // JSON-LD VP
-                                vp = JsonParser.parseString(vpToken).getAsJsonObject();
-                OpenID4VPLogger.logVPTokenFormat(LOG, "JSON-LD");
+                vp = JsonParser.parseString(vpToken).getAsJsonObject();
+
             }
 
             // Extract verifiable credentials array
             if (!vp.has("verifiableCredential") && !vp.has("vp")) {
-                                return;
+                return;
             }
 
             JsonElement vcElement = vp.has("verifiableCredential")
@@ -494,56 +483,45 @@ public class VPSubmissionServlet extends HttpServlet {
             }
 
             int credentialCount = verifiableCredentials.size();
-            OpenID4VPLogger.logCredentialCount(LOG, credentialCount);
 
             // Verify each VC
             for (int i = 0; i < credentialCount; i++) {
-                OpenID4VPLogger.logCredentialIndex(LOG, i + 1, credentialCount);
 
                 JsonElement vcElem = verifiableCredentials.get(i);
 
                 if (vcElem.isJsonPrimitive() && vcElem.getAsString().contains(".")) {
                     // JWT VC
                     String vcJwt = vcElem.getAsString();
-                    OpenID4VPLogger.logCredentialType(LOG, "JWT");
 
                     boolean verified = vcVerifier.verifyJWTVCIssuer(vcJwt, tenantDomain);
                     if (!verified) {
-                        OpenID4VPLogger.logCredentialVerificationFailed(LOG, i + 1,
-                                "Issuer verification failed");
+
                         throw new CredentialVerificationException(
                                 org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
                                 "Credential " + (i + 1) + " from untrusted issuer");
                     }
-                    OpenID4VPLogger.logCredentialVerificationSuccess(LOG, i + 1,
-                            extractIssuerFromJWT(vcJwt), "JWT");
 
                 } else if (vcElem.isJsonObject()) {
                     // JSON-LD VC
                     JsonObject vcObj = vcElem.getAsJsonObject();
-                    OpenID4VPLogger.logCredentialType(LOG, "JSON-LD");
 
                     boolean verified = vcVerifier.verifyJSONLDVCIssuer(vcObj, tenantDomain);
                     if (!verified) {
-                        OpenID4VPLogger.logCredentialVerificationFailed(LOG, i + 1,
-                                "Issuer verification failed");
+
                         throw new CredentialVerificationException(
                                 org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus.INVALID,
                                 "Credential " + (i + 1) + " from untrusted issuer");
                     }
 
                     String issuer = extractIssuerFromJsonLD(vcObj);
-                    OpenID4VPLogger.logCredentialVerificationSuccess(LOG, i + 1, issuer, "JSON-LD");
+
                 }
             }
-
-            OpenID4VPLogger.logAllCredentialsVerified(LOG, credentialCount);
-            OpenID4VPLogger.logVPVerificationComplete(LOG);
 
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-                        throw new CredentialVerificationException(
+            throw new CredentialVerificationException(
                     "Failed to verify credential issuers: " + e.getMessage(), e);
         }
     }
@@ -565,7 +543,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 return payload.get("iss").getAsString();
             }
         } catch (Exception e) {
-                    }
+        }
         return "unknown";
     }
 
@@ -586,7 +564,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-                    }
+        }
         return "unknown";
     }
 }

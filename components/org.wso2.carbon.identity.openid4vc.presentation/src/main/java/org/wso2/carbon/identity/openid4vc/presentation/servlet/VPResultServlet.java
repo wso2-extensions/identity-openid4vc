@@ -76,9 +76,6 @@ public class VPResultServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         // Parse transaction ID from path
         String pathInfo = request.getPathInfo();
 
@@ -106,22 +103,19 @@ public class VPResultServlet extends HttpServlet {
                 sendJsonResponse(request, response, HttpServletResponse.SC_OK, resultDTO);
             }
 
-            if (log.isDebugEnabled()) {
-                            }
-
         } catch (VPRequestNotFoundException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND,
                     "Transaction not found: " + transactionId);
         } catch (VPSubmissionNotFoundException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_SUBMISSION_NOT_FOUND,
                     "No submission found for transaction: " + transactionId);
         } catch (VPException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }

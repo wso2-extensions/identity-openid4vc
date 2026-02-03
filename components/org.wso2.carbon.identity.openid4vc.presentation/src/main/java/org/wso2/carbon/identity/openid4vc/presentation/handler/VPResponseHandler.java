@@ -166,9 +166,6 @@ public class VPResponseHandler {
         result.setErrorCode(submission.getError());
         result.setErrorDescription(submission.getErrorDescription());
 
-        if (log.isDebugEnabled()) {
-                    }
-
         return result;
     }
 
@@ -263,7 +260,7 @@ public class VPResponseHandler {
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Invalid JWT encoding: " + e.getMessage());
         } catch (Exception e) {
-                        result.setStatus(VCVerificationStatus.INVALID);
+            result.setStatus(VCVerificationStatus.INVALID);
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Failed to process VP token: " + e.getMessage());
         }
@@ -360,7 +357,7 @@ public class VPResponseHandler {
         } catch (VPSubmissionValidationException e) {
             throw e;
         } catch (Exception e) {
-                        result.setStatus(VCVerificationStatus.INVALID);
+            result.setStatus(VCVerificationStatus.INVALID);
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Failed to parse VP token: " + e.getMessage());
         }
@@ -432,7 +429,7 @@ public class VPResponseHandler {
                     processJsonCredential(credential, result);
                 }
             } catch (Exception e) {
-                            }
+            }
         }
     }
 
@@ -477,7 +474,7 @@ public class VPResponseHandler {
             }
 
         } catch (Exception e) {
-                    }
+        }
     }
 
     /**

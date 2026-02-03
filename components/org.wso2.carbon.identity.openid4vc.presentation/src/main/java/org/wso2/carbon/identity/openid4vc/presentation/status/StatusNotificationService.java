@@ -47,8 +47,6 @@ public class StatusNotificationService {
         this.longPollingManager = LongPollingManager.getInstance();
         this.statusChangeListeners = new CopyOnWriteArrayList<>();
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -77,13 +75,10 @@ public class StatusNotificationService {
     public void notifyVPSubmitted(final String requestId, final VPSubmission submission) {
 
         if (requestId == null || submission == null) {
-                        return;
+            return;
         }
 
         String status = buildSubmissionStatus(submission);
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         // Notify the status listener cache (for long polling)
         statusListenerCache.notifyListeners(requestId, status);
@@ -107,13 +102,10 @@ public class StatusNotificationService {
             final String errorDescription) {
 
         if (requestId == null) {
-                        return;
+            return;
         }
 
         String status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -140,13 +132,10 @@ public class StatusNotificationService {
     public void notifyRequestExpired(final String requestId) {
 
         if (requestId == null) {
-                        return;
+            return;
         }
 
         String status = VPRequestStatus.EXPIRED.name();
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -168,13 +157,10 @@ public class StatusNotificationService {
             final VPSubmission submission) {
 
         if (requestId == null) {
-                        return;
+            return;
         }
 
         String status = VPRequestStatus.COMPLETED.name();
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -195,8 +181,7 @@ public class StatusNotificationService {
 
         if (listener != null && !statusChangeListeners.contains(listener)) {
             statusChangeListeners.add(listener);
-            if (LOG.isDebugEnabled()) {
-                            }
+
         }
     }
 
@@ -209,8 +194,7 @@ public class StatusNotificationService {
 
         if (listener != null) {
             statusChangeListeners.remove(listener);
-            if (LOG.isDebugEnabled()) {
-                            }
+
         }
     }
 
@@ -225,7 +209,7 @@ public class StatusNotificationService {
             try {
                 listener.onStatusChange(requestId, newStatus, submission);
             } catch (Exception e) {
-                            }
+            }
         }
     }
 

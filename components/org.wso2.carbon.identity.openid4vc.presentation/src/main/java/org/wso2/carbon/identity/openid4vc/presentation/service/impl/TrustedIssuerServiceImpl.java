@@ -60,24 +60,21 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     @Override
     public boolean isIssuerTrusted(String issuerDid, String tenantDomain) {
         if (issuerDid == null || issuerDid.trim().isEmpty()) {
-                        return false;
+            return false;
         }
 
         if (!isTrustEnforcementEnabled(tenantDomain)) {
-                        return true;
+            return true;
         }
 
         try {
             int tenantId = getTenantId(tenantDomain);
             boolean trusted = trustedIssuerDAO.isIssuerTrusted(issuerDid, tenantId);
 
-            if (LOG.isDebugEnabled()) {
-                            }
-
             return trusted;
 
         } catch (VPException e) {
-                        return false; // Fail closed - if we can't verify trust, don't trust
+            return false; // Fail closed - if we can't verify trust, don't trust
         }
     }
 
@@ -106,7 +103,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
 
         trustedIssuerDAO.addTrustedIssuer(trustedIssuer);
 
-            }
+    }
 
     @Override
     public void removeTrustedIssuer(String issuerDid, String tenantDomain) throws VPException {
@@ -117,7 +114,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         int tenantId = getTenantId(tenantDomain);
         trustedIssuerDAO.removeTrustedIssuer(issuerDid.trim(), tenantId);
 
-            }
+    }
 
     @Override
     public List<String> getTrustedIssuers(String tenantDomain) throws VPException {
@@ -157,7 +154,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         int tenantId = getTenantId(tenantDomain);
         trustedIssuerDAO.updateTrustedIssuerDescription(issuerDid.trim(), tenantId, description);
 
-            }
+    }
 
     /**
      * Get tenant ID from tenant domain.
@@ -198,7 +195,6 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     public void populateTrustedIssuers(List<String> issuerDids, String tenantDomain, String addedBy)
             throws VPException {
 
-        
         int successCount = 0;
         int failureCount = 0;
 
@@ -207,9 +203,9 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
                 addTrustedIssuer(issuerDid, tenantDomain, addedBy, "Pre-populated trusted issuer");
                 successCount++;
             } catch (VPException e) {
-                                failureCount++;
+                failureCount++;
             }
         }
 
-            }
+    }
 }

@@ -73,50 +73,47 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     public VPSubmission processVPSubmission(VPSubmissionDTO submissionDTO, int tenantId)
             throws VPRequestNotFoundException, VPRequestExpiredException, VPException {
 
-                                        
         // Get the request ID from state parameter
         String requestId = submissionDTO.getState();
         if (StringUtils.isBlank(requestId)) {
-                        throw new VPException("State parameter (request ID) is required");
+            throw new VPException("State parameter (request ID) is required");
         }
 
-                // Fetch the VP request
+        // Fetch the VP request
         VPRequest vpRequest = vpRequestDAO.getVPRequestById(requestId, tenantId);
         if (vpRequest == null) {
-                        throw new VPRequestNotFoundException(requestId);
+            throw new VPRequestNotFoundException(requestId);
         }
 
-                
         // Check if request has expired
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
-                        // Mark as expired in database
+            // Mark as expired in database
             // Mark as expired in database
             vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.EXPIRED, tenantId);
             // INVALIDATE CACHE
             if (vpRequestCache != null) {
                 vpRequestCache.remove(requestId);
             }
-                        throw new VPRequestExpiredException(requestId);
+            throw new VPRequestExpiredException(requestId);
         }
 
         // Check if request is still active
         if (vpRequest.getStatus() != VPRequestStatus.ACTIVE) {
-                        throw new VPException("Request is no longer active: " + requestId +
+            throw new VPException("Request is no longer active: " + requestId +
                     ", current status: " + vpRequest.getStatus());
         }
 
-        
         // Check if it's an error response from wallet
         if (StringUtils.isNotBlank(submissionDTO.getError())) {
-                                    return processErrorSubmission(submissionDTO, vpRequest, tenantId);
+            return processErrorSubmission(submissionDTO, vpRequest, tenantId);
         }
 
         // Validate required fields for successful submission
         if (StringUtils.isBlank(submissionDTO.getVpToken())) {
-                        throw new VPException("vp_token is required for successful submission");
+            throw new VPException("vp_token is required for successful submission");
         }
 
-                // Create submission record
+        // Create submission record
         // Use the transaction ID from the request for consistency
         String transactionId = vpRequest.getTransactionId();
         if (StringUtils.isBlank(transactionId)) {
@@ -126,14 +123,13 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         String submissionId = OpenID4VPUtil.generateSubmissionId();
         long submittedAt = System.currentTimeMillis();
 
-                
         // Convert presentation submission JsonObject to String for storage
         String presentationSubmissionJson = submissionDTO.getPresentationSubmission() != null
                 ? submissionDTO.getPresentationSubmission().toString()
                 : null;
 
         if (presentationSubmissionJson != null) {
-                    }
+        }
 
         VPSubmission vpSubmission = new VPSubmission.Builder()
                 .submissionId(submissionId)
@@ -146,17 +142,16 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
                 .tenantId(tenantId)
                 .build();
 
-                // Persist submission
+        // Persist submission
         vpSubmissionDAO.createVPSubmission(vpSubmission);
-        
-                // Update request status to VP_SUBMITTED
+
+        // Update request status to VP_SUBMITTED
         vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.VP_SUBMITTED, tenantId);
         // INVALIDATE CACHE: Ensure subsequent reads pick up the new status
         if (vpRequestCache != null) {
             vpRequestCache.remove(requestId);
-                    }
-        
-                                                
+        }
+
         return vpSubmission;
     }
 
@@ -167,13 +162,12 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
             VPRequest vpRequest, int tenantId)
             throws VPException {
 
-                String requestId = vpRequest.getRequestId();
-                        
+        String requestId = vpRequest.getRequestId();
+
         String submissionId = OpenID4VPUtil.generateSubmissionId();
         String transactionId = OpenID4VPUtil.generateTransactionId();
         long submittedAt = System.currentTimeMillis();
 
-                
         // Create submission record with error
         VPSubmission vpSubmission = new VPSubmission.Builder()
                 .submissionId(submissionId)
@@ -186,17 +180,16 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
                 .tenantId(tenantId)
                 .build();
 
-                // Persist submission
+        // Persist submission
         vpSubmissionDAO.createVPSubmission(vpSubmission);
-        
-                // Update request status - still VP_SUBMITTED but with error
+
+        // Update request status - still VP_SUBMITTED but with error
         vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.VP_SUBMITTED, tenantId);
         // INVALIDATE CACHE
         if (vpRequestCache != null) {
             vpRequestCache.remove(requestId);
         }
-        
-                                
+
         return vpSubmission;
     }
 
@@ -204,17 +197,11 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     public VPSubmission getVPSubmissionById(String submissionId, int tenantId)
             throws VPSubmissionNotFoundException, VPException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         VPSubmission submission = vpSubmissionDAO.getVPSubmissionById(submissionId, tenantId);
 
         if (submission == null) {
-                        throw new VPSubmissionNotFoundException(null, submissionId);
+            throw new VPSubmissionNotFoundException(null, submissionId);
         }
-
-        if (log.isDebugEnabled()) {
-                    }
 
         return submission;
     }
@@ -223,17 +210,11 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     public VPSubmission getVPSubmissionByRequestId(String requestId, int tenantId)
             throws VPSubmissionNotFoundException, VPException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         VPSubmission submission = vpSubmissionDAO.getVPSubmissionByRequestId(requestId, tenantId);
 
         if (submission == null) {
-                        throw new VPSubmissionNotFoundException(null, requestId);
+            throw new VPSubmissionNotFoundException(null, requestId);
         }
-
-        if (log.isDebugEnabled()) {
-                    }
 
         return submission;
     }
@@ -310,16 +291,12 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         // Delete
         vpSubmissionDAO.deleteVPSubmission(submissionId, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     @Override
     public void deleteSubmissionsForRequest(String requestId, int tenantId) throws VPException {
         vpSubmissionDAO.deleteVPSubmissionsByRequestId(requestId, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -335,7 +312,5 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         // Update status
         vpSubmissionDAO.updateVerificationStatus(submissionId, status, verificationResult, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 }

@@ -78,9 +78,6 @@ public class VPRequestServiceImpl implements VPRequestService {
     public VPRequestResponseDTO createVPRequest(VPRequestCreateDTO requestCreateDTO, int tenantId)
             throws VPException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         // Validate input
         validateCreateRequest(requestCreateDTO);
 
@@ -115,7 +112,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                     presentationDefinition = pdJson.toString();
                 }
             } catch (Exception e) {
-                            }
+            }
         }
 
         // Calculate timestamps
@@ -169,9 +166,6 @@ public class VPRequestServiceImpl implements VPRequestService {
         response.setRequestUri(requestUri);
         response.setAuthorizationDetails(authorizationDetails);
         response.setExpiresAt(expiresAt);
-
-        if (log.isDebugEnabled()) {
-                    }
 
         return response;
     }
@@ -253,8 +247,6 @@ public class VPRequestServiceImpl implements VPRequestService {
             vpRequestCache.remove(requestId);
         }
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     @Override
@@ -314,16 +306,11 @@ public class VPRequestServiceImpl implements VPRequestService {
         // Remove from cache
         vpRequestCache.remove(requestId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     @Override
     public int processExpiredRequests(int tenantId) throws VPException {
         int count = vpRequestDAO.markExpiredRequests(tenantId);
-
-        if (count > 0 && log.isDebugEnabled()) {
-                    }
 
         return count;
     }
@@ -436,7 +423,6 @@ public class VPRequestServiceImpl implements VPRequestService {
             String did = provider.getDID(tenantId, baseUrl, signingAlgorithm);
             String keyId = provider.getSigningKeyId(tenantId, baseUrl, signingAlgorithm);
 
-            
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
                     .issuer(did)
@@ -501,7 +487,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             return jwsObject.serialize();
 
         } catch (Exception e) {
-                        throw new RuntimeException("Error building request object JWT", e);
+            throw new RuntimeException("Error building request object JWT", e);
         }
     }
 }

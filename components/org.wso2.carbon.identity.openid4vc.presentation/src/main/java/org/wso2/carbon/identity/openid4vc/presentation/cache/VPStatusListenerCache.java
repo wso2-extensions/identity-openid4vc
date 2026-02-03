@@ -70,13 +70,13 @@ public class VPStatusListenerCache {
         /**
          * Constructor.
          *
-         * @param id        Unique listener ID
-         * @param timeout   Timeout in milliseconds
-         * @param cb        Callback to invoke on status change
+         * @param id      Unique listener ID
+         * @param timeout Timeout in milliseconds
+         * @param cb      Callback to invoke on status change
          */
         public StatusListener(final String id,
-                              final long timeout,
-                              final StatusCallback cb) {
+                final long timeout,
+                final StatusCallback cb) {
 
             this.listenerId = id;
             this.createdAt = System.currentTimeMillis();
@@ -180,11 +180,8 @@ public class VPStatusListenerCache {
                 this::cleanupExpiredListeners,
                 CLEANUP_INTERVAL_MS,
                 CLEANUP_INTERVAL_MS,
-                TimeUnit.MILLISECONDS
-        );
+                TimeUnit.MILLISECONDS);
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -213,8 +210,8 @@ public class VPStatusListenerCache {
      * @return The registered listener
      */
     public StatusListener registerListener(final String requestId,
-                                           final String listenerId,
-                                           final StatusCallback callback) {
+            final String listenerId,
+            final StatusCallback callback) {
 
         return registerListener(requestId, listenerId, DEFAULT_POLLING_TIMEOUT_MS,
                 callback);
@@ -230,17 +227,14 @@ public class VPStatusListenerCache {
      * @return The registered listener
      */
     public StatusListener registerListener(final String requestId,
-                                           final String listenerId,
-                                           final long timeoutMs,
-                                           final StatusCallback callback) {
+            final String listenerId,
+            final long timeoutMs,
+            final StatusCallback callback) {
 
         StatusListener listener = new StatusListener(listenerId, timeoutMs, callback);
 
         listenersByRequestId.computeIfAbsent(requestId, k -> new ArrayList<>())
                 .add(listener);
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         return listener;
     }
@@ -255,17 +249,16 @@ public class VPStatusListenerCache {
 
         List<StatusListener> listeners = listenersByRequestId.get(requestId);
         if (listeners != null) {
-            int notifiedCount = 0;
+
             synchronized (listeners) {
                 for (StatusListener listener : listeners) {
                     if (!listener.isNotified()) {
                         listener.notify(status);
-                        notifiedCount++;
+
                     }
                 }
             }
-            if (LOG.isDebugEnabled()) {
-                            }
+
         }
     }
 
@@ -334,9 +327,7 @@ public class VPStatusListenerCache {
      */
     private void cleanupExpiredListeners() {
 
-        int cleanedCount = 0;
-        Iterator<Map.Entry<String, List<StatusListener>>> entryIterator =
-                listenersByRequestId.entrySet().iterator();
+        Iterator<Map.Entry<String, List<StatusListener>>> entryIterator = listenersByRequestId.entrySet().iterator();
 
         while (entryIterator.hasNext()) {
             Map.Entry<String, List<StatusListener>> entry = entryIterator.next();
@@ -353,7 +344,7 @@ public class VPStatusListenerCache {
 
                     if (listener.isNotified() || listener.isTimedOut()) {
                         listenerIterator.remove();
-                        cleanedCount++;
+
                     }
                 }
             }
@@ -364,8 +355,6 @@ public class VPStatusListenerCache {
             }
         }
 
-        if (cleanedCount > 0 && LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -397,5 +386,5 @@ public class VPStatusListenerCache {
             Thread.currentThread().interrupt();
         }
         listenersByRequestId.clear();
-            }
+    }
 }

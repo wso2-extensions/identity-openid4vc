@@ -58,8 +58,6 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -154,8 +152,6 @@ public class DIDKeysDAOImpl implements DIDKeysDAO {
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

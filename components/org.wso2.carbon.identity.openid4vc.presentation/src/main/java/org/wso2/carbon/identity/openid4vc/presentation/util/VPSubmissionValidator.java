@@ -117,10 +117,6 @@ public final class VPSubmissionValidator {
                     "Invalid error code format: " + error);
         }
 
-        if (LOG.isDebugEnabled()) {
-            // Sanitize to prevent CRLF injection
-            String sanitizedError = error.replace('\n', '_').replace('\r', '_');
-                    }
     }
 
     /**

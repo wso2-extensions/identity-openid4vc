@@ -66,8 +66,6 @@ public class LongPollingManager {
         this.walletDataCache = WalletDataCache.getInstance();
         this.vpRequestDAO = new VPRequestDAOImpl();
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -100,20 +98,16 @@ public class LongPollingManager {
      * @return PollingResult with the current status
      */
     public PollingResult waitForStatusChange(final String requestId,
-                                              final long timeoutMs,
-                                              final int tenantId) {
+            final long timeoutMs,
+            final int tenantId) {
 
         long actualTimeout = normalizeTimeout(timeoutMs);
         String listenerId = generateListenerId();
 
-        if (LOG.isDebugEnabled()) {
-                    }
-
         // First check current status immediately
         PollingResult immediateResult = checkCurrentStatus(requestId, tenantId);
         if (immediateResult.isComplete()) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return immediateResult;
         }
 
@@ -122,14 +116,11 @@ public class LongPollingManager {
         final PollingResultHolder resultHolder = new PollingResultHolder();
 
         // Register listener
-        VPStatusListenerCache.StatusCallback callback =
-                new VPStatusListenerCache.StatusCallback() {
+        VPStatusListenerCache.StatusCallback callback = new VPStatusListenerCache.StatusCallback() {
 
             @Override
             public void onStatusChange(String status) {
 
-                if (LOG.isDebugEnabled()) {
-                                    }
                 resultHolder.setResult(createPollingResult(status, requestId, tenantId));
                 latch.countDown();
             }
@@ -137,8 +128,6 @@ public class LongPollingManager {
             @Override
             public void onTimeout() {
 
-                if (LOG.isDebugEnabled()) {
-                                    }
                 resultHolder.setResult(PollingResult.timeout(requestId));
                 latch.countDown();
             }
@@ -152,8 +141,7 @@ public class LongPollingManager {
 
             if (!completed) {
                 // Timeout occurred
-                if (LOG.isDebugEnabled()) {
-                                    }
+
                 return PollingResult.timeout(requestId);
             }
 
@@ -163,7 +151,7 @@ public class LongPollingManager {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-                        return PollingResult.error(requestId, "Polling interrupted");
+            return PollingResult.error(requestId, "Polling interrupted");
         } finally {
             // Clean up listener
             statusListenerCache.removeListener(requestId, listenerId);
@@ -218,7 +206,7 @@ public class LongPollingManager {
                     return PollingResult.waiting(requestId);
             }
         } catch (VPException e) {
-                        return PollingResult.error(requestId, e.getMessage());
+            return PollingResult.error(requestId, e.getMessage());
         }
     }
 
@@ -231,8 +219,6 @@ public class LongPollingManager {
      */
     public void notifySubmission(final String requestId, final String status) {
 
-        if (LOG.isDebugEnabled()) {
-                    }
         statusListenerCache.notifyListeners(requestId, status);
     }
 
@@ -240,8 +226,8 @@ public class LongPollingManager {
      * Create polling result based on status.
      */
     private PollingResult createPollingResult(final String status,
-                                               final String requestId,
-                                               final int tenantId) {
+            final String requestId,
+            final int tenantId) {
 
         if (status == null) {
             return PollingResult.waiting(requestId);

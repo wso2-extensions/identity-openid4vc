@@ -100,7 +100,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      */
     @Override
     protected void doGet(final HttpServletRequest request,
-                         final HttpServletResponse response)
+            final HttpServletResponse response)
             throws ServletException, IOException {
 
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON
@@ -127,9 +127,6 @@ public class VPStatusPollingServlet extends HttpServlet {
             // Get tenant ID
             int tenantId = getTenantId(request);
 
-            if (LOG.isDebugEnabled()) {
-                            }
-
             if (enableLongPoll) {
                 // Use async processing for long polling
                 handleLongPoll(request, response, requestId, timeoutMs, tenantId);
@@ -139,7 +136,7 @@ public class VPStatusPollingServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR,
                     "Internal server error");
         }
@@ -149,10 +146,10 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Handle long polling request.
      */
     private void handleLongPoll(final HttpServletRequest request,
-                                 final HttpServletResponse response,
-                                 final String requestId,
-                                 final long timeoutMs,
-                                 final int tenantId) throws IOException {
+            final HttpServletResponse response,
+            final String requestId,
+            final long timeoutMs,
+            final int tenantId) throws IOException {
 
         // Use synchronous long polling (blocks the thread)
         // This approach works with Servlet 2.x and 3.x
@@ -168,8 +165,8 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Handle immediate status check.
      */
     private void handleImmediateStatus(final HttpServletResponse response,
-                                        final String requestId,
-                                        final int tenantId) throws IOException {
+            final String requestId,
+            final int tenantId) throws IOException {
 
         PollingResult result = pollingManager.checkCurrentStatus(requestId, tenantId);
         VPStatusResponseDTO statusDTO = buildStatusResponse(result, requestId);
@@ -180,7 +177,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Build status response from polling result.
      */
     private VPStatusResponseDTO buildStatusResponse(final PollingResult result,
-                                                     final String requestId) {
+            final String requestId) {
 
         VPStatusResponseDTO.Builder builder = new VPStatusResponseDTO.Builder()
                 .requestId(requestId);
@@ -300,7 +297,7 @@ public class VPStatusPollingServlet extends HttpServlet {
                     return MAX_TIMEOUT_SECONDS;
                 }
             } catch (NumberFormatException e) {
-                            }
+            }
         }
         return DEFAULT_TIMEOUT_SECONDS;
     }
@@ -315,7 +312,7 @@ public class VPStatusPollingServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                            }
+            }
         }
         return DEFAULT_TENANT_ID;
     }
@@ -324,7 +321,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Send success response.
      */
     private void sendSuccessResponse(final HttpServletResponse response,
-                                      final VPStatusResponseDTO statusDTO)
+            final VPStatusResponseDTO statusDTO)
             throws IOException {
 
         response.setStatus(HttpServletResponse.SC_OK);
@@ -338,9 +335,9 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Send error response.
      */
     private void sendErrorResponse(final HttpServletResponse response,
-                                    final int statusCode,
-                                    final String errorCode,
-                                    final String errorDescription)
+            final int statusCode,
+            final String errorCode,
+            final String errorDescription)
             throws IOException {
 
         response.setStatus(statusCode);

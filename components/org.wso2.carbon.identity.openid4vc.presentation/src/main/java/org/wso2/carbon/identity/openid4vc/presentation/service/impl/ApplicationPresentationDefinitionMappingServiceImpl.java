@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresen
 /**
  * Implementation of ApplicationPresentationDefinitionMappingService.
  */
-public class ApplicationPresentationDefinitionMappingServiceImpl 
+public class ApplicationPresentationDefinitionMappingServiceImpl
         implements ApplicationPresentationDefinitionMappingService {
 
     private final ApplicationPresentationDefinitionMappingDAO mappingDAO;
@@ -50,12 +50,9 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
     }
 
     @Override
-    public void mapPresentationDefinitionToApplication(String applicationId, 
-                                                        String presentationDefinitionId, 
-                                                        int tenantId) throws VPException {
-        
-        if (log.isDebugEnabled()) {
-                    }
+    public void mapPresentationDefinitionToApplication(String applicationId,
+            String presentationDefinitionId,
+            int tenantId) throws VPException {
 
         ApplicationPresentationDefinitionMapping mapping = new ApplicationPresentationDefinitionMapping.Builder()
                 .applicationId(applicationId)
@@ -67,60 +64,38 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
 
         mappingDAO.createOrUpdateMapping(mapping);
 
-        if (log.isInfoEnabled()) {
-                    }
     }
 
     @Override
-    public String getApplicationPresentationDefinitionId(String applicationId, int tenantId) 
+    public String getApplicationPresentationDefinitionId(String applicationId, int tenantId)
             throws VPException {
-        
-        if (log.isDebugEnabled()) {
-                    }
 
         String presentationDefinitionId = mappingDAO.getPresentationDefinitionIdByApplicationId(
                 applicationId, tenantId);
-
-        if (log.isDebugEnabled()) {
-                    }
 
         return presentationDefinitionId;
     }
 
     @Override
-    public ApplicationPresentationDefinitionMapping getApplicationMapping(String applicationId, 
-                                                                          int tenantId) throws VPException {
-        
-        if (log.isDebugEnabled()) {
-                    }
+    public ApplicationPresentationDefinitionMapping getApplicationMapping(String applicationId,
+            int tenantId) throws VPException {
 
         ApplicationPresentationDefinitionMapping mapping = mappingDAO.getMappingByApplicationId(
                 applicationId, tenantId);
-
-        if (log.isDebugEnabled()) {
-                    }
 
         return mapping;
     }
 
     @Override
-    public void removePresentationDefinitionMapping(String applicationId, int tenantId) 
+    public void removePresentationDefinitionMapping(String applicationId, int tenantId)
             throws VPException {
-        
-        if (log.isDebugEnabled()) {
-                    }
 
         mappingDAO.deleteMapping(applicationId, tenantId);
 
-        if (log.isInfoEnabled()) {
-                    }
     }
 
     @Override
     public boolean isApplicationMappingExists(String applicationId, int tenantId) throws VPException {
-        
-        if (log.isDebugEnabled()) {
-                    }
 
         return mappingDAO.mappingExists(applicationId, tenantId);
     }

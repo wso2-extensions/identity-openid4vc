@@ -175,8 +175,6 @@ public class QRCodeUtil {
 
         // For now, return a placeholder that indicates QR generation is needed
         // The actual QR can be generated on the client side using JavaScript libraries
-        if (log.isDebugEnabled()) {
-                    }
 
         // Return a JSON object that the frontend can use to generate the QR code
         return createQRCodePlaceholder(content, size);

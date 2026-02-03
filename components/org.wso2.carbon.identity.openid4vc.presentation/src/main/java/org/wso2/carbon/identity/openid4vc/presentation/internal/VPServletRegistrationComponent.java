@@ -63,16 +63,16 @@ public class VPServletRegistrationComponent {
     protected void activate(ComponentContext context) {
         try {
             registerServlets();
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
         try {
             unregisterServlets();
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
     }
 
     /**
@@ -80,27 +80,27 @@ public class VPServletRegistrationComponent {
      */
     private void registerServlets() throws ServletException, NamespaceException {
         if (httpService == null) {
-                        return;
+            return;
         }
 
         // Register VP Request Servlet
         httpService.registerServlet(VP_REQUEST_PATH, new VPRequestServlet(), null, null);
-        
+
         // Register Request URI Servlet (for wallet to fetch authorization request)
         httpService.registerServlet(REQUEST_URI_PATH, new RequestUriServlet(), null, null);
-        
+
         // Register VP Submission Servlet
         httpService.registerServlet(VP_RESPONSE_PATH, new VPSubmissionServlet(), null, null);
-        
+
         // Register VP Result Servlet
         httpService.registerServlet(VP_RESULT_PATH, new VPResultServlet(), null, null);
-        
+
         // Register Presentation Definition Servlet
         httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
-        
+
         // Register Well-Known DID Servlet
         httpService.registerServlet(WELL_KNOWN_DID_PATH, new WellKnownDIDServlet(), null, null);
-            }
+    }
 
     /**
      * Unregister all OpenID4VP servlets.
@@ -112,60 +112,56 @@ public class VPServletRegistrationComponent {
 
         try {
             httpService.unregister(VP_REQUEST_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
 
         try {
             httpService.unregister(REQUEST_URI_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
 
         try {
             httpService.unregister(VP_RESPONSE_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
 
         try {
             httpService.unregister(VP_RESULT_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
 
         try {
             httpService.unregister(PRESENTATION_DEFINITIONS_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
 
         try {
             httpService.unregister(WELL_KNOWN_DID_PATH);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
     }
 
     @Reference(name = "osgi.http.service", service = HttpService.class, cardinality = 
     ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetHttpService")
     protected void setHttpService(HttpService httpService) {
         this.httpService = httpService;
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     protected void unsetHttpService(HttpService httpService) {
         this.httpService = null;
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
     ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 
     protected void unsetRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(null);
-        if (log.isDebugEnabled()) {
-                    }
+
     }
 }

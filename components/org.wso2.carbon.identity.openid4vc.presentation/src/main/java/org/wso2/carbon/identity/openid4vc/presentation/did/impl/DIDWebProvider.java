@@ -134,9 +134,6 @@ public class DIDWebProvider implements DIDProvider {
         try {
             String did = getDID(tenantId, baseUrl);
 
-            if (LOG.isDebugEnabled()) {
-                            }
-
             DIDDocument didDocument = new DIDDocument();
             didDocument.setId(did);
 
@@ -173,10 +170,9 @@ public class DIDWebProvider implements DIDProvider {
 
                     verificationMethods.add(vm);
                     relationships.add(keyId);
-                    if (LOG.isDebugEnabled()) {
-                                            }
+
                 } catch (Exception e) {
-                                    }
+                }
             }
 
             // 2. Add EdDSA Key (Ed25519VerificationKey2020)
@@ -202,10 +198,9 @@ public class DIDWebProvider implements DIDProvider {
 
                     verificationMethods.add(vm);
                     relationships.add(keyId);
-                    if (LOG.isDebugEnabled()) {
-                                            }
+
                 } catch (Exception e) {
-                                    }
+                }
             }
 
             // 3. Add ES256 Key (EcdsaSecp256r1VerificationKey2019)
@@ -222,17 +217,15 @@ public class DIDWebProvider implements DIDProvider {
 
                     verificationMethods.add(vm);
                     relationships.add(keyId);
-                    if (LOG.isDebugEnabled()) {
-                                            }
+
                 } catch (Exception e) {
-                                    }
+                }
             }
 
             didDocument.setVerificationMethod(verificationMethods);
             didDocument.setAuthentication(relationships);
             didDocument.setAssertionMethod(relationships);
 
-            
             return didDocument;
 
         } catch (Exception e) {

@@ -87,11 +87,8 @@ public class WalletStatusServlet extends HttpServlet {
         try {
             String state = request.getParameter(PARAM_STATE);
 
-            if (LOG.isDebugEnabled()) {
-                            }
-
             if (StringUtils.isBlank(state)) {
-                                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         "Missing required parameter: state");
                 return;
             }
@@ -108,7 +105,7 @@ public class WalletStatusServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
     }
@@ -133,31 +130,22 @@ public class WalletStatusServlet extends HttpServlet {
             try {
                 VPRequestService requestService = VPServiceDataHolder.getInstance().getVPRequestService();
                 if (requestService != null) {
-                    if (LOG.isDebugEnabled()) {
-                                            }
+
                     VPRequest vpRequest = requestService.getVPRequestById(state, DEFAULT_TENANT_ID);
                     if (vpRequest != null) {
-                        if (LOG.isDebugEnabled()) {
-                                                    }
+
                         if (vpRequest.getStatus() == VPRequestStatus.VP_SUBMITTED ||
                                 vpRequest.getStatus() == VPRequestStatus.COMPLETED) {
                             tokenReceived = true;
-                            if (LOG.isDebugEnabled()) {
-                                                            }
+
                         }
-                    } else {
-                        if (LOG.isDebugEnabled()) {
-                                                    }
+
                     }
-                } else {
-                                    }
+                }
             } catch (Exception e) {
                 // Log but don't fail the request, just treat as not received
-                            }
+            }
         }
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         sendStatusResponse(response, tokenReceived, "ACTIVE");
     }
@@ -172,9 +160,6 @@ public class WalletStatusServlet extends HttpServlet {
         long timeoutSeconds = getTimeoutSeconds(request);
         long timeoutMs = timeoutSeconds * 1000L;
         int tenantId = getTenantId(request);
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         // Use synchronous long poll (blocking)
         handleSyncLongPoll(response, state, timeoutMs, tenantId);
@@ -261,7 +246,7 @@ public class WalletStatusServlet extends HttpServlet {
                     return MAX_TIMEOUT_SECONDS;
                 }
             } catch (NumberFormatException e) {
-                            }
+            }
         }
         return DEFAULT_TIMEOUT_SECONDS;
     }
@@ -276,7 +261,7 @@ public class WalletStatusServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                            }
+            }
         }
         return DEFAULT_TENANT_ID;
     }
