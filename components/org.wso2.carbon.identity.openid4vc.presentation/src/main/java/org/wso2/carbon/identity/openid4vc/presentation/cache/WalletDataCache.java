@@ -28,7 +28,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Thread-safe singleton cache for storing VP tokens and submission data temporarily.
+ * Thread-safe singleton cache for storing VP tokens and submission data
+ * temporarily.
  * Implements TTL-based expiration mechanism.
  */
 public class WalletDataCache {
@@ -69,22 +70,20 @@ public class WalletDataCache {
     /**
      * Store VP token with state as key.
      *
-     * @param state    State parameter
-     * @param vpToken  VP token to store
+     * @param state   State parameter
+     * @param vpToken VP token to store
      */
     public void storeToken(String state, String vpToken) {
         if (state == null || state.trim().isEmpty()) {
-                        return;
+            return;
         }
         if (vpToken == null || vpToken.trim().isEmpty()) {
-                        return;
+            return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         tokenCache.put(state, new CacheEntry(vpToken, expiryTime));
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -95,27 +94,22 @@ public class WalletDataCache {
      */
     public boolean hasToken(String state) {
         if (state == null || state.trim().isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return false;
         }
 
         CacheEntry entry = tokenCache.get(state);
         if (entry == null) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return false;
         }
 
         if (entry.isExpired()) {
             tokenCache.remove(state);
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return false;
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return true;
     }
 
@@ -127,22 +121,19 @@ public class WalletDataCache {
      */
     public String retrieveToken(String state) {
         if (state == null || state.trim().isEmpty()) {
-                        return null;
+            return null;
         }
 
         CacheEntry entry = tokenCache.remove(state);
         if (entry == null) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return null;
         }
 
         if (entry.isExpired()) {
-                        return null;
+            return null;
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return entry.getToken();
     }
 
@@ -154,17 +145,15 @@ public class WalletDataCache {
      */
     public void storeSubmission(String requestId, VPSubmission submission) {
         if (requestId == null || requestId.trim().isEmpty()) {
-                        return;
+            return;
         }
         if (submission == null) {
-                        return;
+            return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         submissionCache.put(requestId, new SubmissionCacheEntry(submission, expiryTime));
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -175,23 +164,20 @@ public class WalletDataCache {
      */
     public VPSubmission getSubmission(String requestId) {
         if (requestId == null || requestId.trim().isEmpty()) {
-                        return null;
+            return null;
         }
 
         SubmissionCacheEntry entry = submissionCache.get(requestId);
         if (entry == null) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return null;
         }
 
         if (entry.isExpired()) {
-                        submissionCache.remove(requestId);
+            submissionCache.remove(requestId);
             return null;
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return entry.getSubmission();
     }
 
@@ -203,22 +189,19 @@ public class WalletDataCache {
      */
     public VPSubmission retrieveSubmission(String requestId) {
         if (requestId == null || requestId.trim().isEmpty()) {
-                        return null;
+            return null;
         }
 
         SubmissionCacheEntry entry = submissionCache.remove(requestId);
         if (entry == null) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return null;
         }
 
         if (entry.isExpired()) {
-                        return null;
+            return null;
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return entry.getSubmission();
     }
 
@@ -254,17 +237,15 @@ public class WalletDataCache {
      */
     public void storeContext(String sessionDataKey, AuthenticationContext context) {
         if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
-                        return;
+            return;
         }
         if (context == null) {
-                        return;
+            return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         contextCache.put(sessionDataKey, new ContextCacheEntry(context, expiryTime));
 
-        if (LOG.isDebugEnabled()) {
-                    }
     }
 
     /**
@@ -275,23 +256,20 @@ public class WalletDataCache {
      */
     public AuthenticationContext getContext(String sessionDataKey) {
         if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
-                        return null;
+            return null;
         }
 
         ContextCacheEntry entry = contextCache.get(sessionDataKey);
         if (entry == null) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return null;
         }
 
         if (entry.isExpired()) {
-                        contextCache.remove(sessionDataKey);
+            contextCache.remove(sessionDataKey);
             return null;
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return entry.getContext();
     }
 
@@ -306,8 +284,7 @@ public class WalletDataCache {
         }
 
         contextCache.remove(sessionDataKey);
-        if (LOG.isDebugEnabled()) {
-                    }
+
     }
 
     /**
@@ -316,13 +293,12 @@ public class WalletDataCache {
     private void startCleanupTask() {
         cleanupScheduler.scheduleAtFixedRate(() -> {
             try {
-                int removedCount = 0;
 
                 // Clean up token cache
                 for (Map.Entry<String, CacheEntry> entry : tokenCache.entrySet()) {
                     if (entry.getValue().isExpired()) {
                         tokenCache.remove(entry.getKey());
-                        removedCount++;
+
                     }
                 }
 
@@ -330,7 +306,7 @@ public class WalletDataCache {
                 for (Map.Entry<String, ContextCacheEntry> entry : contextCache.entrySet()) {
                     if (entry.getValue().isExpired()) {
                         contextCache.remove(entry.getKey());
-                        removedCount++;
+
                     }
                 }
 
@@ -338,14 +314,12 @@ public class WalletDataCache {
                 for (Map.Entry<String, SubmissionCacheEntry> entry : submissionCache.entrySet()) {
                     if (entry.getValue().isExpired()) {
                         submissionCache.remove(entry.getKey());
-                        removedCount++;
+
                     }
                 }
 
-                if (removedCount > 0 && LOG.isDebugEnabled()) {
-                                    }
             } catch (Exception e) {
-                            }
+            }
         }, CLEANUP_INTERVAL_MINUTES, CLEANUP_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
@@ -383,8 +357,7 @@ public class WalletDataCache {
         tokenCache.clear();
         contextCache.clear();
         submissionCache.clear();
-        if (LOG.isDebugEnabled()) {
-                    }
+
     }
 
     /**
@@ -450,4 +423,3 @@ public class WalletDataCache {
         }
     }
 }
-

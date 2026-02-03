@@ -64,7 +64,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
     @Override
     public void createVPSubmission(VPSubmission vpSubmission) throws VPException {
-                                
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_VP_SUBMISSION)) {
                 ps.setString(1, vpSubmission.getSubmissionId());
@@ -83,20 +83,18 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 int rowsAffected = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                            } catch (SQLException e) {
-                                IdentityDatabaseUtil.rollbackTransaction(connection);
+            } catch (SQLException e) {
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-                        throw new VPException("Error creating VP submission: " +
+            throw new VPException("Error creating VP submission: " +
                     vpSubmission.getSubmissionId(), e);
         }
     }
 
     @Override
     public VPSubmission getVPSubmissionById(String submissionId, int tenantId) throws VPException {
-        if (log.isDebugEnabled()) {
-                    }
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_VP_SUBMISSION_BY_ID)) {
@@ -105,17 +103,15 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        if (log.isDebugEnabled()) {
-                                                    }
+
                         return mapResultSetToVPSubmission(rs);
                     } else {
-                        if (log.isDebugEnabled()) {
-                                                    }
+
                     }
                 }
             }
         } catch (SQLException e) {
-                        throw new VPException("Error retrieving VP submission: " + submissionId, e);
+            throw new VPException("Error retrieving VP submission: " + submissionId, e);
         }
         return null;
     }
@@ -123,8 +119,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     @Override
     public VPSubmission getVPSubmissionByRequestId(String requestId, int tenantId)
             throws VPException {
-        if (log.isDebugEnabled()) {
-                    }
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             try (PreparedStatement ps = connection.prepareStatement(
@@ -134,17 +128,15 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
 
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        if (log.isDebugEnabled()) {
-                                                    }
+
                         return mapResultSetToVPSubmission(rs);
                     } else {
-                        if (log.isDebugEnabled()) {
-                                                    }
+
                     }
                 }
             }
         } catch (SQLException e) {
-                        throw new VPException("Error retrieving VP submission for request: " + requestId, e);
+            throw new VPException("Error retrieving VP submission for request: " + requestId, e);
         }
         return null;
     }
@@ -200,8 +192,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -221,8 +211,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 int deleted = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -243,8 +231,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 int deleted = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

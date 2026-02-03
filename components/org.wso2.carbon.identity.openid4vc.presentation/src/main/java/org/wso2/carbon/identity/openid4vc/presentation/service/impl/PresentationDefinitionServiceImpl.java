@@ -31,7 +31,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.util.PresentationDefiniti
 import java.util.List;
 
 /**
- * Implementation of PresentationDefinitionService for managing presentation definitions.
+ * Implementation of PresentationDefinitionService for managing presentation
+ * definitions.
  */
 public class PresentationDefinitionServiceImpl implements PresentationDefinitionService {
 
@@ -54,9 +55,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     @Override
     public PresentationDefinition createPresentationDefinition(
             PresentationDefinition presentationDefinition, int tenantId) throws VPException {
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Validate input
         validatePresentationDefinition(presentationDefinition);
@@ -99,9 +97,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         // Persist
         presentationDefinitionDAO.createPresentationDefinition(toCreate);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         return toCreate;
     }
 
@@ -124,13 +119,13 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     }
 
     @Override
-    public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId) 
+    public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId)
             throws VPException {
         return presentationDefinitionDAO.getAllPresentationDefinitions(tenantId);
     }
 
     @Override
-    public PresentationDefinition getDefaultPresentationDefinition(int tenantId) 
+    public PresentationDefinition getDefaultPresentationDefinition(int tenantId)
             throws VPException {
         return presentationDefinitionDAO.getDefaultPresentationDefinition(tenantId);
     }
@@ -141,9 +136,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throws PresentationDefinitionNotFoundException, VPException {
 
         String definitionId = presentationDefinition.getDefinitionId();
-        
-        if (log.isDebugEnabled()) {
-                    }
 
         // Verify exists
         PresentationDefinition existing = getPresentationDefinitionById(definitionId, tenantId);
@@ -160,12 +152,13 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         PresentationDefinition toUpdate = new PresentationDefinition.Builder()
                 .id(existing.getId())
                 .definitionId(definitionId)
-                .name(StringUtils.isNotBlank(presentationDefinition.getName()) ?
-                        presentationDefinition.getName() : existing.getName())
-                .description(presentationDefinition.getDescription() != null ?
-                        presentationDefinition.getDescription() : existing.getDescription())
-                .definitionJson(StringUtils.isNotBlank(presentationDefinition.getDefinitionJson()) ?
-                        presentationDefinition.getDefinitionJson() : existing.getDefinitionJson())
+                .name(StringUtils.isNotBlank(presentationDefinition.getName()) ? presentationDefinition.getName()
+                        : existing.getName())
+                .description(presentationDefinition.getDescription() != null ? presentationDefinition.getDescription()
+                        : existing.getDescription())
+                .definitionJson(StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())
+                        ? presentationDefinition.getDefinitionJson()
+                        : existing.getDefinitionJson())
                 .isDefault(presentationDefinition.isDefault())
                 .createdAt(existing.getCreatedAt())
                 .updatedAt(System.currentTimeMillis())
@@ -180,9 +173,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         // Update
         presentationDefinitionDAO.updatePresentationDefinition(toUpdate);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         return toUpdate;
     }
 
@@ -190,25 +180,17 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     public void deletePresentationDefinition(String definitionId, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         // Verify exists
         getPresentationDefinitionById(definitionId, tenantId);
 
         // Delete
         presentationDefinitionDAO.deletePresentationDefinition(definitionId, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     @Override
     public void setAsDefault(String definitionId, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException {
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Verify exists
         getPresentationDefinitionById(definitionId, tenantId);
@@ -216,12 +198,10 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         // Set as default (this clears other defaults internally)
         presentationDefinitionDAO.setAsDefault(definitionId, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 
     @Override
-    public boolean presentationDefinitionExists(String definitionId, int tenantId) 
+    public boolean presentationDefinitionExists(String definitionId, int tenantId)
             throws VPException {
         return presentationDefinitionDAO.presentationDefinitionExists(definitionId, tenantId);
     }
@@ -236,7 +216,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
     @Override
     public String buildPresentationDefinitionJson(String id, String name, String purpose,
-                                                    String[] inputDescriptors) throws VPException {
+            String[] inputDescriptors) throws VPException {
         return PresentationDefinitionUtil.buildPresentationDefinition(
                 id, name, purpose, inputDescriptors);
     }
@@ -244,9 +224,9 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     /**
      * Validate presentation definition before creation.
      */
-    private void validatePresentationDefinition(PresentationDefinition definition) 
+    private void validatePresentationDefinition(PresentationDefinition definition)
             throws VPException {
-        
+
         if (definition == null) {
             throw new VPException("Presentation definition cannot be null");
         }
@@ -277,7 +257,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                     .updatedAt(System.currentTimeMillis())
                     .tenantId(tenantId)
                     .build();
-            
+
             presentationDefinitionDAO.updatePresentationDefinition(updated);
         }
     }

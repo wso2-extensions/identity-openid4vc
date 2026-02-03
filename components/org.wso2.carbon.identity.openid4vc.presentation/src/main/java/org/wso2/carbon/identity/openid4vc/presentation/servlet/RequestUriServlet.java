@@ -39,10 +39,13 @@ import javax.servlet.http.HttpServletResponse;
 /**
  * Servlet for handling OpenID4VP request_uri endpoint.
  * 
- * This endpoint is called by wallet applications to retrieve the authorization request
- * object (containing the presentation definition) when using the request_uri flow.
+ * This endpoint is called by wallet applications to retrieve the authorization
+ * request
+ * object (containing the presentation definition) when using the request_uri
+ * flow.
  * 
- * According to OpenID4VP spec, this endpoint must return the authorization request
+ * According to OpenID4VP spec, this endpoint must return the authorization
+ * request
  * as a JWT or JSON object.
  * 
  * Path: /openid4vp/v1/request-uri/{requestId}
@@ -65,16 +68,18 @@ public class RequestUriServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.vpRequestService = new VPRequestServiceImpl();
-            }
+    }
 
     /**
      * Handle GET requests to retrieve the authorization request object.
      * 
      * Path pattern: /request-uri/{requestId}
      * 
-     * According to OpenID4VP spec (https://openid.net/specs/openid-4-verifiable-presentations-1_0.html):
+     * According to OpenID4VP spec
+     * (https://openid.net/specs/openid-4-verifiable-presentations-1_0.html):
      * - The response MUST be an authorization request object
-     * - Can be returned as JWT (application/oauth-authz-req+jwt) or JSON (application/json)
+     * - Can be returned as JWT (application/oauth-authz-req+jwt) or JSON
+     * (application/json)
      * - Must include presentation_definition or presentation_definition_uri
      */
     @Override
@@ -82,9 +87,6 @@ public class RequestUriServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Validate path
         if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
@@ -106,14 +108,12 @@ public class RequestUriServlet extends HttpServlet {
         int tenantId = getTenantId(request);
 
         try {
-            if (log.isDebugEnabled()) {
-                            }
 
             // Get the request JWT/object from service
             String authzRequest = vpRequestService.getRequestJwt(requestId, tenantId);
 
             if (StringUtils.isBlank(authzRequest)) {
-                                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                         ErrorDTO.ErrorCode.INTERNAL_ERROR, "Failed to generate authorization request");
                 return;
             }
@@ -122,13 +122,13 @@ public class RequestUriServlet extends HttpServlet {
             // Content-Type should be:
             // - application/oauth-authz-req+jwt if JWT format
             // - application/json if JSON format
-            
+
             // Check if it's a JWT (starts with "eyJ")
             if (authzRequest.startsWith("eyJ")) {
                 response.setContentType("application/oauth-authz-req+jwt");
-                            } else {
+            } else {
                 response.setContentType("application/json");
-                            }
+            }
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.setHeader("Cache-Control", "no-store");
@@ -138,20 +138,17 @@ public class RequestUriServlet extends HttpServlet {
                 writer.write(authzRequest);
             }
 
-            if (log.isDebugEnabled()) {
-                            }
-
         } catch (VPRequestNotFoundException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND, "Request not found or has been consumed");
         } catch (VPRequestExpiredException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_GONE,
+            sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     ErrorDTO.ErrorCode.VP_REQUEST_EXPIRED, "Request has expired");
         } catch (VPException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -170,7 +167,7 @@ public class RequestUriServlet extends HttpServlet {
      * Send error response as JSON.
      */
     private void sendErrorResponse(HttpServletResponse response, int statusCode,
-                                    ErrorDTO.ErrorCode errorCode, String errorDescription)
+            ErrorDTO.ErrorCode errorCode, String errorDescription)
             throws IOException {
 
         response.setStatus(statusCode);
@@ -186,7 +183,5 @@ public class RequestUriServlet extends HttpServlet {
             writer.write(gson.toJson(errorDTO));
         }
 
-        if (log.isDebugEnabled()) {
-                    }
     }
 }

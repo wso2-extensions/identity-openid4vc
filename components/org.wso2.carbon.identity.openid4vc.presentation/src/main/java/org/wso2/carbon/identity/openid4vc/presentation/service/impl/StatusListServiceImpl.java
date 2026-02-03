@@ -86,16 +86,13 @@ public class StatusListServiceImpl implements StatusListService {
         } else if (isBitstringStatusList(statusType)) {
             return checkBitstringStatusListFromCredentialStatus(credentialStatus);
         } else {
-                        return RevocationCheckResult.unknown("Unsupported status type: " + statusType);
+            return RevocationCheckResult.unknown("Unsupported status type: " + statusType);
         }
     }
 
     @Override
     public RevocationCheckResult checkStatusList2021(String statusListCredentialUrl, int statusListIndex,
             String statusPurpose) throws RevocationCheckException {
-
-        if (LOG.isDebugEnabled()) {
-                    }
 
         try {
             // Fetch and decode the status list
@@ -129,7 +126,7 @@ public class StatusListServiceImpl implements StatusListService {
         } catch (RevocationCheckException e) {
             throw e;
         } catch (Exception e) {
-                        throw new RevocationCheckException("Failed to check status list: " + e.getMessage(),
+            throw new RevocationCheckException("Failed to check status list: " + e.getMessage(),
                     statusListCredentialUrl, statusListIndex, e);
         }
     }
@@ -148,8 +145,7 @@ public class StatusListServiceImpl implements StatusListService {
         // Check cache first
         CachedStatusList cached = statusListCache.get(statusListCredentialUrl);
         if (cached != null && !cached.isExpired()) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return cached.getBitstring();
         }
 
@@ -171,7 +167,7 @@ public class StatusListServiceImpl implements StatusListService {
         } catch (RevocationCheckException e) {
             throw e;
         } catch (Exception e) {
-                        throw RevocationCheckException.networkError(statusListCredentialUrl, e);
+            throw RevocationCheckException.networkError(statusListCredentialUrl, e);
         }
     }
 
@@ -186,7 +182,7 @@ public class StatusListServiceImpl implements StatusListService {
         int bitIndex = index % 8;
 
         if (byteIndex >= bitstring.length) {
-                        return false;
+            return false;
         }
 
         // Check if the bit is set (MSB first within each byte)
@@ -197,7 +193,7 @@ public class StatusListServiceImpl implements StatusListService {
     @Override
     public void clearCache() {
         statusListCache.clear();
-            }
+    }
 
     @Override
     public boolean isRevocationCheckEnabled() {
@@ -408,7 +404,7 @@ public class StatusListServiceImpl implements StatusListService {
 
                 // Validate minimum size per spec (optional but recommended)
                 if (bitstring.length < MIN_BITSTRING_SIZE) {
-                                    }
+                }
 
                 return bitstring;
             }

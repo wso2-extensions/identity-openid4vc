@@ -93,20 +93,15 @@ public class VPDefinitionServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         int tenantId = getTenantId(request);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         try {
             if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
                 // List all definitions
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleListDefinitions(request, response, tenantId);
             } else if (pathInfo.startsWith("/mapping/")) {
                 // Handle application mapping requests
                 String applicationId = pathInfo.substring("/mapping/".length());
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleGetApplicationMapping(request, response, applicationId, tenantId);
             } else {
                 // Get specific definition
@@ -114,18 +109,17 @@ public class VPDefinitionServlet extends HttpServlet {
                 if (definitionId.contains("/")) {
                     definitionId = definitionId.split("/")[0];
                 }
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleGetDefinition(request, response, definitionId, tenantId);
             }
         } catch (PresentationDefinitionNotFoundException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -141,26 +135,21 @@ public class VPDefinitionServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         int tenantId = getTenantId(request);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         try {
             if ("/mapping".equals(pathInfo)) {
                 // Handle application mapping creation/update
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleCreateUpdateApplicationMapping(request, response, tenantId);
             } else {
                 // Handle presentation definition creation
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleCreatePresentationDefinition(request, response, tenantId);
             }
         } catch (VPException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -184,9 +173,6 @@ public class VPDefinitionServlet extends HttpServlet {
         if (definitionId.contains("/")) {
             definitionId = definitionId.split("/")[0];
         }
-
-        if (log.isDebugEnabled()) {
-                    }
 
         try {
             String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
@@ -217,10 +203,10 @@ public class VPDefinitionServlet extends HttpServlet {
             sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -236,15 +222,11 @@ public class VPDefinitionServlet extends HttpServlet {
         String pathInfo = request.getPathInfo();
         int tenantId = getTenantId(request);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         try {
             if (pathInfo != null && pathInfo.startsWith("/mapping/")) {
                 // Handle application mapping deletion
                 String applicationId = pathInfo.substring("/mapping/".length());
-                if (log.isDebugEnabled()) {
-                                    }
+
                 handleDeleteApplicationMapping(request, response, applicationId, tenantId);
             } else {
                 // Handle presentation definition deletion
@@ -259,18 +241,16 @@ public class VPDefinitionServlet extends HttpServlet {
                     definitionId = definitionId.split("/")[0];
                 }
 
-                if (log.isDebugEnabled()) {
-                                    }
                 handleDeletePresentationDefinition(request, response, definitionId, tenantId);
             }
         } catch (PresentationDefinitionNotFoundException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
         } catch (VPException e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -297,14 +277,8 @@ public class VPDefinitionServlet extends HttpServlet {
     private void handleGetDefinition(HttpServletRequest request, HttpServletResponse response, String definitionId,
             int tenantId) throws Exception {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         PresentationDefinition definition = presentationDefinitionService.getPresentationDefinitionById(definitionId,
                 tenantId);
-
-        if (log.isDebugEnabled()) {
-                    }
 
         sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(definition));
     }
@@ -315,26 +289,21 @@ public class VPDefinitionServlet extends HttpServlet {
     private void handleGetApplicationMapping(HttpServletRequest request, HttpServletResponse response,
             String applicationId, int tenantId) throws Exception {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         try {
             ApplicationPresentationDefinitionMapping mapping = mappingService
                     .getApplicationMapping(applicationId, tenantId);
 
             if (mapping != null) {
-                if (log.isDebugEnabled()) {
-                                    }
+
                 sendJsonResponse(request, response, HttpServletResponse.SC_OK, mapping);
             } else {
-                if (log.isDebugEnabled()) {
-                                    }
+
                 sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                         ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND,
                         "No mapping found for application: " + applicationId);
             }
         } catch (Exception e) {
-                        throw e;
+            throw e;
         }
     }
 
@@ -344,45 +313,36 @@ public class VPDefinitionServlet extends HttpServlet {
     private void handleCreateUpdateApplicationMapping(HttpServletRequest request, HttpServletResponse response,
             int tenantId) throws Exception {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
 
         if (StringUtils.isBlank(requestBody)) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Request body is required");
             return;
         }
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Parse request
         ApplicationMappingRequest mappingRequest;
         try {
             mappingRequest = gson.fromJson(requestBody, ApplicationMappingRequest.class);
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
             return;
         }
 
         // Validate required fields
         if (StringUtils.isBlank(mappingRequest.getApplicationId())) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "applicationId is required");
             return;
         }
 
         if (StringUtils.isBlank(mappingRequest.getPresentationDefinitionId())) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "presentationDefinitionId is required");
             return;
         }
-
-        if (log.isDebugEnabled()) {
-                    }
 
         try {
             // Create or update the mapping
@@ -391,16 +351,13 @@ public class VPDefinitionServlet extends HttpServlet {
                     mappingRequest.getPresentationDefinitionId(),
                     tenantId);
 
-            if (log.isDebugEnabled()) {
-                            }
-
             // Send success response
             ApplicationMappingResponse successResponse = new ApplicationMappingResponse();
             successResponse.setMessage("Mapping created successfully");
             sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, successResponse);
 
         } catch (Exception e) {
-                        throw e;
+            throw e;
         }
     }
 
@@ -410,20 +367,14 @@ public class VPDefinitionServlet extends HttpServlet {
     private void handleDeleteApplicationMapping(HttpServletRequest request, HttpServletResponse response,
             String applicationId, int tenantId) throws Exception {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         try {
             mappingService.removePresentationDefinitionMapping(applicationId, tenantId);
-
-            if (log.isDebugEnabled()) {
-                            }
 
             // Send 204 No Content
             response.setStatus(HttpServletResponse.SC_NO_CONTENT);
 
         } catch (Exception e) {
-                        throw e;
+            throw e;
         }
     }
 
@@ -432,9 +383,6 @@ public class VPDefinitionServlet extends HttpServlet {
      */
     private void handleCreatePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
             int tenantId) throws Exception {
-
-        if (log.isDebugEnabled()) {
-                    }
 
         String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
 
@@ -449,20 +397,20 @@ public class VPDefinitionServlet extends HttpServlet {
         try {
             createRequest = gson.fromJson(requestBody, PresentationDefinitionRequest.class);
         } catch (Exception e) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
             return;
         }
 
         // Validate required fields
         if (StringUtils.isBlank(createRequest.getName())) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "name is required");
             return;
         }
 
         if (StringUtils.isBlank(createRequest.getDefinitionJson())) {
-                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "definitionJson is required");
             return;
         }
@@ -481,9 +429,6 @@ public class VPDefinitionServlet extends HttpServlet {
         PresentationDefinition created = presentationDefinitionService
                 .createPresentationDefinition(definition, tenantId);
 
-        if (log.isDebugEnabled()) {
-                    }
-
         // Send response
         sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, toResponseDTO(created));
     }
@@ -494,13 +439,7 @@ public class VPDefinitionServlet extends HttpServlet {
     private void handleDeletePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
             String definitionId, int tenantId) throws Exception {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         presentationDefinitionService.deletePresentationDefinition(definitionId, tenantId);
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Send 204 No Content
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);

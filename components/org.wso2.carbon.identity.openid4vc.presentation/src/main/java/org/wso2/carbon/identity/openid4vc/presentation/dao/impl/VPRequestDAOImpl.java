@@ -89,8 +89,6 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -166,7 +164,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     @Override
     public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId)
             throws VPException {
-                                
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_STATUS)) {
                 ps.setString(1, status.getValue());
@@ -176,15 +174,14 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                
                 if (updated == 0) {
-                                    }
+                }
             } catch (SQLException e) {
-                                IdentityDatabaseUtil.rollbackTransaction(connection);
+                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-                        throw new VPException("Error updating VP request status: " + requestId, e);
+            throw new VPException("Error updating VP request status: " + requestId, e);
         }
     }
 
@@ -200,8 +197,6 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -218,11 +213,8 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.setString(1, requestId);
                 ps.setInt(2, tenantId);
 
-                int deleted = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -265,8 +257,6 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
                 return updated;
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);

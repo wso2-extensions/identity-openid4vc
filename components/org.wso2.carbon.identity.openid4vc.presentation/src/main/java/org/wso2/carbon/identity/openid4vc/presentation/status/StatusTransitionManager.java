@@ -27,7 +27,8 @@ import java.util.Set;
 
 /**
  * Manager for VP request status transitions.
- * Enforces valid state transitions and provides utilities for status management.
+ * Enforces valid state transitions and provides utilities for status
+ * management.
  *
  * Valid transitions:
  * - ACTIVE → VP_SUBMITTED (when wallet submits VP)
@@ -70,7 +71,7 @@ public class StatusTransitionManager {
      * @return true if transition is valid
      */
     public static boolean isValidTransition(final VPRequestStatus from,
-                                            final VPRequestStatus to) {
+            final VPRequestStatus to) {
 
         if (from == null || to == null) {
             return false;
@@ -157,15 +158,14 @@ public class StatusTransitionManager {
      * @throws IllegalStateException if transition is invalid and strict mode
      */
     public static VPRequestStatus transition(final VPRequestStatus from,
-                                              final VPRequestStatus to) {
+            final VPRequestStatus to) {
 
         if (isValidTransition(from, to)) {
-            if (LOG.isDebugEnabled()) {
-                            }
+
             return to;
         }
 
-                return from;
+        return from;
     }
 
     /**
@@ -177,7 +177,7 @@ public class StatusTransitionManager {
      * @throws InvalidStatusTransitionException if transition is invalid
      */
     public static VPRequestStatus transitionStrict(final VPRequestStatus from,
-                                                    final VPRequestStatus to)
+            final VPRequestStatus to)
             throws InvalidStatusTransitionException {
 
         if (!isValidTransition(from, to)) {
@@ -186,20 +186,18 @@ public class StatusTransitionManager {
                     from, to);
         }
 
-        if (LOG.isDebugEnabled()) {
-                    }
         return to;
     }
 
     /**
      * Get the appropriate status string for notifications.
      *
-     * @param status    VP request status
-     * @param hasError  Whether there was an error
+     * @param status   VP request status
+     * @param hasError Whether there was an error
      * @return Status string for notifications
      */
     public static String getNotificationStatus(final VPRequestStatus status,
-                                                final boolean hasError) {
+            final boolean hasError) {
 
         if (status == null) {
             return "UNKNOWN";
@@ -229,7 +227,7 @@ public class StatusTransitionManager {
             String normalizedStatus = statusStr.replace("_ERROR", "");
             return VPRequestStatus.valueOf(normalizedStatus);
         } catch (IllegalArgumentException e) {
-                        return null;
+            return null;
         }
     }
 
@@ -251,8 +249,8 @@ public class StatusTransitionManager {
          * @param toStatus   Target status
          */
         public InvalidStatusTransitionException(final String message,
-                                                final VPRequestStatus fromStatus,
-                                                final VPRequestStatus toStatus) {
+                final VPRequestStatus fromStatus,
+                final VPRequestStatus toStatus) {
 
             super(message);
             this.fromStatus = fromStatus;

@@ -78,9 +78,6 @@ public class VPResultServiceImpl implements VPResultService {
     public VPResultDTO getVPResult(String transactionId, int tenantId)
             throws VPRequestNotFoundException, VPSubmissionNotFoundException, VPException {
 
-        if (log.isDebugEnabled()) {
-                    }
-
         // Find request by transaction ID
         VPRequest request = vpRequestDAO.getVPRequestByTransactionId(transactionId, tenantId);
         if (request == null) {
@@ -103,9 +100,6 @@ public class VPResultServiceImpl implements VPResultService {
     @Override
     public VPResultDTO getVPResultByRequestId(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPSubmissionNotFoundException, VPException {
-
-        if (log.isDebugEnabled()) {
-                    }
 
         // Find request
         VPRequest request = vpRequestDAO.getVPRequestById(requestId, tenantId);
@@ -170,7 +164,7 @@ public class VPResultServiceImpl implements VPResultService {
             result.setStatus(allSuccess ? "VERIFIED" : "VERIFICATION_FAILED");
 
         } catch (Exception e) {
-                        result.setStatus("ERROR");
+            result.setStatus("ERROR");
             result.setOverallResult("FAILED");
             result.setError("verification_error");
             result.setErrorDescription(e.getMessage());
@@ -195,7 +189,7 @@ public class VPResultServiceImpl implements VPResultService {
                 results = parseAndVerifyJsonLdVP(vpToken);
             }
         } catch (Exception e) {
-                        // Return single error result
+            // Return single error result
             VCVerificationResultDTO errorResult = new VCVerificationResultDTO.Builder()
                     .vcIndex(0)
                     .verificationStatus(VCVerificationStatus.INVALID)
@@ -313,7 +307,7 @@ public class VPResultServiceImpl implements VPResultService {
                 }
             }
         } catch (Exception e) {
-                    }
+        }
         return null;
     }
 
@@ -332,7 +326,7 @@ public class VPResultServiceImpl implements VPResultService {
                 }
             }
         } catch (Exception e) {
-                    }
+        }
         return null;
     }
 
@@ -383,7 +377,7 @@ public class VPResultServiceImpl implements VPResultService {
             }
 
         } catch (Exception e) {
-                        throw new VPException("Failed to parse JWT VP: " + e.getMessage());
+            throw new VPException("Failed to parse JWT VP: " + e.getMessage());
         }
 
         return results;
@@ -417,7 +411,7 @@ public class VPResultServiceImpl implements VPResultService {
             }
 
         } catch (Exception e) {
-                        throw new VPException("Failed to parse JSON-LD VP: " + e.getMessage());
+            throw new VPException("Failed to parse JSON-LD VP: " + e.getMessage());
         }
 
         return results;
@@ -446,21 +440,21 @@ public class VPResultServiceImpl implements VPResultService {
 
             // Use verification service to verify the credential
             VerifiableCredential vc = vcVerificationService.parseCredential(vcString, contentType);
-            
+
             boolean signatureValid = vcVerificationService.verifySignature(vc);
             if (signatureValid) {
-                            } else {
-                            }
+            } else {
+            }
 
             boolean expired = vcVerificationService.isExpired(vc);
             if (!expired) {
-                            } else {
-                            }
+            } else {
+            }
 
             boolean revoked = vcVerificationService.isRevoked(vc);
             if (!revoked) {
-                            } else {
-                            }
+            } else {
+            }
 
             VCVerificationStatus status;
             String error = null;
@@ -476,7 +470,7 @@ public class VPResultServiceImpl implements VPResultService {
                 error = "Credential has been revoked";
             } else {
                 status = VCVerificationStatus.SUCCESS;
-                            }
+            }
 
             List<String> types = vc.getType();
             return new VCVerificationResultDTO.Builder()
@@ -498,7 +492,7 @@ public class VPResultServiceImpl implements VPResultService {
                     .build();
 
         } catch (Exception e) {
-                        return new VCVerificationResultDTO.Builder()
+            return new VCVerificationResultDTO.Builder()
                     .vcIndex(index)
                     .verificationStatus(VCVerificationStatus.INVALID)
                     .error("Verification failed: " + e.getMessage())
@@ -527,7 +521,7 @@ public class VPResultServiceImpl implements VPResultService {
                 }
             }
         } catch (Exception e) {
-                    }
+        }
 
         return null;
     }

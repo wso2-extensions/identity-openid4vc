@@ -83,8 +83,6 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -176,11 +174,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.setString(6, presentationDefinition.getDefinitionId());
                 ps.setInt(7, presentationDefinition.getTenantId());
 
-                int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -199,11 +194,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.setString(1, definitionId);
                 ps.setInt(2, tenantId);
 
-                int deleted = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -253,8 +245,6 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

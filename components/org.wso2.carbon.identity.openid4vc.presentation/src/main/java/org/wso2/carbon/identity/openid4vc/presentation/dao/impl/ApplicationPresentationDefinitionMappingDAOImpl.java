@@ -70,8 +70,6 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 }
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -130,11 +128,8 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 ps.setString(1, applicationId);
                 ps.setInt(2, tenantId);
 
-                int deleted = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                if (log.isDebugEnabled()) {
-                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
