@@ -57,7 +57,6 @@ public class RequestUriServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant

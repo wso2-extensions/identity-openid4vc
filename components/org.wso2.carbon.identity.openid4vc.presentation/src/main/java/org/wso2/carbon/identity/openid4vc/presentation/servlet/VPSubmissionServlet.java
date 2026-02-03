@@ -74,7 +74,6 @@ public class VPSubmissionServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     private static final int DEFAULT_TENANT_ID = -1234;
