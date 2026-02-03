@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 
@@ -39,8 +37,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class VPRequestCache {
 
-    private static final Log log = LogFactory.getLog(VPRequestCache.class);
-    
     private static volatile VPRequestCache instance;
     
     private final Map<String, VPRequestCacheEntry> cacheByRequestId;
@@ -106,9 +102,7 @@ public class VPRequestCache {
         this.cleanupExecutor.scheduleAtFixedRate(this::cleanup, 1, 1, TimeUnit.MINUTES);
 
         if (log.isDebugEnabled()) {
-            log.debug("VPRequestCache initialized with expiry: " + expiryTimeMillis + 
-                "ms, maxEntries: " + maxEntries);
-        }
+                    }
     }
 
     /**
@@ -134,15 +128,13 @@ public class VPRequestCache {
      */
     public void put(VPRequest vpRequest) {
         if (vpRequest == null || vpRequest.getRequestId() == null) {
-            log.warn("Attempted to cache null VP request or request with null ID");
-            return;
+                        return;
         }
 
         // Check cache size limit
         if (cacheByRequestId.size() >= maxEntries) {
             if (log.isDebugEnabled()) {
-                log.debug("Cache size limit reached. Triggering cleanup.");
-            }
+                            }
             cleanup();
             
             // If still at limit after cleanup, evict oldest entries
@@ -159,9 +151,7 @@ public class VPRequestCache {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Cached VP request: " + vpRequest.getRequestId() + 
-                ", transaction: " + vpRequest.getTransactionId());
-        }
+                    }
     }
 
     /**
@@ -183,8 +173,7 @@ public class VPRequestCache {
         if (entry.isExpired()) {
             remove(requestId);
             if (log.isDebugEnabled()) {
-                log.debug("VP request expired and removed from cache: " + requestId);
-            }
+                            }
             return null;
         }
 
@@ -226,8 +215,7 @@ public class VPRequestCache {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Removed VP request from cache: " + requestId);
-        }
+                    }
     }
 
     /**
@@ -244,8 +232,7 @@ public class VPRequestCache {
         if (requestId != null) {
             cacheByRequestId.remove(requestId);
             if (log.isDebugEnabled()) {
-                log.debug("Removed VP request from cache by transaction: " + transactionId);
-            }
+                            }
         }
     }
 
@@ -275,8 +262,7 @@ public class VPRequestCache {
         cacheByRequestId.clear();
         transactionToRequestIdMap.clear();
         if (log.isDebugEnabled()) {
-            log.debug("VPRequestCache cleared");
-        }
+                    }
     }
 
     /**
@@ -300,8 +286,7 @@ public class VPRequestCache {
         }
 
         if (removed > 0 && log.isDebugEnabled()) {
-            log.debug("VPRequestCache cleanup removed " + removed + " expired entries");
-        }
+                    }
     }
 
     /**
@@ -329,8 +314,7 @@ public class VPRequestCache {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Evicted " + evicted + " oldest entries from VPRequestCache");
-        }
+                    }
     }
 
     /**
@@ -348,6 +332,5 @@ public class VPRequestCache {
             Thread.currentThread().interrupt();
         }
         clear();
-        log.info("VPRequestCache shutdown complete");
-    }
+            }
 }

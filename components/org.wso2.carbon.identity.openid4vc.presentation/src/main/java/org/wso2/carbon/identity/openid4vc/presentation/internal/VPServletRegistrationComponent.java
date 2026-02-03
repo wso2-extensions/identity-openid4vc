@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -51,8 +49,6 @@ import javax.servlet.ServletException;
 @Component(name = "org.wso2.carbon.identity.openid4vc.presentation.servlet.component", immediate = true)
 public class VPServletRegistrationComponent {
 
-    private static final Log log = LogFactory.getLog(VPServletRegistrationComponent.class);
-
     private static final String API_BASE_PATH = "/openid4vp/v1";
     private static final String VP_REQUEST_PATH = API_BASE_PATH + "/vp-request";
     private static final String REQUEST_URI_PATH = API_BASE_PATH + "/request-uri";
@@ -67,20 +63,16 @@ public class VPServletRegistrationComponent {
     protected void activate(ComponentContext context) {
         try {
             registerServlets();
-            log.info("OpenID4VP servlet registration component activated successfully");
-        } catch (Exception e) {
-            log.error("Error activating OpenID4VP servlet registration component", e);
-        }
+                    } catch (Exception e) {
+                    }
     }
 
     @Deactivate
     protected void deactivate(ComponentContext context) {
         try {
             unregisterServlets();
-            log.info("OpenID4VP servlet registration component deactivated");
-        } catch (Exception e) {
-            log.error("Error deactivating OpenID4VP servlet registration component", e);
-        }
+                    } catch (Exception e) {
+                    }
     }
 
     /**
@@ -88,34 +80,27 @@ public class VPServletRegistrationComponent {
      */
     private void registerServlets() throws ServletException, NamespaceException {
         if (httpService == null) {
-            log.warn("HttpService not available, skipping servlet registration");
-            return;
+                        return;
         }
 
         // Register VP Request Servlet
         httpService.registerServlet(VP_REQUEST_PATH, new VPRequestServlet(), null, null);
-        log.info("Registered VPRequestServlet at: " + VP_REQUEST_PATH);
-
+        
         // Register Request URI Servlet (for wallet to fetch authorization request)
         httpService.registerServlet(REQUEST_URI_PATH, new RequestUriServlet(), null, null);
-        log.info("Registered RequestUriServlet at: " + REQUEST_URI_PATH);
-
+        
         // Register VP Submission Servlet
         httpService.registerServlet(VP_RESPONSE_PATH, new VPSubmissionServlet(), null, null);
-        log.info("Registered VPSubmissionServlet at: " + VP_RESPONSE_PATH);
-
+        
         // Register VP Result Servlet
         httpService.registerServlet(VP_RESULT_PATH, new VPResultServlet(), null, null);
-        log.info("Registered VPResultServlet at: " + VP_RESULT_PATH);
-
+        
         // Register Presentation Definition Servlet
         httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
-        log.info("Registered VPDefinitionServlet at: " + PRESENTATION_DEFINITIONS_PATH);
-
+        
         // Register Well-Known DID Servlet
         httpService.registerServlet(WELL_KNOWN_DID_PATH, new WellKnownDIDServlet(), null, null);
-        log.info("Registered WellKnownDIDServlet at: " + WELL_KNOWN_DID_PATH);
-    }
+            }
 
     /**
      * Unregister all OpenID4VP servlets.
@@ -127,45 +112,33 @@ public class VPServletRegistrationComponent {
 
         try {
             httpService.unregister(VP_REQUEST_PATH);
-            log.info("Unregistered servlet at: " + VP_REQUEST_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering VP request servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
 
         try {
             httpService.unregister(REQUEST_URI_PATH);
-            log.info("Unregistered servlet at: " + REQUEST_URI_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering request URI servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
 
         try {
             httpService.unregister(VP_RESPONSE_PATH);
-            log.info("Unregistered servlet at: " + VP_RESPONSE_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering VP submission servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
 
         try {
             httpService.unregister(VP_RESULT_PATH);
-            log.info("Unregistered servlet at: " + VP_RESULT_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering VP result servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
 
         try {
             httpService.unregister(PRESENTATION_DEFINITIONS_PATH);
-            log.info("Unregistered servlet at: " + PRESENTATION_DEFINITIONS_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering presentation definition servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
 
         try {
             httpService.unregister(WELL_KNOWN_DID_PATH);
-            log.info("Unregistered servlet at: " + WELL_KNOWN_DID_PATH);
-        } catch (Exception e) {
-            log.debug("Error unregistering well-known DID servlet", e);
-        }
+                    } catch (Exception e) {
+                    }
     }
 
     @Reference(name = "osgi.http.service", service = HttpService.class, cardinality = 
@@ -173,15 +146,13 @@ public class VPServletRegistrationComponent {
     protected void setHttpService(HttpService httpService) {
         this.httpService = httpService;
         if (log.isDebugEnabled()) {
-            log.debug("HttpService set in VPServletRegistrationComponent");
-        }
+                    }
     }
 
     protected void unsetHttpService(HttpService httpService) {
         this.httpService = null;
         if (log.isDebugEnabled()) {
-            log.debug("HttpService unset in VPServletRegistrationComponent");
-        }
+                    }
     }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
@@ -189,14 +160,12 @@ public class VPServletRegistrationComponent {
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {
-            log.debug("RealmService set in VPServletRegistrationComponent");
-        }
+                    }
     }
 
     protected void unsetRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(null);
         if (log.isDebugEnabled()) {
-            log.debug("RealmService unset in VPServletRegistrationComponent");
-        }
+                    }
     }
 }

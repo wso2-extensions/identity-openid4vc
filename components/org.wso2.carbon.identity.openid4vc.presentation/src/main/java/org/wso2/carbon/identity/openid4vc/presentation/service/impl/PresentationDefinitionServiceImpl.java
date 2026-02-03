@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.PresentationDefinitionDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.PresentationDefinitionNotFoundException;
@@ -36,8 +34,6 @@ import java.util.List;
  * Implementation of PresentationDefinitionService for managing presentation definitions.
  */
 public class PresentationDefinitionServiceImpl implements PresentationDefinitionService {
-
-    private static final Log log = LogFactory.getLog(PresentationDefinitionServiceImpl.class);
 
     private final PresentationDefinitionDAO presentationDefinitionDAO;
 
@@ -60,8 +56,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             PresentationDefinition presentationDefinition, int tenantId) throws VPException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Creating presentation definition: " + presentationDefinition.getName());
-        }
+                    }
 
         // Validate input
         validatePresentationDefinition(presentationDefinition);
@@ -105,8 +100,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         presentationDefinitionDAO.createPresentationDefinition(toCreate);
 
         if (log.isDebugEnabled()) {
-            log.debug("Created presentation definition: " + definitionId);
-        }
+                    }
 
         return toCreate;
     }
@@ -149,8 +143,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         String definitionId = presentationDefinition.getDefinitionId();
         
         if (log.isDebugEnabled()) {
-            log.debug("Updating presentation definition: " + definitionId);
-        }
+                    }
 
         // Verify exists
         PresentationDefinition existing = getPresentationDefinitionById(definitionId, tenantId);
@@ -188,8 +181,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         presentationDefinitionDAO.updatePresentationDefinition(toUpdate);
 
         if (log.isDebugEnabled()) {
-            log.debug("Updated presentation definition: " + definitionId);
-        }
+                    }
 
         return toUpdate;
     }
@@ -199,8 +191,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throws PresentationDefinitionNotFoundException, VPException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Deleting presentation definition: " + definitionId);
-        }
+                    }
 
         // Verify exists
         getPresentationDefinitionById(definitionId, tenantId);
@@ -209,8 +200,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         presentationDefinitionDAO.deletePresentationDefinition(definitionId, tenantId);
 
         if (log.isDebugEnabled()) {
-            log.debug("Deleted presentation definition: " + definitionId);
-        }
+                    }
     }
 
     @Override
@@ -218,8 +208,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throws PresentationDefinitionNotFoundException, VPException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Setting presentation definition as default: " + definitionId);
-        }
+                    }
 
         // Verify exists
         getPresentationDefinitionById(definitionId, tenantId);
@@ -228,8 +217,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         presentationDefinitionDAO.setAsDefault(definitionId, tenantId);
 
         if (log.isDebugEnabled()) {
-            log.debug("Set presentation definition as default: " + definitionId);
-        }
+                    }
     }
 
     @Override

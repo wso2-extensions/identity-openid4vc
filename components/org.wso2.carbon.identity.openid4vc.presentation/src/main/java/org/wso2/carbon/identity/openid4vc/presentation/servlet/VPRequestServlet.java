@@ -22,8 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
@@ -55,8 +53,6 @@ import javax.servlet.http.HttpServletResponse;
 public class VPRequestServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(VPRequestServlet.class);
-    
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -81,8 +77,7 @@ public class VPRequestServlet extends HttpServlet {
             throws ServletException, IOException {
         
         if (log.isDebugEnabled()) {
-            log.debug("Received VP request creation request");
-        }
+                    }
 
         try {
             // Read request body
@@ -121,16 +116,13 @@ public class VPRequestServlet extends HttpServlet {
             sendJsonResponse(response, HttpServletResponse.SC_CREATED, responseDTO);
 
             if (log.isDebugEnabled()) {
-                log.debug("Created VP request: " + responseDTO.getRequestId());
-            }
+                            }
 
         } catch (VPException e) {
-            log.error("Error creating VP request", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error creating VP request", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -176,12 +168,10 @@ public class VPRequestServlet extends HttpServlet {
             sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     ErrorDTO.ErrorCode.VP_REQUEST_EXPIRED, e.getMessage());
         } catch (VPException e) {
-            log.error("Error processing VP request", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
@@ -193,8 +183,7 @@ public class VPRequestServlet extends HttpServlet {
                                           int tenantId) throws Exception {
         
         if (log.isDebugEnabled()) {
-            log.debug("Fetching request JWT for: " + requestId);
-        }
+                    }
 
         String requestJwt = vpRequestService.getRequestJwt(requestId, tenantId);
         
@@ -213,8 +202,7 @@ public class VPRequestServlet extends HttpServlet {
                                       String requestId, int tenantId) throws Exception {
         
         if (log.isDebugEnabled()) {
-            log.debug("Status check for request: " + requestId);
-        }
+                    }
 
         // Get timeout parameter for long polling
         String timeoutParam = request.getParameter("timeout");

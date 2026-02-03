@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 
 import java.sql.Connection;
@@ -34,8 +32,6 @@ import java.sql.Statement;
  */
 public class DatabaseSchemaInitializer {
 
-    private static final Log LOG = LogFactory.getLog(DatabaseSchemaInitializer.class);
-
     private static final String TABLE_VP_REQUEST = "IDN_VP_REQUEST";
     private static final String TABLE_VP_SUBMISSION = "IDN_VP_SUBMISSION";
     private static final String TABLE_PRESENTATION_DEFINITION = "IDN_PRESENTATION_DEFINITION";
@@ -45,12 +41,10 @@ public class DatabaseSchemaInitializer {
      * Initialize the database schema. Creates tables if they don't exist.
      */
     public static void initializeSchema() {
-        LOG.info("[OPENID4VP] Initializing database schema...");
-
+        
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
             if (connection == null) {
-                LOG.error("[OPENID4VP] Failed to get database connection for schema initialization");
-                return;
+                                return;
             }
 
             // Create tables in order (due to potential foreign key dependencies)
@@ -60,11 +54,9 @@ public class DatabaseSchemaInitializer {
             createApplicationPresentationDefinitionTable(connection);
             createDIDKeysTable(connection);
 
-            LOG.info("[OPENID4VP] Database schema initialization completed successfully");
-
+            
         } catch (SQLException e) {
-            LOG.error("[OPENID4VP] Error initializing database schema: " + e.getMessage(), e);
-        }
+                    }
     }
 
     /**
@@ -88,8 +80,7 @@ public class DatabaseSchemaInitializer {
      */
     private static void createVPRequestTable(Connection connection) throws SQLException {
         if (tableExists(connection, TABLE_VP_REQUEST)) {
-            LOG.debug("[OPENID4VP] Table " + TABLE_VP_REQUEST + " already exists");
-            return;
+                        return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS IDN_VP_REQUEST (" +
@@ -134,8 +125,7 @@ public class DatabaseSchemaInitializer {
      */
     private static void createVPSubmissionTable(Connection connection) throws SQLException {
         if (tableExists(connection, TABLE_VP_SUBMISSION)) {
-            LOG.debug("[OPENID4VP] Table " + TABLE_VP_SUBMISSION + " already exists");
-            return;
+                        return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS IDN_VP_SUBMISSION (" +
@@ -171,8 +161,7 @@ public class DatabaseSchemaInitializer {
      */
     private static void createPresentationDefinitionTable(Connection connection) throws SQLException {
         if (tableExists(connection, TABLE_PRESENTATION_DEFINITION)) {
-            LOG.debug("[OPENID4VP] Table " + TABLE_PRESENTATION_DEFINITION + " already exists");
-            return;
+                        return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS IDN_PRESENTATION_DEFINITION (" +
@@ -203,8 +192,7 @@ public class DatabaseSchemaInitializer {
      */
     private static void createApplicationPresentationDefinitionTable(Connection connection) throws SQLException {
         if (tableExists(connection, TABLE_APP_PRES_DEF_MAPPING)) {
-            LOG.debug("[OPENID4VP] Table " + TABLE_APP_PRES_DEF_MAPPING + " already exists");
-            return;
+                        return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS IDN_APPLICATION_PRESENTATION_DEFINITION (" +
@@ -240,8 +228,7 @@ public class DatabaseSchemaInitializer {
      */
     private static void createDIDKeysTable(Connection connection) throws SQLException {
         if (tableExists(connection, "IDN_DID_KEYS")) {
-            LOG.debug("[OPENID4VP] Table IDN_DID_KEYS already exists");
-            return;
+                        return;
         }
 
         String sql = "CREATE TABLE IF NOT EXISTS IDN_DID_KEYS (" +
@@ -263,17 +250,14 @@ public class DatabaseSchemaInitializer {
     private static void executeSQL(Connection connection, String sql, String objectName) {
         try (Statement statement = connection.createStatement()) {
             statement.execute(sql);
-            LOG.info("[OPENID4VP] Created database object: " + objectName);
-        } catch (SQLException e) {
+                    } catch (SQLException e) {
             // Log but don't fail - the object might already exist or be created by another
             // thread
             if (e.getMessage() != null && (e.getMessage().contains("already exists") ||
                     e.getMessage().contains("Duplicate") ||
                     e.getMessage().contains("DUPLICATE"))) {
-                LOG.debug("[OPENID4VP] Object " + objectName + " already exists");
-            } else {
-                LOG.warn("[OPENID4VP] Error creating object " + objectName + ": " + e.getMessage());
-            }
+                            } else {
+                            }
         }
     }
 }

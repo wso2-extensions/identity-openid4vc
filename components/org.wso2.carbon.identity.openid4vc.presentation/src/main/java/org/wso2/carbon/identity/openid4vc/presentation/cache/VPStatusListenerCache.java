@@ -18,9 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -36,8 +33,6 @@ import java.util.concurrent.TimeUnit;
  * When a VP submission arrives, listeners are notified.
  */
 public class VPStatusListenerCache {
-
-    private static final Log LOG = LogFactory.getLog(VPStatusListenerCache.class);
 
     private static volatile VPStatusListenerCache instance;
 
@@ -189,8 +184,7 @@ public class VPStatusListenerCache {
         );
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("VPStatusListenerCache initialized");
-        }
+                    }
     }
 
     /**
@@ -246,9 +240,7 @@ public class VPStatusListenerCache {
                 .add(listener);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Registered listener " + listenerId + " for request "
-                    + requestId);
-        }
+                    }
 
         return listener;
     }
@@ -273,9 +265,7 @@ public class VPStatusListenerCache {
                 }
             }
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Notified " + notifiedCount + " listeners for request "
-                        + requestId + " with status " + status);
-            }
+                            }
         }
     }
 
@@ -375,8 +365,7 @@ public class VPStatusListenerCache {
         }
 
         if (cleanedCount > 0 && LOG.isDebugEnabled()) {
-            LOG.debug("Cleaned up " + cleanedCount + " expired listeners");
-        }
+                    }
     }
 
     /**
@@ -408,6 +397,5 @@ public class VPStatusListenerCache {
             Thread.currentThread().interrupt();
         }
         listenersByRequestId.clear();
-        LOG.info("VPStatusListenerCache shutdown complete");
-    }
+            }
 }

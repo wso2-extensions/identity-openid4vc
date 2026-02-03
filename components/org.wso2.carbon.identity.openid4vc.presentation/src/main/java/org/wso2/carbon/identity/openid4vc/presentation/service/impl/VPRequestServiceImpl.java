@@ -21,8 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
@@ -48,8 +46,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.util.PresentationDefiniti
  * Implementation of VPRequestService for managing VP authorization requests.
  */
 public class VPRequestServiceImpl implements VPRequestService {
-
-    private static final Log log = LogFactory.getLog(VPRequestServiceImpl.class);
 
     private final VPRequestDAO vpRequestDAO;
     private final VPRequestCache vpRequestCache;
@@ -83,8 +79,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             throws VPException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Creating VP request for client: " + requestCreateDTO.getClientId());
-        }
+                    }
 
         // Validate input
         validateCreateRequest(requestCreateDTO);
@@ -120,8 +115,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                     presentationDefinition = pdJson.toString();
                 }
             } catch (Exception e) {
-                log.warn("Error parsing presentation definition internally", e);
-            }
+                            }
         }
 
         // Calculate timestamps
@@ -177,8 +171,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         response.setExpiresAt(expiresAt);
 
         if (log.isDebugEnabled()) {
-            log.debug("Created VP request: " + requestId + " with transaction: " + transactionId);
-        }
+                    }
 
         return response;
     }
@@ -261,8 +254,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         }
 
         if (log.isDebugEnabled()) {
-            log.debug("Updated VP request status: " + requestId + " to " + status);
-        }
+                    }
     }
 
     @Override
@@ -323,8 +315,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         vpRequestCache.remove(requestId);
 
         if (log.isDebugEnabled()) {
-            log.debug("Deleted VP request: " + requestId);
-        }
+                    }
     }
 
     @Override
@@ -332,8 +323,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         int count = vpRequestDAO.markExpiredRequests(tenantId);
 
         if (count > 0 && log.isDebugEnabled()) {
-            log.debug("Marked " + count + " VP requests as expired for tenant: " + tenantId);
-        }
+                    }
 
         return count;
     }
@@ -446,9 +436,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             String did = provider.getDID(tenantId, baseUrl, signingAlgorithm);
             String keyId = provider.getSigningKeyId(tenantId, baseUrl, signingAlgorithm);
 
-            log.info("Building Request Object with DID details - Method: " + provider.getName() +
-                    ", DID: " + did);
-
+            
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
                     .issuer(did)
@@ -513,8 +501,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             return jwsObject.serialize();
 
         } catch (Exception e) {
-            log.error("Error building request object JWT", e);
-            throw new RuntimeException("Error building request object JWT", e);
+                        throw new RuntimeException("Error building request object JWT", e);
         }
     }
 }

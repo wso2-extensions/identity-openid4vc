@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.TrustedIssuerDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.TrustedIssuerDAOImpl;
@@ -38,8 +36,6 @@ import java.util.List;
  * Provides allowlist-based issuer verification.
  */
 public class TrustedIssuerServiceImpl implements TrustedIssuerService {
-
-    private static final Log LOG = LogFactory.getLog(TrustedIssuerServiceImpl.class);
 
     private final TrustedIssuerDAO trustedIssuerDAO;
 
@@ -64,14 +60,11 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     @Override
     public boolean isIssuerTrusted(String issuerDid, String tenantDomain) {
         if (issuerDid == null || issuerDid.trim().isEmpty()) {
-            LOG.warn("Issuer DID is null or empty");
-            return false;
+                        return false;
         }
 
         if (!isTrustEnforcementEnabled(tenantDomain)) {
-            LOG.debug("Trust enforcement is disabled for tenant: " + tenantDomain +
-                    ". Accepting all issuers.");
-            return true;
+                        return true;
         }
 
         try {
@@ -79,15 +72,12 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
             boolean trusted = trustedIssuerDAO.isIssuerTrusted(issuerDid, tenantId);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug(String.format("[Trust Policy] Issuer %s is %s for tenant %s",
-                        issuerDid, trusted ? "TRUSTED" : "NOT TRUSTED", tenantDomain));
-            }
+                            }
 
             return trusted;
 
         } catch (VPException e) {
-            LOG.error("Error checking if issuer is trusted: " + issuerDid, e);
-            return false; // Fail closed - if we can't verify trust, don't trust
+                        return false; // Fail closed - if we can't verify trust, don't trust
         }
     }
 
@@ -116,9 +106,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
 
         trustedIssuerDAO.addTrustedIssuer(trustedIssuer);
 
-        LOG.info(String.format("Added trusted issuer: %s for tenant: %s by user: %s",
-                issuerDid, tenantDomain, addedBy));
-    }
+            }
 
     @Override
     public void removeTrustedIssuer(String issuerDid, String tenantDomain) throws VPException {
@@ -129,8 +117,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         int tenantId = getTenantId(tenantDomain);
         trustedIssuerDAO.removeTrustedIssuer(issuerDid.trim(), tenantId);
 
-        LOG.info(String.format("Removed trusted issuer: %s for tenant: %s", issuerDid, tenantDomain));
-    }
+            }
 
     @Override
     public List<String> getTrustedIssuers(String tenantDomain) throws VPException {
@@ -170,9 +157,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
         int tenantId = getTenantId(tenantDomain);
         trustedIssuerDAO.updateTrustedIssuerDescription(issuerDid.trim(), tenantId, description);
 
-        LOG.info(String.format("Updated description for trusted issuer: %s for tenant: %s",
-                issuerDid, tenantDomain));
-    }
+            }
 
     /**
      * Get tenant ID from tenant domain.
@@ -213,8 +198,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
     public void populateTrustedIssuers(List<String> issuerDids, String tenantDomain, String addedBy)
             throws VPException {
 
-        LOG.info("Populating " + issuerDids.size() + " trusted issuers for tenant: " + tenantDomain);
-
+        
         int successCount = 0;
         int failureCount = 0;
 
@@ -223,12 +207,9 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
                 addTrustedIssuer(issuerDid, tenantDomain, addedBy, "Pre-populated trusted issuer");
                 successCount++;
             } catch (VPException e) {
-                LOG.warn("Failed to add trusted issuer: " + issuerDid, e);
-                failureCount++;
+                                failureCount++;
             }
         }
 
-        LOG.info(String.format("Populated trusted issuers for tenant %s: %d succeeded, %d failed",
-                tenantDomain, successCount, failureCount));
-    }
+            }
 }

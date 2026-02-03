@@ -23,8 +23,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
@@ -49,7 +47,6 @@ import java.util.zip.GZIPInputStream;
  */
 public class StatusListServiceImpl implements StatusListService {
 
-    private static final Log LOG = LogFactory.getLog(StatusListServiceImpl.class);
     private static final Gson GSON = new Gson();
 
     // Cache for decoded status lists
@@ -89,8 +86,7 @@ public class StatusListServiceImpl implements StatusListService {
         } else if (isBitstringStatusList(statusType)) {
             return checkBitstringStatusListFromCredentialStatus(credentialStatus);
         } else {
-            LOG.warn("Unsupported credential status type: " + statusType);
-            return RevocationCheckResult.unknown("Unsupported status type: " + statusType);
+                        return RevocationCheckResult.unknown("Unsupported status type: " + statusType);
         }
     }
 
@@ -99,8 +95,7 @@ public class StatusListServiceImpl implements StatusListService {
             String statusPurpose) throws RevocationCheckException {
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Checking StatusList2021 at " + statusListCredentialUrl + " index " + statusListIndex);
-        }
+                    }
 
         try {
             // Fetch and decode the status list
@@ -134,8 +129,7 @@ public class StatusListServiceImpl implements StatusListService {
         } catch (RevocationCheckException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("Error checking StatusList2021", e);
-            throw new RevocationCheckException("Failed to check status list: " + e.getMessage(),
+                        throw new RevocationCheckException("Failed to check status list: " + e.getMessage(),
                     statusListCredentialUrl, statusListIndex, e);
         }
     }
@@ -155,8 +149,7 @@ public class StatusListServiceImpl implements StatusListService {
         CachedStatusList cached = statusListCache.get(statusListCredentialUrl);
         if (cached != null && !cached.isExpired()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Using cached status list for: " + statusListCredentialUrl);
-            }
+                            }
             return cached.getBitstring();
         }
 
@@ -178,8 +171,7 @@ public class StatusListServiceImpl implements StatusListService {
         } catch (RevocationCheckException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("Error fetching and decoding status list from: " + statusListCredentialUrl, e);
-            throw RevocationCheckException.networkError(statusListCredentialUrl, e);
+                        throw RevocationCheckException.networkError(statusListCredentialUrl, e);
         }
     }
 
@@ -194,9 +186,7 @@ public class StatusListServiceImpl implements StatusListService {
         int bitIndex = index % 8;
 
         if (byteIndex >= bitstring.length) {
-            LOG.warn("Bit index " + index + " is out of bounds for bitstring of length " +
-                    (bitstring.length * 8) + " bits");
-            return false;
+                        return false;
         }
 
         // Check if the bit is set (MSB first within each byte)
@@ -207,8 +197,7 @@ public class StatusListServiceImpl implements StatusListService {
     @Override
     public void clearCache() {
         statusListCache.clear();
-        LOG.info("Status list cache cleared");
-    }
+            }
 
     @Override
     public boolean isRevocationCheckEnabled() {
@@ -419,8 +408,7 @@ public class StatusListServiceImpl implements StatusListService {
 
                 // Validate minimum size per spec (optional but recommended)
                 if (bitstring.length < MIN_BITSTRING_SIZE) {
-                    LOG.debug("Status list bitstring is smaller than recommended minimum size");
-                }
+                                    }
 
                 return bitstring;
             }

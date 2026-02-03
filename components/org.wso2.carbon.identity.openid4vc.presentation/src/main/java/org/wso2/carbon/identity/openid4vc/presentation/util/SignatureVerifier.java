@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDResolverService;
 
@@ -37,8 +35,6 @@ import java.util.Base64;
  * Supports JWT signatures and JSON-LD Linked Data signatures.
  */
 public class SignatureVerifier {
-
-    private static final Log LOG = LogFactory.getLog(SignatureVerifier.class);
 
     /**
      * Constructor with DID resolver service.
@@ -94,8 +90,7 @@ public class SignatureVerifier {
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("JWT signature verification failed", e);
-            throw new CredentialVerificationException(
+                        throw new CredentialVerificationException(
                     "JWT signature verification failed: " + e.getMessage(), e);
         }
     }
@@ -129,15 +124,13 @@ public class SignatureVerifier {
             } else if (proofType.contains("EcdsaSecp256k1")) {
                 return verifyEcdsaSecp256k1Signature(document, publicKey, proofValue);
             } else {
-                LOG.warn("Unknown proof type: " + proofType + ", attempting generic verification");
-                return verifyGenericSignature(document, publicKey, proofValue, proofType);
+                                return verifyGenericSignature(document, publicKey, proofValue, proofType);
             }
 
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("Linked data signature verification failed", e);
-            throw new CredentialVerificationException(
+                        throw new CredentialVerificationException(
                     "Linked data signature verification failed: " + e.getMessage(), e);
         }
     }
@@ -172,8 +165,7 @@ public class SignatureVerifier {
             sig.update(documentHash);
             return sig.verify(signatureBytes);
         } catch (Exception e) {
-            LOG.warn("Native EdDSA verification not available: " + e.getMessage());
-            // Ed25519 verification requires specific support
+                        // Ed25519 verification requires specific support
             throw new CredentialVerificationException(
                     "Ed25519 verification not supported: " + e.getMessage());
         }

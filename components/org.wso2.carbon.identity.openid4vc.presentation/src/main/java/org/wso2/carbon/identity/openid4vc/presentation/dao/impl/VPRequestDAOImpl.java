@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -37,8 +35,6 @@ import java.util.List;
  * Implementation of VPRequestDAO using JDBC.
  */
 public class VPRequestDAOImpl implements VPRequestDAO {
-
-    private static final Log log = LogFactory.getLog(VPRequestDAOImpl.class);
 
     // SQL Queries
     private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, " +
@@ -94,8 +90,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Created VP request: " + vpRequest.getRequestId());
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -171,11 +166,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     @Override
     public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId)
             throws VPException {
-        log.info("[VP_REQUEST_DAO] Updating VP request status...");
-        log.info("[VP_REQUEST_DAO] Request ID: " + requestId);
-        log.info("[VP_REQUEST_DAO] New Status: " + status);
-        log.info("[VP_REQUEST_DAO] Tenant ID: " + tenantId);
-
+                                
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
             try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_STATUS)) {
                 ps.setString(1, status.getValue());
@@ -185,19 +176,15 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 int updated = ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
-                log.info("[VP_REQUEST_DAO] VP request status updated successfully - Rows affected: " + updated);
-
+                
                 if (updated == 0) {
-                    log.warn("[VP_REQUEST_DAO] No rows updated - Request may not exist: " + requestId);
-                }
+                                    }
             } catch (SQLException e) {
-                log.error("[VP_REQUEST_DAO] SQL error updating VP request status: " + e.getMessage(), e);
-                IdentityDatabaseUtil.rollbackTransaction(connection);
+                                IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
             }
         } catch (SQLException e) {
-            log.error("[VP_REQUEST_DAO] Database error updating VP request status: " + requestId, e);
-            throw new VPException("Error updating VP request status: " + requestId, e);
+                        throw new VPException("Error updating VP request status: " + requestId, e);
         }
     }
 
@@ -214,8 +201,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Updated VP request JWT: " + requestId);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -236,8 +222,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted VP request: " + requestId + ", rows affected: " + deleted);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -281,8 +266,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Marked " + updated + " expired VP requests for tenant: " + tenantId);
-                }
+                                    }
                 return updated;
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);

@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.status;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 
 import java.util.EnumMap;
@@ -38,8 +36,6 @@ import java.util.Set;
  * - VP_SUBMITTED → EXPIRED (if not processed in time)
  */
 public class StatusTransitionManager {
-
-    private static final Log LOG = LogFactory.getLog(StatusTransitionManager.class);
 
     /**
      * Map of valid transitions for each status.
@@ -165,13 +161,11 @@ public class StatusTransitionManager {
 
         if (isValidTransition(from, to)) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Status transition: " + from + " -> " + to);
-            }
+                            }
             return to;
         }
 
-        LOG.warn("Invalid status transition attempted: " + from + " -> " + to);
-        return from;
+                return from;
     }
 
     /**
@@ -193,8 +187,7 @@ public class StatusTransitionManager {
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Status transition: " + from + " -> " + to);
-        }
+                    }
         return to;
     }
 
@@ -236,8 +229,7 @@ public class StatusTransitionManager {
             String normalizedStatus = statusStr.replace("_ERROR", "");
             return VPRequestStatus.valueOf(normalizedStatus);
         } catch (IllegalArgumentException e) {
-            LOG.warn("Unknown status string: " + statusStr);
-            return null;
+                        return null;
         }
     }
 

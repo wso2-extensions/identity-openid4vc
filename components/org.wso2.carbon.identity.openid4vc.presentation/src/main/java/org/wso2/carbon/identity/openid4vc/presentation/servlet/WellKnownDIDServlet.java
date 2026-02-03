@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
@@ -47,8 +45,6 @@ import javax.servlet.http.HttpServletResponse;
 public class WellKnownDIDServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log LOG = LogFactory.getLog(WellKnownDIDServlet.class);
-
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant
 
     private DIDDocumentService didDocumentService;
@@ -57,8 +53,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.didDocumentService = new DIDDocumentServiceImpl();
-        LOG.info("WellKnownDIDServlet initialized successfully");
-    }
+            }
 
     /**
      * Handle GET requests - Return DID Document.
@@ -67,13 +62,11 @@ public class WellKnownDIDServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        LOG.debug("Received request for /.well-known/did.json");
-
+        
         try {
             // Extract domain from request
             String domain = extractDomain(request);
-            LOG.debug("Extracted domain: " + domain);
-
+            
             // Get tenant ID (default to super tenant for now)
             // In a multi-tenant setup, this should be extracted from the request
             int tenantId = DEFAULT_TENANT_ID;
@@ -81,8 +74,7 @@ public class WellKnownDIDServlet extends HttpServlet {
             // Generate DID document
             String didDocument = didDocumentService.getDIDDocument(domain, tenantId);
 
-            LOG.info("Serving DID Document for domain: " + domain);
-
+            
             // Send response
             response.setContentType("application/did+json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_OK);
@@ -96,15 +88,12 @@ public class WellKnownDIDServlet extends HttpServlet {
             out.print(didDocument);
             out.flush();
 
-            LOG.info("DID Document served successfully for domain: " + domain);
-
+            
         } catch (DIDDocumentException e) {
-            LOG.error("Failed to generate DID document", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Failed to generate DID document: " + e.getMessage());
         } catch (Exception e) {
-            LOG.error("Unexpected error serving DID document", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
     }

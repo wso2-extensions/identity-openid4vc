@@ -23,8 +23,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -51,8 +49,6 @@ import java.util.Map;
  * 5. Extracting claims from verified credentials
  */
 public class VPResponseHandler {
-
-    private static final Log log = LogFactory.getLog(VPResponseHandler.class);
 
     /**
      * Result of VP validation.
@@ -171,9 +167,7 @@ public class VPResponseHandler {
         result.setErrorDescription(submission.getErrorDescription());
 
         if (log.isDebugEnabled()) {
-            log.debug("Wallet returned error: " + submission.getError() +
-                    " - " + submission.getErrorDescription());
-        }
+                    }
 
         return result;
     }
@@ -269,8 +263,7 @@ public class VPResponseHandler {
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Invalid JWT encoding: " + e.getMessage());
         } catch (Exception e) {
-            log.error("Error processing JWT VP token", e);
-            result.setStatus(VCVerificationStatus.INVALID);
+                        result.setStatus(VCVerificationStatus.INVALID);
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Failed to process VP token: " + e.getMessage());
         }
@@ -367,8 +360,7 @@ public class VPResponseHandler {
         } catch (VPSubmissionValidationException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Error processing JSON VP token", e);
-            result.setStatus(VCVerificationStatus.INVALID);
+                        result.setStatus(VCVerificationStatus.INVALID);
             result.setErrorCode(OpenID4VPConstants.ErrorCodes.INVALID_REQUEST);
             result.setErrorDescription("Failed to parse VP token: " + e.getMessage());
         }
@@ -440,8 +432,7 @@ public class VPResponseHandler {
                     processJsonCredential(credential, result);
                 }
             } catch (Exception e) {
-                log.warn("Error processing credential: " + e.getMessage());
-            }
+                            }
         }
     }
 
@@ -486,8 +477,7 @@ public class VPResponseHandler {
             }
 
         } catch (Exception e) {
-            log.warn("Error processing JWT credential: " + e.getMessage());
-        }
+                    }
     }
 
     /**

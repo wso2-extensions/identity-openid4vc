@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.polling;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
@@ -37,8 +35,6 @@ import java.util.concurrent.TimeUnit;
  * Handles the coordination between status polling requests and VP submissions.
  */
 public class LongPollingManager {
-
-    private static final Log LOG = LogFactory.getLog(LongPollingManager.class);
 
     private static volatile LongPollingManager instance;
 
@@ -71,8 +67,7 @@ public class LongPollingManager {
         this.vpRequestDAO = new VPRequestDAOImpl();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("LongPollingManager initialized");
-        }
+                    }
     }
 
     /**
@@ -112,17 +107,13 @@ public class LongPollingManager {
         String listenerId = generateListenerId();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Starting long poll for request: " + requestId
-                    + ", timeout: " + actualTimeout + "ms, listenerId: " + listenerId);
-        }
+                    }
 
         // First check current status immediately
         PollingResult immediateResult = checkCurrentStatus(requestId, tenantId);
         if (immediateResult.isComplete()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Immediate result available for request: " + requestId
-                        + ", status: " + immediateResult.getStatus());
-            }
+                            }
             return immediateResult;
         }
 
@@ -138,9 +129,7 @@ public class LongPollingManager {
             public void onStatusChange(String status) {
 
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Status change received for request: " + requestId
-                            + ", status: " + status);
-                }
+                                    }
                 resultHolder.setResult(createPollingResult(status, requestId, tenantId));
                 latch.countDown();
             }
@@ -149,8 +138,7 @@ public class LongPollingManager {
             public void onTimeout() {
 
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Timeout for request: " + requestId);
-                }
+                                    }
                 resultHolder.setResult(PollingResult.timeout(requestId));
                 latch.countDown();
             }
@@ -165,8 +153,7 @@ public class LongPollingManager {
             if (!completed) {
                 // Timeout occurred
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Long poll timed out for request: " + requestId);
-                }
+                                    }
                 return PollingResult.timeout(requestId);
             }
 
@@ -176,8 +163,7 @@ public class LongPollingManager {
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.warn("Long poll interrupted for request: " + requestId);
-            return PollingResult.error(requestId, "Polling interrupted");
+                        return PollingResult.error(requestId, "Polling interrupted");
         } finally {
             // Clean up listener
             statusListenerCache.removeListener(requestId, listenerId);
@@ -232,8 +218,7 @@ public class LongPollingManager {
                     return PollingResult.waiting(requestId);
             }
         } catch (VPException e) {
-            LOG.error("Error checking status for request: " + requestId, e);
-            return PollingResult.error(requestId, e.getMessage());
+                        return PollingResult.error(requestId, e.getMessage());
         }
     }
 
@@ -247,9 +232,7 @@ public class LongPollingManager {
     public void notifySubmission(final String requestId, final String status) {
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notifying submission for request: " + requestId
-                    + ", status: " + status);
-        }
+                    }
         statusListenerCache.notifyListeners(requestId, status);
     }
 

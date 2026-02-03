@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.status;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
@@ -33,8 +31,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Coordinates between VP submissions and polling clients.
  */
 public class StatusNotificationService {
-
-    private static final Log LOG = LogFactory.getLog(StatusNotificationService.class);
 
     private static volatile StatusNotificationService instance;
 
@@ -52,8 +48,7 @@ public class StatusNotificationService {
         this.statusChangeListeners = new CopyOnWriteArrayList<>();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("StatusNotificationService initialized");
-        }
+                    }
     }
 
     /**
@@ -82,16 +77,13 @@ public class StatusNotificationService {
     public void notifyVPSubmitted(final String requestId, final VPSubmission submission) {
 
         if (requestId == null || submission == null) {
-            LOG.warn("Cannot notify VP submitted: null parameters");
-            return;
+                        return;
         }
 
         String status = buildSubmissionStatus(submission);
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notifying VP submitted for request: " + requestId
-                    + ", status: " + status);
-        }
+                    }
 
         // Notify the status listener cache (for long polling)
         statusListenerCache.notifyListeners(requestId, status);
@@ -115,16 +107,13 @@ public class StatusNotificationService {
             final String errorDescription) {
 
         if (requestId == null) {
-            LOG.warn("Cannot notify submission error: null request ID");
-            return;
+                        return;
         }
 
         String status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notifying submission error for request: " + requestId
-                    + ", error: " + error);
-        }
+                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -151,15 +140,13 @@ public class StatusNotificationService {
     public void notifyRequestExpired(final String requestId) {
 
         if (requestId == null) {
-            LOG.warn("Cannot notify request expired: null request ID");
-            return;
+                        return;
         }
 
         String status = VPRequestStatus.EXPIRED.name();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notifying request expired: " + requestId);
-        }
+                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -181,15 +168,13 @@ public class StatusNotificationService {
             final VPSubmission submission) {
 
         if (requestId == null) {
-            LOG.warn("Cannot notify verification complete: null request ID");
-            return;
+                        return;
         }
 
         String status = VPRequestStatus.COMPLETED.name();
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Notifying verification complete for request: " + requestId);
-        }
+                    }
 
         // Notify the status listener cache
         statusListenerCache.notifyListeners(requestId, status);
@@ -211,8 +196,7 @@ public class StatusNotificationService {
         if (listener != null && !statusChangeListeners.contains(listener)) {
             statusChangeListeners.add(listener);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Registered status change listener: " + listener.getClass().getName());
-            }
+                            }
         }
     }
 
@@ -226,8 +210,7 @@ public class StatusNotificationService {
         if (listener != null) {
             statusChangeListeners.remove(listener);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Unregistered status change listener: " + listener.getClass().getName());
-            }
+                            }
         }
     }
 
@@ -242,9 +225,7 @@ public class StatusNotificationService {
             try {
                 listener.onStatusChange(requestId, newStatus, submission);
             } catch (Exception e) {
-                LOG.error("Error notifying status change listener: "
-                        + listener.getClass().getName(), e);
-            }
+                            }
         }
     }
 

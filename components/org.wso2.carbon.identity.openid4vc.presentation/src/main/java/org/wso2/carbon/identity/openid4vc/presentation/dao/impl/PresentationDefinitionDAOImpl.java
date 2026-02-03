@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -36,8 +34,6 @@ import java.util.List;
  * Implementation of PresentationDefinitionDAO using JDBC.
  */
 public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO {
-
-    private static final Log log = LogFactory.getLog(PresentationDefinitionDAOImpl.class);
 
     // SQL Queries
     private static final String SQL_INSERT_PRESENTATION_DEFINITION = "INSERT INTO IDN_PRESENTATION_DEFINITION " +
@@ -88,9 +84,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Created presentation definition: " +
-                            presentationDefinition.getDefinitionId());
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -186,9 +180,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Updated presentation definition: " +
-                            presentationDefinition.getDefinitionId() + ", rows affected: " + updated);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -211,9 +203,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Deleted presentation definition: " + definitionId +
-                            ", rows affected: " + deleted);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -264,8 +254,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
                 if (log.isDebugEnabled()) {
-                    log.debug("Set presentation definition as default: " + definitionId);
-                }
+                                    }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

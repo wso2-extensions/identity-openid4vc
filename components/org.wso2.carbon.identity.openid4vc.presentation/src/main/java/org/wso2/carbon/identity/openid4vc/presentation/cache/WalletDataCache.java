@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 
@@ -35,7 +33,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class WalletDataCache {
 
-    private static final Log LOG = LogFactory.getLog(WalletDataCache.class);
     private static final WalletDataCache INSTANCE = new WalletDataCache();
     private static final long DEFAULT_TTL_MINUTES = 5;
     private static final long CLEANUP_INTERVAL_MINUTES = 1;
@@ -77,20 +74,17 @@ public class WalletDataCache {
      */
     public void storeToken(String state, String vpToken) {
         if (state == null || state.trim().isEmpty()) {
-            LOG.warn("Attempted to store token with null or empty state");
-            return;
+                        return;
         }
         if (vpToken == null || vpToken.trim().isEmpty()) {
-            LOG.warn("Attempted to store null or empty VP token");
-            return;
+                        return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         tokenCache.put(state, new CacheEntry(vpToken, expiryTime));
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Stored VP token for state: " + state);
-        }
+                    }
     }
 
     /**
@@ -102,30 +96,26 @@ public class WalletDataCache {
     public boolean hasToken(String state) {
         if (state == null || state.trim().isEmpty()) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("hasToken called with null or empty state");
-            }
+                            }
             return false;
         }
 
         CacheEntry entry = tokenCache.get(state);
         if (entry == null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("No token found in cache for state: " + state);
-            }
+                            }
             return false;
         }
 
         if (entry.isExpired()) {
             tokenCache.remove(state);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Token expired for state: " + state);
-            }
+                            }
             return false;
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Token exists and valid for state: " + state);
-        }
+                    }
         return true;
     }
 
@@ -137,26 +127,22 @@ public class WalletDataCache {
      */
     public String retrieveToken(String state) {
         if (state == null || state.trim().isEmpty()) {
-            LOG.warn("Attempted to retrieve token with null or empty state");
-            return null;
+                        return null;
         }
 
         CacheEntry entry = tokenCache.remove(state);
         if (entry == null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("No token found for state: " + state);
-            }
+                            }
             return null;
         }
 
         if (entry.isExpired()) {
-            LOG.warn("Token expired for state: " + state);
-            return null;
+                        return null;
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Retrieved and removed VP token for state: " + state);
-        }
+                    }
         return entry.getToken();
     }
 
@@ -168,20 +154,17 @@ public class WalletDataCache {
      */
     public void storeSubmission(String requestId, VPSubmission submission) {
         if (requestId == null || requestId.trim().isEmpty()) {
-            LOG.warn("Attempted to store submission with null or empty requestId");
-            return;
+                        return;
         }
         if (submission == null) {
-            LOG.warn("Attempted to store null submission");
-            return;
+                        return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         submissionCache.put(requestId, new SubmissionCacheEntry(submission, expiryTime));
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Stored VP submission for requestId: " + requestId);
-        }
+                    }
     }
 
     /**
@@ -192,27 +175,23 @@ public class WalletDataCache {
      */
     public VPSubmission getSubmission(String requestId) {
         if (requestId == null || requestId.trim().isEmpty()) {
-            LOG.warn("Attempted to retrieve submission with null or empty requestId");
-            return null;
+                        return null;
         }
 
         SubmissionCacheEntry entry = submissionCache.get(requestId);
         if (entry == null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("No submission found for requestId: " + requestId);
-            }
+                            }
             return null;
         }
 
         if (entry.isExpired()) {
-            LOG.warn("Submission expired for requestId: " + requestId);
-            submissionCache.remove(requestId);
+                        submissionCache.remove(requestId);
             return null;
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Retrieved VP submission for requestId: " + requestId);
-        }
+                    }
         return entry.getSubmission();
     }
 
@@ -224,26 +203,22 @@ public class WalletDataCache {
      */
     public VPSubmission retrieveSubmission(String requestId) {
         if (requestId == null || requestId.trim().isEmpty()) {
-            LOG.warn("Attempted to retrieve submission with null or empty requestId");
-            return null;
+                        return null;
         }
 
         SubmissionCacheEntry entry = submissionCache.remove(requestId);
         if (entry == null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("No submission found for requestId: " + requestId);
-            }
+                            }
             return null;
         }
 
         if (entry.isExpired()) {
-            LOG.warn("Submission expired for requestId: " + requestId);
-            return null;
+                        return null;
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Retrieved and removed VP submission for requestId: " + requestId);
-        }
+                    }
         return entry.getSubmission();
     }
 
@@ -279,20 +254,17 @@ public class WalletDataCache {
      */
     public void storeContext(String sessionDataKey, AuthenticationContext context) {
         if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
-            LOG.warn("Attempted to store context with null or empty sessionDataKey");
-            return;
+                        return;
         }
         if (context == null) {
-            LOG.warn("Attempted to store null context");
-            return;
+                        return;
         }
 
         long expiryTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(DEFAULT_TTL_MINUTES);
         contextCache.put(sessionDataKey, new ContextCacheEntry(context, expiryTime));
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Stored authentication context for sessionDataKey: " + sessionDataKey);
-        }
+                    }
     }
 
     /**
@@ -303,27 +275,23 @@ public class WalletDataCache {
      */
     public AuthenticationContext getContext(String sessionDataKey) {
         if (sessionDataKey == null || sessionDataKey.trim().isEmpty()) {
-            LOG.warn("Attempted to retrieve context with null or empty sessionDataKey");
-            return null;
+                        return null;
         }
 
         ContextCacheEntry entry = contextCache.get(sessionDataKey);
         if (entry == null) {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("No context found for sessionDataKey: " + sessionDataKey);
-            }
+                            }
             return null;
         }
 
         if (entry.isExpired()) {
-            LOG.warn("Context expired for sessionDataKey: " + sessionDataKey);
-            contextCache.remove(sessionDataKey);
+                        contextCache.remove(sessionDataKey);
             return null;
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Retrieved authentication context for sessionDataKey: " + sessionDataKey);
-        }
+                    }
         return entry.getContext();
     }
 
@@ -339,8 +307,7 @@ public class WalletDataCache {
 
         contextCache.remove(sessionDataKey);
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Cleared authentication context for sessionDataKey: " + sessionDataKey);
-        }
+                    }
     }
 
     /**
@@ -376,11 +343,9 @@ public class WalletDataCache {
                 }
 
                 if (removedCount > 0 && LOG.isDebugEnabled()) {
-                    LOG.debug("Cleanup task removed " + removedCount + " expired entries");
-                }
+                                    }
             } catch (Exception e) {
-                LOG.error("Error during cache cleanup", e);
-            }
+                            }
         }, CLEANUP_INTERVAL_MINUTES, CLEANUP_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
@@ -419,8 +384,7 @@ public class WalletDataCache {
         contextCache.clear();
         submissionCache.clear();
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Cache cleared");
-        }
+                    }
     }
 
     /**

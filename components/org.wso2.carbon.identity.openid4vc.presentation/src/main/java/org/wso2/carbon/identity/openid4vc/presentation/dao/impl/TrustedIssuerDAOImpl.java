@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.TrustedIssuerDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -37,8 +35,6 @@ import java.util.List;
  * DAO implementation for managing trusted credential issuers.
  */
 public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
-
-    private static final Log LOG = LogFactory.getLog(TrustedIssuerDAOImpl.class);
 
     // SQL Queries
     private static final String IS_ISSUER_TRUSTED = "SELECT ID FROM IDN_OPENID4VP_TRUSTED_ISSUER " +
@@ -99,9 +95,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
             statement.executeUpdate();
             IdentityDatabaseUtil.commitTransaction(connection);
 
-            LOG.info("Added trusted issuer: " + trustedIssuer.getIssuerDid() +
-                    " for tenant ID: " + trustedIssuer.getTenantId());
-
+            
         } catch (SQLException e) {
             throw new VPException("Error adding trusted issuer: " + trustedIssuer.getIssuerDid(), e);
         }
@@ -119,10 +113,8 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
             IdentityDatabaseUtil.commitTransaction(connection);
 
             if (rowsAffected == 0) {
-                LOG.warn("No trusted issuer found to remove: " + issuerDid);
-            } else {
-                LOG.info("Removed trusted issuer: " + issuerDid + " for tenant ID: " + tenantId);
-            }
+                            } else {
+                            }
 
         } catch (SQLException e) {
             throw new VPException("Error removing trusted issuer: " + issuerDid, e);
@@ -197,8 +189,7 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
                 throw new VPException("Trusted issuer not found: " + issuerDid);
             }
 
-            LOG.info("Updated description for trusted issuer: " + issuerDid);
-
+            
         } catch (SQLException e) {
             throw new VPException("Error updating trusted issuer description: " + issuerDid, e);
         }

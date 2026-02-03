@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -54,7 +52,6 @@ import java.util.Hashtable;
 @Component(name = "org.wso2.carbon.identity.openid4vc.presentation.service.component", immediate = true)
 public class VPServiceRegistrationComponent {
 
-    private static final Log log = LogFactory.getLog(VPServiceRegistrationComponent.class);
     private static volatile boolean authenticatorRegistered = false;
 
     @Activate
@@ -62,15 +59,13 @@ public class VPServiceRegistrationComponent {
         try {
             // Only register once to avoid duplicates
             if (authenticatorRegistered) {
-                log.debug("OpenID4VP services already registered, skipping duplicate activation");
-                return;
+                                return;
             }
 
             BundleContext bundleContext = context.getBundleContext();
 
             // Initialize database schema (creates tables if they don't exist)
-            log.info("Initializing OpenID4VP database schema...");
-            DatabaseSchemaInitializer.initializeSchema();
+                        DatabaseSchemaInitializer.initializeSchema();
 
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
@@ -103,12 +98,9 @@ public class VPServiceRegistrationComponent {
 
             authenticatorRegistered = true;
 
-            log.info("OpenID4VP service registration component activated successfully");
-            log.info("Registered OpenID4VPAuthenticator as local authenticator");
-
+                        
         } catch (Exception e) {
-            log.error("Error activating OpenID4VP service registration component", e);
-        }
+                    }
     }
 
     @Deactivate
@@ -121,23 +113,20 @@ public class VPServiceRegistrationComponent {
 
         authenticatorRegistered = false;
 
-        log.info("OpenID4VP service registration component deactivated");
-    }
+            }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
     ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
         if (log.isDebugEnabled()) {
-            log.debug("RealmService set in VPServiceRegistrationComponent");
-        }
+                    }
     }
 
     protected void unsetRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(null);
         if (log.isDebugEnabled()) {
-            log.debug("RealmService unset in VPServiceRegistrationComponent");
-        }
+                    }
     }
 
     @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = 
@@ -145,14 +134,12 @@ public class VPServiceRegistrationComponent {
     protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(applicationManagementService);
         if (log.isDebugEnabled()) {
-            log.debug("ApplicationManagementService set in VPServiceRegistrationComponent");
-        }
+                    }
     }
 
     protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(null);
         if (log.isDebugEnabled()) {
-            log.debug("ApplicationManagementService unset in VPServiceRegistrationComponent");
-        }
+                    }
     }
 }

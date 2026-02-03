@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.TrustedVerifier;
 import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedVerifierService;
@@ -40,8 +38,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * In production, this should be backed by a persistent store.
  */
 public class TrustedVerifierServiceImpl implements TrustedVerifierService {
-
-    private static final Log LOG = LogFactory.getLog(TrustedVerifierServiceImpl.class);
 
     // In-memory storage for trusted verifiers (tenant -> verifierId -> verifier)
     private final Map<String, Map<String, TrustedVerifier>> verifierStore = new ConcurrentHashMap<>();
@@ -188,8 +184,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
                     .put(trustedVerifier.getClientId(), trustedVerifier.getId());
         }
 
-        LOG.info("Added trusted verifier: " + trustedVerifier.getId() + " for tenant: " + tenantDomain);
-        return trustedVerifier;
+                return trustedVerifier;
     }
 
     @Override
@@ -237,8 +232,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
         // Update store
         tenantVerifiers.put(verifierId, trustedVerifier);
 
-        LOG.info("Updated trusted verifier: " + verifierId + " for tenant: " + tenantDomain);
-        return trustedVerifier;
+                return trustedVerifier;
     }
 
     @Override
@@ -268,8 +262,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
             }
         }
 
-        LOG.info("Removed trusted verifier: " + verifierId + " from tenant: " + tenantDomain);
-    }
+            }
 
     @Override
     public boolean validateVerifierRequest(String verifierDid, List<String> requestedCredentialTypes,
@@ -289,17 +282,14 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
 
         // Check if verifier is active
         if (!verifier.isActive()) {
-            LOG.warn("Verifier " + verifierDid + " is not active");
-            return false;
+                        return false;
         }
 
         // Check if all requested credential types are allowed
         if (requestedCredentialTypes != null && !requestedCredentialTypes.isEmpty()) {
             for (String credentialType : requestedCredentialTypes) {
                 if (!verifier.allowsCredentialType(credentialType)) {
-                    LOG.warn("Verifier " + verifierDid + " is not allowed to request credential type: " +
-                            credentialType);
-                    return false;
+                                        return false;
                 }
             }
         }
@@ -371,8 +361,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
                 return redirectHost.equals(organizationHost) ||
                         redirectHost.endsWith("." + organizationHost);
             } catch (Exception e) {
-                LOG.warn("Failed to parse URIs for validation", e);
-                return false;
+                                return false;
             }
         }
 
@@ -383,8 +372,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
     public void clearCache() {
         // No separate cache in this implementation, but method is available for future
         // use
-        LOG.info("Cache cleared");
-    }
+            }
 
     // Configuration methods
 

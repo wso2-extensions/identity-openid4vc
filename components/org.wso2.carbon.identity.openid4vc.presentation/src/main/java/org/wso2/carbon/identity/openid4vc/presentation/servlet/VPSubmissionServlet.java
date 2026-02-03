@@ -26,8 +26,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
@@ -75,8 +73,6 @@ import javax.servlet.http.HttpServletResponse;
 public class VPSubmissionServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log LOG = LogFactory.getLog(VPSubmissionServlet.class);
-
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -127,16 +123,9 @@ public class VPSubmissionServlet extends HttpServlet {
             final HttpServletResponse response)
             throws ServletException, IOException {
 
-        LOG.info("========== VP SUBMISSION SERVLET CALLED ==========");
-        LOG.info("Request URI: " + request.getRequestURI());
-        LOG.info("Request URL: " + request.getRequestURL());
-        LOG.info("Context Path: " + request.getContextPath());
-        LOG.info("Servlet Path: " + request.getServletPath());
-        LOG.info("==================================================");
-
+                                                
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Received VP submission from wallet");
-        }
+                    }
 
         try {
             // Parse submission parameters
@@ -146,8 +135,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 VPSubmissionValidator.validateSubmission(submissionDTO);
             } catch (VPSubmissionValidationException e) {
-                LOG.warn("VP submission validation failed: " + e.getMessage());
-                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
                         e.getMessage());
                 return;
@@ -160,8 +148,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 verifyAllCredentialIssuers(submissionDTO.getVpToken(), tenantDomain);
             } catch (CredentialVerificationException e) {
-                LOG.error("Credential issuer verification failed: " + e.getMessage());
-                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                sendErrorResponse(response, HttpServletResponse.SC_FORBIDDEN,
                         "untrusted_issuer",
                         "Credential from untrusted issuer: " + e.getMessage());
                 return;
@@ -174,37 +161,25 @@ public class VPSubmissionServlet extends HttpServlet {
             VPSubmission submission = vpSubmissionService.processVPSubmission(
                     submissionDTO, tenantId);
 
-            LOG.info("[VP_SUBMISSION_SERVLET] VP submission processed, notifying status listeners...");
-            // Notify status listeners for long polling
+                        // Notify status listeners for long polling
             notifyStatusListeners(submissionDTO.getState(), submission);
-            LOG.info("[VP_SUBMISSION_SERVLET] Status listeners notified");
-
-            LOG.info("[VP_SUBMISSION_SERVLET] Sending success response to wallet...");
-            // Send success response
+            
+                        // Send success response
             sendSuccessResponse(response, submission);
-            LOG.info("[VP_SUBMISSION_SERVLET] Success response sent to wallet");
-
-            LOG.info("[VP_SUBMISSION_SERVLET] ========== VP SUBMISSION SERVLET COMPLETED SUCCESSFULLY ==========");
-            LOG.info("[VP_SUBMISSION_SERVLET] Submission ID: " + submission.getSubmissionId());
-            LOG.info("[VP_SUBMISSION_SERVLET] Request ID: " + submissionDTO.getState());
-            LOG.info("[VP_SUBMISSION_SERVLET] ======================================================================");
-
+            
+                                                
         } catch (VPRequestNotFoundException e) {
-            LOG.warn("VP submission for unknown request: " + e.getMessage());
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
+                        sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
                     OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
                     "Request not found: " + e.getRequestId());
         } catch (VPRequestExpiredException e) {
-            LOG.warn("VP submission for expired request: " + e.getMessage());
-            sendErrorResponse(response, HttpServletResponse.SC_GONE,
+                        sendErrorResponse(response, HttpServletResponse.SC_GONE,
                     "expired_request", e.getMessage());
         } catch (VPException e) {
-            LOG.error("Error processing VP submission", e);
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     OpenID4VPConstants.ErrorCodes.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-            LOG.error("Unexpected error processing VP submission", e);
-            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR, "Internal server error");
         }
     }
@@ -258,9 +233,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 dto.setPresentationSubmission(
                         JsonParser.parseString(presSubStr).getAsJsonObject());
             } catch (JsonSyntaxException e) {
-                LOG.warn("Failed to parse presentation_submission: "
-                        + e.getMessage());
-            }
+                            }
         }
 
         dto.setState(getDecodedParameter(request,
@@ -301,8 +274,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 return URLDecoder.decode(value, StandardCharsets.UTF_8.name());
             } catch (Exception e) {
-                LOG.debug("Failed to decode parameter " + paramName + ": " + e.getMessage());
-                return value;
+                                return value;
             }
         }
         return value;
@@ -317,57 +289,40 @@ public class VPSubmissionServlet extends HttpServlet {
     private void notifyStatusListeners(final String requestId,
             final VPSubmission submission) {
 
-        LOG.info("[VP_NOTIFICATION] ========== Notifying Status Listeners ==========");
-        LOG.info("[VP_NOTIFICATION] Request ID: " + requestId);
-        LOG.info("[VP_NOTIFICATION] Submission ID: " + submission.getSubmissionId());
-        LOG.info("[VP_NOTIFICATION] Has Error: " + (StringUtils.isNotBlank(submission.getError())));
-
+                                
         if (StringUtils.isBlank(requestId)) {
-            LOG.warn("[VP_NOTIFICATION] Request ID is blank, skipping notification");
-            return;
+                        return;
         }
 
         // Store submission in wallet data cache for status checks
         if (walletDataCache != null) {
-            LOG.info("[VP_NOTIFICATION] Storing submission in wallet data cache...");
-            walletDataCache.storeSubmission(requestId, submission);
-            LOG.info("[VP_NOTIFICATION] Submission stored in cache");
-        } else {
-            LOG.warn("[VP_NOTIFICATION] Wallet data cache is null");
-        }
+                        walletDataCache.storeSubmission(requestId, submission);
+                    } else {
+                    }
 
         // Use the centralized notification service
         if (statusNotificationService != null) {
-            LOG.info("[VP_NOTIFICATION] Using centralized notification service");
-            if (StringUtils.isNotBlank(submission.getError())) {
-                LOG.info("[VP_NOTIFICATION] Notifying submission error: " + submission.getError());
-                statusNotificationService.notifySubmissionError(
+                        if (StringUtils.isNotBlank(submission.getError())) {
+                                statusNotificationService.notifySubmissionError(
                         requestId,
                         submission.getError(),
                         submission.getErrorDescription());
             } else {
-                LOG.info("[VP_NOTIFICATION] Notifying VP submitted successfully");
-                statusNotificationService.notifyVPSubmitted(requestId, submission);
+                                statusNotificationService.notifyVPSubmitted(requestId, submission);
             }
-            LOG.info("[VP_NOTIFICATION] Centralized notification completed");
-        } else if (statusListenerCache != null) {
+                    } else if (statusListenerCache != null) {
             // Fallback to direct notification
-            LOG.info("[VP_NOTIFICATION] Using fallback status listener cache");
-            String status;
+                        String status;
             if (StringUtils.isNotBlank(submission.getError())) {
                 status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
             } else {
                 status = VPRequestStatus.VP_SUBMITTED.name();
             }
-            LOG.info("[VP_NOTIFICATION] Notifying listeners with status: " + status);
-            statusListenerCache.notifyListeners(requestId, status);
-            LOG.info("[VP_NOTIFICATION] Fallback notification completed");
-        } else {
-            LOG.error("[VP_NOTIFICATION] Both statusNotificationService and statusListenerCache are null!");
-        }
+                        statusListenerCache.notifyListeners(requestId, status);
+                    } else {
+                    }
 
-        LOG.info("[VP_NOTIFICATION] ========== Status Listeners Notified ==========");
-    }
+            }
 
     /**
      * Send success response to wallet.
@@ -380,10 +335,7 @@ public class VPSubmissionServlet extends HttpServlet {
             final VPSubmission submission)
             throws IOException {
 
-        LOG.info("[VP_RESPONSE] Building success response for wallet...");
-        LOG.info("[VP_RESPONSE] Submission ID: " + submission.getSubmissionId());
-        LOG.info("[VP_RESPONSE] Transaction ID: " + submission.getTransactionId());
-
+                        
         response.setStatus(HttpServletResponse.SC_OK);
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON
                 + ";charset=UTF-8");
@@ -399,14 +351,12 @@ public class VPSubmissionServlet extends HttpServlet {
         }
 
         String responseJson = GSON.toJson(responseObj);
-        LOG.info("[VP_RESPONSE] Response JSON: " + responseJson);
-
+        
         try (PrintWriter writer = response.getWriter()) {
             writer.write(responseJson);
         }
 
-        LOG.info("[VP_RESPONSE] Success response sent to wallet (HTTP 200)");
-    }
+            }
 
     /**
      * Send error response per OAuth 2.0 spec.
@@ -451,8 +401,7 @@ public class VPSubmissionServlet extends HttpServlet {
             try {
                 return Integer.parseInt(tenantHeader);
             } catch (NumberFormatException e) {
-                LOG.debug("Invalid tenant ID header: " + tenantHeader);
-            }
+                            }
         }
         return DEFAULT_TENANT_ID;
     }
@@ -485,8 +434,7 @@ public class VPSubmissionServlet extends HttpServlet {
             throws CredentialVerificationException {
 
         if (StringUtils.isBlank(vpToken)) {
-            LOG.warn("VP token is blank, skipping issuer verification");
-            return;
+                        return;
         }
 
         OpenID4VPLogger.logVPSubmissionStart(LOG);
@@ -500,27 +448,20 @@ public class VPSubmissionServlet extends HttpServlet {
             if (vpToken.contains(".")) {
                 // JWT VP - decode payload
                 String[] parts = vpToken.split("\\.");
-                LOG.info("[VP_VERIFY] VP Token is JWT format with " + parts.length + " parts");
-
+                
                 if (parts.length >= 2) {
                     String payloadJson = new String(
                             java.util.Base64.getUrlDecoder().decode(parts[1]),
                             java.nio.charset.StandardCharsets.UTF_8);
 
-                    LOG.info("[VP_VERIFY] Decoded JWT payload (first 500 chars): "
-                            + payloadJson.substring(0, Math.min(500, payloadJson.length())));
-
+                    
                     JsonElement parsedElement = JsonParser.parseString(payloadJson);
 
                     // The VP might be wrapped in a "vp" claim or be the top-level object
                     if (parsedElement.isJsonObject()) {
                         vp = parsedElement.getAsJsonObject();
-                        LOG.info("[VP_VERIFY] Successfully parsed VP as JSON object");
-                    } else {
-                        LOG.warn("[VP_VERIFY] Parsed element is not a JSON object, type: "
-                                + parsedElement.getClass().getSimpleName());
-                        LOG.warn("[VP_VERIFY] Skipping issuer verification due to unexpected VP format");
-                        return;
+                                            } else {
+                                                                        return;
                     }
                     OpenID4VPLogger.logVPTokenFormat(LOG, "JWT");
                 } else {
@@ -530,15 +471,13 @@ public class VPSubmissionServlet extends HttpServlet {
                 }
             } else {
                 // JSON-LD VP
-                LOG.info("[VP_VERIFY] VP Token appears to be JSON-LD format");
-                vp = JsonParser.parseString(vpToken).getAsJsonObject();
+                                vp = JsonParser.parseString(vpToken).getAsJsonObject();
                 OpenID4VPLogger.logVPTokenFormat(LOG, "JSON-LD");
             }
 
             // Extract verifiable credentials array
             if (!vp.has("verifiableCredential") && !vp.has("vp")) {
-                LOG.warn("No verifiableCredential field in VP, skipping issuer verification");
-                return;
+                                return;
             }
 
             JsonElement vcElement = vp.has("verifiableCredential")
@@ -604,8 +543,7 @@ public class VPSubmissionServlet extends HttpServlet {
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-            LOG.error("Error verifying credential issuers: " + e.getMessage(), e);
-            throw new CredentialVerificationException(
+                        throw new CredentialVerificationException(
                     "Failed to verify credential issuers: " + e.getMessage(), e);
         }
     }
@@ -627,8 +565,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 return payload.get("iss").getAsString();
             }
         } catch (Exception e) {
-            LOG.debug("Failed to extract issuer from JWT: " + e.getMessage());
-        }
+                    }
         return "unknown";
     }
 
@@ -649,8 +586,7 @@ public class VPSubmissionServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            LOG.debug("Failed to extract issuer from JSON-LD: " + e.getMessage());
-        }
+                    }
         return "unknown";
     }
 }

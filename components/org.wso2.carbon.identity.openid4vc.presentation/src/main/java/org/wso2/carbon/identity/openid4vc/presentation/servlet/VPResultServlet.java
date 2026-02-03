@@ -21,8 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPResultDTO;
@@ -55,8 +53,6 @@ import javax.servlet.http.HttpServletResponse;
 public class VPResultServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
-    private static final Log log = LogFactory.getLog(VPResultServlet.class);
-
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -81,8 +77,7 @@ public class VPResultServlet extends HttpServlet {
             throws ServletException, IOException {
 
         if (log.isDebugEnabled()) {
-            log.debug("Received VP result request");
-        }
+                    }
 
         // Parse transaction ID from path
         String pathInfo = request.getPathInfo();
@@ -112,26 +107,21 @@ public class VPResultServlet extends HttpServlet {
             }
 
             if (log.isDebugEnabled()) {
-                log.debug("Returned VP result for transaction: " + transactionId);
-            }
+                            }
 
         } catch (VPRequestNotFoundException e) {
-            log.warn("VP result request for unknown transaction: " + transactionId);
-            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_REQUEST_NOT_FOUND,
                     "Transaction not found: " + transactionId);
         } catch (VPSubmissionNotFoundException e) {
-            log.warn("No submission found for transaction: " + transactionId);
-            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+                        sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.VP_SUBMISSION_NOT_FOUND,
                     "No submission found for transaction: " + transactionId);
         } catch (VPException e) {
-            log.error("Error retrieving VP result", e);
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+                        sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
         } catch (Exception e) {
-            log.error("Unexpected error retrieving VP result", e);
-            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                        sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
     }
