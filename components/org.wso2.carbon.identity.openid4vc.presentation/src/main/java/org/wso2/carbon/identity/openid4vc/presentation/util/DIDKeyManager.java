@@ -77,13 +77,13 @@ public class DIDKeyManager {
                 OctetKeyPair keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
 
                 keyCache.put(tenantId, keyPair);
-                                return keyPair;
+                return keyPair;
             }
         } catch (Exception e) {
-                    }
+        }
 
         // 3. Generate New
-                OctetKeyPair keyPair = generateEd25519KeyPair();
+        OctetKeyPair keyPair = generateEd25519KeyPair();
 
         // 4. Save to DB
         saveEd25519Key(tenantId, keyPair);
@@ -125,14 +125,14 @@ public class DIDKeyManager {
 
                     ECKey ecKey = new ECKey.Builder(Curve.P_256, x, y).d(d).build();
                     ecKeyCache.put(tenantId, ecKey);
-                                        return ecKey;
+                    return ecKey;
                 }
             }
         } catch (Exception e) {
-                    }
+        }
 
         // 3. Generate New
-                ECKey ecKey = generateECKeyPair();
+        ECKey ecKey = generateECKeyPair();
 
         // 4. Save to DB
         saveECKey(tenantId, ecKey);
@@ -172,8 +172,8 @@ public class DIDKeyManager {
                     keyPair.getX().decode(),
                     keyPair.getD().decode());
             didKeysDAO.addDIDKey(newDidKey);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
     }
 
     private static void saveECKey(int tenantId, ECKey keyPair) {
@@ -194,8 +194,8 @@ public class DIDKeyManager {
                     pubKey,
                     keyPair.getD().decode());
             didKeysDAO.addDIDKey(newDidKey);
-                    } catch (Exception e) {
-                    }
+        } catch (Exception e) {
+        }
     }
 
     /**
@@ -213,7 +213,7 @@ public class DIDKeyManager {
 
             return "z" + base58Encode(multicodecKey);
         } catch (Exception e) {
-                        return null;
+            return null;
         }
     }
 
@@ -259,7 +259,7 @@ public class DIDKeyManager {
 
             return "z" + base58Encode(multicodecKey);
         } catch (Exception e) {
-                        return null;
+            return null;
         }
     }
 
@@ -269,7 +269,7 @@ public class DIDKeyManager {
     public static String generateDIDKey(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
         String multibase = publicKeyToMultibase(keyPair);
         String didKey = "did:key:" + multibase;
-                return didKey;
+        return didKey;
     }
 
     /**
@@ -278,7 +278,7 @@ public class DIDKeyManager {
     public static String generateDIDKey(com.nimbusds.jose.jwk.ECKey keyPair) {
         String multibase = publicKeyToMultibase(keyPair);
         String didKey = "did:key:" + multibase;
-                return didKey;
+        return didKey;
     }
 
     /**
@@ -354,7 +354,7 @@ public class DIDKeyManager {
 
         // Extract public key (skip 2-byte prefix)
         byte[] publicKey = java.util.Arrays.copyOfRange(decoded, 2, decoded.length);
-                return publicKey;
+        return publicKey;
     }
 
     /**
@@ -465,7 +465,7 @@ public class DIDKeyManager {
             encoded[--outputStart] = (byte) alphabet.charAt(0);
         }
 
-        return new String(encoded, outputStart, encoded.length - outputStart);
+        return new String(encoded, outputStart, encoded.length - outputStart, java.nio.charset.StandardCharsets.UTF_8);
     }
 
     private static byte divmod(byte[] number, int firstDigit, int base, int divisor) {
@@ -487,7 +487,7 @@ public class DIDKeyManager {
      * @throws Exception if generation fails
      */
     public static com.nimbusds.jose.jwk.OctetKeyPair regenerateKeyPair(int tenantId) throws Exception {
-                com.nimbusds.jose.jwk.OctetKeyPair keyPair = generateEd25519KeyPair();
+        com.nimbusds.jose.jwk.OctetKeyPair keyPair = generateEd25519KeyPair();
         keyCache.put(tenantId, keyPair);
         return keyPair;
     }
@@ -509,7 +509,7 @@ public class DIDKeyManager {
      */
     public static void removeKeys(int tenantId) {
         keyCache.remove(tenantId);
-            }
+    }
 
     private static String bytesToHex(byte[] bytes) {
         StringBuilder sb = new StringBuilder();

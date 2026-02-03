@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
+import com.google.gson.JsonObject;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
@@ -53,7 +54,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     public void init() throws ServletException {
         super.init();
         this.didDocumentService = new DIDDocumentServiceImpl();
-            }
+    }
 
     /**
      * Handle GET requests - Return DID Document.
@@ -62,11 +63,10 @@ public class WellKnownDIDServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        
         try {
             // Extract domain from request
             String domain = extractDomain(request);
-            
+
             // Get tenant ID (default to super tenant for now)
             // In a multi-tenant setup, this should be extracted from the request
             int tenantId = DEFAULT_TENANT_ID;
@@ -74,7 +74,6 @@ public class WellKnownDIDServlet extends HttpServlet {
             // Generate DID document
             String didDocument = didDocumentService.getDIDDocument(domain, tenantId);
 
-            
             // Send response
             response.setContentType("application/did+json;charset=UTF-8");
             response.setStatus(HttpServletResponse.SC_OK);
@@ -88,12 +87,11 @@ public class WellKnownDIDServlet extends HttpServlet {
             out.print(didDocument);
             out.flush();
 
-            
         } catch (DIDDocumentException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Failed to generate DID document: " + e.getMessage());
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
     }
@@ -132,11 +130,11 @@ public class WellKnownDIDServlet extends HttpServlet {
         response.setContentType("application/json;charset=UTF-8");
         response.setStatus(statusCode);
 
-        String errorJson = String.format("{\"error\":\"%s\"}",
-                message.replace("\"", "\\\""));
+        JsonObject errorJson = new JsonObject();
+        errorJson.addProperty("error", message);
 
         PrintWriter out = response.getWriter();
-        out.print(errorJson);
+        out.print(errorJson.toString());
         out.flush();
     }
 }

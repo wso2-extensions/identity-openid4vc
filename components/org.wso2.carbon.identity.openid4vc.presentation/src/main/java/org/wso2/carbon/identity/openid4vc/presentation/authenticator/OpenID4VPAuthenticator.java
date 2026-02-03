@@ -474,12 +474,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         try {
             response.setContentType("application/json;charset=UTF-8");
 
-            StringBuilder json = new StringBuilder();
-            json.append("{\"status\":\"").append(status).append("\"");
+            JsonObject json = new JsonObject();
+            json.addProperty("status", status);
             if (error != null) {
-                json.append(",\"error\":\"").append(error.replace("\"", "\\\"")).append("\"");
+                json.addProperty("error", error);
             }
-            json.append("}");
 
             response.getWriter().write(json.toString());
         } catch (IOException e) {

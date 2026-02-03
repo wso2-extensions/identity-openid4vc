@@ -37,8 +37,8 @@ public class DIDKey {
         this.keyId = keyId;
         this.tenantId = tenantId;
         this.algorithm = algorithm;
-        this.publicKey = publicKey;
-        this.privateKey = privateKey;
+        this.publicKey = publicKey != null ? publicKey.clone() : null;
+        this.privateKey = privateKey != null ? privateKey.clone() : null;
         this.createdAt = System.currentTimeMillis();
     }
 
@@ -67,19 +67,19 @@ public class DIDKey {
     }
 
     public byte[] getPublicKey() {
-        return publicKey;
+        return publicKey != null ? publicKey.clone() : null;
     }
 
     public void setPublicKey(byte[] publicKey) {
-        this.publicKey = publicKey;
+        this.publicKey = publicKey != null ? publicKey.clone() : null;
     }
 
     public byte[] getPrivateKey() {
-        return privateKey;
+        return privateKey != null ? privateKey.clone() : null;
     }
 
     public void setPrivateKey(byte[] privateKey) {
-        this.privateKey = privateKey;
+        this.privateKey = privateKey != null ? privateKey.clone() : null;
     }
 
     public long getCreatedAt() {
