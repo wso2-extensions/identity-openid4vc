@@ -364,8 +364,6 @@ public class StatusListServiceImpl implements StatusListService {
             // Try StatusList2021 format
             if (credentialSubject.has("encodedList")) {
                 encodedList = credentialSubject.get("encodedList").getAsString();
-            } else if (credentialSubject.has("encodedList")) {
-                encodedList = credentialSubject.get("encodedList").getAsString();
             }
 
             if (StringUtils.isBlank(encodedList)) {
@@ -404,6 +402,7 @@ public class StatusListServiceImpl implements StatusListService {
 
                 // Validate minimum size per spec (optional but recommended)
                 if (bitstring.length < MIN_BITSTRING_SIZE) {
+                    // Log warning or throw exception if strict mode is enabled
                 }
 
                 return bitstring;

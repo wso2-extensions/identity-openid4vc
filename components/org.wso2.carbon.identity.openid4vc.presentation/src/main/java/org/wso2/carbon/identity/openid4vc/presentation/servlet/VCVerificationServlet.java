@@ -58,13 +58,13 @@ public class VCVerificationServlet extends HttpServlet {
 
     private static final String CONTENT_TYPE_JSON = "application/json";
 
-    private VCVerificationService verificationService;
+    private transient VCVerificationService verificationService;
 
     @Override
     public void init() throws ServletException {
         super.init();
         this.verificationService = new VCVerificationServiceImpl();
-            }
+    }
 
     /**
      * Set the verification service (for testing).
@@ -84,7 +84,6 @@ public class VCVerificationServlet extends HttpServlet {
             pathInfo = request.getServletPath();
         }
 
-        
         try {
             // Read request body
             String requestBody = readRequestBody(request);
@@ -108,7 +107,7 @@ public class VCVerificationServlet extends HttpServlet {
             }
 
         } catch (Exception e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "server_error", "Internal server error: " + e.getMessage());
         }
     }
@@ -120,7 +119,6 @@ public class VCVerificationServlet extends HttpServlet {
             String requestBody, String contentType)
             throws IOException {
 
-        
         try {
             // Check if content type is supported
             if (!verificationService.isContentTypeSupported(contentType)) {
@@ -138,7 +136,7 @@ public class VCVerificationServlet extends HttpServlet {
             sendVerificationResponse(response, result);
 
         } catch (CredentialVerificationException e) {
-                        VCVerificationResultDTO result = new VCVerificationResultDTO(
+            VCVerificationResultDTO result = new VCVerificationResultDTO(
                     0, e.getVerificationStatus() != null ? e.getVerificationStatus() : VCVerificationStatus.INVALID,
                     e.getMessage());
             sendVerificationResponse(response, result);
@@ -152,7 +150,6 @@ public class VCVerificationServlet extends HttpServlet {
             String requestBody, String contentType)
             throws IOException {
 
-        
         try {
             // VP verification
             List<VCVerificationResultDTO> results = verificationService.verifyVPToken(requestBody);
@@ -161,7 +158,7 @@ public class VCVerificationServlet extends HttpServlet {
             sendVPVerificationResponse(response, results);
 
         } catch (CredentialVerificationException e) {
-                        sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     "verification_failed", e.getMessage());
         }
     }

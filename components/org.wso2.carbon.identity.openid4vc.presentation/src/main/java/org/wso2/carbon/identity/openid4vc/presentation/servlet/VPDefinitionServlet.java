@@ -71,8 +71,8 @@ public class VPDefinitionServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234;
 
-    private PresentationDefinitionService presentationDefinitionService;
-    private ApplicationPresentationDefinitionMappingService mappingService;
+    private transient PresentationDefinitionService presentationDefinitionService;
+    private transient ApplicationPresentationDefinitionMappingService mappingService;
 
     @Override
     public void init() throws ServletException {

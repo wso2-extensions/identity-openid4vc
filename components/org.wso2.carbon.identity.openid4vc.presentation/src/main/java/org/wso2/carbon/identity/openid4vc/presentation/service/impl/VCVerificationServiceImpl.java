@@ -201,7 +201,6 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             } catch (CredentialVerificationException e) {
                 // Continue without failing - revocation check is optional
             }
-        } else {
         }
 
         // All checks passed

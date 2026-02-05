@@ -143,11 +143,11 @@ public class VerifiablePresentation {
     }
 
     public Date getIssuanceDate() {
-        return issuanceDate;
+        return issuanceDate != null ? new Date(issuanceDate.getTime()) : null;
     }
 
     public void setIssuanceDate(Date issuanceDate) {
-        this.issuanceDate = issuanceDate;
+        this.issuanceDate = issuanceDate != null ? new Date(issuanceDate.getTime()) : null;
     }
 
     public String getNonce() {

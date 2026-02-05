@@ -48,7 +48,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant
 
-    private DIDDocumentService didDocumentService;
+    private transient DIDDocumentService didDocumentService;
 
     @Override
     public void init() throws ServletException {

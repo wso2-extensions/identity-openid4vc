@@ -115,6 +115,32 @@ public class VCVerificationResultDTO {
         this.error = error;
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param other DTO to copy
+     */
+    public VCVerificationResultDTO(VCVerificationResultDTO other) {
+        this.vcIndex = other.vcIndex;
+        this.verificationStatus = other.verificationStatus;
+        this.credentialType = other.credentialType;
+        this.credentialTypes = other.credentialTypes != null
+                ? Arrays.copyOf(other.credentialTypes, other.credentialTypes.length)
+                : null;
+        this.issuer = other.issuer;
+        this.issuerId = other.issuerId;
+        this.subject = other.subject;
+        this.issuanceDate = other.issuanceDate;
+        this.expirationDate = other.expirationDate;
+        this.credentialId = other.credentialId;
+        this.format = other.format;
+        this.signatureValid = other.signatureValid;
+        this.expired = other.expired;
+        this.revoked = other.revoked;
+        this.error = other.error;
+        this.errorDetails = other.errorDetails;
+    }
+
     // Getters and Setters
 
     public int getVcIndex() {
@@ -154,7 +180,7 @@ public class VCVerificationResultDTO {
     }
 
     public String[] getCredentialTypes() {
-        return credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : null;
+        return credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : new String[0];
     }
 
     public void setCredentialTypes(String[] credentialTypes) {
@@ -276,87 +302,87 @@ public class VCVerificationResultDTO {
         private final VCVerificationResultDTO dto = new VCVerificationResultDTO();
 
         public Builder vcIndex(int vcIndex) {
-            dto.vcIndex = vcIndex;
+            dto.setVcIndex(vcIndex);
             return this;
         }
 
         public Builder verificationStatus(VCVerificationStatus status) {
-            dto.verificationStatus = status != null ? status.getValue() : null;
+            dto.setVerificationStatus(status);
             return this;
         }
 
         public Builder credentialType(String credentialType) {
-            dto.credentialType = credentialType;
+            dto.setCredentialType(credentialType);
             return this;
         }
 
         public Builder credentialTypes(String[] credentialTypes) {
-            dto.credentialTypes = credentialTypes;
+            dto.setCredentialTypes(credentialTypes);
             return this;
         }
 
         public Builder issuer(String issuer) {
-            dto.issuer = issuer;
+            dto.setIssuer(issuer);
             return this;
         }
 
         public Builder issuerId(String issuerId) {
-            dto.issuerId = issuerId;
+            dto.setIssuerId(issuerId);
             return this;
         }
 
         public Builder subject(String subject) {
-            dto.subject = subject;
+            dto.setSubject(subject);
             return this;
         }
 
         public Builder issuanceDate(String issuanceDate) {
-            dto.issuanceDate = issuanceDate;
+            dto.setIssuanceDate(issuanceDate);
             return this;
         }
 
         public Builder expirationDate(String expirationDate) {
-            dto.expirationDate = expirationDate;
+            dto.setExpirationDate(expirationDate);
             return this;
         }
 
         public Builder credentialId(String credentialId) {
-            dto.credentialId = credentialId;
+            dto.setCredentialId(credentialId);
             return this;
         }
 
         public Builder format(String format) {
-            dto.format = format;
+            dto.setFormat(format);
             return this;
         }
 
         public Builder signatureValid(Boolean signatureValid) {
-            dto.signatureValid = signatureValid;
+            dto.setSignatureValid(signatureValid);
             return this;
         }
 
         public Builder expired(Boolean expired) {
-            dto.expired = expired;
+            dto.setExpired(expired);
             return this;
         }
 
         public Builder revoked(Boolean revoked) {
-            dto.revoked = revoked;
+            dto.setRevoked(revoked);
             return this;
         }
 
         public Builder error(String error) {
-            dto.error = error;
+            dto.setError(error);
             return this;
         }
 
         public Builder errorDetails(String errorDetails) {
-            dto.errorDetails = errorDetails;
+            dto.setErrorDetails(errorDetails);
             return this;
         }
 
         public VCVerificationResultDTO build() {
-            return dto;
+            return new VCVerificationResultDTO(dto);
         }
     }
 

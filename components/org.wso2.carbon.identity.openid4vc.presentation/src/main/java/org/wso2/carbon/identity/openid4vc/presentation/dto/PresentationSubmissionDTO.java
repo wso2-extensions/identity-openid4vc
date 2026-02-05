@@ -127,8 +127,7 @@ public class PresentationSubmissionDTO {
      * @param descMap Descriptor map list
      */
     public void setDescriptorMap(final List<DescriptorMapDTO> descMap) {
-
-        this.descriptorMap = descMap;
+        this.descriptorMap = descMap != null ? new ArrayList<>(descMap) : null;
     }
 
     /**

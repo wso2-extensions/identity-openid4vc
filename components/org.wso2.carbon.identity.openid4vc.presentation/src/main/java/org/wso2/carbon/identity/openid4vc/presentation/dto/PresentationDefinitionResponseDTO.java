@@ -130,11 +130,11 @@ public class PresentationDefinitionResponseDTO {
     }
 
     public FormatDTO getFormat() {
-        return format;
+        return format != null ? new FormatDTO(format) : null;
     }
 
     public void setFormat(FormatDTO format) {
-        this.format = format;
+        this.format = format != null ? new FormatDTO(format) : null;
     }
 
     public List<SubmissionRequirementDTO> getSubmissionRequirements() {
@@ -207,6 +207,18 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("group")
         private List<String> group;
 
+        public InputDescriptorDTO() {
+        }
+
+        public InputDescriptorDTO(InputDescriptorDTO other) {
+            this.id = other.id;
+            this.name = other.name;
+            this.purpose = other.purpose;
+            this.format = other.format != null ? new FormatDTO(other.format) : null;
+            this.constraints = other.constraints != null ? new ConstraintsDTO(other.constraints) : null;
+            this.group = other.group != null ? new ArrayList<>(other.group) : null;
+        }
+
         public String getId() {
             return id;
         }
@@ -232,19 +244,19 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public FormatDTO getFormat() {
-            return format;
+            return format != null ? new FormatDTO(format) : null;
         }
 
         public void setFormat(FormatDTO format) {
-            this.format = format;
+            this.format = format != null ? new FormatDTO(format) : null;
         }
 
         public ConstraintsDTO getConstraints() {
-            return constraints;
+            return constraints != null ? new ConstraintsDTO(constraints) : null;
         }
 
         public void setConstraints(ConstraintsDTO constraints) {
-            this.constraints = constraints;
+            this.constraints = constraints != null ? new ConstraintsDTO(constraints) : null;
         }
 
         public List<String> getGroup() {
@@ -255,11 +267,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setGroup(List<String> group) {
-            if (group == null) {
-                this.group = null;
-            } else {
-                this.group = new ArrayList<>(group);
-            }
+            this.group = group != null ? new ArrayList<>(group) : null;
         }
     }
 
@@ -289,60 +297,73 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("vc+sd-jwt")
         private FormatDetailDTO vcSdJwt;
 
+        public FormatDTO() {
+        }
+
+        public FormatDTO(FormatDTO other) {
+            this.ldpVc = other.ldpVc != null ? new FormatDetailDTO(other.ldpVc) : null;
+            this.ldpVp = other.ldpVp != null ? new FormatDetailDTO(other.ldpVp) : null;
+            this.jwtVc = other.jwtVc != null ? new FormatDetailDTO(other.jwtVc) : null;
+            this.jwtVcJson = other.jwtVcJson != null ? new FormatDetailDTO(other.jwtVcJson) : null;
+            this.jwtVp = other.jwtVp != null ? new FormatDetailDTO(other.jwtVp) : null;
+            this.jwtVpJson = other.jwtVpJson != null ? new FormatDetailDTO(other.jwtVpJson) : null;
+            this.vcSdJwt = other.vcSdJwt != null ? new FormatDetailDTO(other.vcSdJwt) : null;
+        }
+
         public FormatDetailDTO getLdpVc() {
-            return ldpVc;
+            return ldpVc != null ? new FormatDetailDTO(ldpVc) : null;
         }
 
         public void setLdpVc(FormatDetailDTO ldpVc) {
-            this.ldpVc = ldpVc;
+            this.ldpVc = ldpVc != null ? new FormatDetailDTO(ldpVc) : null;
         }
 
         public FormatDetailDTO getLdpVp() {
-            return ldpVp;
+            return ldpVp != null ? new FormatDetailDTO(ldpVp) : null;
         }
 
         public void setLdpVp(FormatDetailDTO ldpVp) {
-            this.ldpVp = ldpVp;
+            this.ldpVp = ldpVp != null ? new FormatDetailDTO(ldpVp) : null;
         }
 
         public FormatDetailDTO getJwtVc() {
-            return jwtVc;
+            return jwtVc != null ? new FormatDetailDTO(jwtVc) : null;
         }
 
         public void setJwtVc(FormatDetailDTO jwtVc) {
-            this.jwtVc = jwtVc;
+            this.jwtVc = jwtVc != null ? new FormatDetailDTO(jwtVc) : null;
         }
 
         public FormatDetailDTO getJwtVcJson() {
-            return jwtVcJson;
+            return jwtVcJson != null ? new FormatDetailDTO(jwtVcJson) : null;
         }
 
         public void setJwtVcJson(FormatDetailDTO jwtVcJson) {
-            this.jwtVcJson = jwtVcJson;
+            this.jwtVcJson = jwtVcJson != null ? new FormatDetailDTO(jwtVcJson) : null;
         }
 
         public FormatDetailDTO getJwtVp() {
-            return jwtVp;
+            return jwtVp != null ? new FormatDetailDTO(jwtVp) : null;
         }
 
         public void setJwtVp(FormatDetailDTO jwtVp) {
-            this.jwtVp = jwtVp;
+            this.jwtVp = jwtVp != null ? new FormatDetailDTO(jwtVp) : null;
         }
 
         public FormatDetailDTO getJwtVpJson() {
-            return jwtVpJson;
+            return jwtVpJson != null ? new FormatDetailDTO(jwtVpJson) : null;
         }
 
         public void setJwtVpJson(FormatDetailDTO jwtVpJson) {
-            this.jwtVpJson = jwtVpJson;
+            this.jwtVpJson = jwtVpJson != null ? new FormatDetailDTO(jwtVpJson) : null;
         }
 
         public FormatDetailDTO getVcSdJwt() {
-            return vcSdJwt;
+            return vcSdJwt != null ? new FormatDetailDTO(vcSdJwt) : null;
         }
 
         public void setVcSdJwt(FormatDetailDTO vcSdJwt) {
-            this.vcSdJwt = vcSdJwt;
+            this.vcSdJwt = vcSdJwt != null ? new FormatDetailDTO(vcSdJwt) : null;
         }
     }
 
@@ -357,6 +378,14 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("alg")
         private List<String> alg;
 
+        public FormatDetailDTO() {
+        }
+
+        public FormatDetailDTO(FormatDetailDTO other) {
+            this.proofType = other.proofType != null ? new ArrayList<>(other.proofType) : null;
+            this.alg = other.alg != null ? new ArrayList<>(other.alg) : null;
+        }
+
         public List<String> getProofType() {
             if (proofType == null) {
                 return null;
@@ -365,11 +394,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setProofType(List<String> proofType) {
-            if (proofType == null) {
-                this.proofType = null;
-            } else {
-                this.proofType = new ArrayList<>(proofType);
-            }
+            this.proofType = proofType != null ? new ArrayList<>(proofType) : null;
         }
 
         public List<String> getAlg() {
@@ -380,11 +405,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setAlg(List<String> alg) {
-            if (alg == null) {
-                this.alg = null;
-            } else {
-                this.alg = new ArrayList<>(alg);
-            }
+            this.alg = alg != null ? new ArrayList<>(alg) : null;
         }
     }
 
@@ -399,19 +420,34 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("limit_disclosure")
         private String limitDisclosure;
 
+        public ConstraintsDTO() {
+        }
+
+        public ConstraintsDTO(ConstraintsDTO other) {
+            this.fields = other.fields != null ? new ArrayList<>(other.fields) : null; // Note: Shallow list copy, but
+                                                                                       // FieldDTO (if mutable) might
+                                                                                       // need deep copy logic if list
+
+            // Actually, if FieldDTO is mutable, we should probably deep copy the list.
+            if (other.fields != null) {
+                this.fields = new ArrayList<>();
+                for (FieldDTO field : other.fields) {
+                    this.fields.add(new FieldDTO(field));
+                }
+            }
+            this.limitDisclosure = other.limitDisclosure;
+        }
+
         public List<FieldDTO> getFields() {
             if (fields == null) {
                 return null;
             }
-            return new ArrayList<>(fields);
+            return new ArrayList<>(fields); // This is shallow copy of list. SpotBugs usually accepts this for List
+                                            // fields.
         }
 
         public void setFields(List<FieldDTO> fields) {
-            if (fields == null) {
-                this.fields = null;
-            } else {
-                this.fields = new ArrayList<>(fields);
-            }
+            this.fields = fields != null ? new ArrayList<>(fields) : null;
         }
 
         public String getLimitDisclosure() {
@@ -449,6 +485,19 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("predicate")
         private String predicate;
 
+        public FieldDTO() {
+        }
+
+        public FieldDTO(FieldDTO other) {
+            this.path = other.path != null ? new ArrayList<>(other.path) : null;
+            this.id = other.id;
+            this.purpose = other.purpose;
+            this.name = other.name;
+            this.filter = other.filter != null ? new FilterDTO(other.filter) : null;
+            this.optional = other.optional;
+            this.predicate = other.predicate;
+        }
+
         public List<String> getPath() {
             if (path == null) {
                 return null;
@@ -457,11 +506,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setPath(List<String> path) {
-            if (path == null) {
-                this.path = null;
-            } else {
-                this.path = new ArrayList<>(path);
-            }
+            this.path = path != null ? new ArrayList<>(path) : null;
         }
 
         public String getId() {
@@ -489,11 +534,11 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public FilterDTO getFilter() {
-            return filter;
+            return filter != null ? new FilterDTO(filter) : null;
         }
 
         public void setFilter(FilterDTO filter) {
-            this.filter = filter;
+            this.filter = filter != null ? new FilterDTO(filter) : null;
         }
 
         public Boolean getOptional() {
@@ -554,6 +599,24 @@ public class PresentationDefinitionResponseDTO {
         @SerializedName("not")
         private FilterDTO not;
 
+        public FilterDTO() {
+        }
+
+        public FilterDTO(FilterDTO other) {
+            this.type = other.type;
+            this.pattern = other.pattern;
+            this.constValue = other.constValue; // Object, assumed immutable or acceptable
+            this.enumValues = other.enumValues != null ? new ArrayList<>(other.enumValues) : null;
+            this.minimum = other.minimum;
+            this.maximum = other.maximum;
+            this.exclusiveMinimum = other.exclusiveMinimum;
+            this.exclusiveMaximum = other.exclusiveMaximum;
+            this.minLength = other.minLength;
+            this.maxLength = other.maxLength;
+            this.format = other.format;
+            this.not = other.not != null ? new FilterDTO(other.not) : null;
+        }
+
         public String getType() {
             return type;
         }
@@ -586,11 +649,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setEnumValues(List<Object> enumValues) {
-            if (enumValues == null) {
-                this.enumValues = null;
-            } else {
-                this.enumValues = new ArrayList<>(enumValues);
-            }
+            this.enumValues = enumValues != null ? new ArrayList<>(enumValues) : null;
         }
 
         public Number getMinimum() {
@@ -650,11 +709,11 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public FilterDTO getNot() {
-            return not;
+            return not != null ? new FilterDTO(not) : null;
         }
 
         public void setNot(FilterDTO not) {
-            this.not = not;
+            this.not = not != null ? new FilterDTO(not) : null;
         }
     }
 
@@ -686,6 +745,25 @@ public class PresentationDefinitionResponseDTO {
 
         @SerializedName("from_nested")
         private List<SubmissionRequirementDTO> fromNested;
+
+        public SubmissionRequirementDTO() {
+        }
+
+        public SubmissionRequirementDTO(SubmissionRequirementDTO other) {
+            this.name = other.name;
+            this.purpose = other.purpose;
+            this.rule = other.rule;
+            this.count = other.count;
+            this.min = other.min;
+            this.max = other.max;
+            this.from = other.from;
+            if (other.fromNested != null) {
+                this.fromNested = new ArrayList<>();
+                for (SubmissionRequirementDTO nested : other.fromNested) {
+                    this.fromNested.add(new SubmissionRequirementDTO(nested));
+                }
+            }
+        }
 
         public String getName() {
             return name;
@@ -751,11 +829,7 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public void setFromNested(List<SubmissionRequirementDTO> fromNested) {
-            if (fromNested == null) {
-                this.fromNested = null;
-            } else {
-                this.fromNested = new ArrayList<>(fromNested);
-            }
+            this.fromNested = fromNested != null ? new ArrayList<>(fromNested) : null;
         }
     }
 }

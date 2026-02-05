@@ -81,22 +81,22 @@ public class VPSubmissionServlet extends HttpServlet {
     /**
      * VP Submission service instance.
      */
-    private VPSubmissionService vpSubmissionService;
+    private transient VPSubmissionService vpSubmissionService;
 
     /**
      * Status listener cache for long polling notifications.
      */
-    private VPStatusListenerCache statusListenerCache;
+    private transient VPStatusListenerCache statusListenerCache;
 
     /**
      * Status notification service for coordinated notifications.
      */
-    private StatusNotificationService statusNotificationService;
+    private transient StatusNotificationService statusNotificationService;
 
     /**
      * Wallet data cache for storing submissions.
      */
-    private WalletDataCache walletDataCache;
+    private transient WalletDataCache walletDataCache;
 
     @Override
     public void init() throws ServletException {
@@ -512,8 +512,6 @@ public class VPSubmissionServlet extends HttpServlet {
                                 "Credential " + (i + 1) + " from untrusted issuer");
                     }
 
-                    String issuer = extractIssuerFromJsonLD(vcObj);
-
                 }
             }
 
@@ -525,45 +523,4 @@ public class VPSubmissionServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Extract issuer from JWT VC.
-     *
-     * @param vcJwt JWT VC token
-     * @return Issuer DID
-     */
-    private String extractIssuerFromJWT(String vcJwt) {
-        try {
-            String[] parts = vcJwt.split("\\.");
-            if (parts.length >= 2) {
-                String payloadJson = new String(
-                        java.util.Base64.getUrlDecoder().decode(parts[1]),
-                        java.nio.charset.StandardCharsets.UTF_8);
-                JsonObject payload = JsonParser.parseString(payloadJson).getAsJsonObject();
-                return payload.get("iss").getAsString();
-            }
-        } catch (Exception e) {
-        }
-        return "unknown";
-    }
-
-    /**
-     * Extract issuer from JSON-LD VC.
-     *
-     * @param vcObj JSON-LD VC object
-     * @return Issuer DID
-     */
-    private String extractIssuerFromJsonLD(JsonObject vcObj) {
-        try {
-            if (vcObj.has("issuer")) {
-                JsonElement issuer = vcObj.get("issuer");
-                if (issuer.isJsonPrimitive()) {
-                    return issuer.getAsString();
-                } else if (issuer.isJsonObject()) {
-                    return issuer.getAsJsonObject().get("id").getAsString();
-                }
-            }
-        } catch (Exception e) {
-        }
-        return "unknown";
-    }
 }

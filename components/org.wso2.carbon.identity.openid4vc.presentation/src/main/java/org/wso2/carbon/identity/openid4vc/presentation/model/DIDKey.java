@@ -67,7 +67,7 @@ public class DIDKey {
     }
 
     public byte[] getPublicKey() {
-        return publicKey != null ? publicKey.clone() : null;
+        return publicKey != null ? publicKey.clone() : new byte[0];
     }
 
     public void setPublicKey(byte[] publicKey) {
@@ -75,7 +75,7 @@ public class DIDKey {
     }
 
     public byte[] getPrivateKey() {
-        return privateKey != null ? privateKey.clone() : null;
+        return privateKey != null ? privateKey.clone() : new byte[0];
     }
 
     public void setPrivateKey(byte[] privateKey) {

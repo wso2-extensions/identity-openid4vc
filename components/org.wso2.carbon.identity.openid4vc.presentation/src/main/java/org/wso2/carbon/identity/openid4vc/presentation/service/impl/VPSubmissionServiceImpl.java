@@ -88,7 +88,6 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         // Check if request has expired
         if (OpenID4VPUtil.isExpired(vpRequest.getExpiresAt())) {
             // Mark as expired in database
-            // Mark as expired in database
             vpRequestDAO.updateVPRequestStatus(requestId, VPRequestStatus.EXPIRED, tenantId);
             // INVALIDATE CACHE
             if (vpRequestCache != null) {
@@ -127,9 +126,6 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
         String presentationSubmissionJson = submissionDTO.getPresentationSubmission() != null
                 ? submissionDTO.getPresentationSubmission().toString()
                 : null;
-
-        if (presentationSubmissionJson != null) {
-        }
 
         VPSubmission vpSubmission = new VPSubmission.Builder()
                 .submissionId(submissionId)

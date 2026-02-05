@@ -95,7 +95,6 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
             statement.executeUpdate();
             IdentityDatabaseUtil.commitTransaction(connection);
 
-            
         } catch (SQLException e) {
             throw new VPException("Error adding trusted issuer: " + trustedIssuer.getIssuerDid(), e);
         }
@@ -109,12 +108,8 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
             statement.setString(1, issuerDid);
             statement.setInt(2, tenantId);
 
-            int rowsAffected = statement.executeUpdate();
+            statement.executeUpdate();
             IdentityDatabaseUtil.commitTransaction(connection);
-
-            if (rowsAffected == 0) {
-                            } else {
-                            }
 
         } catch (SQLException e) {
             throw new VPException("Error removing trusted issuer: " + issuerDid, e);
@@ -189,7 +184,6 @@ public class TrustedIssuerDAOImpl implements TrustedIssuerDAO {
                 throw new VPException("Trusted issuer not found: " + issuerDid);
             }
 
-            
         } catch (SQLException e) {
             throw new VPException("Error updating trusted issuer description: " + issuerDid, e);
         }

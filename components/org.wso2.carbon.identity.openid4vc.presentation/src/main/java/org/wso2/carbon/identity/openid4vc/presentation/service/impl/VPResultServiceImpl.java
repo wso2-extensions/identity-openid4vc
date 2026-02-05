@@ -443,17 +443,14 @@ public class VPResultServiceImpl implements VPResultService {
 
             boolean signatureValid = vcVerificationService.verifySignature(vc);
             if (signatureValid) {
-            } else {
             }
 
             boolean expired = vcVerificationService.isExpired(vc);
             if (!expired) {
-            } else {
             }
 
             boolean revoked = vcVerificationService.isRevoked(vc);
             if (!revoked) {
-            } else {
             }
 
             VCVerificationStatus status;
