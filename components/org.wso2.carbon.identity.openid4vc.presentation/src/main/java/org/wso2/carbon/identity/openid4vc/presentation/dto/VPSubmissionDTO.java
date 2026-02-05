@@ -56,7 +56,7 @@ public class VPSubmissionDTO {
      */
     public VPSubmissionDTO(String vpToken, JsonObject presentationSubmission, String state) {
         this.vpToken = vpToken;
-        this.presentationSubmission = presentationSubmission;
+        this.presentationSubmission = presentationSubmission != null ? presentationSubmission.deepCopy() : null;
         this.state = state;
     }
 
@@ -84,11 +84,11 @@ public class VPSubmissionDTO {
     }
 
     public JsonObject getPresentationSubmission() {
-        return presentationSubmission;
+        return presentationSubmission != null ? presentationSubmission.deepCopy() : null;
     }
 
     public void setPresentationSubmission(JsonObject presentationSubmission) {
-        this.presentationSubmission = presentationSubmission;
+        this.presentationSubmission = presentationSubmission != null ? presentationSubmission.deepCopy() : null;
     }
 
     public String getState() {

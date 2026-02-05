@@ -22,7 +22,8 @@ import com.google.gson.annotations.SerializedName;
 
 /**
  * Data Transfer Object for Descriptor Map entries in Presentation Submission.
- * Maps input descriptors from the presentation definition to submitted credentials.
+ * Maps input descriptors from the presentation definition to submitted
+ * credentials.
  */
 public class DescriptorMapDTO {
 
@@ -59,13 +60,13 @@ public class DescriptorMapDTO {
     /**
      * Constructor with required fields.
      *
-     * @param descId       Input descriptor ID
-     * @param credFormat   Credential format
-     * @param jsonPath     Path to credential
+     * @param descId     Input descriptor ID
+     * @param credFormat Credential format
+     * @param jsonPath   Path to credential
      */
     public DescriptorMapDTO(final String descId,
-                            final String credFormat,
-                            final String jsonPath) {
+            final String credFormat,
+            final String jsonPath) {
 
         this.id = descId;
         this.format = credFormat;
@@ -75,20 +76,20 @@ public class DescriptorMapDTO {
     /**
      * Constructor with all fields.
      *
-     * @param descId       Input descriptor ID
-     * @param credFormat   Credential format
-     * @param jsonPath     Path to credential
-     * @param nested       Nested path info
+     * @param descId     Input descriptor ID
+     * @param credFormat Credential format
+     * @param jsonPath   Path to credential
+     * @param nested     Nested path info
      */
     public DescriptorMapDTO(final String descId,
-                            final String credFormat,
-                            final String jsonPath,
-                            final PathNestedDTO nested) {
+            final String credFormat,
+            final String jsonPath,
+            final PathNestedDTO nested) {
 
         this.id = descId;
         this.format = credFormat;
         this.path = jsonPath;
-        this.pathNested = nested;
+        this.pathNested = nested != null ? new PathNestedDTO(nested) : null;
     }
 
     /**
@@ -158,7 +159,7 @@ public class DescriptorMapDTO {
      */
     public PathNestedDTO getPathNested() {
 
-        return pathNested;
+        return pathNested != null ? new PathNestedDTO(pathNested) : null;
     }
 
     /**
@@ -168,7 +169,7 @@ public class DescriptorMapDTO {
      */
     public void setPathNested(final PathNestedDTO nested) {
 
-        this.pathNested = nested;
+        this.pathNested = nested != null ? new PathNestedDTO(nested) : null;
     }
 
     /**

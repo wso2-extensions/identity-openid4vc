@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.dto;
 import com.google.gson.JsonElement;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -114,11 +115,18 @@ public class PresentationDefinitionResponseDTO {
     }
 
     public List<InputDescriptorDTO> getInputDescriptors() {
-        return inputDescriptors;
+        if (inputDescriptors == null) {
+            return null;
+        }
+        return new ArrayList<>(inputDescriptors);
     }
 
     public void setInputDescriptors(List<InputDescriptorDTO> inputDescriptors) {
-        this.inputDescriptors = inputDescriptors;
+        if (inputDescriptors == null) {
+            this.inputDescriptors = null;
+        } else {
+            this.inputDescriptors = new ArrayList<>(inputDescriptors);
+        }
     }
 
     public FormatDTO getFormat() {
@@ -130,11 +138,18 @@ public class PresentationDefinitionResponseDTO {
     }
 
     public List<SubmissionRequirementDTO> getSubmissionRequirements() {
-        return submissionRequirements;
+        if (submissionRequirements == null) {
+            return null;
+        }
+        return new ArrayList<>(submissionRequirements);
     }
 
     public void setSubmissionRequirements(List<SubmissionRequirementDTO> submissionRequirements) {
-        this.submissionRequirements = submissionRequirements;
+        if (submissionRequirements == null) {
+            this.submissionRequirements = null;
+        } else {
+            this.submissionRequirements = new ArrayList<>(submissionRequirements);
+        }
     }
 
     public JsonElement getDefinitionJson() {
@@ -233,11 +248,18 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public List<String> getGroup() {
-            return group;
+            if (group == null) {
+                return null;
+            }
+            return new ArrayList<>(group);
         }
 
         public void setGroup(List<String> group) {
-            this.group = group;
+            if (group == null) {
+                this.group = null;
+            } else {
+                this.group = new ArrayList<>(group);
+            }
         }
     }
 
@@ -336,19 +358,33 @@ public class PresentationDefinitionResponseDTO {
         private List<String> alg;
 
         public List<String> getProofType() {
-            return proofType;
+            if (proofType == null) {
+                return null;
+            }
+            return new ArrayList<>(proofType);
         }
 
         public void setProofType(List<String> proofType) {
-            this.proofType = proofType;
+            if (proofType == null) {
+                this.proofType = null;
+            } else {
+                this.proofType = new ArrayList<>(proofType);
+            }
         }
 
         public List<String> getAlg() {
-            return alg;
+            if (alg == null) {
+                return null;
+            }
+            return new ArrayList<>(alg);
         }
 
         public void setAlg(List<String> alg) {
-            this.alg = alg;
+            if (alg == null) {
+                this.alg = null;
+            } else {
+                this.alg = new ArrayList<>(alg);
+            }
         }
     }
 
@@ -364,11 +400,18 @@ public class PresentationDefinitionResponseDTO {
         private String limitDisclosure;
 
         public List<FieldDTO> getFields() {
-            return fields;
+            if (fields == null) {
+                return null;
+            }
+            return new ArrayList<>(fields);
         }
 
         public void setFields(List<FieldDTO> fields) {
-            this.fields = fields;
+            if (fields == null) {
+                this.fields = null;
+            } else {
+                this.fields = new ArrayList<>(fields);
+            }
         }
 
         public String getLimitDisclosure() {
@@ -407,11 +450,18 @@ public class PresentationDefinitionResponseDTO {
         private String predicate;
 
         public List<String> getPath() {
-            return path;
+            if (path == null) {
+                return null;
+            }
+            return new ArrayList<>(path);
         }
 
         public void setPath(List<String> path) {
-            this.path = path;
+            if (path == null) {
+                this.path = null;
+            } else {
+                this.path = new ArrayList<>(path);
+            }
         }
 
         public String getId() {
@@ -529,11 +579,18 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public List<Object> getEnumValues() {
-            return enumValues;
+            if (enumValues == null) {
+                return null;
+            }
+            return new ArrayList<>(enumValues);
         }
 
         public void setEnumValues(List<Object> enumValues) {
-            this.enumValues = enumValues;
+            if (enumValues == null) {
+                this.enumValues = null;
+            } else {
+                this.enumValues = new ArrayList<>(enumValues);
+            }
         }
 
         public Number getMinimum() {
@@ -687,11 +744,18 @@ public class PresentationDefinitionResponseDTO {
         }
 
         public List<SubmissionRequirementDTO> getFromNested() {
-            return fromNested;
+            if (fromNested == null) {
+                return null;
+            }
+            return new ArrayList<>(fromNested);
         }
 
         public void setFromNested(List<SubmissionRequirementDTO> fromNested) {
-            this.fromNested = fromNested;
+            if (fromNested == null) {
+                this.fromNested = null;
+            } else {
+                this.fromNested = new ArrayList<>(fromNested);
+            }
         }
     }
 }

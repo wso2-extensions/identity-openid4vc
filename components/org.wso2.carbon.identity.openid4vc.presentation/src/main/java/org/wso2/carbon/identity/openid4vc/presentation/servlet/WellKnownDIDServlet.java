@@ -90,7 +90,7 @@ public class WellKnownDIDServlet extends HttpServlet {
         } catch (DIDDocumentException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Failed to generate DID document: " + e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }

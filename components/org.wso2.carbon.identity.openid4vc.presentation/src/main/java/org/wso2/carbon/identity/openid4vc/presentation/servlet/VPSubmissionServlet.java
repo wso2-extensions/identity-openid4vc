@@ -171,7 +171,7 @@ public class VPSubmissionServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     OpenID4VPConstants.ErrorCodes.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR, "Internal server error");
         }

@@ -127,27 +127,29 @@ public class TrustedVerifier {
     }
 
     public List<String> getAllowedRedirectUris() {
-        return allowedRedirectUris;
+        return allowedRedirectUris != null ? new ArrayList<>(allowedRedirectUris) : null;
     }
 
     public void setAllowedRedirectUris(List<String> allowedRedirectUris) {
-        this.allowedRedirectUris = allowedRedirectUris != null ? allowedRedirectUris : new ArrayList<>();
+        this.allowedRedirectUris = allowedRedirectUris != null ? new ArrayList<>(allowedRedirectUris)
+                : new ArrayList<>();
     }
 
     public List<String> getAllowedCredentialTypes() {
-        return allowedCredentialTypes;
+        return allowedCredentialTypes != null ? new ArrayList<>(allowedCredentialTypes) : null;
     }
 
     public void setAllowedCredentialTypes(List<String> allowedCredentialTypes) {
-        this.allowedCredentialTypes = allowedCredentialTypes != null ? allowedCredentialTypes : new ArrayList<>();
+        this.allowedCredentialTypes = allowedCredentialTypes != null ? new ArrayList<>(allowedCredentialTypes)
+                : new ArrayList<>();
     }
 
     public List<String> getAllowedScopes() {
-        return allowedScopes;
+        return allowedScopes != null ? new ArrayList<>(allowedScopes) : null;
     }
 
     public void setAllowedScopes(List<String> allowedScopes) {
-        this.allowedScopes = allowedScopes != null ? allowedScopes : new ArrayList<>();
+        this.allowedScopes = allowedScopes != null ? new ArrayList<>(allowedScopes) : new ArrayList<>();
     }
 
     public TrustLevel getTrustLevel() {
@@ -191,11 +193,11 @@ public class TrustedVerifier {
     }
 
     public Map<String, Object> getMetadata() {
-        return metadata;
+        return metadata != null ? new HashMap<>(metadata) : null;
     }
 
     public void setMetadata(Map<String, Object> metadata) {
-        this.metadata = metadata != null ? metadata : new HashMap<>();
+        this.metadata = metadata != null ? new HashMap<>(metadata) : new HashMap<>();
     }
 
     // Utility methods
@@ -246,7 +248,7 @@ public class TrustedVerifier {
     /**
      * Add a metadata entry.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the value
      */
     public void addMetadata(String key, Object value) {

@@ -59,7 +59,6 @@ public class VPRequestServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     private static final long DEFAULT_POLL_TIMEOUT_MS = 60000; // 1 minute
@@ -94,7 +93,7 @@ public class VPRequestServlet extends HttpServlet {
             VPRequestCreateDTO createDTO;
             try {
                 createDTO = gson.fromJson(requestBody, VPRequestCreateDTO.class);
-            } catch (Exception e) {
+            } catch (com.google.gson.JsonSyntaxException e) {
                 sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                         ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format: " + e.getMessage());
                 return;
@@ -119,7 +118,7 @@ public class VPRequestServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -168,7 +167,7 @@ public class VPRequestServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -178,7 +177,7 @@ public class VPRequestServlet extends HttpServlet {
      * Handle request JWT retrieval (for request_uri flow).
      */
     private void handleRequestJwtRequest(HttpServletResponse response, String requestId,
-            int tenantId) throws Exception {
+            int tenantId) throws VPException, IOException {
 
         String requestJwt = vpRequestService.getRequestJwt(requestId, tenantId);
 
@@ -194,7 +193,7 @@ public class VPRequestServlet extends HttpServlet {
      * Handle status polling request.
      */
     private void handleStatusRequest(HttpServletRequest request, HttpServletResponse response,
-            String requestId, int tenantId) throws Exception {
+            String requestId, int tenantId) throws VPException, IOException {
 
         // Get timeout parameter for long polling
         String timeoutParam = request.getParameter("timeout");
@@ -221,7 +220,7 @@ public class VPRequestServlet extends HttpServlet {
      * consider using async servlets with DeferredResult pattern.
      */
     private VPRequestStatusDTO pollForStatus(String requestId, int tenantId, long timeout)
-            throws Exception {
+            throws VPException {
 
         long startTime = System.currentTimeMillis();
         long pollInterval = 1000; // 1 second

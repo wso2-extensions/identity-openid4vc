@@ -241,7 +241,7 @@ public class VerifiableCredential {
          * Check if this is an Ed25519 signature.
          */
         public boolean isEd25519() {
-            return type != null && (type.contains("Ed25519") || type.equals("Ed25519Signature2020") 
+            return type != null && (type.contains("Ed25519") || type.equals("Ed25519Signature2020")
                     || type.equals("Ed25519Signature2018"));
         }
 
@@ -264,11 +264,11 @@ public class VerifiableCredential {
     }
 
     public List<String> getContext() {
-        return context;
+        return context != null ? new ArrayList<>(context) : null;
     }
 
     public void setContext(List<String> context) {
-        this.context = context;
+        this.context = context != null ? new ArrayList<>(context) : null;
     }
 
     public void addContext(String ctx) {
@@ -279,11 +279,11 @@ public class VerifiableCredential {
     }
 
     public List<String> getType() {
-        return type;
+        return type != null ? new ArrayList<>(type) : null;
     }
 
     public void setType(List<String> type) {
-        this.type = type;
+        this.type = type != null ? new ArrayList<>(type) : null;
     }
 
     public void addType(String t) {
@@ -348,11 +348,11 @@ public class VerifiableCredential {
     }
 
     public Map<String, Object> getCredentialSubject() {
-        return credentialSubject;
+        return credentialSubject != null ? new HashMap<>(credentialSubject) : null;
     }
 
     public void setCredentialSubject(Map<String, Object> credentialSubject) {
-        this.credentialSubject = credentialSubject;
+        this.credentialSubject = credentialSubject != null ? new HashMap<>(credentialSubject) : null;
     }
 
     public String getCredentialSubjectId() {
@@ -436,19 +436,19 @@ public class VerifiableCredential {
     }
 
     public Map<String, Object> getJwtClaims() {
-        return jwtClaims;
+        return jwtClaims != null ? new HashMap<>(jwtClaims) : null;
     }
 
     public void setJwtClaims(Map<String, Object> jwtClaims) {
-        this.jwtClaims = jwtClaims;
+        this.jwtClaims = jwtClaims != null ? new HashMap<>(jwtClaims) : null;
     }
 
     public List<String> getDisclosures() {
-        return disclosures;
+        return disclosures != null ? new ArrayList<>(disclosures) : null;
     }
 
     public void setDisclosures(List<String> disclosures) {
-        this.disclosures = disclosures;
+        this.disclosures = disclosures != null ? new ArrayList<>(disclosures) : null;
     }
 
     public void addDisclosure(String disclosure) {

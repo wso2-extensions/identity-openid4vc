@@ -67,7 +67,6 @@ public class VPDefinitionServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     private static final int DEFAULT_TENANT_ID = -1234;
@@ -118,7 +117,7 @@ public class VPDefinitionServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -148,7 +147,7 @@ public class VPDefinitionServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -205,7 +204,7 @@ public class VPDefinitionServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -249,7 +248,7 @@ public class VPDefinitionServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }
@@ -259,7 +258,7 @@ public class VPDefinitionServlet extends HttpServlet {
      * Handle list all definitions.
      */
     private void handleListDefinitions(HttpServletRequest request, HttpServletResponse response, int tenantId)
-            throws Exception {
+            throws VPException, IOException {
 
         List<PresentationDefinition> definitions = presentationDefinitionService
                 .getAllPresentationDefinitions(tenantId);
@@ -275,7 +274,7 @@ public class VPDefinitionServlet extends HttpServlet {
      * Handle get specific definition.
      */
     private void handleGetDefinition(HttpServletRequest request, HttpServletResponse response, String definitionId,
-            int tenantId) throws Exception {
+            int tenantId) throws VPException, IOException {
 
         PresentationDefinition definition = presentationDefinitionService.getPresentationDefinitionById(definitionId,
                 tenantId);
@@ -287,23 +286,19 @@ public class VPDefinitionServlet extends HttpServlet {
      * Handle get application mapping.
      */
     private void handleGetApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            String applicationId, int tenantId) throws Exception {
+            String applicationId, int tenantId) throws VPException, IOException {
 
-        try {
-            ApplicationPresentationDefinitionMapping mapping = mappingService
-                    .getApplicationMapping(applicationId, tenantId);
+        ApplicationPresentationDefinitionMapping mapping = mappingService
+                .getApplicationMapping(applicationId, tenantId);
 
-            if (mapping != null) {
+        if (mapping != null) {
 
-                sendJsonResponse(request, response, HttpServletResponse.SC_OK, mapping);
-            } else {
+            sendJsonResponse(request, response, HttpServletResponse.SC_OK, mapping);
+        } else {
 
-                sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
-                        ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND,
-                        "No mapping found for application: " + applicationId);
-            }
-        } catch (Exception e) {
-            throw e;
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+                    ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND,
+                    "No mapping found for application: " + applicationId);
         }
     }
 
@@ -311,7 +306,7 @@ public class VPDefinitionServlet extends HttpServlet {
      * Handle create/update application mapping.
      */
     private void handleCreateUpdateApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            int tenantId) throws Exception {
+            int tenantId) throws VPException, IOException {
 
         String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
 
@@ -325,7 +320,7 @@ public class VPDefinitionServlet extends HttpServlet {
         ApplicationMappingRequest mappingRequest;
         try {
             mappingRequest = gson.fromJson(requestBody, ApplicationMappingRequest.class);
-        } catch (Exception e) {
+        } catch (com.google.gson.JsonSyntaxException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
             return;
@@ -344,45 +339,35 @@ public class VPDefinitionServlet extends HttpServlet {
             return;
         }
 
-        try {
-            // Create or update the mapping
-            mappingService.mapPresentationDefinitionToApplication(
-                    mappingRequest.getApplicationId(),
-                    mappingRequest.getPresentationDefinitionId(),
-                    tenantId);
+        // Create or update the mapping
+        mappingService.mapPresentationDefinitionToApplication(
+                mappingRequest.getApplicationId(),
+                mappingRequest.getPresentationDefinitionId(),
+                tenantId);
 
-            // Send success response
-            ApplicationMappingResponse successResponse = new ApplicationMappingResponse();
-            successResponse.setMessage("Mapping created successfully");
-            sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, successResponse);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        // Send success response
+        ApplicationMappingResponse successResponse = new ApplicationMappingResponse();
+        successResponse.setMessage("Mapping created successfully");
+        sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, successResponse);
     }
 
     /**
      * Handle delete application mapping.
      */
     private void handleDeleteApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            String applicationId, int tenantId) throws Exception {
+            String applicationId, int tenantId) throws VPException, IOException {
 
-        try {
-            mappingService.removePresentationDefinitionMapping(applicationId, tenantId);
+        mappingService.removePresentationDefinitionMapping(applicationId, tenantId);
 
-            // Send 204 No Content
-            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-
-        } catch (Exception e) {
-            throw e;
-        }
+        // Send 204 No Content
+        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
     /**
      * Handle create presentation definition.
      */
     private void handleCreatePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
-            int tenantId) throws Exception {
+            int tenantId) throws VPException, IOException {
 
         String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
 
@@ -396,7 +381,7 @@ public class VPDefinitionServlet extends HttpServlet {
         PresentationDefinitionRequest createRequest;
         try {
             createRequest = gson.fromJson(requestBody, PresentationDefinitionRequest.class);
-        } catch (Exception e) {
+        } catch (com.google.gson.JsonSyntaxException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
             return;
@@ -437,7 +422,7 @@ public class VPDefinitionServlet extends HttpServlet {
      * Handle delete presentation definition.
      */
     private void handleDeletePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
-            String definitionId, int tenantId) throws Exception {
+            String definitionId, int tenantId) throws VPException, IOException {
 
         presentationDefinitionService.deletePresentationDefinition(definitionId, tenantId);
 
