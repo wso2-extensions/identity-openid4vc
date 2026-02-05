@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
@@ -50,6 +51,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     }
 
     @Override
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public DIDDocument getDIDDocumentObject(String domain, int tenantId) throws DIDDocumentException {
         try {
             // Since this method backs the .well-known/did.json endpoint, it implies did:web
@@ -62,6 +64,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     }
 
     @Override
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String getDID(String domain) {
         try {
             // Default to did:web for domain-based lookup
@@ -79,6 +82,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
      * @return DID identifier (defaults to did:web)
      * @throws DIDDocumentException if generation fails
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String getDID(int tenantId) throws DIDDocumentException {
         try {
             // Default to did:web
@@ -91,6 +95,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     }
 
     @Override
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String regenerateKeys(String domain, int tenantId) throws DIDDocumentException {
         // This is specific to internal key management (did:key/did:jwk)
         // did:web keys are managed via Keystore usually

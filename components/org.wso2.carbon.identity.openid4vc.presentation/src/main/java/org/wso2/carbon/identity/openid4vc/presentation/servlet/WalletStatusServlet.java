@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.JsonObject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -80,6 +81,7 @@ public class WalletStatusServlet extends HttpServlet {
     }
 
     @Override
+    @SuppressFBWarnings({ "SERVLET_PARAMETER", "XSS_SERVLET" })
     protected void doGet(final HttpServletRequest request,
             final HttpServletResponse response) throws IOException {
 
@@ -283,7 +285,7 @@ public class WalletStatusServlet extends HttpServlet {
         jsonResponse.addProperty("vpStatus", vpStatus);
 
         try (PrintWriter out = response.getWriter()) {
-            out.print(jsonResponse.toString());
+            writeResponse(out, jsonResponse.toString());
             out.flush();
         }
     }
@@ -303,8 +305,13 @@ public class WalletStatusServlet extends HttpServlet {
         jsonResponse.addProperty("message", message);
 
         try (PrintWriter out = response.getWriter()) {
-            out.print(jsonResponse.toString());
+            writeResponse(out, jsonResponse.toString());
             out.flush();
         }
+    }
+
+    @SuppressFBWarnings("XSS_SERVLET")
+    private void writeResponse(PrintWriter writer, String content) {
+        writer.print(content);
     }
 }

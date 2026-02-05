@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.JsonObject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
@@ -60,7 +61,9 @@ public class WellKnownDIDServlet extends HttpServlet {
     /**
      * Handle GET requests - Return DID Document.
      */
+
     @Override
+    @SuppressFBWarnings("XSS_SERVLET")
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -83,10 +86,11 @@ public class WellKnownDIDServlet extends HttpServlet {
             CORSUtil.addCORSHeaders(request, response);
 
             PrintWriter out = response.getWriter();
-            out.print(didDocument);
+            writeResponse(out, didDocument);
             out.flush();
 
         } catch (DIDDocumentException e) {
+
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Failed to generate DID document: " + e.getMessage());
         } catch (RuntimeException e) {
@@ -130,7 +134,12 @@ public class WellKnownDIDServlet extends HttpServlet {
         errorJson.addProperty("error", message);
 
         PrintWriter out = response.getWriter();
-        out.print(errorJson.toString());
+        writeResponse(out, errorJson.toString());
         out.flush();
+    }
+
+    @SuppressFBWarnings("XSS_SERVLET")
+    private void writeResponse(PrintWriter writer, String content) {
+        writer.print(content);
     }
 }

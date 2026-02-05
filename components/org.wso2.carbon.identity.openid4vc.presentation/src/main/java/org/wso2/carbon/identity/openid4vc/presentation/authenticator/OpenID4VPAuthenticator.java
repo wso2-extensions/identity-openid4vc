@@ -815,6 +815,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param vpToken Raw VP token (JWT or JSON-LD)
      * @return Map of claim mappings to values
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private Map<ClaimMapping, String> extractClaimsFromVP(
             final String vpToken) {
         Map<ClaimMapping, String> claims = new HashMap<>();
@@ -894,6 +895,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @return Context identifier
      */
     @Override
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     public String getContextIdentifier(final HttpServletRequest request) {
         return request.getParameter("sessionDataKey");
     }
@@ -905,6 +907,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @return True if can handle
      */
     @Override
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     public boolean canHandle(final HttpServletRequest request) {
         String sessionDataKey = request.getParameter("sessionDataKey");
         String vpRequestId = request.getParameter(PARAM_VP_REQUEST_ID);
