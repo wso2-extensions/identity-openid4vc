@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.service.impl;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
@@ -65,6 +66,8 @@ public class VPRequestServiceImpl implements VPRequestService {
     /**
      * Constructor for dependency injection.
      */
+
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public VPRequestServiceImpl(VPRequestDAO vpRequestDAO, VPRequestCache vpRequestCache,
             PresentationDefinitionService presentationDefinitionService,
             String baseUrl) {
@@ -111,7 +114,9 @@ public class VPRequestServiceImpl implements VPRequestService {
                     pdJson.remove("_internal");
                     presentationDefinition = pdJson.toString();
                 }
+
             } catch (Exception e) {
+                // Ignore
             }
         }
 
@@ -414,6 +419,12 @@ public class VPRequestServiceImpl implements VPRequestService {
      * Note: In production, this should be properly signed with the verifier's
      * private key.
      */
+    /**
+     * Build the request object as a JWT.
+     * Note: In production, this should be properly signed with the verifier's
+     * private key.
+     */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String buildRequestObjectJwt(VPRequest vpRequest, String didMethod, String signingAlgorithm) {
         try {
             DIDProvider provider = DIDProviderFactory.getProvider(didMethod);

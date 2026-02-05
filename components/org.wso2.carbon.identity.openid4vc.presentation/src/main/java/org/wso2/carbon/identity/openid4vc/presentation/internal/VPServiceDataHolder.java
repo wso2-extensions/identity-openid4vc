@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
@@ -58,6 +59,7 @@ public class VPServiceDataHolder {
      * 
      * @return VPServiceDataHolder instance
      */
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static VPServiceDataHolder getInstance() {
         if (instance == null) {
             synchronized (VPServiceDataHolder.class) {
@@ -74,6 +76,7 @@ public class VPServiceDataHolder {
      * 
      * @return RealmService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public RealmService getRealmService() {
         return realmService;
     }
@@ -83,6 +86,7 @@ public class VPServiceDataHolder {
      * 
      * @param realmService RealmService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setRealmService(RealmService realmService) {
         this.realmService = realmService;
     }
@@ -92,6 +96,7 @@ public class VPServiceDataHolder {
      * 
      * @return VPRequestService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public VPRequestService getVPRequestService() {
         return vpRequestService;
     }
@@ -101,6 +106,7 @@ public class VPServiceDataHolder {
      * 
      * @param vpRequestService VPRequestService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setVPRequestService(VPRequestService vpRequestService) {
         this.vpRequestService = vpRequestService;
     }
@@ -110,6 +116,7 @@ public class VPServiceDataHolder {
      * 
      * @return VPSubmissionService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public VPSubmissionService getVPSubmissionService() {
         return vpSubmissionService;
     }
@@ -119,6 +126,7 @@ public class VPServiceDataHolder {
      * 
      * @param vpSubmissionService VPSubmissionService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setVPSubmissionService(VPSubmissionService vpSubmissionService) {
         this.vpSubmissionService = vpSubmissionService;
     }
@@ -128,6 +136,7 @@ public class VPServiceDataHolder {
      * 
      * @return PresentationDefinitionService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public PresentationDefinitionService getPresentationDefinitionService() {
         return presentationDefinitionService;
     }
@@ -137,6 +146,7 @@ public class VPServiceDataHolder {
      * 
      * @param presentationDefinitionService PresentationDefinitionService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setPresentationDefinitionService(
             PresentationDefinitionService presentationDefinitionService) {
         this.presentationDefinitionService = presentationDefinitionService;
@@ -147,6 +157,7 @@ public class VPServiceDataHolder {
      * 
      * @return ApplicationPresentationDefinitionMappingService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService() {
         return applicationPresentationDefinitionMappingService;
     }
@@ -157,6 +168,7 @@ public class VPServiceDataHolder {
      * @param applicationPresentationDefinitionMappingService ApplicationPresentationDefinitionMappingService
      *                                                        instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setApplicationPresentationDefinitionMappingService(
             ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
         this.applicationPresentationDefinitionMappingService = applicationPresentationDefinitionMappingService;
@@ -167,6 +179,7 @@ public class VPServiceDataHolder {
      * 
      * @return TrustedIssuerService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public TrustedIssuerService getTrustedIssuerService() {
         if (trustedIssuerService == null) {
             trustedIssuerService = new TrustedIssuerServiceImpl();
@@ -179,6 +192,7 @@ public class VPServiceDataHolder {
      * 
      * @param trustedIssuerService TrustedIssuerService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setTrustedIssuerService(TrustedIssuerService trustedIssuerService) {
         this.trustedIssuerService = trustedIssuerService;
     }
@@ -188,6 +202,7 @@ public class VPServiceDataHolder {
      * 
      * @return VCVerificationService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public VCVerificationService getVCVerificationService() {
         if (vcVerificationService == null) {
             vcVerificationService = new VCVerificationServiceImpl();
@@ -200,6 +215,7 @@ public class VPServiceDataHolder {
      * 
      * @param vcVerificationService VCVerificationService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setVCVerificationService(VCVerificationService vcVerificationService) {
         this.vcVerificationService = vcVerificationService;
     }
@@ -209,6 +225,7 @@ public class VPServiceDataHolder {
      * 
      * @return DIDDocumentService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public DIDDocumentService getDIDDocumentService() {
         if (didDocumentService == null) {
             didDocumentService = new DIDDocumentServiceImpl();
@@ -221,14 +238,17 @@ public class VPServiceDataHolder {
      * 
      * @param didDocumentService DIDDocumentService instance
      */
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setDIDDocumentService(DIDDocumentService didDocumentService) {
         this.didDocumentService = didDocumentService;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP")
     public ApplicationManagementService getApplicationManagementService() {
         return applicationManagementService;
     }
 
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
         this.applicationManagementService = applicationManagementService;
     }

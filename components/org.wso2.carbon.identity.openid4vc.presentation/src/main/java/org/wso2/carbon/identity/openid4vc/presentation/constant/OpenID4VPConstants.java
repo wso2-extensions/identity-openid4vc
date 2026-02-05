@@ -217,13 +217,13 @@ public class OpenID4VPConstants {
         public static final int LONG_POLLING_TIMEOUT_SECONDS = 60; // 1 minute
         public static final int MAX_LONG_POLLING_TIMEOUT_SECONDS = 120; // 2 minutes
         public static final int MIN_LONG_POLLING_TIMEOUT_SECONDS = 5;
-        public static final String[] SUPPORTED_VC_FORMATS = {
-                VCFormats.JWT_VP_JSON,
-                VCFormats.JWT_VC_JSON,
-                VCFormats.LDP_VP,
-                VCFormats.LDP_VC,
-                VCFormats.VC_SD_JWT
-        };
+        public static final java.util.List<String> SUPPORTED_VC_FORMATS = java.util.Collections.unmodifiableList(
+                java.util.Arrays.asList(
+                        VCFormats.JWT_VP_JSON,
+                        VCFormats.JWT_VC_JSON,
+                        VCFormats.LDP_VP,
+                        VCFormats.LDP_VC,
+                        VCFormats.VC_SD_JWT));
 
         private Defaults() {
         }

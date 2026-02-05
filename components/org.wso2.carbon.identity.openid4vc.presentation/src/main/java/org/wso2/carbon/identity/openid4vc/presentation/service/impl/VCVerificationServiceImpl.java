@@ -1063,7 +1063,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         if (semicolonIndex > 0) {
             contentType = contentType.substring(0, semicolonIndex);
         }
-        return contentType.trim().toLowerCase();
+        return contentType.trim().toLowerCase(java.util.Locale.ENGLISH);
     }
 
     private Map<String, Object> parseJwtPart(String part) {

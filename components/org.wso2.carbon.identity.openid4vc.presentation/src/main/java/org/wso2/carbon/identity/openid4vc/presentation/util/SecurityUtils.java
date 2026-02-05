@@ -20,21 +20,24 @@ package org.wso2.carbon.identity.openid4vc.presentation.util;
 
 import org.apache.commons.lang.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 /**
  * Security utility class for OpenID4VP operations.
- * Provides methods for secure random generation, input validation, and sanitization.
+ * Provides methods for secure random generation, input validation, and
+ * sanitization.
  */
 public final class SecurityUtils {
 
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
-    
+
     // Patterns for validation
     private static final Pattern DID_PATTERN = Pattern.compile("^did:[a-z]+:[a-zA-Z0-9._%-]+.*$");
-    private static final Pattern URL_PATTERN = Pattern.compile("^https?://[a-zA-Z0-9.-]+(?::[0-9]+)?(?:/.*)?$");
+    // URL_PATTERN removed to avoid ReDOS. Using URI validation instead.
     private static final Pattern NONCE_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
     private static final Pattern STATE_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]+$");
     private static final Pattern UUID_PATTERN = Pattern.compile(
@@ -110,7 +113,12 @@ public final class SecurityUtils {
         if (url.length() > MAX_URL_LENGTH) {
             return false;
         }
-        return URL_PATTERN.matcher(url).matches();
+        try {
+            java.net.URI uri = new java.net.URI(url);
+            return "http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme());
+        } catch (java.net.URISyntaxException e) {
+            return false;
+        }
     }
 
     /**
@@ -174,7 +182,7 @@ public final class SecurityUtils {
     /**
      * Sanitize a string for logging (mask sensitive parts).
      *
-     * @param value the value to sanitize
+     * @param value        the value to sanitize
      * @param visibleChars number of characters to show at start and end
      * @return sanitized string
      */
@@ -185,8 +193,8 @@ public final class SecurityUtils {
         if (value.length() <= visibleChars * 2) {
             return "[masked]";
         }
-        return value.substring(0, visibleChars) + "..." + 
-               value.substring(value.length() - visibleChars);
+        return value.substring(0, visibleChars) + "..." +
+                value.substring(value.length() - visibleChars);
     }
 
     /**
@@ -219,22 +227,27 @@ public final class SecurityUtils {
         if (StringUtils.isBlank(redirectUri)) {
             return false;
         }
-        
+
         // Must be HTTPS (except for localhost in development)
-        String lowerUri = redirectUri.toLowerCase();
+        String lowerUri = redirectUri.toLowerCase(Locale.ENGLISH);
         boolean isHttps = lowerUri.startsWith("https://");
-        boolean isLocalhost = lowerUri.startsWith("http://localhost") || 
-                              lowerUri.startsWith("http://127.0.0.1");
-        
+        boolean isLocalhost = lowerUri.startsWith("http://localhost") ||
+                lowerUri.startsWith("http://127.0.0.1");
+
+        if (redirectUri.startsWith("/")) {
+            // Relative URL is considered safe for redirection within the app
+            return true;
+        }
+
         if (!isHttps && !isLocalhost) {
             return false;
         }
-        
+
         // Must not contain fragments
         if (redirectUri.contains("#")) {
             return false;
         }
-        
+
         // Must be valid URL
         return isValidUrl(redirectUri);
     }
@@ -248,7 +261,7 @@ public final class SecurityUtils {
      */
     public static boolean constantTimeEquals(String a, String b) {
         if (a == null || b == null) {
-            return a == b;
+            return a == null && b == null;
         }
         if (a.length() != b.length()) {
             return false;
@@ -317,14 +330,10 @@ public final class SecurityUtils {
     public static String sha256(String input) {
         try {
             java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(input.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            byte[] hash = digest.digest(input.getBytes(StandardCharsets.UTF_8));
             StringBuilder hexString = new StringBuilder();
             for (byte b : hash) {
-                String hex = Integer.toHexString(0xff & b);
-                if (hex.length() == 1) {
-                    hexString.append('0');
-                }
-                hexString.append(hex);
+                hexString.append(String.format("%02x", b));
             }
             return hexString.toString();
         } catch (Exception e) {

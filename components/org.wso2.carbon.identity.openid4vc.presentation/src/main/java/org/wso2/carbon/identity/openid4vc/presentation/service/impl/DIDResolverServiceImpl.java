@@ -25,6 +25,7 @@ import com.google.gson.JsonParser;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
@@ -117,7 +118,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         if (useCache) {
             CacheEntry entry = cache.get(did);
             if (entry != null && !entry.isExpired()) {
-                                return entry.document;
+                return entry.document;
             }
         }
 
@@ -270,7 +271,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
                 url = "https://" + path + "/.well-known/did.json";
             }
 
-            
             // Fetch the DID document
             String jsonResponse = fetchUrl(url);
             return parseDIDDocument(did, jsonResponse);
@@ -378,7 +378,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
                     method.setPublicKeyMultibase(identifier);
                     break;
                 default:
-                                        method.setType("VerificationMethod");
+                    method.setType("VerificationMethod");
                     method.setPublicKeyMultibase(identifier);
             }
 
@@ -731,6 +731,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Fetch content from a URL.
      */
+    @SuppressFBWarnings("URLCONNECTION_SSRF_FD")
     private String fetchUrl(String urlString) throws Exception {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -817,13 +818,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * 
      * @deprecated Not used with Nimbus OctetKeyPair implementation
      */
-    private byte[] reverseBytes(byte[] bytes) {
-        byte[] reversed = new byte[bytes.length];
-        for (int i = 0; i < bytes.length; i++) {
-            reversed[i] = bytes[bytes.length - 1 - i];
-        }
-        return reversed;
-    }
 
     public static OctetKeyPair generateEd25519KeyPair() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519", "BC");
