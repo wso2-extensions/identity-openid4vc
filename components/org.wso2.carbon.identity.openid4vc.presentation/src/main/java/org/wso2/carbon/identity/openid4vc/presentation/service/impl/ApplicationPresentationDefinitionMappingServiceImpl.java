@@ -70,20 +70,16 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
     public String getApplicationPresentationDefinitionId(String applicationId, int tenantId)
             throws VPException {
 
-        String presentationDefinitionId = mappingDAO.getPresentationDefinitionIdByApplicationId(
+        return mappingDAO.getPresentationDefinitionIdByApplicationId(
                 applicationId, tenantId);
-
-        return presentationDefinitionId;
     }
 
     @Override
     public ApplicationPresentationDefinitionMapping getApplicationMapping(String applicationId,
             int tenantId) throws VPException {
 
-        ApplicationPresentationDefinitionMapping mapping = mappingDAO.getMappingByApplicationId(
+        return mappingDAO.getMappingByApplicationId(
                 applicationId, tenantId);
-
-        return mapping;
     }
 
     @Override

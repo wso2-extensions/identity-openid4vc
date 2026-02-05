@@ -59,7 +59,7 @@ public class VPResultServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234;
 
-    private VPResultService vpResultService;
+    private transient VPResultService vpResultService;
 
     @Override
     public void init() throws ServletException {

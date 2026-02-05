@@ -171,11 +171,8 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.setString(2, requestId);
                 ps.setInt(3, tenantId);
 
-                int updated = ps.executeUpdate();
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
-
-                if (updated == 0) {
-                }
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;

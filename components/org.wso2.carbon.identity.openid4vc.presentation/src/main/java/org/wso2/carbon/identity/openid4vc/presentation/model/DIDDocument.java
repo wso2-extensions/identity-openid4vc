@@ -109,11 +109,11 @@ public class DIDDocument {
         }
 
         public Map<String, Object> getPublicKeyJwkMap() {
-            return publicKeyJwkMap;
+            return publicKeyJwkMap != null ? new HashMap<>(publicKeyJwkMap) : null;
         }
 
         public void setPublicKeyJwkMap(Map<String, Object> publicKeyJwkMap) {
-            this.publicKeyJwkMap = publicKeyJwkMap;
+            this.publicKeyJwkMap = publicKeyJwkMap != null ? new HashMap<>(publicKeyJwkMap) : null;
         }
 
         public String getPublicKeyMultibase() {
@@ -240,11 +240,11 @@ public class DIDDocument {
         }
 
         public Map<String, Object> getServiceEndpointMap() {
-            return serviceEndpointMap;
+            return serviceEndpointMap != null ? new HashMap<>(serviceEndpointMap) : null;
         }
 
         public void setServiceEndpointMap(Map<String, Object> serviceEndpointMap) {
-            this.serviceEndpointMap = serviceEndpointMap;
+            this.serviceEndpointMap = serviceEndpointMap != null ? new HashMap<>(serviceEndpointMap) : null;
         }
     }
 
@@ -354,11 +354,11 @@ public class DIDDocument {
     }
 
     public Map<String, Object> getRawMap() {
-        return rawMap;
+        return rawMap != null ? new HashMap<>(rawMap) : null;
     }
 
     public void setRawMap(Map<String, Object> rawMap) {
-        this.rawMap = rawMap;
+        this.rawMap = rawMap != null ? new HashMap<>(rawMap) : null;
     }
 
     /**

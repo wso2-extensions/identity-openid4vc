@@ -105,8 +105,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                     if (rs.next()) {
 
                         return mapResultSetToVPSubmission(rs);
-                    } else {
-
                     }
                 }
             }
@@ -130,8 +128,6 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                     if (rs.next()) {
 
                         return mapResultSetToVPSubmission(rs);
-                    } else {
-
                     }
                 }
             }
@@ -189,7 +185,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 ps.setString(3, submissionId);
                 ps.setInt(4, tenantId);
 
-                int updated = ps.executeUpdate();
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -208,7 +204,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 ps.setString(1, submissionId);
                 ps.setInt(2, tenantId);
 
-                int deleted = ps.executeUpdate();
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -228,7 +224,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 ps.setString(1, requestId);
                 ps.setInt(2, tenantId);
 
-                int deleted = ps.executeUpdate();
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {

@@ -70,7 +70,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Long polling manager.
      */
-    private LongPollingManager pollingManager;
+    private transient LongPollingManager pollingManager;
 
     @Override
     public void init() throws ServletException {

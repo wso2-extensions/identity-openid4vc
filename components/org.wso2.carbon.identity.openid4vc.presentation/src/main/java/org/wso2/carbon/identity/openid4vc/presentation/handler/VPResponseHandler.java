@@ -86,19 +86,20 @@ public class VPResponseHandler {
         }
 
         public Map<String, String> getVerifiedClaims() {
-            return verifiedClaims;
+            return verifiedClaims != null ? new HashMap<>(verifiedClaims) : null;
         }
 
         public void setVerifiedClaims(Map<String, String> verifiedClaims) {
-            this.verifiedClaims = verifiedClaims;
+            this.verifiedClaims = verifiedClaims != null ? new HashMap<>(verifiedClaims) : null;
         }
 
         public List<String> getValidatedCredentialIds() {
-            return validatedCredentialIds;
+            return validatedCredentialIds != null ? new ArrayList<>(validatedCredentialIds) : null;
         }
 
         public void setValidatedCredentialIds(List<String> validatedCredentialIds) {
-            this.validatedCredentialIds = validatedCredentialIds;
+            this.validatedCredentialIds = validatedCredentialIds != null ? new ArrayList<>(validatedCredentialIds)
+                    : null;
         }
 
         public String getPresentationId() {

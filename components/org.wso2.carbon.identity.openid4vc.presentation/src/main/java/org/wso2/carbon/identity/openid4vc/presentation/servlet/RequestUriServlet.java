@@ -61,7 +61,7 @@ public class RequestUriServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant
 
-    private VPRequestService vpRequestService;
+    private transient VPRequestService vpRequestService;
 
     @Override
     public void init() throws ServletException {

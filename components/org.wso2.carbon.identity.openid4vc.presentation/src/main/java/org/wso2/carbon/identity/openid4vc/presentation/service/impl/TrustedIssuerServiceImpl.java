@@ -69,9 +69,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
 
         try {
             int tenantId = getTenantId(tenantDomain);
-            boolean trusted = trustedIssuerDAO.isIssuerTrusted(issuerDid, tenantId);
-
-            return trusted;
+            return trustedIssuerDAO.isIssuerTrusted(issuerDid, tenantId);
 
         } catch (VPException e) {
             return false; // Fail closed - if we can't verify trust, don't trust
