@@ -134,7 +134,7 @@ public class VPStatusPollingServlet extends HttpServlet {
                 handleImmediateStatus(response, requestId, tenantId);
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR,
                     "Internal server error");

@@ -55,7 +55,6 @@ public class VPResultServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     private static final int DEFAULT_TENANT_ID = -1234;
@@ -114,7 +113,7 @@ public class VPResultServlet extends HttpServlet {
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
         }

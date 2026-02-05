@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 import com.google.gson.JsonObject;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
+import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
@@ -104,7 +105,7 @@ public class WalletStatusServlet extends HttpServlet {
                 handleImmediateStatus(response, state);
             }
 
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Internal server error");
         }
@@ -142,7 +143,7 @@ public class WalletStatusServlet extends HttpServlet {
 
                     }
                 }
-            } catch (Exception e) {
+            } catch (VPException | RuntimeException e) {
                 // Log but don't fail the request, just treat as not received
             }
         }

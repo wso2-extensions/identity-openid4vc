@@ -41,7 +41,6 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
 
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
-            .disableHtmlEscaping()
             .create();
 
     @Override
@@ -58,7 +57,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             return provider.getDIDDocument(tenantId, domain);
         } catch (Exception e) {
             String errorMsg = "Failed to generate DID document for tenant: " + tenantId;
-                        throw new DIDDocumentException(errorMsg, e);
+            throw new DIDDocumentException(errorMsg, e);
         }
     }
 
@@ -69,7 +68,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(-1234, domain);
         } catch (Exception e) {
-                        return "did:web:" + domain.replace(":", "%3A");
+            return "did:web:" + domain.replace(":", "%3A");
         }
     }
 
@@ -96,13 +95,13 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
         // This is specific to internal key management (did:key/did:jwk)
         // did:web keys are managed via Keystore usually
         try {
-                        DIDKeyManager.regenerateKeyPair(tenantId);
+            DIDKeyManager.regenerateKeyPair(tenantId);
             // Return did:key representation of new keys
             DIDProvider provider = DIDProviderFactory.getProvider("key");
             return provider.getDID(tenantId, null);
         } catch (Exception e) {
             String errorMsg = "Failed to regenerate keys for tenant: " + tenantId;
-                        throw new DIDDocumentException(errorMsg, e);
+            throw new DIDDocumentException(errorMsg, e);
         }
     }
 

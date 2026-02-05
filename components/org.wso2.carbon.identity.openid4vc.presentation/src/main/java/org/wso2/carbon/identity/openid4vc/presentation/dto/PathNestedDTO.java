@@ -57,6 +57,16 @@ public class PathNestedDTO {
     }
 
     /**
+     * Copy constructor.
+     *
+     * @param nested PathNestedDTO to copy
+     */
+    public PathNestedDTO(PathNestedDTO nested) {
+        this.format = nested.format;
+        this.path = nested.path;
+    }
+
+    /**
      * Get the format.
      *
      * @return Credential format

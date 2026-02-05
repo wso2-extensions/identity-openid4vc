@@ -21,6 +21,8 @@ package org.wso2.carbon.identity.openid4vc.presentation.dto;
 import com.google.gson.annotations.SerializedName;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 
+import java.util.Arrays;
+
 /**
  * Data Transfer Object for individual VC verification result.
  * Provides comprehensive information about each credential's verification
@@ -152,11 +154,11 @@ public class VCVerificationResultDTO {
     }
 
     public String[] getCredentialTypes() {
-        return credentialTypes;
+        return credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : null;
     }
 
     public void setCredentialTypes(String[] credentialTypes) {
-        this.credentialTypes = credentialTypes;
+        this.credentialTypes = credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : null;
     }
 
     public String getIssuerId() {

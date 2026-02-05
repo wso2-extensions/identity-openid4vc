@@ -56,10 +56,11 @@ public class VPRequestResponseDTO {
      * @param expiresAt            Expiry timestamp
      */
     public VPRequestResponseDTO(String transactionId, String requestId,
-                                 AuthorizationDetailsDTO authorizationDetails, Long expiresAt) {
+            AuthorizationDetailsDTO authorizationDetails, Long expiresAt) {
         this.transactionId = transactionId;
         this.requestId = requestId;
-        this.authorizationDetails = authorizationDetails;
+        this.authorizationDetails = authorizationDetails != null ? new AuthorizationDetailsDTO(authorizationDetails)
+                : null;
         this.expiresAt = expiresAt;
     }
 
@@ -71,8 +72,8 @@ public class VPRequestResponseDTO {
      * @param requestUri    Request URI for fetching the authorization request
      * @param expiresAt     Expiry timestamp
      */
-    public VPRequestResponseDTO(String transactionId, String requestId, 
-                                 String requestUri, Long expiresAt) {
+    public VPRequestResponseDTO(String transactionId, String requestId,
+            String requestUri, Long expiresAt) {
         this.transactionId = transactionId;
         this.requestId = requestId;
         this.requestUri = requestUri;
@@ -98,11 +99,12 @@ public class VPRequestResponseDTO {
     }
 
     public AuthorizationDetailsDTO getAuthorizationDetails() {
-        return authorizationDetails;
+        return authorizationDetails != null ? new AuthorizationDetailsDTO(authorizationDetails) : null;
     }
 
     public void setAuthorizationDetails(AuthorizationDetailsDTO authorizationDetails) {
-        this.authorizationDetails = authorizationDetails;
+        this.authorizationDetails = authorizationDetails != null ? new AuthorizationDetailsDTO(authorizationDetails)
+                : null;
     }
 
     public String getRequestUri() {

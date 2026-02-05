@@ -89,11 +89,11 @@ public class VPRequestCreateDTO {
     }
 
     public JsonObject getPresentationDefinition() {
-        return presentationDefinition;
+        return presentationDefinition != null ? presentationDefinition.deepCopy() : null;
     }
 
     public void setPresentationDefinition(JsonObject presentationDefinition) {
-        this.presentationDefinition = presentationDefinition;
+        this.presentationDefinition = presentationDefinition != null ? presentationDefinition.deepCopy() : null;
     }
 
     public String getNonce() {

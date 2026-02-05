@@ -56,6 +56,23 @@ public class AuthorizationDetailsDTO {
         this.responseMode = "direct_post";
     }
 
+    /**
+     * Copy constructor.
+     *
+     * @param authorizationDetails AuthorizationDetailsDTO to copy
+     */
+    public AuthorizationDetailsDTO(AuthorizationDetailsDTO authorizationDetails) {
+        this.clientId = authorizationDetails.clientId;
+        this.responseType = authorizationDetails.responseType;
+        this.responseMode = authorizationDetails.responseMode;
+        this.responseUri = authorizationDetails.responseUri;
+        this.nonce = authorizationDetails.nonce;
+        this.state = authorizationDetails.state;
+        this.presentationDefinition = authorizationDetails.presentationDefinition != null
+                ? authorizationDetails.presentationDefinition.deepCopy()
+                : null;
+    }
+
     // Getters and Setters
 
     public String getClientId() {
@@ -107,11 +124,11 @@ public class AuthorizationDetailsDTO {
     }
 
     public JsonObject getPresentationDefinition() {
-        return presentationDefinition;
+        return presentationDefinition != null ? presentationDefinition.deepCopy() : null;
     }
 
     public void setPresentationDefinition(JsonObject presentationDefinition) {
-        this.presentationDefinition = presentationDefinition;
+        this.presentationDefinition = presentationDefinition != null ? presentationDefinition.deepCopy() : null;
     }
 
     @Override

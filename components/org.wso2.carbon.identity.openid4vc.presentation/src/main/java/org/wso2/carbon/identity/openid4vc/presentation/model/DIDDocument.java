@@ -25,7 +25,8 @@ import java.util.Map;
 
 /**
  * Model class representing a DID Document as per W3C DID Core specification.
- * Contains verification methods and public keys needed for signature verification.
+ * Contains verification methods and public keys needed for signature
+ * verification.
  */
 public class DIDDocument {
 
@@ -67,7 +68,7 @@ public class DIDDocument {
         private String id;
         private String type;
         private String controller;
-        private String publicKeyJwk;  // JSON string of JWK
+        private String publicKeyJwk; // JSON string of JWK
         private Map<String, Object> publicKeyJwkMap;
         private String publicKeyMultibase;
         private String publicKeyBase58;
@@ -258,11 +259,11 @@ public class DIDDocument {
     }
 
     public List<String> getContext() {
-        return context;
+        return context != null ? new ArrayList<>(context) : null;
     }
 
     public void setContext(List<String> context) {
-        this.context = context;
+        this.context = context != null ? new ArrayList<>(context) : null;
     }
 
     public String getController() {
@@ -274,19 +275,19 @@ public class DIDDocument {
     }
 
     public List<String> getAlsoKnownAs() {
-        return alsoKnownAs;
+        return alsoKnownAs != null ? new ArrayList<>(alsoKnownAs) : null;
     }
 
     public void setAlsoKnownAs(List<String> alsoKnownAs) {
-        this.alsoKnownAs = alsoKnownAs;
+        this.alsoKnownAs = alsoKnownAs != null ? new ArrayList<>(alsoKnownAs) : null;
     }
 
     public List<VerificationMethod> getVerificationMethod() {
-        return verificationMethod;
+        return verificationMethod != null ? new ArrayList<>(verificationMethod) : null;
     }
 
     public void setVerificationMethod(List<VerificationMethod> verificationMethod) {
-        this.verificationMethod = verificationMethod;
+        this.verificationMethod = verificationMethod != null ? new ArrayList<>(verificationMethod) : null;
     }
 
     public void addVerificationMethod(VerificationMethod method) {
@@ -297,51 +298,51 @@ public class DIDDocument {
     }
 
     public List<String> getAuthentication() {
-        return authentication;
+        return authentication != null ? new ArrayList<>(authentication) : null;
     }
 
     public void setAuthentication(List<String> authentication) {
-        this.authentication = authentication;
+        this.authentication = authentication != null ? new ArrayList<>(authentication) : null;
     }
 
     public List<String> getAssertionMethod() {
-        return assertionMethod;
+        return assertionMethod != null ? new ArrayList<>(assertionMethod) : null;
     }
 
     public void setAssertionMethod(List<String> assertionMethod) {
-        this.assertionMethod = assertionMethod;
+        this.assertionMethod = assertionMethod != null ? new ArrayList<>(assertionMethod) : null;
     }
 
     public List<String> getKeyAgreement() {
-        return keyAgreement;
+        return keyAgreement != null ? new ArrayList<>(keyAgreement) : null;
     }
 
     public void setKeyAgreement(List<String> keyAgreement) {
-        this.keyAgreement = keyAgreement;
+        this.keyAgreement = keyAgreement != null ? new ArrayList<>(keyAgreement) : null;
     }
 
     public List<String> getCapabilityInvocation() {
-        return capabilityInvocation;
+        return capabilityInvocation != null ? new ArrayList<>(capabilityInvocation) : null;
     }
 
     public void setCapabilityInvocation(List<String> capabilityInvocation) {
-        this.capabilityInvocation = capabilityInvocation;
+        this.capabilityInvocation = capabilityInvocation != null ? new ArrayList<>(capabilityInvocation) : null;
     }
 
     public List<String> getCapabilityDelegation() {
-        return capabilityDelegation;
+        return capabilityDelegation != null ? new ArrayList<>(capabilityDelegation) : null;
     }
 
     public void setCapabilityDelegation(List<String> capabilityDelegation) {
-        this.capabilityDelegation = capabilityDelegation;
+        this.capabilityDelegation = capabilityDelegation != null ? new ArrayList<>(capabilityDelegation) : null;
     }
 
     public List<Service> getService() {
-        return service;
+        return service != null ? new ArrayList<>(service) : null;
     }
 
     public void setService(List<Service> service) {
-        this.service = service;
+        this.service = service != null ? new ArrayList<>(service) : null;
     }
 
     public String getRawDocument() {

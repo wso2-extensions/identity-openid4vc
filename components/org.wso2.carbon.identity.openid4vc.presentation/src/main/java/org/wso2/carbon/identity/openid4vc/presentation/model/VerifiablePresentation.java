@@ -105,11 +105,11 @@ public class VerifiablePresentation {
     }
 
     public List<String> getContext() {
-        return context;
+        return context != null ? new ArrayList<>(context) : null;
     }
 
     public void setContext(List<String> context) {
-        this.context = context;
+        this.context = context != null ? new ArrayList<>(context) : null;
     }
 
     public void addContext(String ctx) {
@@ -120,11 +120,11 @@ public class VerifiablePresentation {
     }
 
     public List<String> getType() {
-        return type;
+        return type != null ? new ArrayList<>(type) : null;
     }
 
     public void setType(List<String> type) {
-        this.type = type;
+        this.type = type != null ? new ArrayList<>(type) : null;
     }
 
     public void addType(String t) {
@@ -159,11 +159,11 @@ public class VerifiablePresentation {
     }
 
     public List<VerifiableCredential> getVerifiableCredentials() {
-        return verifiableCredentials;
+        return verifiableCredentials != null ? new ArrayList<>(verifiableCredentials) : null;
     }
 
     public void setVerifiableCredentials(List<VerifiableCredential> verifiableCredentials) {
-        this.verifiableCredentials = verifiableCredentials;
+        this.verifiableCredentials = verifiableCredentials != null ? new ArrayList<>(verifiableCredentials) : null;
     }
 
     public void addVerifiableCredential(VerifiableCredential vc) {
@@ -252,11 +252,11 @@ public class VerifiablePresentation {
     }
 
     public Map<String, Object> getJwtClaims() {
-        return jwtClaims;
+        return jwtClaims != null ? new java.util.HashMap<>(jwtClaims) : null;
     }
 
     public void setJwtClaims(Map<String, Object> jwtClaims) {
-        this.jwtClaims = jwtClaims;
+        this.jwtClaims = jwtClaims != null ? new java.util.HashMap<>(jwtClaims) : null;
     }
 
     public boolean isSignatureVerified() {

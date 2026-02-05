@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.dto;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,17 +58,17 @@ public class PresentationSubmissionDTO {
     /**
      * Constructor with all fields.
      *
-     * @param submissionId  Unique submission identifier
-     * @param defId         Definition ID
-     * @param descMap       Descriptor map list
+     * @param submissionId Unique submission identifier
+     * @param defId        Definition ID
+     * @param descMap      Descriptor map list
      */
     public PresentationSubmissionDTO(final String submissionId,
-                                     final String defId,
-                                     final List<DescriptorMapDTO> descMap) {
+            final String defId,
+            final List<DescriptorMapDTO> descMap) {
 
         this.id = submissionId;
         this.definitionId = defId;
-        this.descriptorMap = descMap;
+        this.descriptorMap = descMap != null ? new ArrayList<>(descMap) : null;
     }
 
     /**
@@ -117,7 +118,7 @@ public class PresentationSubmissionDTO {
      */
     public List<DescriptorMapDTO> getDescriptorMap() {
 
-        return descriptorMap;
+        return descriptorMap != null ? new ArrayList<>(descriptorMap) : null;
     }
 
     /**

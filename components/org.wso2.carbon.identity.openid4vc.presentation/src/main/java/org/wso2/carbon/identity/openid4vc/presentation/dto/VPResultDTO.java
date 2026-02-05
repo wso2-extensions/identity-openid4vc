@@ -160,11 +160,18 @@ public class VPResultDTO {
     }
 
     public List<VCVerificationResultDTO> getVcVerificationResults() {
-        return vcVerificationResults;
+        if (vcVerificationResults == null) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(vcVerificationResults);
     }
 
     public void setVcVerificationResults(List<VCVerificationResultDTO> vcVerificationResults) {
-        this.vcVerificationResults = vcVerificationResults;
+        if (vcVerificationResults == null) {
+            this.vcVerificationResults = new ArrayList<>();
+        } else {
+            this.vcVerificationResults = new ArrayList<>(vcVerificationResults);
+        }
     }
 
     public String getError() {
@@ -221,8 +228,8 @@ public class VPResultDTO {
     public String toString() {
         return "VPResultDTO{" +
                 "transactionId='" + transactionId + '\'' +
-                ", vcVerificationResultsCount=" + 
-                    (vcVerificationResults != null ? vcVerificationResults.size() : 0) +
+                ", vcVerificationResultsCount=" +
+                (vcVerificationResults != null ? vcVerificationResults.size() : 0) +
                 ", hasError=" + hasError() +
                 '}';
     }
