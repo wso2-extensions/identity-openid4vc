@@ -37,11 +37,11 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceUtil;
-import org.wso2.carbon.identity.openid4vc.sdjwt.Disclosure;
-import org.wso2.carbon.identity.openid4vc.sdjwt.SDJWT;
-import org.wso2.carbon.identity.openid4vc.sdjwt.SDObjectBuilder;
-import org.wso2.carbon.identity.openid4vc.sdjwt.constant.SDJWTConstants;
-import org.wso2.carbon.identity.openid4vc.sdjwt.exception.SDJWTException;
+import org.wso2.carbon.identity.sdjwt.Disclosure;
+import org.wso2.carbon.identity.sdjwt.SDJWT;
+import org.wso2.carbon.identity.sdjwt.SDObjectBuilder;
+import org.wso2.carbon.identity.sdjwt.constant.SDJWTConstants;
+import org.wso2.carbon.identity.sdjwt.exception.SDJWTException;
 
 import java.security.Key;
 import java.security.cert.Certificate;

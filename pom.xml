@@ -44,14 +44,14 @@
     <modules>
         <module>components/org.wso2.carbon.identity.openid4vc.template.management</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.common</module>
-        <module>components/org.wso2.carbon.identity.openid4vc.sdjwt</module>
+        <module>components/org.wso2.carbon.identity.sdjwt</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.credential</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.metadata</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.offer</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.endpoint</module>
         <module>features/org.wso2.carbon.identity.openid4vc.template.management.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.common.server.feature</module>
-        <module>features/org.wso2.carbon.identity.openid4vc.sdjwt.server.feature</module>
+        <module>features/org.wso2.carbon.identity.sdjwt.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.credential.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.metadata.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.offer.server.feature</module>
@@ -112,7 +112,7 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.openid4vc</groupId>
-                <artifactId>org.wso2.carbon.identity.openid4vc.sdjwt</artifactId>
+                <artifactId>org.wso2.carbon.identity.sdjwt</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
