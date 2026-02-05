@@ -64,12 +64,11 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class SdJwtVcFormatHandler implements CredentialFormatHandler {
 
     private static final Log LOG = LogFactory.getLog(SdJwtVcFormatHandler.class);
-    private static final String FORMAT = VC_SD_JWT_FORMAT;
 
     @Override
     public String getFormat() {
 
-        return FORMAT;
+        return VC_SD_JWT_FORMAT;
     }
 
     @Override
