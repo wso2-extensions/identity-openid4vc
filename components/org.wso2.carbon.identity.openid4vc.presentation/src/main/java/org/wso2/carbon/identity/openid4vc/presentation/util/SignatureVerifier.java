@@ -90,7 +90,7 @@ public class SignatureVerifier {
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-                        throw new CredentialVerificationException(
+            throw new CredentialVerificationException(
                     "JWT signature verification failed: " + e.getMessage(), e);
         }
     }
@@ -124,13 +124,13 @@ public class SignatureVerifier {
             } else if (proofType.contains("EcdsaSecp256k1")) {
                 return verifyEcdsaSecp256k1Signature(document, publicKey, proofValue);
             } else {
-                                return verifyGenericSignature(document, publicKey, proofValue, proofType);
+                return verifyGenericSignature(document, publicKey, proofValue, proofType);
             }
 
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
-                        throw new CredentialVerificationException(
+            throw new CredentialVerificationException(
                     "Linked data signature verification failed: " + e.getMessage(), e);
         }
     }
@@ -165,7 +165,7 @@ public class SignatureVerifier {
             sig.update(documentHash);
             return sig.verify(signatureBytes);
         } catch (Exception e) {
-                        // Ed25519 verification requires specific support
+            // Ed25519 verification requires specific support
             throw new CredentialVerificationException(
                     "Ed25519 verification not supported: " + e.getMessage());
         }
@@ -441,7 +441,7 @@ public class SignatureVerifier {
         String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
         if (base58 == null || base58.isEmpty()) {
-            return null;
+            return new byte[0];
         }
 
         // Count leading zeros
@@ -457,7 +457,7 @@ public class SignatureVerifier {
         for (int i = 0; i < base58.length(); i++) {
             int index = alphabet.indexOf(base58.charAt(i));
             if (index < 0) {
-                return null;
+                return new byte[0];
             }
             value = value.multiply(base).add(java.math.BigInteger.valueOf(index));
         }

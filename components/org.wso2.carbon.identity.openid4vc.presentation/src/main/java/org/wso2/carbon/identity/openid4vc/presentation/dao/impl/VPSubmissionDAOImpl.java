@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPSubmissionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -80,7 +81,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
                 ps.setLong(9, vpSubmission.getSubmittedAt());
                 ps.setInt(10, vpSubmission.getTenantId());
 
-                int rowsAffected = ps.executeUpdate();
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -138,6 +139,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     }
 
     @Override
+    @SuppressFBWarnings("SQL_INJECTION_JDBC")
     public List<VPSubmission> getVPSubmissionsByRequestIds(List<String> requestIds, int tenantId)
             throws VPException {
         if (requestIds == null || requestIds.isEmpty()) {

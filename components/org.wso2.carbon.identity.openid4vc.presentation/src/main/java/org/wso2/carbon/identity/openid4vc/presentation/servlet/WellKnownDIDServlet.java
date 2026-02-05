@@ -22,6 +22,7 @@ import com.google.gson.JsonObject;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -79,9 +80,7 @@ public class WellKnownDIDServlet extends HttpServlet {
             response.setStatus(HttpServletResponse.SC_OK);
 
             // Add CORS headers
-            response.setHeader("Access-Control-Allow-Origin", "*");
-            response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-            response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+            CORSUtil.addCORSHeaders(request, response);
 
             PrintWriter out = response.getWriter();
             out.print(didDocument);
@@ -103,10 +102,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     protected void doOptions(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        response.setHeader("Access-Control-Allow-Origin", "*");
-        response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-        response.setHeader("Access-Control-Allow-Headers", "Content-Type");
-        response.setStatus(HttpServletResponse.SC_OK);
+        CORSUtil.handlePreflight(request, response);
     }
 
     /**

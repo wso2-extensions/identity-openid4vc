@@ -209,6 +209,7 @@ public class StatusNotificationService {
             try {
                 listener.onStatusChange(requestId, newStatus, submission);
             } catch (Exception e) {
+                // Ignore exception from listener to avoid disrupting notification flow
             }
         }
     }

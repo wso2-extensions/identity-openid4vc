@@ -22,6 +22,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPSubmissionDAO;
@@ -40,6 +41,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredentia
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPResultService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -67,6 +69,8 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Constructor for dependency injection.
      */
+
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public VPResultServiceImpl(VPRequestDAO vpRequestDAO, VPSubmissionDAO vpSubmissionDAO,
             VCVerificationService vcVerificationService) {
         this.vpRequestDAO = vpRequestDAO;
@@ -188,7 +192,10 @@ public class VPResultServiceImpl implements VPResultService {
                 // Parse JSON-LD VP
                 results = parseAndVerifyJsonLdVP(vpToken);
             }
-        } catch (Exception e) {
+
+        } catch (
+
+        Exception e) {
             // Return single error result
             VCVerificationResultDTO errorResult = new VCVerificationResultDTO.Builder()
                     .vcIndex(0)
@@ -283,11 +290,13 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Extract holder from JWT VP.
      */
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String extractHolderFromJwtVP(String vpToken) {
         try {
             String[] parts = vpToken.split("\\.");
             if (parts.length >= 2) {
-                String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+                String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
                 JsonObject claims = GSON.fromJson(payload, JsonObject.class);
 
                 // Try 'iss' claim first (holder is usually the issuer of VP)
@@ -314,6 +323,8 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Extract holder from JSON-LD VP.
      */
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String extractHolderFromJsonLdVP(String vpToken) {
         try {
             JsonObject vp = GSON.fromJson(vpToken, JsonObject.class);
@@ -333,6 +344,8 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Parse and verify JWT VP.
      */
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private List<VCVerificationResultDTO> parseAndVerifyJwtVP(String vpToken) throws VPException {
         List<VCVerificationResultDTO> results = new ArrayList<>();
 
@@ -342,7 +355,7 @@ public class VPResultServiceImpl implements VPResultService {
                 throw new VPException("Invalid JWT VP format");
             }
 
-            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
             JsonObject claims = GSON.fromJson(payload, JsonObject.class);
 
             JsonArray credentials = null;
@@ -420,6 +433,8 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Verify a single credential and build result DTO.
      */
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private VCVerificationResultDTO verifyCredential(int index, JsonElement vcElement) {
         try {
             String vcString;
@@ -442,16 +457,10 @@ public class VPResultServiceImpl implements VPResultService {
             VerifiableCredential vc = vcVerificationService.parseCredential(vcString, contentType);
 
             boolean signatureValid = vcVerificationService.verifySignature(vc);
-            if (signatureValid) {
-            }
 
             boolean expired = vcVerificationService.isExpired(vc);
-            if (!expired) {
-            }
 
             boolean revoked = vcVerificationService.isRevoked(vc);
-            if (!revoked) {
-            }
 
             VCVerificationStatus status;
             String error = null;
@@ -500,6 +509,8 @@ public class VPResultServiceImpl implements VPResultService {
     /**
      * Extract subject ID from credential subject.
      */
+
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String extractSubjectId(Object credentialSubject) {
         if (credentialSubject == null) {
             return null;

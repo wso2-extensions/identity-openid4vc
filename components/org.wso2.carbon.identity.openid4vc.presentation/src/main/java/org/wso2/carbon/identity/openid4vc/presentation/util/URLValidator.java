@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
@@ -58,7 +59,7 @@ public final class URLValidator {
             String scheme = uri.getScheme();
 
             // Check if scheme is allowed
-            if (scheme == null || !ALLOWED_SCHEMES.contains(scheme.toLowerCase())) {
+            if (scheme == null || !ALLOWED_SCHEMES.contains(scheme.toLowerCase(Locale.ENGLISH))) {
                 return false;
             }
 

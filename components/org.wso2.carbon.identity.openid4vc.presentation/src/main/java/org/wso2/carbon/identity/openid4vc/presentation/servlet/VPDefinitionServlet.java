@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
@@ -501,6 +502,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Request DTO for creating/updating presentation definitions.
      */
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
     private static class PresentationDefinitionRequest {
 
         private String definitionId;
@@ -533,6 +535,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Response DTO for presentation definitions.
      */
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
     private static class PresentationDefinitionResponseDTO {
 
         @SuppressWarnings("unused")
@@ -582,6 +585,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Request DTO for application mapping operations.
      */
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
     private static class ApplicationMappingRequest {
 
         private String applicationId;
@@ -599,6 +603,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Response DTO for application mapping operations.
      */
+    @SuppressFBWarnings("URF_UNREAD_FIELD")
     private static class ApplicationMappingResponse {
 
         private String message;

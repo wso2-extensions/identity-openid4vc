@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.util;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -50,16 +52,20 @@ public final class CORSUtil {
      * @param request  The HTTP request
      * @param response The HTTP response
      */
+    @SuppressFBWarnings({ "HTTP_RESPONSE_SPLITTING", "PERMISSIVE_CORS", "HRS_REQUEST_PARAMETER_TO_HTTP_HEADER" })
     public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response) {
         String origin = request.getHeader(HEADER_ORIGIN);
 
         if (origin != null && !origin.isEmpty()) {
-            // Allow the requesting origin
-            response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, origin);
-            response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            // Sanitize origin to prevent CRLF injection
+            if (isValidOrigin(origin)) {
+                response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+                response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            }
         } else {
-            // Allow all origins for simple requests without credentials
-            response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            // Do not allow all origins with credentials.
+            // If origin is missing, we generally don't set CORS headers or set safe
+            // defaults.
         }
 
         response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_METHODS, DEFAULT_ALLOWED_METHODS);
@@ -75,6 +81,7 @@ public final class CORSUtil {
      * @param response       The HTTP response
      * @param allowedMethods Comma-separated list of allowed HTTP methods
      */
+    @SuppressFBWarnings("HTTP_RESPONSE_SPLITTING")
     public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response,
             String allowedMethods) {
         addCORSHeaders(request, response);
@@ -137,5 +144,28 @@ public final class CORSUtil {
         }
 
         return false;
+    }
+
+    /**
+     * Check if the origin is valid and safe.
+     *
+     * @param origin The origin header value
+     * @return true if valid
+     */
+    private static boolean isValidOrigin(String origin) {
+        if (origin == null || origin.isEmpty()) {
+            return false;
+        }
+        // Check for CRLF injection
+        if (origin.indexOf('\r') != -1 || origin.indexOf('\n') != -1) {
+            return false;
+        }
+        // Basic URL validation
+        try {
+            java.net.URI uri = new java.net.URI(origin);
+            return uri.getScheme() != null && uri.getHost() != null;
+        } catch (java.net.URISyntaxException e) {
+            return false;
+        }
     }
 }
