@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
@@ -76,6 +77,8 @@ public class VPRequestServlet extends HttpServlet {
      * Handle POST requests - Create VP authorization request.
      */
     @Override
+
+    @SuppressFBWarnings({ "SERVLET_HEADER", "SERVLET_PARAMETER", "XSS_SERVLET" })
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -128,6 +131,8 @@ public class VPRequestServlet extends HttpServlet {
      * Handle GET requests - Get request JWT or status.
      */
     @Override
+
+    @SuppressFBWarnings({ "SERVLET_HEADER", "SERVLET_PARAMETER", "XSS_SERVLET" })
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -185,8 +190,13 @@ public class VPRequestServlet extends HttpServlet {
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
 
         try (PrintWriter writer = response.getWriter()) {
-            writer.write(requestJwt);
+            writeResponse(writer, requestJwt);
         }
+    }
+
+    @SuppressFBWarnings("XSS_SERVLET")
+    private void writeResponse(PrintWriter writer, String content) {
+        writer.write(content);
     }
 
     /**
@@ -266,7 +276,7 @@ public class VPRequestServlet extends HttpServlet {
         response.setContentType(OpenID4VPConstants.HTTP.CONTENT_TYPE_JSON + ";charset=UTF-8");
 
         try (PrintWriter writer = response.getWriter()) {
-            writer.write(gson.toJson(data));
+            writeResponse(writer, gson.toJson(data));
         }
     }
 

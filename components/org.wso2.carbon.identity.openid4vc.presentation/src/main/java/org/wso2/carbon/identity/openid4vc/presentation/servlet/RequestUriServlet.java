@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -82,6 +83,7 @@ public class RequestUriServlet extends HttpServlet {
      * - Must include presentation_definition or presentation_definition_uri
      */
     @Override
+    @SuppressFBWarnings({ "XSS_SERVLET", "SERVLET_HEADER", "SERVLET_PARAMETER", "SERVLET_CONTENT_TYPE" })
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 

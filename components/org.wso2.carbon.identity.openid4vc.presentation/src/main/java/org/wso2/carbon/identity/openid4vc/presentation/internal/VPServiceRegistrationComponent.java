@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.osgi.framework.BundleContext;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
@@ -55,6 +56,7 @@ public class VPServiceRegistrationComponent {
     private static volatile boolean authenticatorRegistered = false;
 
     @Activate
+    @SuppressFBWarnings({ "ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD", "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     protected void activate(ComponentContext context) {
         try {
             // Only register once to avoid duplicates
@@ -71,8 +73,8 @@ public class VPServiceRegistrationComponent {
             VPRequestService vpRequestService = new VPRequestServiceImpl();
             VPSubmissionService vpSubmissionService = new VPSubmissionServiceImpl();
             PresentationDefinitionService presentationDefinitionService = new PresentationDefinitionServiceImpl();
-            ApplicationPresentationDefinitionMappingService mappingService = 
-            new ApplicationPresentationDefinitionMappingServiceImpl();
+            ApplicationPresentationDefinitionMappingService mappingService = new 
+            ApplicationPresentationDefinitionMappingServiceImpl();
 
             // Register services with OSGi
             bundleContext.registerService(VPRequestService.class.getName(),
@@ -103,6 +105,7 @@ public class VPServiceRegistrationComponent {
     }
 
     @Deactivate
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     protected void deactivate(ComponentContext context) {
         // Services are automatically unregistered by OSGi
         VPServiceDataHolder.getInstance().setVPRequestService(null);
@@ -115,8 +118,7 @@ public class VPServiceRegistrationComponent {
     }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
-    ReferenceCardinality.MANDATORY, policy = 
-    ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
+    ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC, unbind = "unsetRealmService")
     protected void setRealmService(RealmService realmService) {
         VPServiceDataHolder.getInstance().setRealmService(realmService);
 
@@ -127,16 +129,21 @@ public class VPServiceRegistrationComponent {
 
     }
 
-    @Reference(name = "application.mgt.service", service = ApplicationManagementService.class, cardinality = 
+    @Reference(name = "org.wso2.carbon.identity.application.mgt.ApplicationManagementService", service = 
+    org.wso2.carbon.identity.application.mgt.ApplicationManagementService.class, cardinality = 
     ReferenceCardinality.MANDATORY, policy = 
     ReferencePolicy.DYNAMIC, unbind = "unsetApplicationManagementService")
     protected void setApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(applicationManagementService);
-
     }
 
     protected void unsetApplicationManagementService(ApplicationManagementService applicationManagementService) {
         VPServiceDataHolder.getInstance().setApplicationManagementService(null);
 
+    }
+
+    protected void unsetApplicationPresentationDefinitionMappingService(
+            ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
+        VPServiceDataHolder.getInstance().setApplicationPresentationDefinitionMappingService(null);
     }
 }

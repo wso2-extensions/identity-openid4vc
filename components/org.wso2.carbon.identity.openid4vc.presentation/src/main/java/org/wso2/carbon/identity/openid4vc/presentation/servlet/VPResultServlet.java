@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.servlet;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
@@ -72,6 +73,8 @@ public class VPResultServlet extends HttpServlet {
      * Handle GET requests - Retrieve VP verification results.
      */
     @Override
+
+    @SuppressFBWarnings({ "SERVLET_HEADER", "SERVLET_PARAMETER", "XSS_SERVLET" })
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 

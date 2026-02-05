@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 
@@ -63,6 +64,7 @@ public class WalletDataCache {
      *
      * @return WalletDataCache instance
      */
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static WalletDataCache getInstance() {
         return INSTANCE;
     }

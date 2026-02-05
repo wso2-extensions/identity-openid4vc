@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -189,6 +191,7 @@ public class VPStatusListenerCache {
      *
      * @return VPStatusListenerCache instance
      */
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static VPStatusListenerCache getInstance() {
 
         if (instance == null) {

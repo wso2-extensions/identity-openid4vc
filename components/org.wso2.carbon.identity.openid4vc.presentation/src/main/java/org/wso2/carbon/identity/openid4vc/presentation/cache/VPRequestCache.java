@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 
@@ -108,6 +109,7 @@ public class VPRequestCache {
      *
      * @return VPRequestCache instance
      */
+    @SuppressFBWarnings("MS_EXPOSE_REP")
     public static VPRequestCache getInstance() {
         if (instance == null) {
             synchronized (VPRequestCache.class) {

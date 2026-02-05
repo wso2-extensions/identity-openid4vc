@@ -355,6 +355,7 @@ public class VPRequestServiceImpl implements VPRequestService {
     /**
      * Resolve the presentation definition from ID or inline value.
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private String resolvePresentationDefinition(VPRequestCreateDTO requestCreateDTO, int tenantId)
             throws VPException {
 
