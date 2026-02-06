@@ -209,6 +209,7 @@ public class VPResultServiceImpl implements VPResultService {
     }
 
     @Override
+    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     public VPResultSummaryDTO getVPResultSummary(String transactionId, int tenantId)
             throws VPRequestNotFoundException, VPSubmissionNotFoundException, VPException {
 

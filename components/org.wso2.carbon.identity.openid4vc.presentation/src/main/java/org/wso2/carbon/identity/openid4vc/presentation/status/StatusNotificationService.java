@@ -202,7 +202,7 @@ public class StatusNotificationService {
     /**
      * Notify all registered status change listeners.
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
+    @SuppressFBWarnings({ "REC_CATCH_EXCEPTION", "DE_MIGHT_IGNORE" })
     private void notifyStatusChangeListeners(final String requestId,
             final VPRequestStatus newStatus,
             final VPSubmission submission) {

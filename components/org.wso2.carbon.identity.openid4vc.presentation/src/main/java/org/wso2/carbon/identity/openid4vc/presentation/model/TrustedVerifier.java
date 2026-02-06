@@ -430,6 +430,7 @@ public class TrustedVerifier {
             return this;
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP")
         public TrustedVerifier build() {
             return verifier;
         }

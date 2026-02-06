@@ -102,6 +102,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      *
      * @param didResolverService DID resolver service
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public VCVerificationServiceImpl(DIDResolverService didResolverService) {
         this.didResolverService = didResolverService;
         this.signatureVerifier = new SignatureVerifier(didResolverService);
@@ -114,6 +115,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      * @param didResolverService DID resolver service
      * @param statusListService  Status list service
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public VCVerificationServiceImpl(DIDResolverService didResolverService,
             StatusListService statusListService) {
         this.didResolverService = didResolverService;

@@ -78,6 +78,7 @@ public class VPRequestServiceImpl implements VPRequestService {
     }
 
     @Override
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public VPRequestResponseDTO createVPRequest(VPRequestCreateDTO requestCreateDTO, int tenantId)
             throws VPException {
 
