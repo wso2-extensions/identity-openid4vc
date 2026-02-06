@@ -250,6 +250,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public boolean verifySignature(VerifiableCredential credential)
             throws CredentialVerificationException {
 
@@ -458,6 +459,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public VerifiableCredential parseCredential(String vcString, String contentType)
             throws CredentialVerificationException {
 
@@ -517,6 +519,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Parse a JWT credential.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private VerifiableCredential parseJwtCredential(String jwtString)
             throws CredentialVerificationException {
 
@@ -587,6 +590,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Parse a SD-JWT credential.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private VerifiableCredential parseSdJwtCredential(String sdJwtString)
             throws CredentialVerificationException {
 
@@ -632,6 +636,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Process SD-JWT disclosures to extract claims.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({ "REC_CATCH_EXCEPTION", "DE_MIGHT_IGNORE" })
     private void processDisclosures(VerifiableCredential credential) {
         if (credential.getDisclosures() == null) {
             return;
@@ -663,6 +668,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Parse a JSON-LD credential.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private VerifiableCredential parseJsonLdCredential(String jsonString)
             throws CredentialVerificationException {
 

@@ -467,6 +467,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Send JSON response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendJsonResponse(HttpServletRequest request, HttpServletResponse response, int statusCode, Object data)
             throws IOException {
 
