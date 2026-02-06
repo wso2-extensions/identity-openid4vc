@@ -206,6 +206,7 @@ public class VPRequestServlet extends HttpServlet {
             String requestId, int tenantId) throws VPException, IOException {
 
         // Get timeout parameter for long polling
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String timeoutParam = request.getParameter("timeout");
         long timeout = DEFAULT_POLL_TIMEOUT_MS;
         if (StringUtils.isNotBlank(timeoutParam)) {

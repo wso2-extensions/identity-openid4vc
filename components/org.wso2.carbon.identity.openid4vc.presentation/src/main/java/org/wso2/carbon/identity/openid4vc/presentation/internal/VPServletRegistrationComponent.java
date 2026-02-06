@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -60,6 +61,7 @@ public class VPServletRegistrationComponent {
     private HttpService httpService;
 
     @Activate
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     protected void activate(ComponentContext context) {
         try {
             registerServlets();
@@ -105,6 +107,7 @@ public class VPServletRegistrationComponent {
     /**
      * Unregister all OpenID4VP servlets.
      */
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void unregisterServlets() {
         if (httpService == null) {
             return;

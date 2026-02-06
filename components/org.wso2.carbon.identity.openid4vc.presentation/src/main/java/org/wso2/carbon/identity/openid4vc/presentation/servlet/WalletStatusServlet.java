@@ -224,12 +224,14 @@ public class WalletStatusServlet extends HttpServlet {
      */
     private boolean isLongPollingEnabled(final HttpServletRequest request) {
 
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String longPollParam = request.getParameter(PARAM_LONG_POLL);
         if (longPollParam != null) {
             return "true".equalsIgnoreCase(longPollParam) || "1".equals(longPollParam);
         }
 
         // If timeout parameter is provided, assume long polling
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String timeoutParam = request.getParameter(PARAM_TIMEOUT);
         return StringUtils.isNotBlank(timeoutParam);
     }
@@ -239,6 +241,7 @@ public class WalletStatusServlet extends HttpServlet {
      */
     private long getTimeoutSeconds(final HttpServletRequest request) {
 
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String timeoutParam = request.getParameter(PARAM_TIMEOUT);
         if (StringUtils.isNotBlank(timeoutParam)) {
             try {

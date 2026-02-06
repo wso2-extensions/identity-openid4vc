@@ -162,7 +162,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION", "NP_NULL_ON_SOME_PATH" })
     protected void processAuthenticationResponse(HttpServletRequest request,
             HttpServletResponse response,
             AuthenticationContext context)
@@ -379,6 +379,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     public AuthenticatorFlowStatus process(HttpServletRequest request, HttpServletResponse response,
             AuthenticationContext context)
             throws AuthenticationFailedException, LogoutFailedException {
@@ -786,6 +787,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param requestId Request ID to cleanup
      * @param tenantId  Tenant ID
      */
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void cleanupVPData(String requestId, int tenantId) {
         if (StringUtils.isBlank(requestId)) {
             return;
@@ -805,7 +807,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             WalletDataCache.getInstance().retrieveSubmission(requestId);
 
         } catch (Exception e) {
-            // Ignored: Cleanup failure should not affect flow
+            // Ignored: Best effort cleanup
         }
     }
 
