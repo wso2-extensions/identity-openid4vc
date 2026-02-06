@@ -236,6 +236,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      * Extract request ID from path.
      * Expected path: /vp-request/{requestId}/status
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private String extractRequestId(final HttpServletRequest request) {
 
         String pathInfo = request.getPathInfo();
@@ -267,6 +268,7 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Check if long polling is enabled for this request.
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private boolean isLongPollingEnabled(final HttpServletRequest request) {
 
         @SuppressFBWarnings("SERVLET_PARAMETER")
@@ -285,6 +287,7 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Get timeout seconds from request.
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private long getTimeoutSeconds(final HttpServletRequest request) {
 
         @SuppressFBWarnings("SERVLET_PARAMETER")

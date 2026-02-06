@@ -186,6 +186,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @return Parsed VPSubmissionDTO
      * @throws IOException If parsing fails
      */
+    @SuppressFBWarnings("SERVLET_CONTENT_TYPE")
     private VPSubmissionDTO parseSubmission(final HttpServletRequest request)
             throws IOException {
 

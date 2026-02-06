@@ -292,38 +292,41 @@ public class WalletDataCache {
     /**
      * Start periodic cleanup task to remove expired entries.
      */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void startCleanupTask() {
-        cleanupScheduler.scheduleAtFixedRate(() -> {
-            try {
+        cleanupScheduler.scheduleAtFixedRate(this::cleanupCaches,
+                CLEANUP_INTERVAL_MINUTES, CLEANUP_INTERVAL_MINUTES, TimeUnit.MINUTES);
+    }
 
-                // Clean up token cache
-                for (Map.Entry<String, CacheEntry> entry : tokenCache.entrySet()) {
-                    if (entry.getValue().isExpired()) {
-                        tokenCache.remove(entry.getKey());
-
-                    }
+    /**
+     * Cleanup expired entries from caches.
+     */
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
+    private void cleanupCaches() {
+        try {
+            // Clean up token cache
+            for (Map.Entry<String, CacheEntry> entry : tokenCache.entrySet()) {
+                if (entry.getValue().isExpired()) {
+                    tokenCache.remove(entry.getKey());
                 }
-
-                // Clean up context cache
-                for (Map.Entry<String, ContextCacheEntry> entry : contextCache.entrySet()) {
-                    if (entry.getValue().isExpired()) {
-                        contextCache.remove(entry.getKey());
-
-                    }
-                }
-
-                // Clean up submission cache
-                for (Map.Entry<String, SubmissionCacheEntry> entry : submissionCache.entrySet()) {
-                    if (entry.getValue().isExpired()) {
-                        submissionCache.remove(entry.getKey());
-
-                    }
-                }
-
-            } catch (Exception e) {
             }
-        }, CLEANUP_INTERVAL_MINUTES, CLEANUP_INTERVAL_MINUTES, TimeUnit.MINUTES);
+
+            // Clean up context cache
+            for (Map.Entry<String, ContextCacheEntry> entry : contextCache.entrySet()) {
+                if (entry.getValue().isExpired()) {
+                    contextCache.remove(entry.getKey());
+                }
+            }
+
+            // Clean up submission cache
+            for (Map.Entry<String, SubmissionCacheEntry> entry : submissionCache.entrySet()) {
+                if (entry.getValue().isExpired()) {
+                    submissionCache.remove(entry.getKey());
+                }
+            }
+
+        } catch (Exception e) {
+            // Ignore exceptions during cleanup to ensure scheduler continues
+        }
     }
 
     /**

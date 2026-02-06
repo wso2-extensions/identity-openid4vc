@@ -130,6 +130,7 @@ public class DIDWebProvider implements DIDProvider {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("DE_MIGHT_IGNORE")
     public DIDDocument getDIDDocument(int tenantId, String baseUrl, String algorithm) throws VPException {
         try {
             String did = getDID(tenantId, baseUrl);
