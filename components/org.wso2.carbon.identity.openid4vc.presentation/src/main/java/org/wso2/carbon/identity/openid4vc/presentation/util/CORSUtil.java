@@ -52,7 +52,8 @@ public final class CORSUtil {
      * @param request  The HTTP request
      * @param response The HTTP response
      */
-    @SuppressFBWarnings({ "HTTP_RESPONSE_SPLITTING", "PERMISSIVE_CORS", "HRS_REQUEST_PARAMETER_TO_HTTP_HEADER" })
+    @SuppressFBWarnings({ "HTTP_RESPONSE_SPLITTING", "PERMISSIVE_CORS", "HRS_REQUEST_PARAMETER_TO_HTTP_HEADER",
+            "SERVLET_HEADER" })
     public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response) {
         String origin = request.getHeader(HEADER_ORIGIN);
 

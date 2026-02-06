@@ -169,7 +169,7 @@ public class VPRequestBuilder {
             return signingInput + "." + signature;
 
         } catch (Exception e) {
-                        throw new VPException("Failed to build authorization request JWT", e);
+            throw new VPException("Failed to build authorization request JWT", e);
         }
     }
 
@@ -270,7 +270,7 @@ public class VPRequestBuilder {
         if (StringUtils.isBlank(privateKeyBase64)) {
             // Return empty signature if no key configured
             // In production, this should throw an error
-                        return "";
+            return "";
         }
 
         byte[] keyBytes = Base64.getDecoder().decode(privateKeyBase64);

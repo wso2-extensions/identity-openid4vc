@@ -223,6 +223,9 @@ public class VPDefinitionServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
+        if (pathInfo == null) {
+            pathInfo = "";
+        }
         int tenantId = getTenantId(request);
 
         try {

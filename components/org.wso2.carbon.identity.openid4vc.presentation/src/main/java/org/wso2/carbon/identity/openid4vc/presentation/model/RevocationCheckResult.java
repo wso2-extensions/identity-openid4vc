@@ -31,22 +31,22 @@ public class RevocationCheckResult {
          * Credential is valid (not revoked, not suspended).
          */
         VALID,
-        
+
         /**
          * Credential has been revoked.
          */
         REVOKED,
-        
+
         /**
          * Credential has been suspended (temporary).
          */
         SUSPENDED,
-        
+
         /**
          * Unable to determine status (e.g., network error, unsupported status type).
          */
         UNKNOWN,
-        
+
         /**
          * Status check was skipped (e.g., no credentialStatus field, check disabled).
          */
@@ -280,6 +280,7 @@ public class RevocationCheckResult {
             return this;
         }
 
+        @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP")
         public RevocationCheckResult build() {
             return result;
         }

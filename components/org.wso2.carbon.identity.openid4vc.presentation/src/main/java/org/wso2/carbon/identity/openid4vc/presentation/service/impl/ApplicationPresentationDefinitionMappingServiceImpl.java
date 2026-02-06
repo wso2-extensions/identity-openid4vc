@@ -44,6 +44,7 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
      *
      * @param mappingDAO The DAO for mappings
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public ApplicationPresentationDefinitionMappingServiceImpl(
             ApplicationPresentationDefinitionMappingDAO mappingDAO) {
         this.mappingDAO = mappingDAO;

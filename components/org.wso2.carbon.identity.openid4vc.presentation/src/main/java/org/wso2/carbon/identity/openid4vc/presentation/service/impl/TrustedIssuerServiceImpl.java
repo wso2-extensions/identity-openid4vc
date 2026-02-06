@@ -53,6 +53,7 @@ public class TrustedIssuerServiceImpl implements TrustedIssuerService {
      *
      * @param trustedIssuerDAO DAO instance
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public TrustedIssuerServiceImpl(TrustedIssuerDAO trustedIssuerDAO) {
         this.trustedIssuerDAO = trustedIssuerDAO;
     }

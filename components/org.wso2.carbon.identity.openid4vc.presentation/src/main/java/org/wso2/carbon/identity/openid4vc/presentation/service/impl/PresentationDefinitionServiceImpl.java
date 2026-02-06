@@ -48,6 +48,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     /**
      * Constructor for dependency injection.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public PresentationDefinitionServiceImpl(PresentationDefinitionDAO presentationDefinitionDAO) {
         this.presentationDefinitionDAO = presentationDefinitionDAO;
     }

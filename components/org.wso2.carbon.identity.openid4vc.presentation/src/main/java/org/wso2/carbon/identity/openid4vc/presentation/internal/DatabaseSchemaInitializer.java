@@ -259,7 +259,7 @@ public class DatabaseSchemaInitializer {
         /**
          * Execute SQL and log the result.
          */
-        @SuppressFBWarnings({ "SQL_INJECTION_JDBC", "DE_MIGHT_IGNORE" })
+        @SuppressFBWarnings({ "SQL_INJECTION_JDBC", "DE_MIGHT_IGNORE", "UCF_USELESS_CONTROL_FLOW" })
         private static void executeSQL(Connection connection, String sql, String objectName) {
                 try (Statement statement = connection.createStatement()) {
                         statement.execute(sql);

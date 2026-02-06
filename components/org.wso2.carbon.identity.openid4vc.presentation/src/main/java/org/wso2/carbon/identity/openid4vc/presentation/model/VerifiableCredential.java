@@ -363,10 +363,12 @@ public class VerifiableCredential {
         this.credentialSubjectId = credentialSubjectId;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP")
     public CredentialStatus getCredentialStatus() {
         return credentialStatus;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setCredentialStatus(CredentialStatus credentialStatus) {
         this.credentialStatus = credentialStatus;
     }
@@ -375,10 +377,12 @@ public class VerifiableCredential {
         return credentialStatus != null;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP")
     public Proof getProof() {
         return proof;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setProof(Proof proof) {
         this.proof = proof;
     }

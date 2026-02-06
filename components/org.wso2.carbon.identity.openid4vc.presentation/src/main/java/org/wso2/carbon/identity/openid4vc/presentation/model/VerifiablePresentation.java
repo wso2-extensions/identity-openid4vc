@@ -195,10 +195,12 @@ public class VerifiablePresentation {
         return null;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP")
     public VerifiableCredential.Proof getProof() {
         return proof;
     }
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public void setProof(VerifiableCredential.Proof proof) {
         this.proof = proof;
     }

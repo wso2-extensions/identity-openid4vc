@@ -59,9 +59,6 @@ public class StatusListServiceImpl implements StatusListService {
     // HTTP timeout in milliseconds
     private static final int HTTP_TIMEOUT_MS = 10000;
 
-    // Default minimum bitstring size (16KB = 131,072 bits)
-    private static final int MIN_BITSTRING_SIZE = 16 * 1024;
-
     private boolean revocationCheckEnabled = true;
 
     @Override
@@ -403,9 +400,12 @@ public class StatusListServiceImpl implements StatusListService {
                 byte[] bitstring = baos.toByteArray();
 
                 // Validate minimum size per spec (optional but recommended)
-                if (bitstring.length < MIN_BITSTRING_SIZE) {
-                    // Log warning or throw exception if strict mode is enabled
-                }
+                // Validate minimum size per spec (optional but recommended)
+                /*
+                 * if (bitstring.length < MIN_BITSTRING_SIZE) {
+                 * Log warning or throw exception if strict mode is enabled
+                 * }
+                 */
 
                 return bitstring;
             }

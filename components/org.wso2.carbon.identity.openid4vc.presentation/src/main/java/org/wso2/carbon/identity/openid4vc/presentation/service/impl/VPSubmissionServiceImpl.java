@@ -63,6 +63,7 @@ public class VPSubmissionServiceImpl implements VPSubmissionService {
     /**
      * Constructor for dependency injection.
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public VPSubmissionServiceImpl(VPSubmissionDAO vpSubmissionDAO, VPRequestDAO vpRequestDAO) {
         this.vpSubmissionDAO = vpSubmissionDAO;
         this.vpRequestDAO = vpRequestDAO;

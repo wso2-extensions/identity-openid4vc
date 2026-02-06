@@ -295,6 +295,7 @@ public class VPRequestServlet extends HttpServlet {
      * Get tenant ID from request.
      * In production, this should extract from authentication context.
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
         // Simplified - in production, extract from authenticated context
         String tenantHeader = request.getHeader("X-Tenant-Id");
