@@ -86,10 +86,7 @@ public class VPRequestBuilder {
         }
 
         // Client metadata
-        JsonObject clientMetadata = buildClientMetadata(vpRequest);
-        if (clientMetadata != null) {
-            request.add("client_metadata", clientMetadata);
-        }
+        request.add("client_metadata", buildClientMetadata(vpRequest));
 
         return gson.toJson(request);
     }
@@ -152,10 +149,7 @@ public class VPRequestBuilder {
             }
 
             // Client metadata
-            JsonObject clientMetadata = buildClientMetadata(vpRequest);
-            if (clientMetadata != null) {
-                payload.add("client_metadata", clientMetadata);
-            }
+            payload.add("client_metadata", buildClientMetadata(vpRequest));
 
             // Encode and sign
             String headerBase64 = Base64.getUrlEncoder().withoutPadding()

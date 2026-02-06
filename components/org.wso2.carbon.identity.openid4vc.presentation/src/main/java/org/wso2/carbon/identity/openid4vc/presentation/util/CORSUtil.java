@@ -106,6 +106,7 @@ public final class CORSUtil {
      * @param request The HTTP request
      * @return true if this is a preflight request
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     public static boolean isPreflightRequest(HttpServletRequest request) {
         return "OPTIONS".equalsIgnoreCase(request.getMethod())
                 && request.getHeader("Access-Control-Request-Method") != null;
@@ -117,6 +118,7 @@ public final class CORSUtil {
      * @param request The HTTP request
      * @return true if this is a CORS request
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     public static boolean isCORSRequest(HttpServletRequest request) {
         return request.getHeader(HEADER_ORIGIN) != null;
     }
@@ -128,6 +130,7 @@ public final class CORSUtil {
      * @param allowedOrigins Array of allowed origins (null or empty allows all)
      * @return true if the origin is allowed
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     public static boolean isOriginAllowed(HttpServletRequest request, String[] allowedOrigins) {
         if (allowedOrigins == null || allowedOrigins.length == 0) {
             return true; // Allow all

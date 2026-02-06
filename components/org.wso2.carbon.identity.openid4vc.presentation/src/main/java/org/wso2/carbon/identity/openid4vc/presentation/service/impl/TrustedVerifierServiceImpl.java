@@ -184,7 +184,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
                     .put(trustedVerifier.getClientId(), trustedVerifier.getId());
         }
 
-                return trustedVerifier;
+        return trustedVerifier;
     }
 
     @Override
@@ -232,7 +232,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
         // Update store
         tenantVerifiers.put(verifierId, trustedVerifier);
 
-                return trustedVerifier;
+        return trustedVerifier;
     }
 
     @Override
@@ -262,7 +262,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
             }
         }
 
-            }
+    }
 
     @Override
     public boolean validateVerifierRequest(String verifierDid, List<String> requestedCredentialTypes,
@@ -282,14 +282,14 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
 
         // Check if verifier is active
         if (!verifier.isActive()) {
-                        return false;
+            return false;
         }
 
         // Check if all requested credential types are allowed
         if (requestedCredentialTypes != null && !requestedCredentialTypes.isEmpty()) {
             for (String credentialType : requestedCredentialTypes) {
                 if (!verifier.allowsCredentialType(credentialType)) {
-                                        return false;
+                    return false;
                 }
             }
         }
@@ -316,6 +316,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
     }
 
     @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public boolean validateRedirectUri(String verifierDid, String redirectUri, String tenantDomain) {
         RedirectUriValidationMode mode = getRedirectUriValidationMode(tenantDomain);
 
@@ -361,7 +362,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
                 return redirectHost.equals(organizationHost) ||
                         redirectHost.endsWith("." + organizationHost);
             } catch (Exception e) {
-                                return false;
+                return false;
             }
         }
 
@@ -372,7 +373,7 @@ public class TrustedVerifierServiceImpl implements TrustedVerifierService {
     public void clearCache() {
         // No separate cache in this implementation, but method is available for future
         // use
-            }
+    }
 
     // Configuration methods
 
