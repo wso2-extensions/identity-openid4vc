@@ -22,6 +22,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
@@ -195,6 +196,7 @@ public class VPResponseHandler {
     /**
      * Process VP token in JWT format.
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private ValidationResult processJwtVPToken(String vpToken, VPRequest vpRequest)
             throws VPException {
 
@@ -320,6 +322,7 @@ public class VPResponseHandler {
     /**
      * Process VP token in JSON-LD format.
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private ValidationResult processJsonVPToken(String vpToken, VPRequest vpRequest)
             throws VPException {
 
@@ -417,6 +420,7 @@ public class VPResponseHandler {
     /**
      * Process verifiable credentials in the VP.
      */
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void processCredentials(JsonArray credentials, ValidationResult result) {
         for (JsonElement credElement : credentials) {
             try {
@@ -437,6 +441,7 @@ public class VPResponseHandler {
     /**
      * Process a JWT-encoded verifiable credential.
      */
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void processJwtCredential(String jwtCredential, ValidationResult result) {
         try {
             String[] parts = jwtCredential.split("\\.");

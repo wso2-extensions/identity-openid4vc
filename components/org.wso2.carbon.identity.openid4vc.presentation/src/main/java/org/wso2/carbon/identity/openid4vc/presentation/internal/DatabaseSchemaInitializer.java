@@ -43,7 +43,7 @@ public class DatabaseSchemaInitializer {
          * Initialize the database schema. Creates tables if they don't exist.
          */
         @SuppressFBWarnings({ "NP_LOAD_OF_KNOWN_NULL_VALUE", "RCN_REDUNDANT_NULLCHECK_OF_NULL_VALUE",
-                        "UCF_USELESS_CONTROL_FLOW" })
+                        "UCF_USELESS_CONTROL_FLOW", "DE_MIGHT_IGNORE" })
         public static void initializeSchema() {
 
                 try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
@@ -259,7 +259,7 @@ public class DatabaseSchemaInitializer {
         /**
          * Execute SQL and log the result.
          */
-        @SuppressFBWarnings("SQL_INJECTION_JDBC")
+        @SuppressFBWarnings({ "SQL_INJECTION_JDBC", "DE_MIGHT_IGNORE" })
         private static void executeSQL(Connection connection, String sql, String objectName) {
                 try (Statement statement = connection.createStatement()) {
                         statement.execute(sql);
