@@ -146,10 +146,12 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
             LOG.debug(String.format("Adding new VC template for tenant: %s", tenantDomain));
         }
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+        String offerId = java.util.UUID.randomUUID().toString();
         checkIdentifierExists(template, tenantId);
         validateDisplayName(template, tenantId);
         validateFormat(template);
         template.setSigningAlgorithm(DEFAULT_SIGNING_ALGORITHM);
+        template.setOfferId(offerId);
         validateExpiry(template.getExpiresIn());
         validateClaims(template.getClaims(), tenantDomain);
         addVCResource(template, tenantDomain);
