@@ -222,6 +222,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Check if long polling is enabled for this request.
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private boolean isLongPollingEnabled(final HttpServletRequest request) {
 
         @SuppressFBWarnings("SERVLET_PARAMETER")
@@ -239,6 +240,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Get timeout seconds from request.
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private long getTimeoutSeconds(final HttpServletRequest request) {
 
         @SuppressFBWarnings("SERVLET_PARAMETER")

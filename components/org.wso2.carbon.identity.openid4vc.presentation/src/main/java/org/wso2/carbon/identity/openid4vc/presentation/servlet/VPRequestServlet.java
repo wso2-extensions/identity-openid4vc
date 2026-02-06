@@ -202,6 +202,7 @@ public class VPRequestServlet extends HttpServlet {
     /**
      * Handle status polling request.
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private void handleStatusRequest(HttpServletRequest request, HttpServletResponse response,
             String requestId, int tenantId) throws VPException, IOException {
 
