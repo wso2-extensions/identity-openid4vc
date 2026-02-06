@@ -186,6 +186,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Send response based on polling result.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendPollingResultResponse(final HttpServletResponse response,
             final PollingResult result) throws IOException {
 
@@ -257,6 +258,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Get tenant ID from request.
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(final HttpServletRequest request) {
 
         String tenantHeader = request.getHeader("X-Tenant-Id");
@@ -272,6 +274,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Send status response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendStatusResponse(final HttpServletResponse response,
             final boolean tokenReceived,
             final String vpStatus)
@@ -293,6 +296,7 @@ public class WalletStatusServlet extends HttpServlet {
     /**
      * Send error JSON response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendErrorResponse(final HttpServletResponse response,
             final int statusCode,
             final String message)

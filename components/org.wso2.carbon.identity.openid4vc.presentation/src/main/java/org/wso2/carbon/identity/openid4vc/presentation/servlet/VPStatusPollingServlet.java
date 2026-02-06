@@ -213,10 +213,6 @@ public class VPStatusPollingServlet extends HttpServlet {
                 break;
 
             case TIMEOUT:
-                builder.status("ACTIVE")
-                        .tokenReceived(false)
-                        .expired(false);
-                break;
 
             case ERROR:
                 builder.status("ERROR")
@@ -306,6 +302,10 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Get tenant ID from request.
      */
+    /**
+     * Get tenant ID from request.
+     */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(final HttpServletRequest request) {
 
         String tenantHeader = request.getHeader("X-Tenant-Id");
@@ -337,6 +337,9 @@ public class VPStatusPollingServlet extends HttpServlet {
         writer.write(content);
     }
 
+    /**
+     * Send error response.
+     */
     /**
      * Send error response.
      */

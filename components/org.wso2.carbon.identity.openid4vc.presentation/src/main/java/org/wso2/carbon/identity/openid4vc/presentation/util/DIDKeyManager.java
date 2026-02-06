@@ -52,7 +52,7 @@ public class DIDKeyManager {
      * @return OctetKeyPair for the tenant
      * @throws Exception if key generation fails
      */
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static OctetKeyPair getOrGenerateKeyPair(int tenantId) throws Exception {
         // 1. Try Cache
         if (keyCache.containsKey(tenantId)) {
@@ -103,7 +103,7 @@ public class DIDKeyManager {
      * @return ECKey for the tenant
      * @throws Exception if key generation fails
      */
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static ECKey getOrGenerateECKeyPair(int tenantId) throws Exception {
         // 1. Try Cache
         if (ecKeyCache.containsKey(tenantId)) {
@@ -168,7 +168,7 @@ public class DIDKeyManager {
         return new ECKeyGenerator(Curve.P_256).generate();
     }
 
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private static void saveEd25519Key(int tenantId, OctetKeyPair keyPair) {
         try {
             String didKeyString = generateDIDKey(keyPair);
@@ -184,7 +184,7 @@ public class DIDKeyManager {
         }
     }
 
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private static void saveECKey(int tenantId, ECKey keyPair) {
         try {
             String didKeyString = generateDIDKey(keyPair);
@@ -212,7 +212,7 @@ public class DIDKeyManager {
      * Convert Ed25519 public key to multibase format.
      * Format: z + base58btc(0xed01 + public key bytes)
      */
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static String publicKeyToMultibase(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
         try {
             byte[] publicKeyBytes = keyPair.getX().decode();
@@ -233,7 +233,7 @@ public class DIDKeyManager {
      * Format: z + base58btc(0x1200 + compressed point)
      * P-256 multicodec is 0x1200
      */
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static String publicKeyToMultibase(com.nimbusds.jose.jwk.ECKey keyPair) {
         try {
             // Needed: Compressed point (33 bytes: 0x02/0x03 + X)

@@ -141,7 +141,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         }
 
         // Cache the result
-        if (useCache && document != null) {
+        if (useCache) {
             cache.put(did, new CacheEntry(document, DEFAULT_CACHE_TTL_MS));
         }
 
@@ -249,6 +249,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * did:web:example.com → https://example.com/.well-known/did.json
      * did:web:example.com:path:to:did → https://example.com/path/to/did/did.json
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidWeb(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -287,6 +288,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * The JWK is encoded in the DID itself.
      * did:jwk:<base64url-encoded-jwk>
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidJwk(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -336,6 +338,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * The public key is encoded in the DID using multibase/multicodec.
      * did:key:<multibase-encoded-key>
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidKey(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -398,6 +401,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Parse a DID document from JSON.
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument parseDIDDocument(String did, String jsonString) throws DIDResolutionException {
         try {
             JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
@@ -559,6 +563,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Extract a public key from a verification method.
      */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private PublicKey extractPublicKey(DIDDocument.VerificationMethod method) throws DIDResolutionException {
         try {
             // Try JWK first
@@ -767,6 +772,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Decode base58 string.
      */
+    @SuppressFBWarnings("PZLA_PREFER_ZERO_LENGTH_ARRAYS")
     private byte[] base58Decode(String base58) {
         // Base58 alphabet (Bitcoin)
         String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";

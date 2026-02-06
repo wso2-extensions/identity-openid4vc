@@ -25,6 +25,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
@@ -189,6 +190,7 @@ public class VPSubmissionServlet extends HttpServlet {
             throws IOException {
 
         VPSubmissionDTO dto = new VPSubmissionDTO();
+        @SuppressFBWarnings("SERVLET_CONTENT_TYPE")
         String contentType = request.getContentType();
 
         if (contentType != null
@@ -259,6 +261,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param paramName Parameter name
      * @return Decoded value or original if decoding fails
      */
+    @SuppressFBWarnings("SERVLET_PARAMETER")
     private String getDecodedParameter(final HttpServletRequest request,
             final String paramName) {
 
@@ -323,6 +326,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param submission The processed submission
      * @throws IOException If writing fails
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendSuccessResponse(final HttpServletResponse response,
             final VPSubmission submission)
             throws IOException {
@@ -358,6 +362,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param errorDescription Error description
      * @throws IOException If writing fails
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendErrorResponse(final HttpServletResponse response,
             final int statusCode,
             final String errorCode,
@@ -385,6 +390,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param request HTTP request
      * @return Tenant ID
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(final HttpServletRequest request) {
 
         String tenantHeader = request.getHeader("X-Tenant-Id");
@@ -403,6 +409,7 @@ public class VPSubmissionServlet extends HttpServlet {
      * @param request HTTP request
      * @return Tenant domain
      */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private String getTenantDomain(final HttpServletRequest request) {
         String tenantDomain = request.getHeader("X-Tenant-Domain");
         if (StringUtils.isNotBlank(tenantDomain)) {

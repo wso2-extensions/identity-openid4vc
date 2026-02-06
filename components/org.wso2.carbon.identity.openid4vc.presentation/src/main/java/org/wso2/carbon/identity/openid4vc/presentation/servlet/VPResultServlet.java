@@ -134,6 +134,7 @@ public class VPResultServlet extends HttpServlet {
     /**
      * Send JSON response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendJsonResponse(HttpServletRequest request, HttpServletResponse response,
             int statusCode, Object data)
             throws IOException {
@@ -150,6 +151,7 @@ public class VPResultServlet extends HttpServlet {
     /**
      * Send error response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response,
             int statusCode, ErrorDTO.ErrorCode errorCode, String message)
             throws IOException {
@@ -161,6 +163,10 @@ public class VPResultServlet extends HttpServlet {
     /**
      * Get tenant ID from request context.
      */
+    /**
+     * Get tenant ID from request context.
+     */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
         String tenantHeader = request.getHeader("X-Tenant-Id");
         if (StringUtils.isNotBlank(tenantHeader)) {

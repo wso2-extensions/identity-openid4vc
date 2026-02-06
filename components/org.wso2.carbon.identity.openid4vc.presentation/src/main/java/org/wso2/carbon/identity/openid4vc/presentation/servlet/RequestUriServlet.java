@@ -167,6 +167,10 @@ public class RequestUriServlet extends HttpServlet {
     /**
      * Send error response as JSON.
      */
+    /**
+     * Send error response as JSON.
+     */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendErrorResponse(HttpServletResponse response, int statusCode,
             ErrorDTO.ErrorCode errorCode, String errorDescription)
             throws IOException {

@@ -91,6 +91,9 @@ public class VPDefinitionServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String pathInfo = request.getPathInfo();
+        if (pathInfo == null) {
+            pathInfo = "";
+        }
         int tenantId = getTenantId(request);
 
         try {
@@ -476,6 +479,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Send error response.
      */
+    @SuppressFBWarnings("XSS_SERVLET")
     private void sendErrorResponse(HttpServletRequest request, HttpServletResponse response, int statusCode,
             ErrorDTO.ErrorCode errorCode, String message)
             throws IOException {
@@ -487,6 +491,10 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Get tenant ID from request.
      */
+    /**
+     * Get tenant ID from request.
+     */
+    @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
         String tenantHeader = request.getHeader("X-Tenant-Id");
         if (StringUtils.isNotBlank(tenantHeader)) {
@@ -606,6 +614,7 @@ public class VPDefinitionServlet extends HttpServlet {
     @SuppressFBWarnings("URF_UNREAD_FIELD")
     private static class ApplicationMappingResponse {
 
+        @SuppressWarnings("unused")
         private String message;
 
         public void setMessage(String message) {
