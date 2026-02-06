@@ -292,7 +292,7 @@ public class WalletDataCache {
     /**
      * Start periodic cleanup task to remove expired entries.
      */
-    @SuppressFBWarnings("DE_MIGHT_IGNORE")
+    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private void startCleanupTask() {
         cleanupScheduler.scheduleAtFixedRate(() -> {
             try {

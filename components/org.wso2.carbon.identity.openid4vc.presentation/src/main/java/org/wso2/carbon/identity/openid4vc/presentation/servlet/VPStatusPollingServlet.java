@@ -240,7 +240,9 @@ public class VPStatusPollingServlet extends HttpServlet {
 
         String pathInfo = request.getPathInfo();
         if (StringUtils.isBlank(pathInfo)) {
-            return request.getParameter("request_id");
+            @SuppressFBWarnings("SERVLET_PARAMETER")
+            String requestId = request.getParameter("request_id");
+            return requestId;
         }
 
         // Remove leading slash
@@ -267,6 +269,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      */
     private boolean isLongPollingEnabled(final HttpServletRequest request) {
 
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String longPollParam = request.getParameter(PARAM_LONG_POLL);
         if (longPollParam != null) {
             return "true".equalsIgnoreCase(longPollParam)
@@ -274,6 +277,7 @@ public class VPStatusPollingServlet extends HttpServlet {
         }
 
         // If timeout parameter is provided, assume long polling
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String timeoutParam = request.getParameter(PARAM_TIMEOUT);
         return StringUtils.isNotBlank(timeoutParam);
     }
@@ -283,6 +287,7 @@ public class VPStatusPollingServlet extends HttpServlet {
      */
     private long getTimeoutSeconds(final HttpServletRequest request) {
 
+        @SuppressFBWarnings("SERVLET_PARAMETER")
         String timeoutParam = request.getParameter(PARAM_TIMEOUT);
         if (StringUtils.isNotBlank(timeoutParam)) {
             try {

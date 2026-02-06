@@ -229,7 +229,7 @@ public class VPDefinitionServlet extends HttpServlet {
         int tenantId = getTenantId(request);
 
         try {
-            if (pathInfo != null && pathInfo.startsWith("/mapping/")) {
+            if (pathInfo.startsWith("/mapping/")) {
                 // Handle application mapping deletion
                 String applicationId = pathInfo.substring("/mapping/".length());
 
