@@ -28,7 +28,7 @@ public class Constants {
     public static final String SEGMENT_TOKEN = "token";
     public static final String VC_CLAIM = "vc";
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
-    public static final String VC_SD_JWT_FORMAT = "vc+sd-jwt";
+    public static final String VC_SD_JWT_FORMAT = "dc+sd-jwt";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
 
     /**
