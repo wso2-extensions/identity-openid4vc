@@ -21,6 +21,8 @@ This documentation provides comprehensive coverage of the OpenID4VP (OpenID for 
 | [09 - Constants & Internal](./09-constants-internal-packages.md) | Configuration |
 | [10 - Runtime Flows](./10-runtime-flows.md) | Sequence diagrams |
 | [11 - Feature Support](./11-feature-support.md) | OID4VP compliance |
+| [12 - Debugging Guide](./12-debugging-guide.md) | Troubleshooting |
+| [SD-JWT Handling](./sd-jwt-handling.md) | Selective Disclosure JWT guide |
 
 ---
 

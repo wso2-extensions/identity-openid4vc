@@ -47,7 +47,7 @@ This document details all OpenID4VP features supported by this implementation.
 | `jwt_vp` | ✅ Full | EdDSA, ES256, ES384, RS256 |
 | `ldp_vc` | ⚠️ Limited | Ed25519Signature2020 |
 | `ldp_vp` | ⚠️ Limited | Ed25519Signature2020 |
-| `vc+sd-jwt` | ✅ Supported | EdDSA, ES256 |
+| `vc+sd-jwt` | ✅ Supported | RS256, ES256, ES256K, EdDSA |
 | `mso_mdoc` | ❌ Not supported | Mobile documents |
 
 ### Algorithm Support
