@@ -66,7 +66,7 @@ public final class SDJWTConstants {
     /**
      * JWT typ header value for SD-JWT VCs (Issuer-signed JWT).
      */
-    public static final String TYP_VC_SD_JWT = "vc+sd-jwt";
+    public static final String TYP_DC_SD_JWT = "dc+sd-jwt";
 
     /**
      * JWT typ header value for Key Binding JWT.

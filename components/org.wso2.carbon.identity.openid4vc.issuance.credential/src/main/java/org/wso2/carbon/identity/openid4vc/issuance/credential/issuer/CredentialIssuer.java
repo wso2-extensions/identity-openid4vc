@@ -59,4 +59,3 @@ public class CredentialIssuer {
         return handler.issueCredential(credentialIssuerContext);
     }
 }
-
