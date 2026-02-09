@@ -166,6 +166,8 @@ Payload: {
 | `credentialStatus` | CredentialStatus | Revocation info |
 | `proof` | Proof | Issuer signature |
 | `rawJwt` | String | Original JWT if JWT format |
+| `disclosures` | List\<String\> | SD-JWT disclosures (Base64url encoded) |
+| `keyBindingJwt` | String | SD-JWT key binding JWT (optional) |
 
 #### Credential Subject Example
 
