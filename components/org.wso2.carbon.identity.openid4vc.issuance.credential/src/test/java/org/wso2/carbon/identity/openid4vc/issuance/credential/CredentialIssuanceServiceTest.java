@@ -247,37 +247,6 @@ public class CredentialIssuanceServiceTest {
         }
     }
 
-    @Test(priority = 5, description = "Test with failed scope validation",
-            expectedExceptions = CredentialIssuanceException.class)
-    public void testIssueCredentialWithFailedScopeValidation() throws Exception {
-        // Mock template with required scope
-        VCTemplate credentialvcTemplate = createTestVCTemplate();
-        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
-        when(vcTemplateManager.getByIdentifier(TEST_TEMPLATE_ID, TENANT_DOMAIN))
-                .thenReturn(credentialvcTemplate);
-
-        // Mock token provider with token that has WRONG scopes (missing required scope)
-        TokenProvider tokenProvider = mock(TokenProvider.class);
-        CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
-        AccessTokenDO accessTokenDO = new AccessTokenDO();
-        accessTokenDO.setScope(new String[]{"openid", "profile", "email"}); // Missing TEST_SCOPE
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
-        authenticatedUser.setUserName(TEST_USERNAME);
-        accessTokenDO.setAuthzUser(authenticatedUser);
-        when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
-
-        // Execute test - should fail at scope validation
-        CredentialIssuanceReqDTO reqDTO = createTestRequest();
-        try {
-            credentialIssuanceService.issueCredential(reqDTO);
-            Assert.fail("Expected CredentialIssuanceException to be thrown");
-        } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getDescription().contains("scope") || e.getDescription().contains("required"),
-                    "Exception description should indicate insufficient scope. Actual: " + e.getDescription());
-            throw e;
-        }
-    }
-
     private MockedStatic<ServiceURLBuilder> mockServiceUrlBuilder() throws Exception {
 
         ServiceURL serviceURL = mock(ServiceURL.class);

@@ -44,7 +44,6 @@ import org.wso2.carbon.user.core.service.RealmService;
 import java.util.Arrays;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CredentialIssuerMetadata.SUBJECT_IDENTIFIER;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INSUFFICIENT_SCOPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INTERNAL_SERVER_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_CREDENTIAL_REQUEST;
@@ -138,7 +137,7 @@ public class CredentialIssuanceService {
         }
 
         String[] scopes  = accessTokenDO.getScope();
-        validateScope(scopes, reqDTO.getCredentialConfigurationId());
+        reqDTO.setCredentialConfigurationId(scopes[0]);
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
         reqDTO.setAuthenticatedUser(authenticatedUser);
     }
@@ -158,10 +157,8 @@ public class CredentialIssuanceService {
         try {
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
             AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
-            Map<String, String> claims =  userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
+            return userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
                     template.getClaims().toArray(new String[0]), null);
-            claims.put(SUBJECT_IDENTIFIER, authenticatedUser.getUserId());
-            return claims;
         } catch (IdentityException e) {
             throw CredentialIssuanceExceptionHandler.handleServerException(USER_REALM_ERROR, e,
                     "tenant: %s", reqDTO.getTenantDomain());
