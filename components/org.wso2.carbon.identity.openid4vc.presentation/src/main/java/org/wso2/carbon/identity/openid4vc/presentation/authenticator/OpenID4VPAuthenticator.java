@@ -18,10 +18,12 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
@@ -39,6 +41,8 @@ import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.dto.DescriptorMapDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.dto.PresentationSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
@@ -161,6 +165,60 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
     }
 
+    /**
+     * Extract VP token format from presentation_submission.
+     * Uses the standard DIF Presentation Exchange descriptor_map to identify the format.
+     *
+     * @param submission VP submission containing presentation_submission JSON
+     * @return Format string (e.g., "vc+sd-jwt", "ldp_vp", "jwt_vp", "jwt_vp_json")
+     * @throws VPException If presentation_submission is missing, invalid, or format cannot be determined
+     */
+    private String extractVPTokenFormat(VPSubmission submission) throws VPException {
+        String presentationSubmissionJson = submission.getPresentationSubmission();
+
+        if (StringUtils.isBlank(presentationSubmissionJson)) {
+            throw new VPException("presentation_submission is required but was not provided");
+        }
+
+        try {
+            Gson gson = new Gson();
+            PresentationSubmissionDTO presentationSubmission = gson.fromJson(
+                    presentationSubmissionJson, PresentationSubmissionDTO.class);
+
+            if (presentationSubmission == null) {
+                throw new VPException("presentation_submission could not be parsed");
+            }
+
+            java.util.List<DescriptorMapDTO> descriptorMap = presentationSubmission.getDescriptorMap();
+            if (descriptorMap == null || descriptorMap.isEmpty()) {
+                throw new VPException("descriptor_map is empty in presentation_submission");
+            }
+
+            // Get format from first descriptor entry
+            DescriptorMapDTO firstDescriptor = descriptorMap.get(0);
+            String format = firstDescriptor.getFormat();
+
+            if (StringUtils.isBlank(format)) {
+                throw new VPException("format field is missing in descriptor_map");
+            }
+
+            // Normalize format string to handle variations
+            // Replace spaces and underscores with plus signs, trim, and lowercase
+            // Examples: "vc sd-jwt" -> "vc+sd-jwt", "VC+SD-JWT" -> "vc+sd-jwt"
+            String normalizedFormat = format.trim()
+                    .toLowerCase(Locale.ENGLISH)
+                    .replace(" ", "+")
+                    .replace("_", "+");
+
+            return normalizedFormat;
+
+
+        } catch (JsonSyntaxException e) {
+            throw new VPException("Invalid presentation_submission JSON: " + e.getMessage(), e);
+        }
+    }
+
+
     @Override
     @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION", "NP_NULL_ON_SOME_PATH" })
     protected void processAuthenticationResponse(HttpServletRequest request,
@@ -187,59 +245,47 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             String username = null;
 
             try {
+                // Extract format from presentation_submission using DIF Presentation Exchange standard
+                String format = extractVPTokenFormat(submission);
                 JsonObject vpData = null;
 
-                // Check if VP token is JSON-LD format (starts with { or [)
-                String trimmedToken = vpToken.trim();
-                if (trimmedToken.startsWith("{") || trimmedToken.startsWith("[")) {
-                    try {
-                        JsonElement parsed = JsonParser.parseString(trimmedToken);
-                        if (parsed.isJsonObject()) {
-                            vpData = parsed.getAsJsonObject();
-                        }
-                    } catch (Exception e) {
-                        // Ignored: Failed to parse as JSON, will try other formats
-                    }
-                }
-
-                // If not JSON-LD, try SD-JWT format (contains ~)
-                if (vpData == null && vpToken.contains("~")) {
+                // Parse VP token based on format from presentation_submission
+                if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
+                    // SD-JWT format: <Issuer-signed JWT>~<Disclosure 1>~...~<KB-JWT>
                     String[] sdParts = vpToken.split("~");
                     String issuerJwt = sdParts[0];
-                    // Extracted issuer JWT from SD-JWT
 
                     String[] jwtParts = issuerJwt.split("\\.");
                     if (jwtParts.length >= 2) {
                         String payload = new String(Base64.getUrlDecoder().decode(jwtParts[1]), StandardCharsets.UTF_8);
-                        // Decoding SD-JWT payload
                         vpData = JsonParser.parseString(payload).getAsJsonObject();
                     }
-                }
 
-                // If not SD-JWT, try standard 3-part JWT
-                if (vpData == null) {
+                } else if (OpenID4VPConstants.VCFormats.LDP_VP.equals(format)) {
+                    // JSON-LD format
+                    String trimmedToken = vpToken.trim();
+                    JsonElement parsed = JsonParser.parseString(trimmedToken);
+                    if (parsed.isJsonObject()) {
+                        vpData = parsed.getAsJsonObject();
+                    }
+
+                } else if (OpenID4VPConstants.VCFormats.JWT_VP.equals(format) ||
+                           OpenID4VPConstants.VCFormats.JWT_VP_JSON.equals(format)) {
+                    // Standard JWT format (3 parts)
                     String[] dotParts = vpToken.split("\\.");
-                    if (dotParts.length == 3) {
+                    if (dotParts.length >= 2) {
                         String payload = new String(Base64.getUrlDecoder().decode(dotParts[1]), StandardCharsets.UTF_8);
-                        // Decoding JWT payload
                         vpData = JsonParser.parseString(payload).getAsJsonObject();
-                    } else {
-                        if (dotParts.length > 3) {
-                            try {
-                                String payload = new String(Base64.getUrlDecoder().decode(dotParts[1]),
-                                        StandardCharsets.UTF_8);
-                                vpData = JsonParser.parseString(payload).getAsJsonObject();
-                            } catch (Exception e) {
-                                // Ignored: Not a valid JWT payload
-                            }
-                        }
-
-                        if (vpData == null) {
-                            throw new VPException(
-                                    "Unsupported VP token format: expected JSON-LD, 3-part JWT, or SD-JWT");
-                        }
                     }
+
+                } else {
+                    throw new VPException("Unsupported VP token format: " + format);
                 }
+
+                if (vpData == null) {
+                    throw new VPException("Failed to parse VP token with format: " + format);
+                }
+
 
                 // Extract VP wrapper if present
                 JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
