@@ -45,8 +45,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CREDENTIAL_CONFIGURATION_ID;
-
 
 /**
  * Rest implementation of OID4VCI credential endpoint.
@@ -95,20 +93,8 @@ public class CredentialEndpoint {
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
             }
 
-            // Validate required field: credential_configuration_id
-            if (!jsonObject.has(CREDENTIAL_CONFIGURATION_ID)) {
-                String errorResponse = CredentialErrorResponse.builder()
-                        .error(CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST)
-                        .errorDescription("Missing required field: credential_configuration_id")
-                        .build()
-                        .toJson();
-                return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
-            }
-
-            String credentialConfigurationId = jsonObject.get(CREDENTIAL_CONFIGURATION_ID).getAsString();
-
             CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(authHeader,
-                    tenantDomain, credentialConfigurationId);
+                    tenantDomain);
             return buildResponse(credentialIssuanceRespDTO);
 
         } catch (CredentialIssuanceClientException e) {
@@ -174,15 +160,13 @@ public class CredentialEndpoint {
         }
     }
 
-    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader, String tenantDomain,
-                                                                          String credentialConfigurationId)
+    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader, String tenantDomain)
             throws CredentialIssuanceException {
 
         String token = authHeader.substring(7);
 
         CredentialIssuanceReqDTO credentialIssuanceReqDTO = new CredentialIssuanceReqDTO();
         credentialIssuanceReqDTO.setTenantDomain(tenantDomain);
-        credentialIssuanceReqDTO.setCredentialConfigurationId(credentialConfigurationId);
         credentialIssuanceReqDTO.setToken(token);
 
         CredentialIssuanceService credentialIssuanceService = CredentialIssuanceServiceFactory
