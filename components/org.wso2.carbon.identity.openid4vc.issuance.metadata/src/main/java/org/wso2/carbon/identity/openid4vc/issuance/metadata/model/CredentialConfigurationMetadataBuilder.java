@@ -39,6 +39,8 @@ public class CredentialConfigurationMetadataBuilder {
     private String format;
     private String scope;
     private List<String> signingAlgorithms = new ArrayList<>();
+    private List<String> cryptographicBindingMethods = new ArrayList<>();
+    private Map<String, Object> proofTypesSupported = new LinkedHashMap<>();
     private List<String> types = new ArrayList<>();
     private String vct;
     private Object display = Collections.emptyList();
@@ -91,6 +93,39 @@ public class CredentialConfigurationMetadataBuilder {
         if (algorithm != null && !algorithm.isEmpty()) {
             this.signingAlgorithms.add(algorithm);
         }
+        return this;
+    }
+
+    /**
+     * Add a supported cryptographic binding method (e.g., "jwk").
+     *
+     * @param method cryptographic binding method
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder cryptographicBindingMethod(String method) {
+
+        if (method != null && !method.isEmpty()) {
+            this.cryptographicBindingMethods.add(method);
+        }
+        return this;
+    }
+
+    /**
+     * Set JWT proof metadata with supported proof signing algorithms.
+     *
+     * @param algorithms supported signing algorithms for JWT proofs
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder jwtProofSigningAlgorithms(List<String> algorithms) {
+
+        if (algorithms == null || algorithms.isEmpty()) {
+            return this;
+        }
+
+        Map<String, Object> jwtProofMetadata = new LinkedHashMap<>();
+        jwtProofMetadata.put(Constants.CredentialIssuerMetadata.PROOF_SIGNING_ALG_VALUES_SUPPORTED,
+                new ArrayList<>(algorithms));
+        this.proofTypesSupported.put(Constants.JWT_PROOF, jwtProofMetadata);
         return this;
     }
 
@@ -172,6 +207,13 @@ public class CredentialConfigurationMetadataBuilder {
 
         config.put(Constants.CredentialIssuerMetadata.CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED,
                 signingAlgorithms);
+        if (!cryptographicBindingMethods.isEmpty()) {
+            config.put(Constants.CredentialIssuerMetadata.CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED,
+                    cryptographicBindingMethods);
+        }
+        if (!proofTypesSupported.isEmpty()) {
+            config.put(Constants.CredentialIssuerMetadata.PROOF_TYPES_SUPPORTED, proofTypesSupported);
+        }
 
         // Add vct at config level for SD-JWT VC format
         if (vct != null) {

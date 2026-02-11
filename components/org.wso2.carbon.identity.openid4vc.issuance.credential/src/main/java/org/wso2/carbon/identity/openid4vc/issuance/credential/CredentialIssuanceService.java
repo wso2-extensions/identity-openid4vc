@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.Credentia
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuer;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceExceptionHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
@@ -42,11 +43,13 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INSUFFICIENT_SCOPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INTERNAL_SERVER_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_CREDENTIAL_REQUEST;
+import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_PROOF;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_TOKEN;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.UNKNOWN_CREDENTIAL_CONFIGURATION;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.USER_REALM_ERROR;
@@ -88,6 +91,17 @@ public class CredentialIssuanceService {
 
         validateAccessToken(reqDTO);
 
+        if (reqDTO.getProofDTO() != null) {
+            List<ProofValidator> proofValidators = CredentialIssuanceDataHolder.getInstance()
+                    .getProofValidators();
+            ProofValidator proofValidator = proofValidators.stream()
+                    .filter(v -> reqDTO.getProofDTO().getType().equals(v.getType()))
+                    .findFirst()
+                    .orElseThrow(() -> new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Unsupported proof type: " + reqDTO.getProofDTO().getType()));
+            proofValidator.validateProof(reqDTO.getProofDTO(), reqDTO.getTenantDomain());
+        }
+
         try {
             VCTemplate template = templateManager
                     .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
@@ -103,6 +117,7 @@ public class CredentialIssuanceService {
             issuerContext.setVCTemplate(template);
             issuerContext.setTenantDomain(reqDTO.getTenantDomain());
             issuerContext.setClaims(getClaims(reqDTO, template));
+            issuerContext.setHolderPublicKey(reqDTO.getProofDTO() != null ? reqDTO.getProofDTO().getPublicKey() : null);
 
             String credential = credentialIssuer.issueCredential(issuerContext);
             CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();

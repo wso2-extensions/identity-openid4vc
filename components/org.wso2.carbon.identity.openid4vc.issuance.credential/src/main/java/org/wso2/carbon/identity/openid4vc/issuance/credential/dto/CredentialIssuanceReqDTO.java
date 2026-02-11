@@ -28,7 +28,9 @@ public class CredentialIssuanceReqDTO {
     private String tenantDomain;
     private String credentialConfigurationId;
     private String token;
-    AuthenticatedUser authenticatedUser;
+    private AuthenticatedUser authenticatedUser;
+    private ProofDTO proofDTO;
+
 
     public String getTenantDomain() {
 
@@ -68,5 +70,13 @@ public class CredentialIssuanceReqDTO {
     public void setAuthenticatedUser(AuthenticatedUser authenticatedUser) {
 
         this.authenticatedUser = authenticatedUser;
+    }
+
+    public ProofDTO getProofDTO() {
+        return proofDTO;
+    }
+
+    public void setProofDTO(ProofDTO proofDTO) {
+        this.proofDTO = proofDTO;
     }
 }
