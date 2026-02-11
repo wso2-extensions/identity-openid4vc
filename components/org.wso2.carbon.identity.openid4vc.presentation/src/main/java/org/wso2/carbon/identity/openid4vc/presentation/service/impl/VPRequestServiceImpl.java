@@ -135,7 +135,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                 .clientId(requestCreateDTO.getClientId())
                 .nonce(nonce)
                 .presentationDefinitionId(requestCreateDTO.getPresentationDefinitionId())
-                .presentationDefinition(presentationDefinition)
+                .presentationDefinition(presentationDefinition) // Still set it in memory
                 .responseUri(responseUri)
                 .responseMode(OpenID4VPConstants.Protocol.RESPONSE_MODE_DIRECT_POST)
                 .status(VPRequestStatus.ACTIVE)
@@ -189,10 +189,29 @@ public class VPRequestServiceImpl implements VPRequestService {
             if (vpRequest == null) {
                 throw new VPRequestNotFoundException(requestId);
             }
+            // Populate presentation definition if missing
+            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                        vpRequest.getPresentationDefinitionId(), tenantId);
+                if (pd != null) {
+                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+                }
+            }
 
             // Populate cache if still active
             if (vpRequest.getStatus() == VPRequestStatus.ACTIVE) {
                 vpRequestCache.put(vpRequest);
+            }
+        } else {
+             // Populate presentation definition if missing in cache (unlikely but safe)
+            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                        vpRequest.getPresentationDefinitionId(), tenantId);
+                if (pd != null) {
+                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+                }
             }
         }
 
@@ -212,6 +231,27 @@ public class VPRequestServiceImpl implements VPRequestService {
 
             if (vpRequest == null) {
                 throw new VPRequestNotFoundException("Transaction not found: " + transactionId);
+            }
+
+             // Populate presentation definition if missing
+            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                        vpRequest.getPresentationDefinitionId(), tenantId);
+                if (pd != null) {
+                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+                }
+            }
+
+        } else {
+            // Populate presentation definition if missing in cache
+             if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                        vpRequest.getPresentationDefinitionId(), tenantId);
+                if (pd != null) {
+                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+                }
             }
         }
 
@@ -315,6 +355,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
     @Override
     public int processExpiredRequests(int tenantId) throws VPException {
+        // markExpiredRequests logic
         int count = vpRequestDAO.markExpiredRequests(tenantId);
 
         return count;
@@ -376,8 +417,6 @@ public class VPRequestServiceImpl implements VPRequestService {
             return definition.getDefinitionJson();
         }
 
-
-
         throw new VPException("No presentation definition available");
     }
 
@@ -410,11 +449,6 @@ public class VPRequestServiceImpl implements VPRequestService {
         return OpenID4VPUtil.getBaseUrl();
     }
 
-    /**
-     * Build the request object as a JWT.
-     * Note: In production, this should be properly signed with the verifier's
-     * private key.
-     */
     /**
      * Build the request object as a JWT.
      * Note: In production, this should be properly signed with the verifier's
