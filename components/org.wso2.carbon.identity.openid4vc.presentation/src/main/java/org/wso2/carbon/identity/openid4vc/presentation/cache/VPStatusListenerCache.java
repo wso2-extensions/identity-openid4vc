@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.cache;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -162,6 +163,16 @@ public class VPStatusListenerCache {
          * Called when the listener times out.
          */
         void onTimeout();
+
+        /**
+         * Called when a VP submission is received (direct processing).
+         *
+         * @param submission The VP submission
+         */
+        default void onSubmissionReceived(VPSubmission submission) {
+            // Default implementation for backward compatibility
+            // Subclasses should override this for direct processing
+        }
     }
 
     /**
@@ -258,6 +269,32 @@ public class VPStatusListenerCache {
                     if (!listener.isNotified()) {
                         listener.notify(status);
 
+                    }
+                }
+            }
+
+        }
+    }
+
+    /**
+     * Notify all listeners for a request ID with VP submission (direct processing).
+     *
+     * @param requestId  Request ID
+     * @param submission VP submission to pass to listeners
+     */
+    public void notifyListenersWithSubmission(final String requestId, final VPSubmission submission) {
+
+        List<StatusListener> listeners = listenersByRequestId.get(requestId);
+        if (listeners != null) {
+
+            synchronized (listeners) {
+                for (StatusListener listener : listeners) {
+                    if (!listener.isNotified()) {
+                        // Mark as notified and call callback with submission
+                        listener.notified = true;
+                        if (listener.callback != null) {
+                            listener.callback.onSubmissionReceived(submission);
+                        }
                     }
                 }
             }
