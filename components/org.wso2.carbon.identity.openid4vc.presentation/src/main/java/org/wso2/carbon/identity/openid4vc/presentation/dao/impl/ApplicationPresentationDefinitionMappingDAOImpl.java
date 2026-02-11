@@ -36,15 +36,15 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
 
     // SQL Queries
     private static final String SQL_INSERT_MAPPING = "INSERT INTO IDN_APPLICATION_PRESENTATION_DEFINITION " +
-            "(APPLICATION_ID, PRESENTATION_DEFINITION_ID, TENANT_ID, CREATED_AT, UPDATED_AT) " +
-            "VALUES (?, ?, ?, ?, ?)";
+            "(APPLICATION_ID, PRESENTATION_DEFINITION_ID, TENANT_ID) " +
+            "VALUES (?, ?, ?)";
 
     private static final String SQL_UPDATE_MAPPING = "UPDATE IDN_APPLICATION_PRESENTATION_DEFINITION SET " +
-            "PRESENTATION_DEFINITION_ID = ?, UPDATED_AT = ? " +
+            "PRESENTATION_DEFINITION_ID = ? " +
             "WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
 
     private static final String SQL_SELECT_MAPPING_BY_APP_ID = "SELECT APPLICATION_ID, " +
-            "PRESENTATION_DEFINITION_ID, TENANT_ID, CREATED_AT, UPDATED_AT " +
+            "PRESENTATION_DEFINITION_ID, TENANT_ID " +
             "FROM IDN_APPLICATION_PRESENTATION_DEFINITION WHERE APPLICATION_ID = ? AND TENANT_ID = ?";
 
     private static final String SQL_SELECT_PRES_DEF_ID = "SELECT PRESENTATION_DEFINITION_ID " +
@@ -128,6 +128,7 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 ps.setString(1, applicationId);
                 ps.setInt(2, tenantId);
 
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -165,8 +166,6 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
             ps.setString(1, mapping.getApplicationId());
             ps.setString(2, mapping.getPresentationDefinitionId());
             ps.setInt(3, mapping.getTenantId());
-            ps.setLong(4, System.currentTimeMillis());
-            ps.setLong(5, System.currentTimeMillis());
 
             ps.executeUpdate();
         }
@@ -179,9 +178,8 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
             ApplicationPresentationDefinitionMapping mapping) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_MAPPING)) {
             ps.setString(1, mapping.getPresentationDefinitionId());
-            ps.setLong(2, System.currentTimeMillis());
-            ps.setString(3, mapping.getApplicationId());
-            ps.setInt(4, mapping.getTenantId());
+            ps.setString(2, mapping.getApplicationId());
+            ps.setInt(3, mapping.getTenantId());
 
             ps.executeUpdate();
         }
@@ -196,8 +194,6 @@ public class ApplicationPresentationDefinitionMappingDAOImpl
                 .applicationId(rs.getString("APPLICATION_ID"))
                 .presentationDefinitionId(rs.getString("PRESENTATION_DEFINITION_ID"))
                 .tenantId(rs.getInt("TENANT_ID"))
-                .createdAt(rs.getLong("CREATED_AT"))
-                .updatedAt(rs.getLong("UPDATED_AT"))
                 .build();
     }
 }
