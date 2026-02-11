@@ -19,6 +19,7 @@ import java.util.List;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF_TYPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.MAX_CLOCK_SKEW_SECONDS;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS;
 
 /**
  * Proof validator for JWT-based proofs.
@@ -103,10 +104,12 @@ public class JwtProofValidator implements ProofValidator {
                     "Invalid typ header. Expected: " + JWT_PROOF_TYPE + ", got: " + typ);
         }
 
-        // Check algorithm is not 'none'
+        // Check algorithm is in the allowed asymmetric algorithm set
         String alg = signedJWT.getHeader().getAlgorithm().getName();
-        if ("none".equalsIgnoreCase(alg)) {
-            throw new CredentialIssuanceException("Algorithm 'none' is not allowed");
+        if (!SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS.contains(alg)) {
+            throw new CredentialIssuanceException(
+                    "Unsupported proof signing algorithm: " + alg +
+                    ". Allowed: " + SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS);
         }
     }
 
