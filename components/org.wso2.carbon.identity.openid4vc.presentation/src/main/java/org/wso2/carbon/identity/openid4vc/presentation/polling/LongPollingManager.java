@@ -39,9 +39,9 @@ public class LongPollingManager {
     private static volatile LongPollingManager instance;
 
     /**
-     * Default polling timeout in milliseconds (60 seconds).
+     * Default polling timeout in milliseconds (5 seconds).
      */
-    private static final long DEFAULT_POLLING_TIMEOUT_MS = 60000L;
+    private static final long DEFAULT_POLLING_TIMEOUT_MS = 5000L;
 
     /**
      * Minimum polling timeout in milliseconds (5 seconds).

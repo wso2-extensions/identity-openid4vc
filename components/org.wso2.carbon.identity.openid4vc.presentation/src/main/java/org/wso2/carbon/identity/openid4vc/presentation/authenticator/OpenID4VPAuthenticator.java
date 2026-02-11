@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.DescriptorMapDTO;
@@ -87,7 +88,7 @@ import javax.servlet.http.HttpServletResponse;
  * - direct_post.jwt: Wallet posts signed JWT response
  */
 public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
-        implements FederatedApplicationAuthenticator {
+        implements FederatedApplicationAuthenticator, VPStatusListenerCache.StatusCallback {
 
     private static final long serialVersionUID = 1L;
 
@@ -118,6 +119,26 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private static final int DISPLAY_ORDER_5 = 5;
     private static final int SUPER_TENANT_ID_PLACEHOLDER = -1234;
 
+    // Instance variable to store received VP submission (direct processing)
+    private volatile VPSubmission receivedSubmission;
+
+    // StatusCallback interface implementation for direct processing
+    @Override
+    public void onStatusChange(String status) {
+        // Legacy callback - not used in direct processing
+    }
+
+    @Override
+    public void onTimeout() {
+        // Timeout callback - not used in direct processing
+    }
+
+    @Override
+    public void onSubmissionReceived(VPSubmission submission) {
+        // Direct processing: store submission for processAuthenticationResponse
+        this.receivedSubmission = submission;
+    }
+
     @Override
     public String getName() {
         return AUTHENTICATOR_NAME;
@@ -142,6 +163,14 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             // Store request ID in session
             context.setProperty(SESSION_VP_REQUEST_ID, vpRequestResponse.getRequestId());
             context.setProperty(SESSION_TRANSACTION_ID, vpRequestResponse.getTransactionId());
+
+            // Register this authenticator as a listener for direct processing
+            VPStatusListenerCache listenerCache = VPStatusListenerCache.getInstance();
+            listenerCache.registerListener(
+                    vpRequestResponse.getRequestId(),
+                    "auth-" + context.getContextIdentifier(),
+                    this  // Pass this authenticator instance as the callback
+            );
 
             // Generate QR code content
             String qrContent = QRCodeUtil.generateRequestUriQRContent(
@@ -226,25 +255,18 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             AuthenticationContext context)
             throws AuthenticationFailedException {
 
+        // Get submission from callback (direct processing - no database read!)
+        VPSubmission submission = this.receivedSubmission;
+
+        if (submission == null || StringUtils.isBlank(submission.getVpToken())) {
+            throw new AuthenticationFailedException("VP token not found in submission");
+        }
+
+        // Extract credentials from VP Token
+        String vpToken = submission.getVpToken();
+        String username = null;
+
         try {
-            // Get VP result
-            VPSubmissionService submissionService = getVPSubmissionService();
-            int tenantId = getTenantId(context);
-
-            // Get the request ID from session
-            String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
-
-            VPSubmission submission = submissionService.getVPSubmissionByRequestId(requestId, tenantId);
-
-            if (submission == null || StringUtils.isBlank(submission.getVpToken())) {
-                throw new AuthenticationFailedException("VP token not found in submission");
-            }
-
-            // Extract credentials from VP Token
-            String vpToken = submission.getVpToken();
-            String username = null;
-
-            try {
                 // Extract format from presentation_submission using DIF Presentation Exchange standard
                 String format = extractVPTokenFormat(submission);
                 JsonObject vpData = null;
@@ -393,7 +415,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             }
 
             if (StringUtils.isBlank(username)) {
-                cleanupVPData(requestId, tenantId);
                 throw new AuthenticationFailedException("No user identifier found in VP");
             }
 
@@ -414,14 +435,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
             context.setSubject(authenticatedUser);
 
-            // Cleanup VP data after successful authentication
-            cleanupVPData(requestId, tenantId);
-
-        } catch (VPException e) {
-            String reqId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
-            cleanupVPData(reqId, getTenantId(context));
-            throw new AuthenticationFailedException("Failed to process VP submission", e);
-        }
+            // No cleanup needed - submission processed in-memory (direct processing)
     }
 
     @Override

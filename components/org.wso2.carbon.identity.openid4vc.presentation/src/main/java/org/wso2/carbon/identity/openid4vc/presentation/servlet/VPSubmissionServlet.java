@@ -30,19 +30,21 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
+import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.VPRequestDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestExpiredException;
-import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
+import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.status.StatusNotificationService;
+import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.util.VPSubmissionValidator;
 
 import java.io.IOException;
@@ -151,27 +153,44 @@ public class VPSubmissionServlet extends HttpServlet {
 
             // Get tenant ID
             int tenantId = getTenantId(request);
+            String requestId = submissionDTO.getState();
 
-            // Process submission
-            VPSubmission submission = vpSubmissionService.processVPSubmission(
-                    submissionDTO, tenantId);
+            // Build VPSubmission object in-memory (NO database storage!)
+            String presentationSubmissionJson = submissionDTO.getPresentationSubmission() != null
+                    ? submissionDTO.getPresentationSubmission().toString()
+                    : null;
 
-            // Notify status listeners for long polling
-            notifyStatusListeners(submissionDTO.getState(), submission);
+            VPSubmission submission = new VPSubmission.Builder()
+                    .submissionId(OpenID4VPUtil.generateSubmissionId())
+                    .requestId(requestId)
+                    .vpToken(submissionDTO.getVpToken())
+                    .presentationSubmission(presentationSubmissionJson)
+                    .verificationStatus(VCVerificationStatus.PENDING)
+                    .submittedAt(System.currentTimeMillis())
+                    .tenantId(tenantId)
+                    .build();
+
+            // Store in cache for status polling (direct processing)
+            WalletDataCache walletCache = WalletDataCache.getInstance();
+            walletCache.storeSubmission(requestId, submission);
+
+            // Update VP request status in database
+            try {
+                VPRequestDAO vpRequestDAO = new VPRequestDAOImpl();
+                vpRequestDAO.updateVPRequestStatus(
+                        requestId,
+                        VPRequestStatus.VP_SUBMITTED,
+                        tenantId);
+            } catch (VPException e) {
+                // Non-fatal: cache is already updated for polling
+            }
+
+            // Notify status listeners with submission object (direct processing)
+            notifyStatusListeners(requestId, submission);
 
             // Send success response
             sendSuccessResponse(response, submission);
 
-        } catch (VPRequestNotFoundException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND,
-                    OpenID4VPConstants.ErrorCodes.INVALID_REQUEST,
-                    "Request not found: " + e.getRequestId());
-        } catch (VPRequestExpiredException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_GONE,
-                    "expired_request", e.getMessage());
-        } catch (VPException e) {
-            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST,
-                    OpenID4VPConstants.ErrorCodes.INVALID_REQUEST, e.getMessage());
         } catch (RuntimeException e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     OpenID4VPConstants.ErrorCodes.SERVER_ERROR, "Internal server error");
@@ -307,15 +326,8 @@ public class VPSubmissionServlet extends HttpServlet {
                 statusNotificationService.notifyVPSubmitted(requestId, submission);
             }
         } else if (statusListenerCache != null) {
-            // Fallback to direct notification
-            String status;
-            if (StringUtils.isNotBlank(submission.getError())) {
-                status = VPRequestStatus.VP_SUBMITTED.name() + "_ERROR";
-            } else {
-                status = VPRequestStatus.VP_SUBMITTED.name();
-            }
-            statusListenerCache.notifyListeners(requestId, status);
-        } else {
+            // Direct processing: pass submission to listeners
+            statusListenerCache.notifyListenersWithSubmission(requestId, submission);
         }
 
     }

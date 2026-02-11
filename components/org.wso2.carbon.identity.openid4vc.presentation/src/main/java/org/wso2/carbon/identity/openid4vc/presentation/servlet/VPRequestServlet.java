@@ -31,6 +31,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestStatusDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestExpiredException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPRequestNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.LongPollingManager;
+import org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPRequestServiceImpl;
 
@@ -230,41 +232,43 @@ public class VPRequestServlet extends HttpServlet {
      * Poll for status with timeout.
      * Note: This is a simplified polling implementation. For production,
      * consider using async servlets with DeferredResult pattern.
+     * Uses LongPollingManager to handle status checks via both cache and database.
+     *
+     * @param requestId Request ID
+     * @param tenantId Tenant ID
+     * @param timeout Polling timeout
+     * @return VPRequestStatusDTO with status
+     * @throws VPException If error occurs
      */
-    private VPRequestStatusDTO pollForStatus(String requestId, int tenantId, long timeout)
+    private VPRequestStatusDTO pollForStatus(final String requestId, final int tenantId, final long timeout)
             throws VPException {
 
-        long startTime = System.currentTimeMillis();
-        long pollInterval = 1000; // 1 second
+        LongPollingManager pollingManager = LongPollingManager.getInstance();
+        PollingResult result = pollingManager.waitForStatusChange(requestId, timeout, tenantId);
 
-        while (System.currentTimeMillis() - startTime < timeout) {
-            // Check current status
-            org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = vpRequestService
-                    .getVPRequestById(requestId, tenantId);
+        VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
+        statusDTO.setRequestId(requestId);
 
-            // If not ACTIVE (i.e., VP_SUBMITTED, EXPIRED, COMPLETED), return immediately
-            if (vpRequest.getStatus() != org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.ACTIVE) {
-                VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
-                statusDTO.setStatus(vpRequest.getStatus());
-                statusDTO.setRequestId(requestId);
-                return statusDTO;
+        org.wso2.carbon.identity.openid4vc.presentation.polling.PollingResult.ResultStatus status =
+                result.getResultStatus();
+
+        if (status == PollingResult.ResultStatus.SUBMITTED
+                || status == PollingResult.ResultStatus.SUBMITTED_WITH_ERROR) {
+            // Determine likely status from result string or default to VP_SUBMITTED
+            // LongPollingManager returns SUBMITTED for both VP_SUBMITTED and COMPLETED
+            String statusStr = result.getStatus();
+            if (org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.COMPLETED
+                .name().equals(statusStr)) {
+                statusDTO.setStatus(org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.COMPLETED);
+            } else {
+                statusDTO.setStatus(org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.VP_SUBMITTED);
             }
-
-            // Wait before next poll
-            try {
-                Thread.sleep(pollInterval);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
+        } else if (status == PollingResult.ResultStatus.EXPIRED) {
+            statusDTO.setStatus(org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.EXPIRED);
+        } else {
+            statusDTO.setStatus(org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus.ACTIVE);
         }
 
-        // Timeout - return current status
-        org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest vpRequest = vpRequestService
-                .getVPRequestById(requestId, tenantId);
-        VPRequestStatusDTO statusDTO = new VPRequestStatusDTO();
-        statusDTO.setStatus(vpRequest.getStatus());
-        statusDTO.setRequestId(requestId);
         return statusDTO;
     }
 

@@ -61,7 +61,7 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Default polling timeout in seconds.
      */
-    private static final long DEFAULT_TIMEOUT_SECONDS = 60L;
+    private static final long DEFAULT_TIMEOUT_SECONDS = 5L;
 
     /**
      * Maximum polling timeout in seconds.
