@@ -63,15 +63,6 @@ public interface PresentationDefinitionService {
     List<PresentationDefinition> getAllPresentationDefinitions(int tenantId) throws VPException;
 
     /**
-     * Get the default presentation definition for a tenant.
-     *
-     * @param tenantId The tenant ID
-     * @return The default presentation definition, or null if none is set
-     * @throws VPException If an error occurs
-     */
-    PresentationDefinition getDefaultPresentationDefinition(int tenantId) throws VPException;
-
-    /**
      * Update an existing presentation definition.
      *
      * @param presentationDefinition The updated presentation definition
@@ -93,17 +84,6 @@ public interface PresentationDefinitionService {
      * @throws VPException                             If an error occurs
      */
     void deletePresentationDefinition(String definitionId, int tenantId) 
-            throws PresentationDefinitionNotFoundException, VPException;
-
-    /**
-     * Set a presentation definition as the default for a tenant.
-     *
-     * @param definitionId The definition identifier to set as default
-     * @param tenantId     The tenant ID
-     * @throws PresentationDefinitionNotFoundException If the definition is not found
-     * @throws VPException                             If an error occurs
-     */
-    void setAsDefault(String definitionId, int tenantId) 
             throws PresentationDefinitionNotFoundException, VPException;
 
     /**

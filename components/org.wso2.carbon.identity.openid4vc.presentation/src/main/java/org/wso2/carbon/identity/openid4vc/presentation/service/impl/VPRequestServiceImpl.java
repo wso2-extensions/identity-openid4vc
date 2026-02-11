@@ -377,12 +377,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             return definition.getDefinitionJson();
         }
 
-        // Fall back to default definition
-        PresentationDefinition defaultDefinition = presentationDefinitionService
-                .getDefaultPresentationDefinition(tenantId);
-        if (defaultDefinition != null) {
-            return defaultDefinition.getDefinitionJson();
-        }
+
 
         throw new VPException("No presentation definition available");
     }

@@ -58,15 +58,6 @@ public interface PresentationDefinitionDAO {
     List<PresentationDefinition> getAllPresentationDefinitions(int tenantId) throws VPException;
 
     /**
-     * Get the default presentation definition for a tenant.
-     *
-     * @param tenantId Tenant ID
-     * @return Default presentation definition or null
-     * @throws VPException if retrieval fails
-     */
-    PresentationDefinition getDefaultPresentationDefinition(int tenantId) throws VPException;
-
-    /**
      * Update presentation definition.
      *
      * @param presentationDefinition Presentation definition to update
@@ -93,13 +84,4 @@ public interface PresentationDefinitionDAO {
      * @throws VPException if check fails
      */
     boolean presentationDefinitionExists(String definitionId, int tenantId) throws VPException;
-
-    /**
-     * Set a presentation definition as the default.
-     *
-     * @param definitionId Definition ID to set as default
-     * @param tenantId     Tenant ID
-     * @throws VPException if update fails
-     */
-    void setAsDefault(String definitionId, int tenantId) throws VPException;
 }

@@ -28,14 +28,10 @@ public class PresentationDefinition implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private int id;
     private String definitionId;
     private String name;
     private String description;
     private String definitionJson;
-    private boolean isDefault;
-    private long createdAt;
-    private Long updatedAt;
     private int tenantId;
 
     /**
@@ -48,26 +44,14 @@ public class PresentationDefinition implements Serializable {
      * Builder pattern constructor.
      */
     private PresentationDefinition(Builder builder) {
-        this.id = builder.id;
         this.definitionId = builder.definitionId;
         this.name = builder.name;
         this.description = builder.description;
         this.definitionJson = builder.definitionJson;
-        this.isDefault = builder.isDefault;
-        this.createdAt = builder.createdAt;
-        this.updatedAt = builder.updatedAt;
         this.tenantId = builder.tenantId;
     }
 
     // Getters and Setters
-
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
 
     public String getDefinitionId() {
         return definitionId;
@@ -101,30 +85,6 @@ public class PresentationDefinition implements Serializable {
         this.definitionJson = definitionJson;
     }
 
-    public boolean isDefault() {
-        return isDefault;
-    }
-
-    public void setDefault(boolean isDefault) {
-        this.isDefault = isDefault;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Long updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     public int getTenantId() {
         return tenantId;
     }
@@ -137,20 +97,11 @@ public class PresentationDefinition implements Serializable {
      * Builder class for PresentationDefinition.
      */
     public static class Builder {
-        private int id;
         private String definitionId;
         private String name;
         private String description;
         private String definitionJson;
-        private boolean isDefault;
-        private long createdAt;
-        private Long updatedAt;
         private int tenantId;
-
-        public Builder id(int id) {
-            this.id = id;
-            return this;
-        }
 
         public Builder definitionId(String definitionId) {
             this.definitionId = definitionId;
@@ -172,21 +123,6 @@ public class PresentationDefinition implements Serializable {
             return this;
         }
 
-        public Builder isDefault(boolean isDefault) {
-            this.isDefault = isDefault;
-            return this;
-        }
-
-        public Builder createdAt(long createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder updatedAt(Long updatedAt) {
-            this.updatedAt = updatedAt;
-            return this;
-        }
-
         public Builder tenantId(int tenantId) {
             this.tenantId = tenantId;
             return this;
@@ -200,10 +136,8 @@ public class PresentationDefinition implements Serializable {
     @Override
     public String toString() {
         return "PresentationDefinition{" +
-                "id=" + id +
-                ", definitionId='" + definitionId + '\'' +
+                "definitionId='" + definitionId + '\'' +
                 ", name='" + name + '\'' +
-                ", isDefault=" + isDefault +
                 ", tenantId=" + tenantId +
                 '}';
     }
