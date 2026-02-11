@@ -38,9 +38,7 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.cache.VPStatusListenerCache;
-import org.wso2.carbon.identity.openid4vc.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.DescriptorMapDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.PresentationSubmissionDTO;
@@ -53,7 +51,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
 
 import java.io.IOException;
@@ -134,6 +131,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
+    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void onSubmissionReceived(VPSubmission submission) {
         // Direct processing: store submission for processAuthenticationResponse
         this.receivedSubmission = submission;
@@ -832,44 +830,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         return VPServiceDataHolder.getInstance().getVPRequestService();
     }
 
-    /**
-     * Get VPSubmissionService instance.
-     */
-    private VPSubmissionService getVPSubmissionService() {
-        return VPServiceDataHolder.getInstance().getVPSubmissionService();
-    }
 
-    /**
-     * Cleanup VP request and submission data after authentication flow.
-     * Called after both successful and failed authentication to comply with
-     * OID4VP data minimization principles.
-     *
-     * @param requestId Request ID to cleanup
-     * @param tenantId  Tenant ID
-     */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    private void cleanupVPData(String requestId, int tenantId) {
-        if (StringUtils.isBlank(requestId)) {
-            return;
-        }
 
-        try {
-            // Delete submission first (foreign key consideration)
-            VPSubmissionService submissionService = getVPSubmissionService();
-            submissionService.deleteSubmissionsForRequest(requestId,
-                    tenantId);
-            // Delete VP request
-            VPRequestService requestService = getVPRequestService();
-            requestService.deleteVPRequest(requestId, tenantId);
 
-            // Clear from caches
-            VPRequestCache.getInstance().remove(requestId);
-            WalletDataCache.getInstance().retrieveSubmission(requestId);
-
-        } catch (Exception e) {
-            // Ignored: Best effort cleanup
-        }
-    }
 
     /**
      * Extract claims from VP token for federated user attributes.

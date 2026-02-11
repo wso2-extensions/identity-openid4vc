@@ -37,8 +37,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
 
     // SQL Queries
     private static final String SQL_INSERT_PRESENTATION_DEFINITION = "INSERT INTO IDN_PRESENTATION_DEFINITION " +
-            "(DEFINITION_ID, NAME, DESCRIPTION, DEFINITION_JSON, IS_DEFAULT, CREATED_AT, UPDATED_AT, TENANT_ID) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            "(DEFINITION_ID, NAME, DESCRIPTION, DEFINITION_JSON, TENANT_ID) " +
+            "VALUES (?, ?, ?, ?, ?)";
 
     private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_ID = "SELECT * FROM " +
             "IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
@@ -46,11 +46,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     private static final String SQL_SELECT_ALL_PRESENTATION_DEFINITIONS = "SELECT * FROM IDN_PRESENTATION_DEFINITION " +
             "WHERE TENANT_ID = ?";
 
-    private static final String SQL_SELECT_DEFAULT_PRESENTATION_DEFINITION = "SELECT * FROM " +
-            "IDN_PRESENTATION_DEFINITION WHERE IS_DEFAULT = ? AND TENANT_ID = ?";
-
     private static final String SQL_UPDATE_PRESENTATION_DEFINITION = "UPDATE IDN_PRESENTATION_DEFINITION SET " +
-            "NAME = ?, DESCRIPTION = ?, DEFINITION_JSON = ?, IS_DEFAULT = ?, UPDATED_AT = ? " +
+            "NAME = ?, DESCRIPTION = ?, DEFINITION_JSON = ? " +
             "WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
     private static final String SQL_DELETE_PRESENTATION_DEFINITION = "DELETE FROM IDN_PRESENTATION_DEFINITION " +
@@ -58,12 +55,6 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
 
     private static final String SQL_CHECK_PRESENTATION_DEFINITION_EXISTS = "SELECT 1 FROM " +
             "IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_CLEAR_DEFAULT = "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? " +
-            "WHERE TENANT_ID = ?";
-
-    private static final String SQL_SET_AS_DEFAULT = "UPDATE IDN_PRESENTATION_DEFINITION SET IS_DEFAULT = ? " +
-            "WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
     @Override
     public void createPresentationDefinition(PresentationDefinition presentationDefinition)
@@ -75,10 +66,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.setString(2, presentationDefinition.getName());
                 ps.setString(3, presentationDefinition.getDescription());
                 ps.setString(4, presentationDefinition.getDefinitionJson());
-                ps.setBoolean(5, presentationDefinition.isDefault());
-                ps.setLong(6, presentationDefinition.getCreatedAt());
-                ps.setObject(7, presentationDefinition.getUpdatedAt());
-                ps.setInt(8, presentationDefinition.getTenantId());
+                ps.setInt(5, presentationDefinition.getTenantId());
 
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
@@ -141,26 +129,6 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     }
 
     @Override
-    public PresentationDefinition getDefaultPresentationDefinition(int tenantId) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_DEFAULT_PRESENTATION_DEFINITION)) {
-                ps.setBoolean(1, true);
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return mapResultSetToPresentationDefinition(rs);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving default presentation definition", e);
-        }
-        return null;
-    }
-
-    @Override
     public void updatePresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
@@ -169,10 +137,8 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.setString(1, presentationDefinition.getName());
                 ps.setString(2, presentationDefinition.getDescription());
                 ps.setString(3, presentationDefinition.getDefinitionJson());
-                ps.setBoolean(4, presentationDefinition.isDefault());
-                ps.setLong(5, System.currentTimeMillis());
-                ps.setString(6, presentationDefinition.getDefinitionId());
-                ps.setInt(7, presentationDefinition.getTenantId());
+                ps.setString(4, presentationDefinition.getDefinitionId());
+                ps.setInt(5, presentationDefinition.getTenantId());
 
                 IdentityDatabaseUtil.commitTransaction(connection);
 
@@ -224,53 +190,17 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
         }
     }
 
-    @Override
-    public void setAsDefault(String definitionId, int tenantId) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try {
-                // First, clear all defaults
-                try (PreparedStatement ps = connection.prepareStatement(SQL_CLEAR_DEFAULT)) {
-                    ps.setBoolean(1, false);
-                    ps.setInt(2, tenantId);
-                    ps.executeUpdate();
-                }
-
-                // Then set the specified definition as default
-                try (PreparedStatement ps = connection.prepareStatement(SQL_SET_AS_DEFAULT)) {
-                    ps.setBoolean(1, true);
-                    ps.setString(2, definitionId);
-                    ps.setInt(3, tenantId);
-                    ps.executeUpdate();
-                }
-
-                IdentityDatabaseUtil.commitTransaction(connection);
-
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error setting presentation definition as default: " +
-                    definitionId, e);
-        }
-    }
-
     /**
      * Map ResultSet to PresentationDefinition object.
      */
     private PresentationDefinition mapResultSetToPresentationDefinition(ResultSet rs)
             throws SQLException {
-        Long updatedAt = rs.getObject("UPDATED_AT") != null ? rs.getLong("UPDATED_AT") : null;
 
         return new PresentationDefinition.Builder()
-                .id(rs.getInt("ID"))
                 .definitionId(rs.getString("DEFINITION_ID"))
                 .name(rs.getString("NAME"))
                 .description(rs.getString("DESCRIPTION"))
                 .definitionJson(rs.getString("DEFINITION_JSON"))
-                .isDefault(rs.getBoolean("IS_DEFAULT"))
-                .createdAt(rs.getLong("CREATED_AT"))
-                .updatedAt(updatedAt)
                 .tenantId(rs.getInt("TENANT_ID"))
                 .build();
     }

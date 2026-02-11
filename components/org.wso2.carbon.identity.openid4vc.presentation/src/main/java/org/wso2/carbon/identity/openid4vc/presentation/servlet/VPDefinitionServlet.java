@@ -191,7 +191,6 @@ public class VPDefinitionServlet extends HttpServlet {
                     .name(updateRequest.getName())
                     .description(updateRequest.getDescription())
                     .definitionJson(updateRequest.getDefinitionJson())
-                    .isDefault(updateRequest.isDefault())
                     .tenantId(tenantId)
                     .build();
 
@@ -413,7 +412,6 @@ public class VPDefinitionServlet extends HttpServlet {
                 .name(createRequest.getName())
                 .description(createRequest.getDescription())
                 .definitionJson(createRequest.getDefinitionJson())
-                .isDefault(createRequest.isDefault())
                 .tenantId(tenantId)
                 .build();
 
@@ -446,9 +444,6 @@ public class VPDefinitionServlet extends HttpServlet {
         dto.setName(definition.getName());
         dto.setDescription(definition.getDescription());
         dto.setDefinitionJson(definition.getDefinitionJson());
-        dto.setDefault(definition.isDefault());
-        dto.setCreatedAt(definition.getCreatedAt());
-        dto.setUpdatedAt(definition.getUpdatedAt());
         return dto;
     }
 
@@ -461,9 +456,6 @@ public class VPDefinitionServlet extends HttpServlet {
         CORSUtil.handlePreflight(request, response);
     }
 
-    /**
-     * Send JSON response.
-     */
     /**
      * Send JSON response.
      */
@@ -495,9 +487,6 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Get tenant ID from request.
      */
-    /**
-     * Get tenant ID from request.
-     */
     @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
         String tenantHeader = request.getHeader("X-Tenant-Id");
@@ -521,7 +510,6 @@ public class VPDefinitionServlet extends HttpServlet {
         private String name;
         private String description;
         private String definitionJson;
-        private boolean isDefault;
 
         public String getDefinitionId() {
             return definitionId;
@@ -537,10 +525,6 @@ public class VPDefinitionServlet extends HttpServlet {
 
         public String getDefinitionJson() {
             return definitionJson;
-        }
-
-        public boolean isDefault() {
-            return isDefault;
         }
     }
 
@@ -558,12 +542,6 @@ public class VPDefinitionServlet extends HttpServlet {
         private String description;
         @SuppressWarnings("unused")
         private String definitionJson;
-        @SuppressWarnings("unused")
-        private boolean isDefault;
-        @SuppressWarnings("unused")
-        private long createdAt;
-        @SuppressWarnings("unused")
-        private Long updatedAt;
 
         public void setDefinitionId(String definitionId) {
             this.definitionId = definitionId;
@@ -579,18 +557,6 @@ public class VPDefinitionServlet extends HttpServlet {
 
         public void setDefinitionJson(String definitionJson) {
             this.definitionJson = definitionJson;
-        }
-
-        public void setDefault(boolean isDefault) {
-            this.isDefault = isDefault;
-        }
-
-        public void setCreatedAt(long createdAt) {
-            this.createdAt = createdAt;
-        }
-
-        public void setUpdatedAt(Long updatedAt) {
-            this.updatedAt = updatedAt;
         }
     }
 

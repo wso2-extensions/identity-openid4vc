@@ -77,23 +77,13 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throw new VPException("Presentation definition with ID already exists: " + definitionId);
         }
 
-        // Set timestamps
-        long now = System.currentTimeMillis();
-
         PresentationDefinition toCreate = new PresentationDefinition.Builder()
                 .definitionId(definitionId)
                 .name(presentationDefinition.getName())
                 .description(presentationDefinition.getDescription())
                 .definitionJson(presentationDefinition.getDefinitionJson())
-                .isDefault(presentationDefinition.isDefault())
-                .createdAt(now)
                 .tenantId(tenantId)
                 .build();
-
-        // If setting as default, clear existing default first
-        if (toCreate.isDefault()) {
-            clearExistingDefault(tenantId);
-        }
 
         // Persist
         presentationDefinitionDAO.createPresentationDefinition(toCreate);
@@ -126,12 +116,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     }
 
     @Override
-    public PresentationDefinition getDefaultPresentationDefinition(int tenantId)
-            throws VPException {
-        return presentationDefinitionDAO.getDefaultPresentationDefinition(tenantId);
-    }
-
-    @Override
     public PresentationDefinition updatePresentationDefinition(
             PresentationDefinition presentationDefinition, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException {
@@ -151,7 +135,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
         // Build updated definition
         PresentationDefinition toUpdate = new PresentationDefinition.Builder()
-                .id(existing.getId())
                 .definitionId(definitionId)
                 .name(StringUtils.isNotBlank(presentationDefinition.getName()) ? presentationDefinition.getName()
                         : existing.getName())
@@ -160,16 +143,8 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                 .definitionJson(StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())
                         ? presentationDefinition.getDefinitionJson()
                         : existing.getDefinitionJson())
-                .isDefault(presentationDefinition.isDefault())
-                .createdAt(existing.getCreatedAt())
-                .updatedAt(System.currentTimeMillis())
                 .tenantId(tenantId)
                 .build();
-
-        // If setting as default, clear existing default first
-        if (toUpdate.isDefault() && !existing.isDefault()) {
-            clearExistingDefault(tenantId);
-        }
 
         // Update
         presentationDefinitionDAO.updatePresentationDefinition(toUpdate);
@@ -186,18 +161,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
         // Delete
         presentationDefinitionDAO.deletePresentationDefinition(definitionId, tenantId);
-
-    }
-
-    @Override
-    public void setAsDefault(String definitionId, int tenantId)
-            throws PresentationDefinitionNotFoundException, VPException {
-
-        // Verify exists
-        getPresentationDefinitionById(definitionId, tenantId);
-
-        // Set as default (this clears other defaults internally)
-        presentationDefinitionDAO.setAsDefault(definitionId, tenantId);
 
     }
 
@@ -238,28 +201,6 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
         if (StringUtils.isBlank(definition.getDefinitionJson())) {
             throw new VPException("Presentation definition JSON is required");
-        }
-    }
-
-    /**
-     * Clear existing default presentation definition.
-     */
-    private void clearExistingDefault(int tenantId) throws VPException {
-        PresentationDefinition existingDefault = getDefaultPresentationDefinition(tenantId);
-        if (existingDefault != null) {
-            PresentationDefinition updated = new PresentationDefinition.Builder()
-                    .id(existingDefault.getId())
-                    .definitionId(existingDefault.getDefinitionId())
-                    .name(existingDefault.getName())
-                    .description(existingDefault.getDescription())
-                    .definitionJson(existingDefault.getDefinitionJson())
-                    .isDefault(false)
-                    .createdAt(existingDefault.getCreatedAt())
-                    .updatedAt(System.currentTimeMillis())
-                    .tenantId(tenantId)
-                    .build();
-
-            presentationDefinitionDAO.updatePresentationDefinition(updated);
         }
     }
 }
