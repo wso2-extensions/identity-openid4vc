@@ -39,7 +39,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     // SQL Queries
     private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, " +
             "CLIENT_ID, NONCE, PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
-            "REQUEST_JWT, STATUS, CREATED_AT, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "REQUEST_JWT, STATUS, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST " +
             "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
@@ -82,9 +82,8 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.setString(8, vpRequest.getResponseMode());
                 ps.setString(9, vpRequest.getRequestJwt());
                 ps.setString(10, vpRequest.getStatus().getValue());
-                ps.setLong(11, vpRequest.getCreatedAt());
-                ps.setLong(12, vpRequest.getExpiresAt());
-                ps.setInt(13, vpRequest.getTenantId());
+                ps.setLong(11, vpRequest.getExpiresAt());
+                ps.setInt(12, vpRequest.getTenantId());
 
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
@@ -301,7 +300,6 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 .responseMode(rs.getString("RESPONSE_MODE"))
                 .requestJwt(rs.getString("REQUEST_JWT"))
                 .status(VPRequestStatus.fromValue(rs.getString("STATUS")))
-                .createdAt(rs.getLong("CREATED_AT"))
                 .expiresAt(rs.getLong("EXPIRES_AT"))
                 .tenantId(rs.getInt("TENANT_ID"))
                 .build();

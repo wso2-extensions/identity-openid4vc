@@ -139,7 +139,6 @@ public class VPRequestServiceImpl implements VPRequestService {
                 .responseUri(responseUri)
                 .responseMode(OpenID4VPConstants.Protocol.RESPONSE_MODE_DIRECT_POST)
                 .status(VPRequestStatus.ACTIVE)
-                .createdAt(createdAt)
                 .expiresAt(expiresAt)
                 .tenantId(tenantId)
                 .build();

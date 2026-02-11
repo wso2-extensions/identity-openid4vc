@@ -38,7 +38,6 @@ public class VPRequest implements Serializable {
     private String responseMode;
     private String requestJwt;
     private VPRequestStatus status;
-    private long createdAt;
     private long expiresAt;
     private int tenantId;
 
@@ -64,7 +63,6 @@ public class VPRequest implements Serializable {
         this.responseMode = builder.responseMode != null ? builder.responseMode : "direct_post";
         this.requestJwt = builder.requestJwt;
         this.status = builder.status != null ? builder.status : VPRequestStatus.ACTIVE;
-        this.createdAt = builder.createdAt;
         this.expiresAt = builder.expiresAt;
         this.tenantId = builder.tenantId;
     }
@@ -151,14 +149,6 @@ public class VPRequest implements Serializable {
         this.status = status;
     }
 
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public long getExpiresAt() {
         return expiresAt;
     }
@@ -198,7 +188,6 @@ public class VPRequest implements Serializable {
         private String responseMode;
         private String requestJwt;
         private VPRequestStatus status;
-        private long createdAt;
         private long expiresAt;
         private int tenantId;
 
@@ -252,11 +241,6 @@ public class VPRequest implements Serializable {
             return this;
         }
 
-        public Builder createdAt(long createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
         public Builder expiresAt(long expiresAt) {
             this.expiresAt = expiresAt;
             return this;
@@ -279,7 +263,6 @@ public class VPRequest implements Serializable {
                 ", transactionId='" + transactionId + '\'' +
                 ", clientId='" + clientId + '\'' +
                 ", status=" + status +
-                ", createdAt=" + createdAt +
                 ", expiresAt=" + expiresAt +
                 ", tenantId=" + tenantId +
                 '}';
