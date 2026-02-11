@@ -30,6 +30,13 @@ public class Constants {
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
     public static final String VC_SD_JWT_FORMAT = "dc+sd-jwt";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String PROOF = "proof";
+    public static final String PROOFS = "proofs";
+    public static final String PROOF_TYPE = "proof_type";
+    public static final String JWT_PROOF = "jwt";
+    public static final String JWT_PROOF_TYPE = "openid4vci-proof+jwt";
+    public static final long MAX_CLOCK_SKEW_SECONDS = 60;
+
 
     /**
      * W3C Verifiable Credential Data Model related constants.
@@ -62,12 +69,17 @@ public class Constants {
         public static final String FORMAT = "format";
         public static final String SCOPE = "scope";
         public static final String CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED = "credential_signing_alg_values_supported";
+        public static final String CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED =
+                "cryptographic_binding_methods_supported";
+        public static final String PROOF_TYPES_SUPPORTED = "proof_types_supported";
+        public static final String PROOF_SIGNING_ALG_VALUES_SUPPORTED = "proof_signing_alg_values_supported";
         public static final String CREDENTIAL_DEFINITION = "credential_definition";
         public static final String CREDENTIAL_METADATA = "credential_metadata";
         public static final String DISPLAY = "display";
         public static final String CLAIMS = "claims";
         public static final String NAME = "name";
         public static final String PATH = "path";
+        public static final String JWK = "jwk";
         public static final String SUBJECT_IDENTIFIER = "sub";
         public static final String VCT = "vct";
     }

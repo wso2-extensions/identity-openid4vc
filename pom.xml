@@ -27,7 +27,7 @@
 
     <groupId>org.wso2.carbon.identity.openid4vc</groupId>
     <artifactId>identity-openid4vc</artifactId>
-    <version>1.0.7-SNAPSHOT</version>
+    <version>1.0.5-SNAPSHOT</version>
     <packaging>pom</packaging>
     <url>http://wso2.org</url>
 

@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +45,8 @@ import java.util.Map;
 public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssuerMetadataProcessor {
 
     private static final Log LOG = LogFactory.getLog(DefaultCredentialIssuerMetadataProcessor.class);
+    private static final List<String> SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS = Collections.unmodifiableList(
+            Arrays.asList("RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512"));
     private static final DefaultCredentialIssuerMetadataProcessor defaultCredentialIssuerMetadataProcessor =
             new DefaultCredentialIssuerMetadataProcessor();
 
@@ -135,7 +138,9 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
 
                 // For SD-JWT VC format, use vct instead of type
                 if (Constants.VC_SD_JWT_FORMAT.equals(configuration.getFormat())) {
-                    builder.vct(configuration.getIdentifier());
+                    builder.vct(configuration.getIdentifier())
+                            .cryptographicBindingMethod(Constants.CredentialIssuerMetadata.JWK)
+                            .jwtProofSigningAlgorithms(SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS);
                 } else {
                     builder.type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
                            .type(configuration.getIdentifier());

@@ -47,6 +47,7 @@ import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -136,6 +137,12 @@ public class SdJwtVcFormatHandler implements CredentialFormatHandler {
         // vct (Verifiable Credential Type) - required for SD-JWT VC
         String credentialType = context.getVCTemplate().getIdentifier();
         builder.putClaim(SDJWTConstants.CLAIM_VCT, credentialType);
+
+        if (context.getHolderPublicKey() != null) {
+            Map<String, Object> cnf = new HashMap<>();
+            cnf.put("jwk", context.getHolderPublicKey());
+            builder.putClaim(SDJWTConstants.CLAIM_CNF, cnf);
+        }
 
         // Add all user claims as selectively disclosable
         Map<String, String> claims = context.getClaims();

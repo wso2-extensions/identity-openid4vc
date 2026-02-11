@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.internal;
 import org.wso2.carbon.identity.oauth.tokenprocessor.DefaultTokenProvider;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -35,6 +36,7 @@ public class CredentialIssuanceDataHolder {
     private static final CredentialIssuanceDataHolder instance = new CredentialIssuanceDataHolder();
     private VCTemplateManager vcTemplateManager;
     private final List<CredentialFormatHandler> credentialFormatHandlers = new ArrayList<>();
+    private final List<ProofValidator> proofValidators = new ArrayList<>();
     private TokenProvider tokenProvider;
     private RealmService realmService;
 
@@ -70,6 +72,21 @@ public class CredentialIssuanceDataHolder {
     public void removeCredentialFormatHandler(CredentialFormatHandler handler) {
 
         this.credentialFormatHandlers.remove(handler);
+    }
+
+    public List<ProofValidator> getProofValidators() {
+
+        return proofValidators;
+    }
+
+    public void addProofValidator(ProofValidator validator) {
+
+        this.proofValidators.add(validator);
+    }
+
+    public void removeProofValidator(ProofValidator validator) {
+
+        this.proofValidators.remove(validator);
     }
 
     public TokenProvider getTokenProvider() {
