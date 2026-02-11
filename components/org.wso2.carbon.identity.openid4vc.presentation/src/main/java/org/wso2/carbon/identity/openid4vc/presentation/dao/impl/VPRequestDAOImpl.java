@@ -38,8 +38,8 @@ public class VPRequestDAOImpl implements VPRequestDAO {
 
     // SQL Queries
     private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, " +
-            "CLIENT_ID, NONCE, PRESENTATION_DEFINITION_ID, PRESENTATION_DEFINITION, RESPONSE_URI, RESPONSE_MODE, " +
-            "REQUEST_JWT, STATUS, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "CLIENT_ID, NONCE, PRESENTATION_DEFINITION_ID, RESPONSE_URI, RESPONSE_MODE, " +
+            "REQUEST_JWT, STATUS, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST " +
             "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
@@ -77,13 +77,13 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 ps.setString(3, vpRequest.getClientId());
                 ps.setString(4, vpRequest.getNonce());
                 ps.setString(5, vpRequest.getPresentationDefinitionId());
-                ps.setString(6, vpRequest.getPresentationDefinition());
-                ps.setString(7, vpRequest.getResponseUri());
-                ps.setString(8, vpRequest.getResponseMode());
-                ps.setString(9, vpRequest.getRequestJwt());
-                ps.setString(10, vpRequest.getStatus().getValue());
-                ps.setLong(11, vpRequest.getExpiresAt());
-                ps.setInt(12, vpRequest.getTenantId());
+                // Parameter 6 was presentation definition, removed.
+                ps.setString(6, vpRequest.getResponseUri());
+                ps.setString(7, vpRequest.getResponseMode());
+                ps.setString(8, vpRequest.getRequestJwt());
+                ps.setString(9, vpRequest.getStatus().getValue());
+                ps.setLong(10, vpRequest.getExpiresAt());
+                ps.setInt(11, vpRequest.getTenantId());
 
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
@@ -295,7 +295,6 @@ public class VPRequestDAOImpl implements VPRequestDAO {
                 .clientId(rs.getString("CLIENT_ID"))
                 .nonce(rs.getString("NONCE"))
                 .presentationDefinitionId(rs.getString("PRESENTATION_DEFINITION_ID"))
-                .presentationDefinition(rs.getString("PRESENTATION_DEFINITION"))
                 .responseUri(rs.getString("RESPONSE_URI"))
                 .responseMode(rs.getString("RESPONSE_MODE"))
                 .requestJwt(rs.getString("REQUEST_JWT"))
