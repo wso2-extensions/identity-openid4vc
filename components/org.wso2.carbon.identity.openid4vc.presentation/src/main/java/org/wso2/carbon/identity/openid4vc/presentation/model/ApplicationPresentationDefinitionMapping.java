@@ -26,8 +26,6 @@ public class ApplicationPresentationDefinitionMapping {
     private String applicationId;
     private String presentationDefinitionId;
     private int tenantId;
-    private long createdAt;
-    private Long updatedAt;
 
     /**
      * Default constructor.
@@ -41,19 +39,19 @@ public class ApplicationPresentationDefinitionMapping {
      * @param applicationId Application ID
      * @param presentationDefinitionId Presentation Definition ID
      * @param tenantId Tenant ID
-     * @param createdAt Creation timestamp
-     * @param updatedAt Last update timestamp
      */
     public ApplicationPresentationDefinitionMapping(String applicationId,
                                                      String presentationDefinitionId,
-                                                     int tenantId,
-                                                     long createdAt,
-                                                     Long updatedAt) {
+                                                     int tenantId) {
         this.applicationId = applicationId;
         this.presentationDefinitionId = presentationDefinitionId;
         this.tenantId = tenantId;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+    }
+
+    private ApplicationPresentationDefinitionMapping(Builder builder) {
+        this.applicationId = builder.applicationId;
+        this.presentationDefinitionId = builder.presentationDefinitionId;
+        this.tenantId = builder.tenantId;
     }
 
     public String getApplicationId() {
@@ -80,22 +78,6 @@ public class ApplicationPresentationDefinitionMapping {
         this.tenantId = tenantId;
     }
 
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(long createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Long getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Long updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
     /**
      * Builder class for ApplicationPresentationDefinitionMapping.
      */
@@ -104,8 +86,7 @@ public class ApplicationPresentationDefinitionMapping {
         private String applicationId;
         private String presentationDefinitionId;
         private int tenantId;
-        private long createdAt;
-        private Long updatedAt;
+
 
         public Builder applicationId(String applicationId) {
             this.applicationId = applicationId;
@@ -122,24 +103,8 @@ public class ApplicationPresentationDefinitionMapping {
             return this;
         }
 
-        public Builder createdAt(long createdAt) {
-            this.createdAt = createdAt;
-            return this;
-        }
-
-        public Builder updatedAt(Long updatedAt) {
-            this.updatedAt = updatedAt;
-            return this;
-        }
-
         public ApplicationPresentationDefinitionMapping build() {
-            return new ApplicationPresentationDefinitionMapping(
-                    applicationId,
-                    presentationDefinitionId,
-                    tenantId,
-                    createdAt,
-                    updatedAt
-            );
+            return new ApplicationPresentationDefinitionMapping(this);
         }
     }
 }

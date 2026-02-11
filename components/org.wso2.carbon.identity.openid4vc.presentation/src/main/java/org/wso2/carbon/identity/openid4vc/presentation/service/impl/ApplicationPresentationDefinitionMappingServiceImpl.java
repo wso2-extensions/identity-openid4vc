@@ -59,8 +59,6 @@ public class ApplicationPresentationDefinitionMappingServiceImpl
                 .applicationId(applicationId)
                 .presentationDefinitionId(presentationDefinitionId)
                 .tenantId(tenantId)
-                .createdAt(System.currentTimeMillis())
-                .updatedAt(System.currentTimeMillis())
                 .build();
 
         mappingDAO.createOrUpdateMapping(mapping);
