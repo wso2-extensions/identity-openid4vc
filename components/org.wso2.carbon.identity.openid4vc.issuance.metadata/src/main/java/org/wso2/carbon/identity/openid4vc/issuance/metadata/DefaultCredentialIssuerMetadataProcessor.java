@@ -32,11 +32,12 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS;
 
 
 /**
@@ -45,8 +46,6 @@ import java.util.Map;
 public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssuerMetadataProcessor {
 
     private static final Log LOG = LogFactory.getLog(DefaultCredentialIssuerMetadataProcessor.class);
-    private static final List<String> SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS = Collections.unmodifiableList(
-            Arrays.asList("RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512"));
     private static final DefaultCredentialIssuerMetadataProcessor defaultCredentialIssuerMetadataProcessor =
             new DefaultCredentialIssuerMetadataProcessor();
 

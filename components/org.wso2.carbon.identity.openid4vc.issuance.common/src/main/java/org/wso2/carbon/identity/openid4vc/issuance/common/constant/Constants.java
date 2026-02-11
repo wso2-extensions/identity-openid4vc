@@ -18,10 +18,19 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.common.constant;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Constants related to OpenID for Verifiable Credential Issuance (OID4VCI).
  */
 public class Constants {
+
+    public static final List<String> SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS =
+            Collections.unmodifiableList(Arrays.asList(
+                    "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512"));
+
     public static final String CONTEXT_OPENID4VCI = "oid4vci";
     public static final String SEGMENT_CREDENTIAL = "credential";
     public static final String SEGMENT_OAUTH2 = "oauth2";
