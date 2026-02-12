@@ -99,7 +99,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         String signingAlgorithm = null;
 
         // Extract and clean internal configuration
-        if (StringUtils.isNotBlank(presentationDefinition)) {
+        if (StringUtils.isBlank(didMethod) && StringUtils.isNotBlank(presentationDefinition)) {
             try {
                 JsonObject pdJson = JsonParser.parseString(presentationDefinition).getAsJsonObject();
                 if (pdJson.has("_internal")) {
@@ -119,6 +119,14 @@ public class VPRequestServiceImpl implements VPRequestService {
             } catch (Exception e) {
                 // Ignore
             }
+        }
+        
+        // Default DID Method if still null
+        if (StringUtils.isBlank(didMethod)) {
+            didMethod = "web";
+        }
+        if (StringUtils.isBlank(signingAlgorithm)) {
+            signingAlgorithm = "RS256";
         }
 
         // Calculate timestamps
@@ -141,18 +149,16 @@ public class VPRequestServiceImpl implements VPRequestService {
                 .status(VPRequestStatus.ACTIVE)
                 .expiresAt(expiresAt)
                 .tenantId(tenantId)
+                .didMethod(didMethod)
+                .signingAlgorithm(signingAlgorithm)
                 .build();
 
         // Generate and set the Request JWT immediately
-        // This ensures the DID method preference is respected at creation time
         String requestJwt = buildRequestObjectJwt(vpRequest, didMethod, signingAlgorithm);
         vpRequest.setRequestJwt(requestJwt);
 
-        // Persist to database
+        // Persist to database (which is now backed by Cache via DAO)
         vpRequestDAO.createVPRequest(vpRequest);
-
-        // Add to cache for fast access
-        vpRequestCache.put(vpRequest);
 
         // Generate request URI if enabled
         String requestUri = null;
@@ -179,39 +185,20 @@ public class VPRequestServiceImpl implements VPRequestService {
     public VPRequest getVPRequestById(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
 
-        // Try cache first
-        VPRequest vpRequest = vpRequestCache.getByRequestId(requestId);
+        // Retrieve from DAO (Cache)
+        VPRequest vpRequest = vpRequestDAO.getVPRequestById(requestId, tenantId);
 
         if (vpRequest == null) {
-            // Fallback to database
-            vpRequest = vpRequestDAO.getVPRequestById(requestId, tenantId);
-
-            if (vpRequest == null) {
-                throw new VPRequestNotFoundException(requestId);
-            }
-            // Populate presentation definition if missing
-            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
-                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
-                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
-                        vpRequest.getPresentationDefinitionId(), tenantId);
-                if (pd != null) {
-                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
-                }
-            }
-
-            // Populate cache if still active
-            if (vpRequest.getStatus() == VPRequestStatus.ACTIVE) {
-                vpRequestCache.put(vpRequest);
-            }
-        } else {
-             // Populate presentation definition if missing in cache (unlikely but safe)
-            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
-                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
-                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
-                        vpRequest.getPresentationDefinitionId(), tenantId);
-                if (pd != null) {
-                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
-                }
+            throw new VPRequestNotFoundException(requestId);
+        }
+        
+        // Populate presentation definition if missing
+        if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+                StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+            PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                    vpRequest.getPresentationDefinitionId(), tenantId);
+            if (pd != null) {
+                vpRequest.setPresentationDefinition(pd.getDefinitionJson());
             }
         }
 
@@ -222,38 +209,22 @@ public class VPRequestServiceImpl implements VPRequestService {
     public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId)
             throws VPRequestNotFoundException, VPException {
 
-        // Try cache first
-        VPRequest vpRequest = vpRequestCache.getByTransactionId(transactionId);
+        // Retrieve from DAO (Cache)
+        VPRequest vpRequest = vpRequestDAO.getVPRequestByTransactionId(transactionId, tenantId);
 
         if (vpRequest == null) {
-            // Fallback to database
-            vpRequest = vpRequestDAO.getVPRequestByTransactionId(transactionId, tenantId);
-
-            if (vpRequest == null) {
-                throw new VPRequestNotFoundException("Transaction not found: " + transactionId);
-            }
-
-             // Populate presentation definition if missing
-            if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
-                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
-                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
-                        vpRequest.getPresentationDefinitionId(), tenantId);
-                if (pd != null) {
-                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
-                }
-            }
-
-        } else {
-            // Populate presentation definition if missing in cache
-             if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
-                    StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
-                PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
-                        vpRequest.getPresentationDefinitionId(), tenantId);
-                if (pd != null) {
-                    vpRequest.setPresentationDefinition(pd.getDefinitionJson());
-                }
-            }
+            throw new VPRequestNotFoundException("Transaction not found: " + transactionId);
         }
+
+        // Populate presentation definition if missing
+        if (StringUtils.isBlank(vpRequest.getPresentationDefinition()) &&
+               StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+           PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
+                   vpRequest.getPresentationDefinitionId(), tenantId);
+           if (pd != null) {
+               vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+           }
+       }
 
         return vpRequest;
     }
@@ -282,16 +253,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             throw new VPRequestExpiredException(requestId);
         }
 
-        // Update in database
+        // Update in DAO (Cache)
         vpRequestDAO.updateVPRequestStatus(requestId, status, tenantId);
-
-        // Update cache if present
-        VPRequest cachedRequest = vpRequestCache.getByRequestId(requestId);
-        if (cachedRequest != null) {
-            // Remove from cache - will be re-fetched with updated status if needed
-            vpRequestCache.remove(requestId);
-        }
-
     }
 
     @Override
@@ -325,12 +288,13 @@ public class VPRequestServiceImpl implements VPRequestService {
             return vpRequest.getRequestJwt();
         }
 
-        // Generate JWT (Note: Full JWT signing would require key management
-        // integration)
-        // For now, return the request parameters as a simple structure
-        // In production, this should be a signed JWT
-        // If JWT is missing (legacy records), attempt to build it with default did:web
-        String requestJwt = buildRequestObjectJwt(vpRequest, "web", "RS256");
+        // Regenerate JWT if missing (fallback)
+        // Use stored metadata if available, otherwise default
+        String didMethod = StringUtils.isNotBlank(vpRequest.getDidMethod()) ? vpRequest.getDidMethod() : "web";
+        String signingAlgorithm = StringUtils.isNotBlank(vpRequest.getSigningAlgorithm()) ? 
+        vpRequest.getSigningAlgorithm() : "RS256";
+
+        String requestJwt = buildRequestObjectJwt(vpRequest, didMethod, signingAlgorithm);
 
         // Store generated JWT
         vpRequestDAO.updateVPRequestJwt(requestId, requestJwt, tenantId);
@@ -342,23 +306,17 @@ public class VPRequestServiceImpl implements VPRequestService {
     public void deleteVPRequest(String requestId, int tenantId)
             throws VPRequestNotFoundException, VPException {
 
-        // Validate exists
+        // Validate exists (optional, could just delete)
         getVPRequestById(requestId, tenantId);
 
-        // Delete from database
+        // Delete from DAO (Cache)
         vpRequestDAO.deleteVPRequest(requestId, tenantId);
-
-        // Remove from cache
-        vpRequestCache.remove(requestId);
-
     }
 
     @Override
     public int processExpiredRequests(int tenantId) throws VPException {
-        // markExpiredRequests logic
-        int count = vpRequestDAO.markExpiredRequests(tenantId);
-
-        return count;
+        // markExpiredRequests logic - delegated to DAO/Cache expiry
+        return vpRequestDAO.markExpiredRequests(tenantId);
     }
 
     @Override

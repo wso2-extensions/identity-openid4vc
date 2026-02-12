@@ -40,18 +40,9 @@ public class VPRequest implements Serializable {
     private VPRequestStatus status;
     private long expiresAt;
     private int tenantId;
+    private String didMethod;
+    private String signingAlgorithm;
 
-    /**
-     * Default constructor.
-     */
-    public VPRequest() {
-        this.status = VPRequestStatus.ACTIVE;
-        this.responseMode = "direct_post";
-    }
-
-    /**
-     * Builder pattern constructor.
-     */
     private VPRequest(Builder builder) {
         this.requestId = builder.requestId;
         this.transactionId = builder.transactionId;
@@ -60,14 +51,14 @@ public class VPRequest implements Serializable {
         this.presentationDefinitionId = builder.presentationDefinitionId;
         this.presentationDefinition = builder.presentationDefinition;
         this.responseUri = builder.responseUri;
-        this.responseMode = builder.responseMode != null ? builder.responseMode : "direct_post";
+        this.responseMode = builder.responseMode;
         this.requestJwt = builder.requestJwt;
-        this.status = builder.status != null ? builder.status : VPRequestStatus.ACTIVE;
+        this.status = builder.status;
         this.expiresAt = builder.expiresAt;
         this.tenantId = builder.tenantId;
+        this.didMethod = builder.didMethod;
+        this.signingAlgorithm = builder.signingAlgorithm;
     }
-
-    // Getters and Setters
 
     public String getRequestId() {
         return requestId;
@@ -165,13 +156,34 @@ public class VPRequest implements Serializable {
         this.tenantId = tenantId;
     }
 
-    /**
-     * Check if the request has expired.
-     *
-     * @return true if expired, false otherwise
-     */
-    public boolean isExpired() {
-        return System.currentTimeMillis() > expiresAt;
+    public String getDidMethod() {
+        return didMethod;
+    }
+
+    public void setDidMethod(String didMethod) {
+        this.didMethod = didMethod;
+    }
+
+    public String getSigningAlgorithm() {
+        return signingAlgorithm;
+    }
+
+    public void setSigningAlgorithm(String signingAlgorithm) {
+        this.signingAlgorithm = signingAlgorithm;
+    }
+
+    @Override
+    public String toString() {
+        return "VPRequest{" +
+                "requestId='" + requestId + '\'' +
+                ", transactionId='" + transactionId + '\'' +
+                ", clientId='" + clientId + '\'' +
+                ", status=" + status +
+                ", expiresAt=" + expiresAt +
+                ", tenantId=" + tenantId +
+                ", didMethod='" + didMethod + '\'' +
+                ", signingAlgorithm='" + signingAlgorithm + '\'' +
+                '}';
     }
 
     /**
@@ -190,6 +202,8 @@ public class VPRequest implements Serializable {
         private VPRequestStatus status;
         private long expiresAt;
         private int tenantId;
+        private String didMethod;
+        private String signingAlgorithm;
 
         public Builder requestId(String requestId) {
             this.requestId = requestId;
@@ -251,20 +265,18 @@ public class VPRequest implements Serializable {
             return this;
         }
 
+        public Builder didMethod(String didMethod) {
+            this.didMethod = didMethod;
+            return this;
+        }
+
+        public Builder signingAlgorithm(String signingAlgorithm) {
+            this.signingAlgorithm = signingAlgorithm;
+            return this;
+        }
+
         public VPRequest build() {
             return new VPRequest(this);
         }
-    }
-
-    @Override
-    public String toString() {
-        return "VPRequest{" +
-                "requestId='" + requestId + '\'' +
-                ", transactionId='" + transactionId + '\'' +
-                ", clientId='" + clientId + '\'' +
-                ", status=" + status +
-                ", expiresAt=" + expiresAt +
-                ", tenantId=" + tenantId +
-                '}';
     }
 }

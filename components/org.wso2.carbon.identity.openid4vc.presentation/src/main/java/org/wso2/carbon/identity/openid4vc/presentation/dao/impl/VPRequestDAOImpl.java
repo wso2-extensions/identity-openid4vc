@@ -18,289 +18,101 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.dao.impl;
 
-import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation of VPRequestDAO using JDBC.
+ * Implementation of VPRequestDAO using VPRequestCache (Distributed Cache).
+ * Replaces DB storage with Cache-based storage as per new architecture.
  */
 public class VPRequestDAOImpl implements VPRequestDAO {
 
-    // SQL Queries
-    private static final String SQL_INSERT_VP_REQUEST = "INSERT INTO IDN_VP_REQUEST (REQUEST_ID, TRANSACTION_ID, " +
-            "CLIENT_ID, NONCE, PRESENTATION_DEFINITION_ID, RESPONSE_URI, RESPONSE_MODE, " +
-            "REQUEST_JWT, STATUS, EXPIRES_AT, TENANT_ID) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+    private static final Log log = LogFactory.getLog(VPRequestDAOImpl.class);
+    private final VPRequestCache vpRequestCache;
 
-    private static final String SQL_SELECT_VP_REQUEST_BY_ID = "SELECT * FROM IDN_VP_REQUEST " +
-            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID = "SELECT * FROM IDN_VP_REQUEST " +
-            "WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID = "SELECT REQUEST_ID FROM IDN_VP_REQUEST " +
-            "WHERE TRANSACTION_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_UPDATE_VP_REQUEST_STATUS = "UPDATE IDN_VP_REQUEST SET STATUS = ? " +
-            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_UPDATE_VP_REQUEST_JWT = "UPDATE IDN_VP_REQUEST SET REQUEST_JWT = ? " +
-            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_DELETE_VP_REQUEST = "DELETE FROM IDN_VP_REQUEST " +
-            "WHERE REQUEST_ID = ? AND TENANT_ID = ?";
-
-    private static final String SQL_SELECT_EXPIRED_VP_REQUESTS = "SELECT * FROM IDN_VP_REQUEST " +
-            "WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
-
-    private static final String SQL_MARK_EXPIRED_REQUESTS = "UPDATE IDN_VP_REQUEST SET STATUS = ? " +
-            "WHERE EXPIRES_AT < ? AND STATUS = ? AND TENANT_ID = ?";
-
-    private static final String SQL_SELECT_VP_REQUESTS_BY_STATUS = "SELECT * FROM IDN_VP_REQUEST " +
-            "WHERE STATUS = ? AND TENANT_ID = ?";
+    public VPRequestDAOImpl() {
+        this.vpRequestCache = VPRequestCache.getInstance();
+    }
 
     @Override
     public void createVPRequest(VPRequest vpRequest) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_VP_REQUEST)) {
-                ps.setString(1, vpRequest.getRequestId());
-                ps.setString(2, vpRequest.getTransactionId());
-                ps.setString(3, vpRequest.getClientId());
-                ps.setString(4, vpRequest.getNonce());
-                ps.setString(5, vpRequest.getPresentationDefinitionId());
-                // Parameter 6 was presentation definition, removed.
-                ps.setString(6, vpRequest.getResponseUri());
-                ps.setString(7, vpRequest.getResponseMode());
-                ps.setString(8, vpRequest.getRequestJwt());
-                ps.setString(9, vpRequest.getStatus().getValue());
-                ps.setLong(10, vpRequest.getExpiresAt());
-                ps.setInt(11, vpRequest.getTenantId());
-
-                ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(connection);
-
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error creating VP request: " + vpRequest.getRequestId(), e);
-        }
+        // Store in cache
+        vpRequestCache.put(vpRequest);
     }
 
     @Override
     public VPRequest getVPRequestById(String requestId, int tenantId) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_VP_REQUEST_BY_ID)) {
-                ps.setString(1, requestId);
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return mapResultSetToVPRequest(rs);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving VP request: " + requestId, e);
-        }
-        return null;
+        // Retrieve from cache
+        return vpRequestCache.getByRequestId(requestId);
     }
 
     @Override
-    public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId)
-            throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_VP_REQUEST_BY_TRANSACTION_ID)) {
-                ps.setString(1, transactionId);
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return mapResultSetToVPRequest(rs);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving VP request by transaction: " + transactionId, e);
-        }
-        return null;
+    public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId) throws VPException {
+        // Retrieve from cache
+        return vpRequestCache.getByTransactionId(transactionId);
     }
 
     @Override
-    public List<String> getRequestIdsByTransactionId(String transactionId, int tenantId)
-            throws VPException {
+    public List<String> getRequestIdsByTransactionId(String transactionId, int tenantId) throws VPException {
         List<String> requestIds = new ArrayList<>();
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_REQUEST_IDS_BY_TRANSACTION_ID)) {
-                ps.setString(1, transactionId);
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        requestIds.add(rs.getString("REQUEST_ID"));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving request IDs for transaction: " +
-                    transactionId, e);
+        VPRequest request = vpRequestCache.getByTransactionId(transactionId);
+        if (request != null) {
+            requestIds.add(request.getRequestId());
         }
         return requestIds;
     }
 
     @Override
-    public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId)
-            throws VPException {
-
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_STATUS)) {
-                ps.setString(1, status.getValue());
-                ps.setString(2, requestId);
-                ps.setInt(3, tenantId);
-
-                ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(connection);
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error updating VP request status: " + requestId, e);
+    public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId) throws VPException {
+        VPRequest request = vpRequestCache.getByRequestId(requestId);
+        if (request != null) {
+            request.setStatus(status);
+            // Updating the object reference in cache is usually sufficient for local map,
+            // but for distributed caches, a put() is often required to trigger replication.
+            vpRequestCache.put(request);
         }
     }
 
     @Override
-    public void updateVPRequestJwt(String requestId, String requestJwt, int tenantId)
-            throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_VP_REQUEST_JWT)) {
-                ps.setString(1, requestJwt);
-                ps.setString(2, requestId);
-                ps.setInt(3, tenantId);
-
-                ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(connection);
-
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error updating VP request JWT: " + requestId, e);
+    public void updateVPRequestJwt(String requestId, String requestJwt, int tenantId) throws VPException {
+        VPRequest request = vpRequestCache.getByRequestId(requestId);
+        if (request != null) {
+            request.setRequestJwt(requestJwt);
+            // Re-put to trigger replication if distributed
+            vpRequestCache.put(request);
         }
     }
 
     @Override
     public void deleteVPRequest(String requestId, int tenantId) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_DELETE_VP_REQUEST)) {
-                ps.setString(1, requestId);
-                ps.setInt(2, tenantId);
-
-                IdentityDatabaseUtil.commitTransaction(connection);
-
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error deleting VP request: " + requestId, e);
-        }
+        vpRequestCache.remove(requestId);
     }
 
     @Override
     public List<VPRequest> getExpiredVPRequests(int tenantId) throws VPException {
-        List<VPRequest> expiredRequests = new ArrayList<>();
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_EXPIRED_VP_REQUESTS)) {
-                ps.setLong(1, System.currentTimeMillis());
-                ps.setString(2, VPRequestStatus.ACTIVE.getValue());
-                ps.setInt(3, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        expiredRequests.add(mapResultSetToVPRequest(rs));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving expired VP requests", e);
-        }
-        return expiredRequests;
+        // Not efficiently supported by cache. Returning empty list as cache handles its own expiry.
+        // This method was for the DB cleanup task.
+        return new ArrayList<>();
     }
 
     @Override
     public int markExpiredRequests(int tenantId) throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(SQL_MARK_EXPIRED_REQUESTS)) {
-                ps.setString(1, VPRequestStatus.EXPIRED.getValue());
-                ps.setLong(2, System.currentTimeMillis());
-                ps.setString(3, VPRequestStatus.ACTIVE.getValue());
-                ps.setInt(4, tenantId);
-
-                int updated = ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(connection);
-
-                return updated;
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error marking expired VP requests", e);
-        }
+        // Not needed for cache. Cache expiry handles it.
+        return 0;
     }
 
     @Override
-    public List<VPRequest> getVPRequestsByStatus(VPRequestStatus status, int tenantId)
-            throws VPException {
-        List<VPRequest> requests = new ArrayList<>();
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_VP_REQUESTS_BY_STATUS)) {
-                ps.setString(1, status.getValue());
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        requests.add(mapResultSetToVPRequest(rs));
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving VP requests by status: " + status, e);
-        }
-        return requests;
-    }
-
-    /**
-     * Map ResultSet to VPRequest object.
-     */
-    private VPRequest mapResultSetToVPRequest(ResultSet rs) throws SQLException {
-        return new VPRequest.Builder()
-                .requestId(rs.getString("REQUEST_ID"))
-                .transactionId(rs.getString("TRANSACTION_ID"))
-                .clientId(rs.getString("CLIENT_ID"))
-                .nonce(rs.getString("NONCE"))
-                .presentationDefinitionId(rs.getString("PRESENTATION_DEFINITION_ID"))
-                .responseUri(rs.getString("RESPONSE_URI"))
-                .responseMode(rs.getString("RESPONSE_MODE"))
-                .requestJwt(rs.getString("REQUEST_JWT"))
-                .status(VPRequestStatus.fromValue(rs.getString("STATUS")))
-                .expiresAt(rs.getLong("EXPIRES_AT"))
-                .tenantId(rs.getInt("TENANT_ID"))
-                .build();
+    public List<VPRequest> getVPRequestsByStatus(VPRequestStatus status, int tenantId) throws VPException {
+        // Iterating cache is expensive and not standard pattern, but supported if needed for admin APIs.
+        // For now, returning empty list as this is rarely used in core flow.
+        return new ArrayList<>();
     }
 }

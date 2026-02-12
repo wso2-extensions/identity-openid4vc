@@ -1,62 +1,89 @@
-# IDN_VP_REQUEST Table Documentation
+# OpenID4VP Data Storage Architecture
 
 ## Overview
-The `IDN_VP_REQUEST` table is the central storage for OpenID for Verifiable Presentations (OpenID4VP) authorization requests in WSO2 Identity Server. It tracks the lifecycle of a VP request from creation to expiry or completion.
+The OpenID for Verifiable Presentations (OpenID4VP) implementation in WSO2 Identity Server uses a **Cache-based** storage mechanism for transient request data and the **Authentication Context** for successful authentication artifacts.
 
-## Table Schema & Column Usage
+> **Note**: The `IDN_VP_REQUEST` database table has been removed to optimize performance and reduce database load for ephemeral request data.
 
-| Column Name | Data Type | Description | Usage/Function |
-| :--- | :--- | :--- | :--- |
-| **ID** | `INTEGER` | Auto-increment Primary Key | Internal reference. |
-| **REQUEST_ID** | `VARCHAR(255)` | Unique UUID for the request | **Primary Identifier**. Used in URLs, API calls, and linking to submissions. |
-| **TRANSACTION_ID** | `VARCHAR(255)` | OIDC Transaction identifier | Links the VP request to the original OIDC authentication flow. |
-| **CLIENT_ID** | `VARCHAR(255)` | Service Provider / Client ID | Identifies the relying party app initiating the request. |
-| **NONCE** | `VARCHAR(255)` | Security Nonce | Replay protection. Verified against the wallet's response. |
-| **PRESENTATION_DEFINITION_ID** | `VARCHAR(255)` | FK to `IDN_PRESENTATION_DEFINITION` | ID of the specific presentation requirement (what credentials are requested). |
-| **PRESENTATION_DEFINITION** | `TEXT` / `CLOB` | Full JSON of the Pres. Def. | **Snapshot** of the definition at request time. Used for validation to ensure requirements haven't changed during the flow. |
-| **RESPONSE_URI** | `VARCHAR(2048)` | Redirect URI | Where the wallet should send the response (if not direct_post). |
-| **RESPONSE_MODE** | `VARCHAR(50)` | e.g., `direct_post` | Defines how the wallet communicates the response. |
-| **REQUEST_JWT** | `TEXT` / `CLOB` | Signed JWT | The actual signed Authorization Request Object sent to the wallet. |
-| **STATUS** | `VARCHAR(50)` | Enum: `ACTIVE`, `EXPIRED`, `COMPLETED` | Tracks request state. |
-| **CREATED_AT** | `BIGINT` | Timestamp (ms) | Audit and cleanup. |
-| **EXPIRES_AT** | `BIGINT` | Timestamp (ms) | Enforcement of request validity window. |
-| **TENANT_ID** | `INTEGER` | Tenant ID | Multi-tenancy isolation. |
+## 1. Request Storage (Cache)
 
-## Key Functions & Behavior
+VP Requests are transient. They are created during authentication initiation and are only needed until the wallet submits a response or the request expires.
 
-### 1. Request Creation
-- **Trigger**: When a user initiates a login with a connection configured for OpenID4VP.
-- **Action**: A new row is inserted with status `ACTIVE`.
-- **Key Data**: A signed `REQUEST_JWT` is generated and stored. The `PRESENTATION_DEFINITION` JSON is snapshotted into the table to freeze requirements.
+### Storage Mechanism
+-   **Component**: `VPRequestCache`
+-   **Underlying Store**: WSO2 Carbon Caching (JCache/Ehcache) or dedicated Distributed Cache.
+-   **Key**: `REQUEST_ID` (UUID)
+-   **Value**: `VPRequest` object (Serializable)
 
-### 2. Request Retrieval (Wallet Interaction)
-- **Trigger**: The wallet scans the QR code or uses the deeplink.
-- **Action**: The wallet fetches the request details using the `request_uri`.
-- **Query**: `SELECT * FROM IDN_VP_REQUEST WHERE REQUEST_ID = ?`
-- **Behavior**: Returns the `REQUEST_JWT` to the wallet.
+### Stored Data (`VPRequest` Object)
+| Field | Description |
+| :--- | :--- |
+| `requestId` | Unique ID used in the QR code and deep link. |
+| `transactionId` | Links to the browser session. |
+| `nonce` | Security nonce for replay protection. |
+| `presentationDefinitionId` | Reference to the required credentials. |
+| `status` | Request state (`ACTIVE`, `COMPLETED`, `EXPIRED`, `CANCELLED`). |
+| `didMethod` | DID method used for signing. |
+| `signingAlgorithm` | Algorithm used for signing. |
+| `expiryTime` | Timestamp when the request becomes invalid. |
+| `tenantId` | Tenant isolation. |
 
-### 3. Response Validation (Processing Submission)
-- **Trigger**: Wallet submits the verifiable presentation (VP) to the `response_uri`.
-- **Action**: The system looks up the request status.
-- **Validation**:
-    - Checks if `STATUS` is `ACTIVE`.
-    - Checks if `Current Time < EXPIRES_AT`.
-    - Verifies the `NONCE` in the response matches the stored `NONCE`.
-- **State Change**: Upon successful verification, the status is updated (conceptually, though often the record is deleted or archived depending on retention policy).
+### Lifecycle
+1.  **Creation**: `processAuthenticationRequest` generates a `VPRequest` and puts it into the cache.
+2.  **Polling**: The frontend polls for status updates using the `requestId`. The `VPResultServlet` or `OpenID4VPAuthenticator` checks the cache.
+3.  **Completion**: When a valid response is received, the cache entry status is updated to `COMPLETED` (or removed depending on implementation).
+4.  **Expiry**: Cache eviction policies automatically clean up expired requests.
 
-### 4. Expiry & Cleanup
-- **Trigger**: Scheduled task or lazy check.
-- **Action**: Requests where `EXPIRES_AT < Current Time` are marked as `EXPIRED` or deleted.
-- **Query**: `UPDATE IDN_VP_REQUEST SET STATUS = 'EXPIRED' WHERE ...`
+---
 
-## Lifecycle State Machine
+## 2. Response Artifact Storage (Authentication Context)
 
-1.  **Created** -> `ACTIVE`
-2.  **Wallet Fetches** -> Remains `ACTIVE`
-3.  **Wallet Responds (Success)** -> Processed -> (Ideally `COMPLETED` or Deleted)
-4.  **Timeout** -> `EXPIRED`
+Upon successful verification of a Verifiable Presentation, the relevant artifacts are stored in the **Authentication Context** to make them available to downstream components (e.g., adaptive authentication scripts, custom post-authentication handlers, or logging).
 
-## Indexes
-- `IDX_VP_REQ_TRANSACTION_ID`: Fast lookup during the OIDC flow.
-- `IDX_VP_REQ_STATUS`: Efficient polling for active/expired requests.
-- `IDX_VP_REQ_EXPIRES`: efficient cleanup of stale records.
+### Storage Mechanism
+-   **Component**: `AuthenticationContext`
+-   **Scope**: Request-scoped (available during the authentication flow).
+
+### Stored Artifacts
+| Constant Key | Description | Use Case |
+| :--- | :--- | :--- |
+| `OpenID4VPConstants.OPENID4VP_VP_TOKEN` | The raw **VP Token** (JWT or JSON-LD) received from the wallet. | Compliance logging, custom claim extraction, non-repudiation. |
+| `OpenID4VPConstants.OPENID4VP_PRESENTATION_SUBMISSION` | The **Presentation Submission** JSON object. | Analyzing which credentials satisfied which input descriptors. |
+
+### Accessing Data
+Downstream components can retrieve these values using:
+```java
+String vpToken = (String) context.getProperty(OpenID4VPConstants.RequestParams.OPENID4VP_VP_TOKEN);
+PresentationSubmissionDTO submission = (PresentationSubmissionDTO) context.getProperty( 
+    OpenID4VPConstants.RequestParams.OPENID4VP_PRESENTATION_SUBMISSION
+);
+```
+
+---
+
+## 3. Persistent Configuration (Database)
+
+While transient data is cached, configuration data remains in the database.
+
+### `IDN_PRESENTATION_DEFINITION`
+Stores the templates for what credentials can be requested.
+-   **ID**: Unique definition ID.
+-   **CONTENT**: The JSON definition body.
+-   **TENANT_ID**: Tenant isolation.
+
+### `IDN_APPLICATION_PRESENTATION_DEFINITION`
+Maps specific applications to presentation definitions.
+-   **APP_ID**: Service Provider ID.
+-   **DEF_ID**: FK to `IDN_PRESENTATION_DEFINITION`.
+
+---
+
+## Summary of Changes from Previous Architecture
+
+| Feature | Previous Architecture | Current Architecture |
+| :--- | :--- | :--- |
+| **Request Storage** | Database Table (`IDN_VP_REQUEST`) | Distributed Cache (`VPRequestCache`) |
+| **Request JWT** | Stored in DB CLOB | Generated on-the-fly (`VPRequest.didMethod/signingAlgo`) |
+| **Poll Status** | SQL Queries | Cache Lookups |
+| **Cleanup** | Database Scheduled Task | Cache Eviction / TTL |
+| **Artifacts** | Not exposed in Context | Exposed in `AuthenticationContext` |
