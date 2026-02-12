@@ -64,6 +64,10 @@ public class OpenID4VPConstants {
         public static final String PRESENTATION_SUBMISSION = "presentation_submission";
         public static final String ID_TOKEN = "id_token";
         public static final String TRANSACTION_ID = "transaction_id";
+        
+        // Context storage keys
+        public static final String OPENID4VP_VP_TOKEN = "openid4vp_vp_token";
+        public static final String OPENID4VP_PRESENTATION_SUBMISSION = "openid4vp_presentation_submission";
 
         private RequestParams() {
         }

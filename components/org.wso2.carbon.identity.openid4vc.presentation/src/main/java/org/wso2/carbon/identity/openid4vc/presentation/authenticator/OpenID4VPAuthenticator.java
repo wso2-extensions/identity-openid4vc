@@ -260,6 +260,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             throw new AuthenticationFailedException("VP token not found in submission");
         }
 
+        // Store generic VP artifacts in context for downstream usage
+        context.setProperty(OpenID4VPConstants.RequestParams.OPENID4VP_VP_TOKEN, submission.getVpToken());
+        context.setProperty(OpenID4VPConstants.RequestParams.OPENID4VP_PRESENTATION_SUBMISSION, 
+                submission.getPresentationSubmission());
+
         // Extract credentials from VP Token
         String vpToken = submission.getVpToken();
         String username = null;

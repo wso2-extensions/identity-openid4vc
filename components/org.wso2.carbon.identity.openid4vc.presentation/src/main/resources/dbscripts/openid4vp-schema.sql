@@ -6,31 +6,6 @@
 -- submissions, and presentation definitions.
 -- =====================================================================
 
--- ---------------------------------------------------------------------
--- Table: IDN_VP_REQUEST
--- Description: Stores VP (Verifiable Presentation) authorization requests
--- ---------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS IDN_VP_REQUEST (
-    REQUEST_ID VARCHAR(255) NOT NULL,
-    TRANSACTION_ID VARCHAR(255) NOT NULL,
-    CLIENT_ID VARCHAR(255) NOT NULL,
-    NONCE VARCHAR(255) NOT NULL,
-    PRESENTATION_DEFINITION_ID VARCHAR(255),
-    RESPONSE_URI VARCHAR(2048),
-    RESPONSE_MODE VARCHAR(50) DEFAULT 'direct_post',
-    REQUEST_JWT TEXT,
-    STATUS VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
-    EXPIRES_AT BIGINT NOT NULL,
-    TENANT_ID INTEGER DEFAULT -1234,
-    PRIMARY KEY (REQUEST_ID),
-    UNIQUE (TRANSACTION_ID, TENANT_ID)
-);
-
--- Indexes for VP_REQUEST table
-CREATE INDEX IDX_VP_REQ_TRANSACTION_ID ON IDN_VP_REQUEST(TRANSACTION_ID, TENANT_ID);
-CREATE INDEX IDX_VP_REQ_STATUS ON IDN_VP_REQUEST(STATUS, TENANT_ID);
-CREATE INDEX IDX_VP_REQ_EXPIRES ON IDN_VP_REQUEST(EXPIRES_AT, STATUS);
-CREATE INDEX IDX_VP_REQ_CLIENT_ID ON IDN_VP_REQUEST(CLIENT_ID, TENANT_ID);
 
 
 -- ---------------------------------------------------------------------
