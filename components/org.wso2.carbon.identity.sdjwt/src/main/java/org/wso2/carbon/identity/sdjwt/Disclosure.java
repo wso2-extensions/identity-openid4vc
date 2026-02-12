@@ -40,7 +40,7 @@ import java.util.Map;
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9901.html">RFC 9901 - SD-JWT Specification</a>
  */
-public class Disclosure {
+public final class Disclosure {
 
     private static final Gson GSON = new GsonBuilder().serializeNulls().create();
 
