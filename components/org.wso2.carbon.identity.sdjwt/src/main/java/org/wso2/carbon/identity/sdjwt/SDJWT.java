@@ -41,7 +41,7 @@ import java.util.regex.Pattern;
  *
  * @see <a href="https://www.rfc-editor.org/rfc/rfc9901.html">RFC 9901 - SD-JWT Specification</a>
  */
-public class SDJWT {
+public final class SDJWT {
 
     private final String issuerSignedJwt;
     private final List<Disclosure> disclosures;
