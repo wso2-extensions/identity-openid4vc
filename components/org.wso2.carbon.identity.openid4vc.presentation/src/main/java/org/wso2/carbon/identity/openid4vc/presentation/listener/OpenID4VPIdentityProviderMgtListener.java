@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.internal.OpenID4VCPresentationDataHolder;
+import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.idp.mgt.listener.AbstractIdentityProviderMgtListener;
@@ -84,11 +84,11 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     public boolean doPreDeleteIdP(String idPName, String tenantDomain) {
 
         try {
-            IdentityProvider identityProvider = OpenID4VCPresentationDataHolder.getInstance()
+            IdentityProvider identityProvider = VPServiceDataHolder.getInstance()
                     .getApplicationManagementService().getIdentityProvider(idPName, tenantDomain);
 
             if (identityProvider != null && StringUtils.isNotBlank(identityProvider.getResourceId())) {
-                PresentationDefinitionService pdService = OpenID4VCPresentationDataHolder.getInstance()
+                PresentationDefinitionService pdService = VPServiceDataHolder.getInstance()
                         .getPresentationDefinitionService();
                 if (pdService != null) {
                     PresentationDefinition existingPd = pdService.getPresentationDefinitionByResourceId(
@@ -131,8 +131,8 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
         }
 
         try {
-            PresentationDefinitionService pdService = 
-            OpenID4VCPresentationDataHolder.getInstance().getPresentationDefinitionService();
+            PresentationDefinitionService pdService =
+                    VPServiceDataHolder.getInstance().getPresentationDefinitionService();
             int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
             String resourceId = identityProvider.getResourceId();
 
