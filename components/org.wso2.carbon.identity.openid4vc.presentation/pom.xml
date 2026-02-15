@@ -186,6 +186,8 @@
                             org.wso2.carbon.identity.openid4vc.presentation.*;version="${identity.oid4vc.pkg.version}"
                         </Export-Package>
                         <Import-Package>
+                            javax.servlet; version="${imp.pkg.version.javax.servlet}",
+                            javax.servlet.http; version="${imp.pkg.version.javax.servlet}",
                             org.osgi.framework; version="[1.8.0, 2.0.0)",
                             org.osgi.service.component; version="${osgi.service.component.annotations.imp.pkg.version.range}",
                             *

@@ -104,6 +104,7 @@ public class VPServiceRegistrationComponent {
         }
     }
 
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     protected void deactivate(ComponentContext context) {
         // Services are automatically unregistered by OSGi
         VPServiceDataHolder.getInstance().setVPRequestService(null);
