@@ -124,7 +124,6 @@ public class VPDefinitionServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String pathInfo = request.getPathInfo();
         int tenantId = getTenantId(request);
 
         try {

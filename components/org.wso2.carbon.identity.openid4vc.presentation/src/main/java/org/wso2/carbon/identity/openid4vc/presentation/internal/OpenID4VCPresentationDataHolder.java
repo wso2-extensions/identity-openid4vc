@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
@@ -25,9 +26,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 /**
  * Data Holder for OpenID4VP presentation.
  */
+@SuppressFBWarnings({"EI_EXPOSE_REP", "EI_EXPOSE_REP2", "MS_EXPOSE_REP", "SING_SINGLETON_GETTER_NOT_SYNCHRONIZED"})
 public class OpenID4VCPresentationDataHolder {
 
-    private static OpenID4VCPresentationDataHolder instance = new OpenID4VCPresentationDataHolder();
+    private static final OpenID4VCPresentationDataHolder INSTANCE = new OpenID4VCPresentationDataHolder();
     private VPRequestService vpRequestService;
     private PresentationDefinitionService presentationDefinitionService;
     private ApplicationManagementService applicationManagementService;
@@ -36,7 +38,7 @@ public class OpenID4VCPresentationDataHolder {
     }
 
     public static OpenID4VCPresentationDataHolder getInstance() {
-        return instance;
+        return INSTANCE;
     }
 
     public VPRequestService getVPRequestService() {

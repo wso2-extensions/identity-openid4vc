@@ -18,9 +18,11 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.listener;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
@@ -78,6 +80,7 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     }
 
     @Override
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public boolean doPreDeleteIdP(String idPName, String tenantDomain) {
 
         try {
@@ -97,12 +100,13 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
                     }
                 }
             }
-        } catch (Exception e) {
-            log.error("Error deleting presentation definition for IDP: " + idPName, e);
+        } catch (IdentityApplicationManagementException | VPException e) {
+            log.error("Error deleting presentation definition for IDP: " + sanitize(idPName), e);
         }
         return true;
     }
 
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     private void handlePresentationDefinitionUpdate(IdentityProvider identityProvider, String tenantDomain) {
 
         if (identityProvider == null) {
@@ -133,7 +137,8 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
             String resourceId = identityProvider.getResourceId();
 
             if (StringUtils.isBlank(resourceId)) {
-                log.warn("Resource ID is null for Identity Provider: " + identityProvider.getIdentityProviderName());
+                log.warn("Resource ID is null for Identity Provider: "
+                        + sanitize(identityProvider.getIdentityProviderName()));
                 return;
             }
 
@@ -160,8 +165,21 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
             }
 
         } catch (VPException e) {
-            log.error("Error managing presentation definition for IDP: " + 
-            identityProvider.getIdentityProviderName(), e);
+            log.error("Error managing presentation definition for IDP: "
+                    + sanitize(identityProvider.getIdentityProviderName()), e);
         }
+    }
+
+    /**
+     * Sanitize a string to prevent CRLF injection in log messages.
+     *
+     * @param input The string to sanitize
+     * @return Sanitized string with CR/LF characters removed
+     */
+    private String sanitize(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace("\r", "").replace("\n", "");
     }
 }
