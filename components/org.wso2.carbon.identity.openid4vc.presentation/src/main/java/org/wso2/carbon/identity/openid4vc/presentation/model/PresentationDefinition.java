@@ -29,6 +29,7 @@ public class PresentationDefinition implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String definitionId;
+    private String resourceId;
     private String name;
     private String description;
     private String definitionJson;
@@ -45,6 +46,7 @@ public class PresentationDefinition implements Serializable {
      */
     private PresentationDefinition(Builder builder) {
         this.definitionId = builder.definitionId;
+        this.resourceId = builder.resourceId;
         this.name = builder.name;
         this.description = builder.description;
         this.definitionJson = builder.definitionJson;
@@ -59,6 +61,14 @@ public class PresentationDefinition implements Serializable {
 
     public void setDefinitionId(String definitionId) {
         this.definitionId = definitionId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(String resourceId) {
+        this.resourceId = resourceId;
     }
 
     public String getName() {
@@ -98,6 +108,7 @@ public class PresentationDefinition implements Serializable {
      */
     public static class Builder {
         private String definitionId;
+        private String resourceId;
         private String name;
         private String description;
         private String definitionJson;
@@ -105,6 +116,11 @@ public class PresentationDefinition implements Serializable {
 
         public Builder definitionId(String definitionId) {
             this.definitionId = definitionId;
+            return this;
+        }
+
+        public Builder resourceId(String resourceId) {
+            this.resourceId = resourceId;
             return this;
         }
 
@@ -137,6 +153,7 @@ public class PresentationDefinition implements Serializable {
     public String toString() {
         return "PresentationDefinition{" +
                 "definitionId='" + definitionId + '\'' +
+                ", resourceId='" + resourceId + '\'' +
                 ", name='" + name + '\'' +
                 ", tenantId=" + tenantId +
                 '}';

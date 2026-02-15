@@ -139,7 +139,7 @@ public class VPSubmissionDAOImpl implements VPSubmissionDAO {
     }
 
     @Override
-    @SuppressFBWarnings("SQL_INJECTION_JDBC")
+    @SuppressFBWarnings({"SQL_INJECTION_JDBC", "SQL_PREPARED_STATEMENT_GENERATED_FROM_NONCONSTANT_STRING"})
     public List<VPSubmission> getVPSubmissionsByRequestIds(List<String> requestIds, int tenantId)
             throws VPException {
         if (requestIds == null || requestIds.isEmpty()) {

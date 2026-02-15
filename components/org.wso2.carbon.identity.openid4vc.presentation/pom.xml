@@ -130,6 +130,18 @@
             <groupId>org.wso2.carbon.identity.framework</groupId>
             <artifactId>org.wso2.carbon.identity.application.common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.identity.application.mgt</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
+                
+        <!-- Identity Provider Management -->
+        <dependency>
+            <groupId>org.wso2.carbon.identity.framework</groupId>
+            <artifactId>org.wso2.carbon.idp.mgt</artifactId>
+            <version>${carbon.identity.framework.version}</version>
+        </dependency>
         
         <!-- Bouncy Castle -->
         <dependency>
@@ -146,8 +158,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <source>21</source>
+                    <target>21</target>
                 </configuration>
             </plugin>
             <plugin>

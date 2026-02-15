@@ -46,10 +46,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.dto.VPRequestResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
+import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
-import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.QRCodeUtil;
 
@@ -627,9 +627,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         int tenantId = getTenantId(context);
 
         try {
-            // Step 1: Try application-specific mapping
-            // Note: The authenticator context provides the Service Provider NAME
-            // But the mapping service expects the Application Resource ID (UUID)
+            // Step 1: Try application based on Resource ID (Connection ID)
+            // The authenticator context provides the Service Provider NAME
+            // But we associated the PD with the Connection (Application) Resource ID
 
             // Resolve Application UUID
             String appResourceId = null;
@@ -647,17 +647,17 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 // Ignored: Application management service might not be available
             }
 
-            // If we couldn't resolve the UUID, fallback to using the name (backward
-            // compatibility / legacy behavior)
-            String lookupId = StringUtils.isNotBlank(appResourceId)
-                    ? appResourceId
-                    : applicationId;
-
-            String appDefinitionId = getApplicationPresentationDefinitionMappingService()
-                    .getApplicationPresentationDefinitionId(lookupId, tenantId);
-
-            if (StringUtils.isNotBlank(appDefinitionId)) {
-                return appDefinitionId;
+            if (StringUtils.isNotBlank(appResourceId)) {
+                // Fetch PD by Resource ID
+                try {
+                    PresentationDefinition pd = VPServiceDataHolder.getInstance().getPresentationDefinitionService()
+                            .getPresentationDefinitionByResourceId(appResourceId, tenantId);
+                    if (pd != null) {
+                        return pd.getDefinitionId();
+                    }
+                } catch (Exception e) {
+                    // Ignored: continue to fallback
+                }
             }
 
         } catch (Exception e) {
@@ -681,23 +681,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         return null;
     }
 
-    /**
-     * Get the Application Presentation Definition Mapping Service.
-     * 
-     * @return ApplicationPresentationDefinitionMappingService
-     * @throws VPException If service is not available
-     */
-    private ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService()
-            throws VPException {
-        ApplicationPresentationDefinitionMappingService service = VPServiceDataHolder
-                .getInstance().getApplicationPresentationDefinitionMappingService();
 
-        if (service == null) {
-            throw new VPException(
-                    "Application Presentation Definition Mapping Service not available");
-        }
-        return service;
-    }
 
     /**
      * Create a default presentation definition that accepts any verifiable

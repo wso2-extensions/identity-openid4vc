@@ -49,6 +49,17 @@ public interface PresentationDefinitionDAO {
             throws VPException;
 
     /**
+     * Get presentation definition by resource ID.
+     *
+     * @param resourceId Resource ID
+     * @param tenantId   Tenant ID
+     * @return Presentation definition or null if not found
+     * @throws VPException if retrieval fails
+     */
+    PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId)
+            throws VPException;
+
+    /**
      * Get all presentation definitions for a tenant.
      *
      * @param tenantId Tenant ID
