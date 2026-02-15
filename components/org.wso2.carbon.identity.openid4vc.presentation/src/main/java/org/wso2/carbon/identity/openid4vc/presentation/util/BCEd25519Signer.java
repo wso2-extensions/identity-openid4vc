@@ -21,6 +21,7 @@ public class BCEd25519Signer implements JWSSigner {
 
     private final OctetKeyPair privateKey;
 
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
     public BCEd25519Signer(OctetKeyPair privateKey) throws JOSEException {
         if (!"Ed25519".equals(privateKey.getCurve().getName())) {
             throw new JOSEException("The key type must be Ed25519");

@@ -54,6 +54,16 @@ public interface PresentationDefinitionService {
             throws PresentationDefinitionNotFoundException, VPException;
 
     /**
+     * Get a presentation definition by its Resource ID.
+     *
+     * @param resourceId The resource identifier (e.g., Connection ID)
+     * @param tenantId   The tenant ID
+     * @return The presentation definition, or null if not found
+     * @throws VPException If an error occurs
+     */
+    PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId) throws VPException;
+
+    /**
      * Get all presentation definitions for a tenant.
      *
      * @param tenantId The tenant ID

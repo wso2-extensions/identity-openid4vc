@@ -20,7 +20,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
@@ -44,7 +43,6 @@ public class VPServiceDataHolder {
     private VPRequestService vpRequestService;
     private VPSubmissionService vpSubmissionService;
     private PresentationDefinitionService presentationDefinitionService;
-    private ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService;
     private TrustedIssuerService trustedIssuerService;
     private VCVerificationService vcVerificationService;
     private DIDDocumentService didDocumentService;
@@ -152,27 +150,7 @@ public class VPServiceDataHolder {
         this.presentationDefinitionService = presentationDefinitionService;
     }
 
-    /**
-     * Get the ApplicationPresentationDefinitionMappingService.
-     * 
-     * @return ApplicationPresentationDefinitionMappingService instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public ApplicationPresentationDefinitionMappingService getApplicationPresentationDefinitionMappingService() {
-        return applicationPresentationDefinitionMappingService;
-    }
 
-    /**
-     * Set the ApplicationPresentationDefinitionMappingService.
-     * 
-     * @param applicationPresentationDefinitionMappingService ApplicationPresentationDefinitionMappingService
-     *                                                        instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public void setApplicationPresentationDefinitionMappingService(
-            ApplicationPresentationDefinitionMappingService applicationPresentationDefinitionMappingService) {
-        this.applicationPresentationDefinitionMappingService = applicationPresentationDefinitionMappingService;
-    }
 
     /**
      * Get the TrustedIssuerService.

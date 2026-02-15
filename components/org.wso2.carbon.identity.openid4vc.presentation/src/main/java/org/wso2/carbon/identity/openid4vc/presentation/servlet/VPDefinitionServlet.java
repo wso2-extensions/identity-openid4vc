@@ -27,11 +27,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstan
 import org.wso2.carbon.identity.openid4vc.presentation.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.model.ApplicationPresentationDefinitionMapping;
 import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.service.ApplicationPresentationDefinitionMappingService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.impl.ApplicationPresentationDefinitionMappingServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.PresentationDefinitionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.util.CORSUtil;
 
@@ -73,13 +70,10 @@ public class VPDefinitionServlet extends HttpServlet {
     private static final int DEFAULT_TENANT_ID = -1234;
 
     private transient PresentationDefinitionService presentationDefinitionService;
-    private transient ApplicationPresentationDefinitionMappingService mappingService;
-
     @Override
     public void init() throws ServletException {
         super.init();
         this.presentationDefinitionService = new PresentationDefinitionServiceImpl();
-        this.mappingService = new ApplicationPresentationDefinitionMappingServiceImpl();
     }
 
     /**
@@ -101,11 +95,6 @@ public class VPDefinitionServlet extends HttpServlet {
                 // List all definitions
 
                 handleListDefinitions(request, response, tenantId);
-            } else if (pathInfo.startsWith("/mapping/")) {
-                // Handle application mapping requests
-                String applicationId = pathInfo.substring("/mapping/".length());
-
-                handleGetApplicationMapping(request, response, applicationId, tenantId);
             } else {
                 // Get specific definition
                 String definitionId = pathInfo.substring(1);
@@ -139,15 +128,9 @@ public class VPDefinitionServlet extends HttpServlet {
         int tenantId = getTenantId(request);
 
         try {
-            if ("/mapping".equals(pathInfo)) {
-                // Handle application mapping creation/update
+            // Handle presentation definition creation
 
-                handleCreateUpdateApplicationMapping(request, response, tenantId);
-            } else {
-                // Handle presentation definition creation
-
-                handleCreatePresentationDefinition(request, response, tenantId);
-            }
+            handleCreatePresentationDefinition(request, response, tenantId);
         } catch (VPException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
                     ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
@@ -228,26 +211,19 @@ public class VPDefinitionServlet extends HttpServlet {
         int tenantId = getTenantId(request);
 
         try {
-            if (pathInfo.startsWith("/mapping/")) {
-                // Handle application mapping deletion
-                String applicationId = pathInfo.substring("/mapping/".length());
-
-                handleDeleteApplicationMapping(request, response, applicationId, tenantId);
-            } else {
-                // Handle presentation definition deletion
-                if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
-                    sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                            ErrorDTO.ErrorCode.INVALID_REQUEST, "Definition ID is required");
-                    return;
-                }
-
-                String definitionId = pathInfo.substring(1);
-                if (definitionId.contains("/")) {
-                    definitionId = definitionId.split("/")[0];
-                }
-
-                handleDeletePresentationDefinition(request, response, definitionId, tenantId);
+            // Handle presentation definition deletion
+            if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
+                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+                        ErrorDTO.ErrorCode.INVALID_REQUEST, "Definition ID is required");
+                return;
             }
+
+            String definitionId = pathInfo.substring(1);
+            if (definitionId.contains("/")) {
+                definitionId = definitionId.split("/")[0];
+            }
+
+            handleDeletePresentationDefinition(request, response, definitionId, tenantId);
         } catch (PresentationDefinitionNotFoundException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
                     ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
@@ -286,87 +262,6 @@ public class VPDefinitionServlet extends HttpServlet {
                 tenantId);
 
         sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(definition));
-    }
-
-    /**
-     * Handle get application mapping.
-     */
-    private void handleGetApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            String applicationId, int tenantId) throws VPException, IOException {
-
-        ApplicationPresentationDefinitionMapping mapping = mappingService
-                .getApplicationMapping(applicationId, tenantId);
-
-        if (mapping != null) {
-
-            sendJsonResponse(request, response, HttpServletResponse.SC_OK, mapping);
-        } else {
-
-            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
-                    ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND,
-                    "No mapping found for application: " + applicationId);
-        }
-    }
-
-    /**
-     * Handle create/update application mapping.
-     */
-    private void handleCreateUpdateApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            int tenantId) throws VPException, IOException {
-
-        String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
-
-        if (StringUtils.isBlank(requestBody)) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "Request body is required");
-            return;
-        }
-
-        // Parse request
-        ApplicationMappingRequest mappingRequest;
-        try {
-            mappingRequest = gson.fromJson(requestBody, ApplicationMappingRequest.class);
-        } catch (com.google.gson.JsonSyntaxException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
-            return;
-        }
-
-        // Validate required fields
-        if (StringUtils.isBlank(mappingRequest.getApplicationId())) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "applicationId is required");
-            return;
-        }
-
-        if (StringUtils.isBlank(mappingRequest.getPresentationDefinitionId())) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "presentationDefinitionId is required");
-            return;
-        }
-
-        // Create or update the mapping
-        mappingService.mapPresentationDefinitionToApplication(
-                mappingRequest.getApplicationId(),
-                mappingRequest.getPresentationDefinitionId(),
-                tenantId);
-
-        // Send success response
-        ApplicationMappingResponse successResponse = new ApplicationMappingResponse();
-        successResponse.setMessage("Mapping created successfully");
-        sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, successResponse);
-    }
-
-    /**
-     * Handle delete application mapping.
-     */
-    private void handleDeleteApplicationMapping(HttpServletRequest request, HttpServletResponse response,
-            String applicationId, int tenantId) throws VPException, IOException {
-
-        mappingService.removePresentationDefinitionMapping(applicationId, tenantId);
-
-        // Send 204 No Content
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
     /**
@@ -490,6 +385,11 @@ public class VPDefinitionServlet extends HttpServlet {
     @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
         String tenantHeader = request.getHeader("X-Tenant-Id");
+        if (StringUtils.isBlank(tenantHeader)) {
+            // Check legacy header
+            tenantHeader = request.getHeader("Tenant-Id");
+        }
+
         if (StringUtils.isNotBlank(tenantHeader)) {
             try {
                 return Integer.parseInt(tenantHeader);
@@ -503,7 +403,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Request DTO for creating/updating presentation definitions.
      */
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
+    @SuppressFBWarnings({"URF_UNREAD_FIELD", "UWF_UNWRITTEN_FIELD"})
     private static class PresentationDefinitionRequest {
 
         private String definitionId;
@@ -531,7 +431,7 @@ public class VPDefinitionServlet extends HttpServlet {
     /**
      * Response DTO for presentation definitions.
      */
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
+    @SuppressFBWarnings({"URF_UNREAD_FIELD", "UWF_UNWRITTEN_FIELD"})
     private static class PresentationDefinitionResponseDTO {
 
         @SuppressWarnings("unused")
@@ -558,38 +458,5 @@ public class VPDefinitionServlet extends HttpServlet {
         public void setDefinitionJson(String definitionJson) {
             this.definitionJson = definitionJson;
         }
-    }
-
-    /**
-     * Request DTO for application mapping operations.
-     */
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
-    private static class ApplicationMappingRequest {
-
-        private String applicationId;
-        private String presentationDefinitionId;
-
-        public String getApplicationId() {
-            return applicationId;
-        }
-
-        public String getPresentationDefinitionId() {
-            return presentationDefinitionId;
-        }
-    }
-
-    /**
-     * Response DTO for application mapping operations.
-     */
-    @SuppressFBWarnings("URF_UNREAD_FIELD")
-    private static class ApplicationMappingResponse {
-
-        @SuppressWarnings("unused")
-        private String message;
-
-        public void setMessage(String message) {
-            this.message = message;
-        }
-
     }
 }

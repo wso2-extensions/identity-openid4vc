@@ -22,7 +22,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.presentation.cache.VPRequestCache;
 import org.wso2.carbon.identity.openid4vc.presentation.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.VPRequestDAOImpl;
@@ -49,7 +48,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.util.PresentationDefiniti
 public class VPRequestServiceImpl implements VPRequestService {
 
     private final VPRequestDAO vpRequestDAO;
-    private final VPRequestCache vpRequestCache;
     private final PresentationDefinitionService presentationDefinitionService;
     private final String baseUrl;
 
@@ -58,7 +56,6 @@ public class VPRequestServiceImpl implements VPRequestService {
      */
     public VPRequestServiceImpl() {
         this.vpRequestDAO = new VPRequestDAOImpl();
-        this.vpRequestCache = VPRequestCache.getInstance();
         this.presentationDefinitionService = new PresentationDefinitionServiceImpl();
         this.baseUrl = getConfiguredBaseUrl();
     }
@@ -68,11 +65,9 @@ public class VPRequestServiceImpl implements VPRequestService {
      */
 
     @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public VPRequestServiceImpl(VPRequestDAO vpRequestDAO, VPRequestCache vpRequestCache,
-            PresentationDefinitionService presentationDefinitionService,
+    public VPRequestServiceImpl(VPRequestDAO vpRequestDAO, PresentationDefinitionService presentationDefinitionService,
             String baseUrl) {
         this.vpRequestDAO = vpRequestDAO;
-        this.vpRequestCache = vpRequestCache;
         this.presentationDefinitionService = presentationDefinitionService;
         this.baseUrl = baseUrl;
     }

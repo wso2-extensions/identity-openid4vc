@@ -39,6 +39,8 @@ public class WalletDataCache {
     private static final long DEFAULT_TTL_MINUTES = 5;
     private static final long CLEANUP_INTERVAL_MINUTES = 1;
 
+    private static volatile WalletDataCache walletDataCache;
+
     private final Map<String, CacheEntry> tokenCache;
     private final Map<String, ContextCacheEntry> contextCache;
     private final Map<String, SubmissionCacheEntry> submissionCache;
@@ -65,8 +67,12 @@ public class WalletDataCache {
      * @return WalletDataCache instance
      */
     @SuppressFBWarnings("MS_EXPOSE_REP")
-    public static WalletDataCache getInstance() {
-        return INSTANCE;
+    public static synchronized WalletDataCache getInstance() {
+
+        if (walletDataCache == null) {
+            walletDataCache = new WalletDataCache();
+        }
+        return walletDataCache;
     }
 
     /**

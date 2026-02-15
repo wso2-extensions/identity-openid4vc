@@ -110,6 +110,17 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     }
 
     @Override
+    public PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId)
+            throws VPException {
+
+        if (StringUtils.isBlank(resourceId)) {
+            throw new VPException("Resource ID is required");
+        }
+
+        return presentationDefinitionDAO.getPresentationDefinitionByResourceId(resourceId, tenantId);
+    }
+
+    @Override
     public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId)
             throws VPException {
         return presentationDefinitionDAO.getAllPresentationDefinitions(tenantId);
