@@ -32,7 +32,4 @@ public class NonceSQLConstants {
 
     public static final String VALIDATE_AND_CONSUME_NONCE =
             "DELETE FROM IDN_VC_NONCE WHERE NONCE_VALUE = ? AND TENANT_ID = ? AND EXPIRY_TIME > ?";
-
-    public static final String DELETE_EXPIRED_NONCES =
-            "DELETE FROM IDN_VC_NONCE WHERE EXPIRY_TIME < ?";
 }

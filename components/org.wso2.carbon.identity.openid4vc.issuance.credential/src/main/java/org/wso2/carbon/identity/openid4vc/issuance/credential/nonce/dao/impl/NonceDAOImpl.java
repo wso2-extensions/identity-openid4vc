@@ -77,22 +77,4 @@ public class NonceDAOImpl implements NonceDAO {
             throw new CredentialIssuanceException("Error validating and consuming nonce", e);
         }
     }
-
-    @Override
-    public void deleteExpiredNonces() throws CredentialIssuanceException {
-
-        try (Connection conn = IdentityDatabaseUtil.getDBConnection(true);
-             PreparedStatement ps = conn.prepareStatement(NonceSQLConstants.DELETE_EXPIRED_NONCES)) {
-            try {
-                ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-                ps.executeUpdate();
-                IdentityDatabaseUtil.commitTransaction(conn);
-            } catch (SQLException e) {
-                IdentityDatabaseUtil.rollbackTransaction(conn);
-                throw e;
-            }
-        } catch (SQLException e) {
-            throw new CredentialIssuanceException("Error deleting expired nonces", e);
-        }
-    }
 }

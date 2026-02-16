@@ -48,11 +48,4 @@ public interface NonceDAO {
      */
     boolean validateAndConsumeNonce(String nonceValue, int tenantId)
             throws CredentialIssuanceException;
-
-    /**
-     * Delete all expired nonces. Intended for periodic cleanup jobs.
-     *
-     * @throws CredentialIssuanceException on database failure.
-     */
-    void deleteExpiredNonces() throws CredentialIssuanceException;
 }
