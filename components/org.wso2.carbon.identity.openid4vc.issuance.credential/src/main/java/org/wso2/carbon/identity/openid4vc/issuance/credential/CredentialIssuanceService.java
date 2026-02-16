@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuer;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceExceptionHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
@@ -63,6 +64,7 @@ public class CredentialIssuanceService {
 
     private static final Log LOG = LogFactory.getLog(CredentialIssuanceService.class);
     private final CredentialIssuer credentialIssuer;
+    private final NonceService nonceService = new NonceService();
 
     public CredentialIssuanceService() {
 
@@ -122,6 +124,8 @@ public class CredentialIssuanceService {
             String credential = credentialIssuer.issueCredential(issuerContext);
             CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();
             respDTO.setCredential(credential);
+            String cNonce = nonceService.generateNonce(reqDTO.getTenantDomain());
+            respDTO.setCNonce(cNonce);
             return respDTO;
 
 

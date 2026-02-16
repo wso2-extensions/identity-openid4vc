@@ -33,6 +33,7 @@ public class Constants {
 
     public static final String CONTEXT_OPENID4VCI = "oid4vci";
     public static final String SEGMENT_CREDENTIAL = "credential";
+    public static final String SEGMENT_NONCE = "nonce";
     public static final String SEGMENT_OAUTH2 = "oauth2";
     public static final String SEGMENT_TOKEN = "token";
     public static final String VC_CLAIM = "vc";
@@ -45,6 +46,8 @@ public class Constants {
     public static final String JWT_PROOF = "jwt";
     public static final String JWT_PROOF_TYPE = "openid4vci-proof+jwt";
     public static final long MAX_CLOCK_SKEW_SECONDS = 60;
+    public static final long DEFAULT_NONCE_TTL_SECONDS = 300;
+    public static final String C_NONCE = "c_nonce";
 
 
     /**
@@ -72,6 +75,7 @@ public class Constants {
     public static class CredentialIssuerMetadata {
         public static final String CREDENTIAL_ISSUER = "credential_issuer";
         public static final String CREDENTIAL_ENDPOINT = "credential_endpoint";
+        public static final String NONCE_ENDPOINT = "nonce_endpoint";
         public static final String AUTHORIZATION_SERVERS = "authorization_servers";
         public static final String CREDENTIAL_CONFIGURATIONS_SUPPORTED = "credential_configurations_supported";
 

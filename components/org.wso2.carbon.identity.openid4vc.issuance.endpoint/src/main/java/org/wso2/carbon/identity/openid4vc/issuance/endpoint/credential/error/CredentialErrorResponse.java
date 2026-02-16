@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.error;
 
 import com.google.gson.Gson;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -45,17 +45,22 @@ public class CredentialErrorResponse {
 
     private final String error;
     private final String errorDescription;
+    private final String cNonce;
 
-    private CredentialErrorResponse(String error, String errorDescription) {
+    private CredentialErrorResponse(String error, String errorDescription, String cNonce) {
         this.error = error;
         this.errorDescription = errorDescription;
+        this.cNonce = cNonce;
     }
 
     public String toJson() {
-        Map<String, String> errorMap = new HashMap<>();
+        Map<String, String> errorMap = new LinkedHashMap<>();
         errorMap.put("error", error);
         if (errorDescription != null && !errorDescription.isEmpty()) {
             errorMap.put("error_description", errorDescription);
+        }
+        if (cNonce != null) {
+            errorMap.put("c_nonce", cNonce);
         }
         return GSON.toJson(errorMap);
     }
@@ -70,6 +75,7 @@ public class CredentialErrorResponse {
     public static class Builder {
         private String error;
         private String errorDescription;
+        private String cNonce;
 
         public Builder error(String error) {
             this.error = error;
@@ -81,11 +87,16 @@ public class CredentialErrorResponse {
             return this;
         }
 
+        public Builder cNonce(String cNonce) {
+            this.cNonce = cNonce;
+            return this;
+        }
+
         public CredentialErrorResponse build() {
             if (error == null || error.isEmpty()) {
                 throw new IllegalArgumentException("Error code is required");
             }
-            return new CredentialErrorResponse(error, errorDescription);
+            return new CredentialErrorResponse(error, errorDescription, cNonce);
         }
     }
 }

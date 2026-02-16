@@ -11,7 +11,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 
 import java.util.List;
@@ -20,6 +22,8 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF_TYPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.MAX_CLOCK_SKEW_SECONDS;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS;
+import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_NONCE;
+import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_PROOF;
 
 /**
  * Proof validator for JWT-based proofs.
@@ -27,6 +31,7 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class JwtProofValidator implements ProofValidator {
 
     private static final Log LOG = LogFactory.getLog(JwtProofValidator.class);
+    private final NonceService nonceService = new NonceService();
 
     @Override
     public String getType() {
@@ -81,10 +86,10 @@ public class JwtProofValidator implements ProofValidator {
                 proofDTO.setIssuedAt(
                         signedJWT.getJWTClaimsSet().getIssueTime().getTime());
             }
-//            Object nonce = signedJWT.getJWTClaimsSet().getClaim("nonce");
-//            if (nonce != null) {
-//                proofDTO.setNonce(nonce.toString());
-//            }
+            Object nonce = signedJWT.getJWTClaimsSet().getClaim("nonce");
+            if (nonce != null) {
+                proofDTO.setNonce(nonce.toString());
+            }
         } catch (Exception e) {
             LOG.warn("Error extracting claims from proof JWT", e);
         }
@@ -189,15 +194,16 @@ public class JwtProofValidator implements ProofValidator {
                         "Proof is too old or from the future");
             }
 
-            // Validate nonce if present
-//            Object nonceObj = signedJWT.getJWTClaimsSet().getClaim("nonce");
-//            if (nonceObj != null) {
-//                String nonce = nonceObj.toString();
-//                if (!nonceManager.validateAndConsumeNonce(nonce, tenantDomain)) {
-//                    throw new CredentialIssuanceException(
-//                            "Invalid or expired nonce");
-//                }
-//            }
+            // Validate nonce — MUST be present and valid when the issuer operates a Nonce Endpoint (draft 16).
+            Object nonceObj = signedJWT.getJWTClaimsSet().getClaim("nonce");
+            if (nonceObj == null) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Missing nonce claim in proof JWT. A nonce from the Nonce Endpoint is required.");
+            }
+            if (!nonceService.validateAndConsumeNonce(nonceObj.toString(), tenantDomain)) {
+                throw new CredentialIssuanceClientException(INVALID_NONCE,
+                        "Invalid or expired nonce");
+            }
 
         } catch (CredentialIssuanceException e) {
             throw e;

@@ -16,33 +16,23 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.issuance.credential.dto;
+package org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.constant;
 
 /**
- * DTO for credential issuance response.
+ * SQL constants for the nonce store.
  */
-public class CredentialIssuanceRespDTO {
+public class NonceSQLConstants {
 
-    private String credential;
-    private String cNonce;
-
-    public String getCredential() {
-
-        return credential;
+    private NonceSQLConstants() {
     }
 
-    public void setCredential(String credential) {
+    public static final String STORE_NONCE =
+            "INSERT INTO IDN_VC_NONCE (TENANT_ID, NONCE_VALUE, TIME_CREATED, EXPIRY_TIME) " +
+            "VALUES (?, ?, ?, ?)";
 
-        this.credential = credential;
-    }
+    public static final String VALIDATE_AND_CONSUME_NONCE =
+            "DELETE FROM IDN_VC_NONCE WHERE NONCE_VALUE = ? AND TENANT_ID = ? AND EXPIRY_TIME > ?";
 
-    public String getCNonce() {
-
-        return cNonce;
-    }
-
-    public void setCNonce(String cNonce) {
-
-        this.cNonce = cNonce;
-    }
+    public static final String DELETE_EXPIRED_NONCES =
+            "DELETE FROM IDN_VC_NONCE WHERE EXPIRY_TIME < ?";
 }
