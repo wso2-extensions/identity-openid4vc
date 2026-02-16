@@ -59,6 +59,9 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     private static final String SQL_CHECK_PRESENTATION_DEFINITION_EXISTS = "SELECT 1 FROM " +
             "IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
+    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_NAME = "SELECT * FROM " +
+            "IDN_PRESENTATION_DEFINITION WHERE NAME = ? AND TENANT_ID = ?";
+
     @Override
     public void createPresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
@@ -166,6 +169,12 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 ps.setString(5, presentationDefinition.getDefinitionId());
                 ps.setInt(6, presentationDefinition.getTenantId());
 
+                int rowsAffected = ps.executeUpdate();
+                if (rowsAffected == 0) {
+                    IdentityDatabaseUtil.rollbackTransaction(connection);
+                    throw new VPException("No presentation definition found to update with ID: " + 
+                            presentationDefinition.getDefinitionId());
+                }
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -230,5 +239,26 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
                 .definitionJson(rs.getString("DEFINITION_JSON"))
                 .tenantId(rs.getInt("TENANT_ID"))
                 .build();
+    }
+
+    @Override
+    public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId)
+            throws VPException {
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    SQL_SELECT_PRESENTATION_DEFINITION_BY_NAME)) {
+                ps.setString(1, name);
+                ps.setInt(2, tenantId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return mapResultSetToPresentationDefinition(rs);
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new VPException("Error retrieving presentation definition by name: " + name, e);
+        }
+        return null;
     }
 }

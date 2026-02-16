@@ -104,7 +104,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private static final String SESSION_TRANSACTION_ID = "openid4vp_transaction_id";
 
     // Configuration property keys
-    private static final String PROP_PRESENTATION_DEFINITION_ID = "PresentationDefinitionId";
+    private static final String PROP_PRESENTATION_DEFINITION_ID = "presentationDefinition";
     private static final String PROP_RESPONSE_MODE = "ResponseMode";
     private static final String PROP_TIMEOUT_SECONDS = "TimeoutSeconds";
     private static final String PROP_CLIENT_ID = "ClientId";
@@ -576,6 +576,13 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         if (StringUtils.isNotBlank(didMethod)) {
             createDTO.setDidMethod(didMethod);
         }
+
+        // Set Signing Algorithm (Default to EdDSA)
+        String signingAlgorithm = authenticatorProperties.get(OpenID4VPConstants.ConfigKeys.SIGNING_ALGORITHM);
+        if (StringUtils.isBlank(signingAlgorithm)) {
+            signingAlgorithm = OpenID4VPConstants.Verification.ALG_EDDSA;
+        }
+        createDTO.setSigningAlgorithm(signingAlgorithm);
 
         // Set client ID from config or generate from tenant
         String clientId = authenticatorProperties.get(PROP_CLIENT_ID);

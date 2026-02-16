@@ -154,6 +154,9 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                 .definitionJson(StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())
                         ? presentationDefinition.getDefinitionJson()
                         : existing.getDefinitionJson())
+                .resourceId(StringUtils.isNotBlank(presentationDefinition.getResourceId()) 
+                        ? presentationDefinition.getResourceId() 
+                        : existing.getResourceId()) // Preserve existing resource ID
                 .tenantId(tenantId)
                 .build();
 
@@ -213,5 +216,13 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         if (StringUtils.isBlank(definition.getDefinitionJson())) {
             throw new VPException("Presentation definition JSON is required");
         }
+    }
+    public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException {
+        
+        if (StringUtils.isBlank(name)) {
+            throw new VPException("Presentation definition name is required");
+        }
+
+        return presentationDefinitionDAO.getPresentationDefinitionByName(name, tenantId);
     }
 }

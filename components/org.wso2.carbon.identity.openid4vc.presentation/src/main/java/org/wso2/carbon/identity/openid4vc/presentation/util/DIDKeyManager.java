@@ -24,33 +24,29 @@ import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.util.Base64URL;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
-import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
-import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
-import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
-import org.wso2.carbon.identity.openid4vc.presentation.dao.DIDKeysDAO;
-import org.wso2.carbon.identity.openid4vc.presentation.dao.impl.DIDKeysDAOImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.model.DIDKey;
+import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.core.util.KeyStoreUtil;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
+import java.security.PrivateKey;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Manages cryptographic keys for DID documents.
- * Generates and caches keys per tenant for DID operations.
+ * Manages cryptographic keys for DID documents using the system KeyStore.
+ * EdDSA keys are retrieved from the tenant's KeyStore.
+ * P-256 keys are currently generated in-memory (ephemeral) as fallback.
  */
 public class DIDKeyManager {
 
     private static final ConcurrentHashMap<Integer, OctetKeyPair> keyCache = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<Integer, ECKey> ecKeyCache = new ConcurrentHashMap<>();
-    private static final DIDKeysDAO didKeysDAO = new DIDKeysDAOImpl();
 
     /**
-     * Get or generate Ed25519 key pair for the given tenant (Default).
+     * Get Ed25519 key pair for the given tenant from KeyStore.
      * 
      * @param tenantId The tenant ID
      * @return OctetKeyPair for the tenant
-     * @throws Exception if key generation fails
+     * @throws Exception if key retrieval fails
      */
     @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static OctetKeyPair getOrGenerateKeyPair(int tenantId) throws Exception {
@@ -59,45 +55,31 @@ public class DIDKeyManager {
             return keyCache.get(tenantId);
         }
 
-        // 2. Try DB
+        // 2. Retrieve from KeyStore
         try {
-            DIDKey existingKey = didKeysDAO.getDIDKeyByTenantAndAlgo(tenantId, "Ed25519");
-            // Fallback for backward compatibility (if algo was not saved or generic
-            // retrieval needed)
-            if (existingKey == null) {
-                existingKey = didKeysDAO.getDIDKeyByTenant(tenantId);
-                // Verify it's Ed25519 by length or algo field
-                if (existingKey != null && !"Ed25519".equals(existingKey.getAlgorithm())
-                        && existingKey.getAlgorithm() != null) {
-                    existingKey = null; // Found a key but not Ed25519
-                }
-            }
-
-            if (existingKey != null) {
-                Base64URL x = Base64URL.encode(existingKey.getPublicKey());
-                Base64URL d = Base64URL.encode(existingKey.getPrivateKey());
-                OctetKeyPair keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
-
+            KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
+            String edKeyAlias = getEdDSAKeyAlias(tenantId);
+            
+            // Check if key exists (by trying to get it)
+            if (keyStoreManager.getDefaultPublicKey(edKeyAlias) != null) {
+                PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey(edKeyAlias);
+                OctetKeyPair keyPair = convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
+                
                 keyCache.put(tenantId, keyPair);
                 return keyPair;
             }
         } catch (Exception e) {
-            // Ignore logic to fallback to generation
+            // Log or handle? For now, we propagate or fallback. 
+            // If KeyStore fails, we arguably shouldn't generate specific random keys as they won't match checking.
+            throw new Exception("Error retrieving EdDSA key from KeyStore for tenant " + tenantId, e);
         }
 
-        // 3. Generate New
-        OctetKeyPair keyPair = generateEd25519KeyPair();
-
-        // 4. Save to DB
-        saveEd25519Key(tenantId, keyPair);
-
-        // 5. Cache
-        keyCache.put(tenantId, keyPair);
-        return keyPair;
+        throw new Exception("EdDSA key not found in KeyStore for tenant " + tenantId);
     }
 
     /**
      * Get or generate EC (P-256) key pair for the given tenant.
+     * Note: Currently ephemeral (in-memory) as DB support is removed.
      * 
      * @param tenantId The tenant ID
      * @return ECKey for the tenant
@@ -110,102 +92,73 @@ public class DIDKeyManager {
             return ecKeyCache.get(tenantId);
         }
 
-        // 2. Try DB
-        try {
-            DIDKey existingKey = didKeysDAO.getDIDKeyByTenantAndAlgo(tenantId, "ES256");
-            if (existingKey != null) {
-                // Reconstruct ECKey
-                byte[] pubKey = existingKey.getPublicKey();
-                byte[] privKey = existingKey.getPrivateKey();
-
-                // Public key stored as X (32) + Y (32)
-                if (pubKey.length == 64) {
-                    byte[] xBytes = java.util.Arrays.copyOfRange(pubKey, 0, 32);
-                    byte[] yBytes = java.util.Arrays.copyOfRange(pubKey, 32, 64);
-
-                    Base64URL x = Base64URL.encode(xBytes);
-                    Base64URL y = Base64URL.encode(yBytes);
-                    Base64URL d = Base64URL.encode(privKey);
-
-                    ECKey ecKey = new ECKey.Builder(Curve.P_256, x, y).d(d).build();
-                    ecKeyCache.put(tenantId, ecKey);
-                    return ecKey;
-                }
-            }
-        } catch (Exception e) {
-            // Ignore logic to fallback to generation
-        }
-
-        // 3. Generate New
+        // 2. Generate New (Ephemeral)
         ECKey ecKey = generateECKeyPair();
 
-        // 4. Save to DB
-        saveECKey(tenantId, ecKey);
-
-        // 5. Cache
+        // 3. Cache
         ecKeyCache.put(tenantId, ecKey);
         return ecKey;
-    }
-
-    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
-    private static OctetKeyPair generateEd25519KeyPair() throws Exception {
-        // Use Bouncy Castle directly to avoid Nimbus dependency on Google Tink which is
-        // missing in OSGi
-        Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
-        gen.init(new Ed25519KeyGenerationParameters(new java.security.SecureRandom()));
-        AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
-
-        Ed25519PublicKeyParameters publicParams = (Ed25519PublicKeyParameters) keyPair.getPublic();
-        Ed25519PrivateKeyParameters privateParams = (Ed25519PrivateKeyParameters) keyPair.getPrivate();
-
-        Base64URL x = Base64URL.encode(publicParams.getEncoded());
-        Base64URL d = Base64URL.encode(privateParams.getEncoded());
-
-        return new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
     }
 
     private static ECKey generateECKeyPair() throws Exception {
         return new ECKeyGenerator(Curve.P_256).generate();
     }
 
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    private static void saveEd25519Key(int tenantId, OctetKeyPair keyPair) {
-        try {
-            String didKeyString = generateDIDKey(keyPair);
-            DIDKey newDidKey = new DIDKey(
-                    didKeyString,
-                    tenantId,
-                    "Ed25519",
-                    keyPair.getX().decode(),
-                    keyPair.getD().decode());
-            didKeysDAO.addDIDKey(newDidKey);
-        } catch (Exception e) {
-            // Ignore DB errors
+    /**
+     * Get the EdDSA key alias for the given tenant.
+     * 
+     * @param tenantId The tenant ID
+     * @return EdDSA key alias
+     * @throws Exception if alias generation fails
+     */
+    public static String getEdDSAKeyAlias(int tenantId) throws Exception {
+        if (tenantId == MultitenantConstants.SUPER_TENANT_ID) {
+            // For super tenant, use a fixed alias
+            return "wso2carbon_ed";
+        } else {
+            // For other tenants, use tenant domain + _ed suffix
+            String tenantDomain = org.wso2.carbon.context.PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain();
+            return KeyStoreUtil.getTenantEdKeyAlias(tenantDomain);
         }
     }
 
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    private static void saveECKey(int tenantId, ECKey keyPair) {
-        try {
-            String didKeyString = generateDIDKey(keyPair);
-
-            // Concatenate X and Y for public key
-            byte[] xBytes = keyPair.getX().decode();
-            byte[] yBytes = keyPair.getY().decode();
-            byte[] pubKey = new byte[xBytes.length + yBytes.length];
-            System.arraycopy(xBytes, 0, pubKey, 0, xBytes.length);
-            System.arraycopy(yBytes, 0, pubKey, xBytes.length, yBytes.length);
-
-            DIDKey newDidKey = new DIDKey(
-                    didKeyString,
-                    tenantId,
-                    "ES256", // Using algorithm name
-                    pubKey,
-                    keyPair.getD().decode());
-            didKeysDAO.addDIDKey(newDidKey);
-        } catch (Exception e) {
-            // Ignore DB errors
-        }
+    /**
+     * Convert PrivateKey to OctetKeyPair for EdDSA signing.
+     * 
+     * @param privateKey The private key from KeyStore
+     * @param keyStoreManager KeyStore manager instance
+     * @param alias Key alias
+     * @return OctetKeyPair for use with BCEd25519Signer
+     * @throws Exception if conversion fails
+     */
+    public static OctetKeyPair convertToOctetKeyPair(PrivateKey privateKey, 
+                                                KeyStoreManager keyStoreManager, 
+                                                String alias) throws Exception {
+        // Get public key
+        java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(alias);
+        
+        // Extract raw key bytes (Ed25519 keys are 32 bytes each)
+        byte[] privateKeyBytes = privateKey.getEncoded();
+        byte[] publicKeyBytes = publicKey.getEncoded();
+        
+        // Ed25519 private key in PKCS#8 format has the actual key at offset 16 (32 bytes)
+        // Ed25519 public key in X.509 format has the actual key at offset 12 (32 bytes)
+        // We use safe extraction if possible, or assume standard encoding provided by BC/Java 15+
+        
+        // Note: Simple byte slicing assumes standard PCKS8/X509 encoding for Ed25519.
+        // If strictly required to parse ASN.1, use BC PrivateKeyInfo.
+        // For now, retaining the logic from DIDWebProvider which seemingly works.
+        
+        byte[] rawPrivateKey = java.util.Arrays.copyOfRange(privateKeyBytes, 
+                privateKeyBytes.length - 32, privateKeyBytes.length);
+        byte[] rawPublicKey = java.util.Arrays.copyOfRange(publicKeyBytes, 
+                publicKeyBytes.length - 32, publicKeyBytes.length);
+        
+        Base64URL x = Base64URL.encode(rawPublicKey);
+        Base64URL d = Base64URL.encode(rawPrivateKey);
+        
+        return new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
     }
 
     /**
@@ -247,23 +200,7 @@ public class DIDKeyManager {
             compressed[0] = yBigInt.testBit(0) ? (byte) 0x03 : (byte) 0x02;
             System.arraycopy(xBytes, 0, compressed, 1, 32);
 
-            // Multicodec Prefix for p256-pub is 0x1200 (varint encoded?)
-            // According to multicodec table: p256-pub is 0x1200
-            // Varint encoding of 0x1200 -> 0x1200 -> 1001 000 0000 000
-            // Wait, standard did:key for P-256 uses 0x1200.
-            // 0x1200 = 0001 0010 0000 0000
-            // Varint:
-            // 0x80 | 0x00? No.
-            // Let's use standard table. 0x1200.
-            // 2 bytes: 0x80 0x24 (Wait, 0x1200 is 4608 decimal)
-            // 4608 = 1001000000000
-            // 7-bit groups: 0000000 (0), 0100100 (36 = 0x24)
-            // So: 0x80 (continuation) 0x24.
-
-            // Let's verify with known impl or spec.
-            // W3C CCG did-method-key: P-256 is 0x1200.
-            // Varint(0x1200) = [0x80, 0x24]
-
+            // Multicodec Prefix for p256-pub is 0x1200 -> Varint [0x80, 0x24]
             byte[] multicodecKey = new byte[35]; // 2 header + 33 data
             multicodecKey[0] = (byte) 0x80;
             multicodecKey[1] = (byte) 0x24; // 0x24 = 36
@@ -294,24 +231,16 @@ public class DIDKeyManager {
     }
 
     /**
-     * Generate a did:key identifier for the given tenant (Default Ed25519).
+     * Generate a did:key identifier for the given tenant (Default Ed25519 from KeyStore).
      * 
      * @param tenantId The tenant ID
      * @return did:key identifier
-     * @throws Exception if key generation fails
+     * @throws Exception if key generation/retrieval fails
      */
     public static String generateDIDKey(int tenantId) throws Exception {
         com.nimbusds.jose.jwk.OctetKeyPair keyPair = getOrGenerateKeyPair(tenantId);
         return generateDIDKey(keyPair);
     }
-
-    /**
-     * Convert Ed25519 public key to multibase format.
-     * Format: z + base58btc(0xed01 + public key bytes)
-     * 
-     * @param keyPair The key pair containing the Ed25519 public key
-     * @return Multibase encoded string (z-prefix for base58btc)
-     */
 
     /**
      * Extract public key bytes from a did:key identifier.
@@ -468,15 +397,16 @@ public class DIDKeyManager {
 
     /**
      * Regenerate keys for a tenant.
+     * Note: For EdDSA (KeyStore), this just clears cache and re-fetches.
+     * For EC (Ephemeral), this generates new key.
      * 
      * @param tenantId The tenant ID
      * @return New OctetKeyPair
      * @throws Exception if generation fails
      */
     public static com.nimbusds.jose.jwk.OctetKeyPair regenerateKeyPair(int tenantId) throws Exception {
-        com.nimbusds.jose.jwk.OctetKeyPair keyPair = generateEd25519KeyPair();
-        keyCache.put(tenantId, keyPair);
-        return keyPair;
+        keyCache.remove(tenantId);
+        return getOrGenerateKeyPair(tenantId);
     }
 
     /**
@@ -486,7 +416,7 @@ public class DIDKeyManager {
      * @return true if keys exist
      */
     public static boolean hasKeys(int tenantId) {
-        return keyCache.containsKey(tenantId);
+        return keyCache.containsKey(tenantId) || ecKeyCache.containsKey(tenantId);
     }
 
     /**
@@ -496,6 +426,7 @@ public class DIDKeyManager {
      */
     public static void removeKeys(int tenantId) {
         keyCache.remove(tenantId);
+        ecKeyCache.remove(tenantId);
     }
 
 }

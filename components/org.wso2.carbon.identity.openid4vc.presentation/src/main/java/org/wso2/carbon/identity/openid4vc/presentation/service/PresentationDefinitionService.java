@@ -127,4 +127,13 @@ public interface PresentationDefinitionService {
      */
     String buildPresentationDefinitionJson(String id, String name, String purpose, 
             String[] inputDescriptors) throws VPException;
+    /**
+     * Get Presentation Definition by name.
+     *
+     * @param name     Name of the presentation definition.
+     * @param tenantId Tenant ID.
+     * @return PresentationDefinition if found, null otherwise.
+     * @throws VPException If an error occurs.
+     */
+    PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException;
 }
