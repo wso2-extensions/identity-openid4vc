@@ -117,26 +117,16 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle POST requests - Create new presentation definition or application
-     * mapping.
+     * Handle POST requests - Disabled.
+     * Definitions are created automatically when a Digital Credentials connection is created.
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int tenantId = getTenantId(request);
-
-        try {
-            // Handle presentation definition creation
-
-            handleCreatePresentationDefinition(request, response, tenantId);
-        } catch (VPException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (RuntimeException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
-        }
+        sendErrorResponse(request, response, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                ErrorDTO.ErrorCode.INVALID_REQUEST,
+                "Definitions are created automatically with connections. Use PUT to update.");
     }
 
     /**
@@ -196,43 +186,16 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle DELETE requests - Delete presentation definition or application
-     * mapping.
+     * Handle DELETE requests - Disabled.
+     * Definitions are deleted automatically when a Digital Credentials connection is deleted.
      */
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String pathInfo = request.getPathInfo();
-        if (pathInfo == null) {
-            pathInfo = "";
-        }
-        int tenantId = getTenantId(request);
-
-        try {
-            // Handle presentation definition deletion
-            if (StringUtils.isBlank(pathInfo) || "/".equals(pathInfo)) {
-                sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                        ErrorDTO.ErrorCode.INVALID_REQUEST, "Definition ID is required");
-                return;
-            }
-
-            String definitionId = pathInfo.substring(1);
-            if (definitionId.contains("/")) {
-                definitionId = definitionId.split("/")[0];
-            }
-
-            handleDeletePresentationDefinition(request, response, definitionId, tenantId);
-        } catch (PresentationDefinitionNotFoundException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
-                    ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
-        } catch (VPException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
-        } catch (RuntimeException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
-        }
+        sendErrorResponse(request, response, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
+                ErrorDTO.ErrorCode.INVALID_REQUEST,
+                "Definitions are deleted automatically when connections are deleted.");
     }
 
     /**
@@ -263,71 +226,9 @@ public class VPDefinitionServlet extends HttpServlet {
         sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(definition));
     }
 
-    /**
-     * Handle create presentation definition.
-     */
-    private void handleCreatePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
-            int tenantId) throws VPException, IOException {
 
-        String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
 
-        if (StringUtils.isBlank(requestBody)) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "Request body is required");
-            return;
-        }
 
-        // Parse request
-        PresentationDefinitionRequest createRequest;
-        try {
-            createRequest = gson.fromJson(requestBody, PresentationDefinitionRequest.class);
-        } catch (com.google.gson.JsonSyntaxException e) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "Invalid JSON format");
-            return;
-        }
-
-        // Validate required fields
-        if (StringUtils.isBlank(createRequest.getName())) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "name is required");
-            return;
-        }
-
-        if (StringUtils.isBlank(createRequest.getDefinitionJson())) {
-            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
-                    ErrorDTO.ErrorCode.INVALID_REQUEST, "definitionJson is required");
-            return;
-        }
-
-        // Build definition model
-        PresentationDefinition definition = new PresentationDefinition.Builder()
-                .definitionId(createRequest.getDefinitionId())
-                .name(createRequest.getName())
-                .description(createRequest.getDescription())
-                .definitionJson(createRequest.getDefinitionJson())
-                .tenantId(tenantId)
-                .build();
-
-        // Create
-        PresentationDefinition created = presentationDefinitionService
-                .createPresentationDefinition(definition, tenantId);
-
-        // Send response
-        sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, toResponseDTO(created));
-    }
-
-    /**
-     * Handle delete presentation definition.
-     */
-    private void handleDeletePresentationDefinition(HttpServletRequest request, HttpServletResponse response,
-            String definitionId, int tenantId) throws VPException, IOException {
-
-        presentationDefinitionService.deletePresentationDefinition(definitionId, tenantId);
-
-        // Send 204 No Content
-        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    }
 
     /**
      * Convert model to response DTO.

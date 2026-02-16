@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
+import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 import org.wso2.carbon.idp.mgt.listener.AbstractIdentityProviderMgtListener;
 
 import java.util.UUID;
@@ -106,7 +107,7 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
         return true;
     }
 
-    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
+    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION"})
     private void handlePresentationDefinitionUpdate(IdentityProvider identityProvider, String tenantDomain) {
 
         if (identityProvider == null) {
@@ -114,19 +115,18 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
         }
 
         // Check if there is a presentation definition property
-        String presentationDefinitionJson = null;
+        String presentationDefinitionValue = null;
         IdentityProviderProperty[] properties = identityProvider.getIdpProperties();
         if (properties != null) {
             for (IdentityProviderProperty prop : properties) {
                 if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
-                    presentationDefinitionJson = prop.getValue();
+                    presentationDefinitionValue = prop.getValue();
                     break;
                 }
             }
         }
 
-        if (StringUtils.isBlank(presentationDefinitionJson)) {
-            // Nothing to do if no PD is provided
+        if (StringUtils.isBlank(presentationDefinitionValue)) {
             return;
         }
 
@@ -142,30 +142,86 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
                 return;
             }
 
-            // Check if a definition already exists for this resource
-            PresentationDefinition existingPd = pdService.getPresentationDefinitionByResourceId(resourceId, tenantId);
+            // Determine if the value is a definition ID (UUID) or a JSON string.
+            // A UUID is a short alphanumeric string; JSON starts with '{'.
+            boolean isJson = presentationDefinitionValue.trim().startsWith("{");
 
-            if (existingPd != null) {
-                // Update existing
-                existingPd.setDefinitionJson(presentationDefinitionJson);
-                existingPd.setName(identityProvider.getIdentityProviderName() + " Definition"); // Sync name
-                pdService.updatePresentationDefinition(existingPd, tenantId);
+            if (isJson) {
+                // Value is PD JSON — this is a new connection creation.
+                // Create the PD in the database and update the IDP property to store the definition ID.
+                PresentationDefinition existingPd = pdService.getPresentationDefinitionByResourceId(
+                        resourceId, tenantId);
+
+                String definitionId;
+                if (existingPd != null) {
+                    // Update existing definition with new JSON
+                    existingPd.setDefinitionJson(presentationDefinitionValue);
+                    existingPd.setName(identityProvider.getIdentityProviderName() + " Definition");
+                    pdService.updatePresentationDefinition(existingPd, tenantId);
+                    definitionId = existingPd.getDefinitionId();
+                } else {
+                    // Create new definition
+                    definitionId = UUID.randomUUID().toString();
+                    PresentationDefinition newPd = new PresentationDefinition.Builder()
+                            .definitionId(definitionId)
+                            .resourceId(resourceId)
+                            .name(identityProvider.getIdentityProviderName() + " Definition")
+                            .description("Auto-generated definition for connection: " +
+                                    identityProvider.getIdentityProviderName())
+                            .definitionJson(presentationDefinitionValue)
+                            .tenantId(tenantId)
+                            .build();
+                    pdService.createPresentationDefinition(newPd, tenantId);
+                }
+
+                // Update the IDP property to store the definition ID instead of JSON
+                updateIdPPropertyToDefinitionId(identityProvider, tenantDomain, definitionId);
+
             } else {
-                // Create new
-                PresentationDefinition newPd = new PresentationDefinition.Builder()
-                        .definitionId(UUID.randomUUID().toString())
-                        .resourceId(resourceId)
-                        .name(identityProvider.getIdentityProviderName() + " Definition")
-                        .description("Auto-generated definition for connection: " + 
-                        identityProvider.getIdentityProviderName())
-                        .definitionJson(presentationDefinitionJson)
-                        .tenantId(tenantId)
-                        .build();
-                pdService.createPresentationDefinition(newPd, tenantId);
+                // Value is already a definition ID — this is a connection update.
+                // The definition JSON should be updated via the PUT endpoint, not here.
+                // Just verify the definition still exists.
+                String definitionId = presentationDefinitionValue.trim();
+                PresentationDefinition existingPd = pdService.getPresentationDefinitionByResourceId(
+                        resourceId, tenantId);
+                if (existingPd == null) {
+                    log.warn("Presentation definition not found for definition ID: "
+                            + sanitize(definitionId) + " and resource ID: " + sanitize(resourceId));
+                }
             }
 
-        } catch (VPException e) {
+        } catch (Exception e) {
             log.error("Error managing presentation definition for IDP: "
+                    + sanitize(identityProvider.getIdentityProviderName()), e);
+        }
+    }
+
+    /**
+     * Update IDP property to store the definition ID instead of the full JSON.
+     */
+    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION"})
+    private void updateIdPPropertyToDefinitionId(IdentityProvider identityProvider,
+            String tenantDomain, String definitionId) {
+
+        try {
+            IdentityProviderProperty[] properties = identityProvider.getIdpProperties();
+            if (properties != null) {
+                for (IdentityProviderProperty prop : properties) {
+                    if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
+                        prop.setValue(definitionId);
+                        break;
+                    }
+                }
+            }
+
+            // Update the IDP to persist the property change.
+            // This will trigger doPostUpdateIdP again, but since the value is now a UUID
+            // (not JSON), the listener will take the non-JSON branch and skip the update loop.
+            IdentityProviderManager.getInstance()
+                    .updateIdP(identityProvider.getIdentityProviderName(),
+                            identityProvider, tenantDomain);
+        } catch (Exception e) {
+            log.error("Error updating IDP property to definition ID for: "
                     + sanitize(identityProvider.getIdentityProviderName()), e);
         }
     }
