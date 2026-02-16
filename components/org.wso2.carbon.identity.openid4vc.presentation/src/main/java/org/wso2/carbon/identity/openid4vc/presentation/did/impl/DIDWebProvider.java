@@ -24,15 +24,12 @@ import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
-import com.nimbusds.jose.util.Base64URL;
 import org.wso2.carbon.core.util.KeyStoreManager;
-import org.wso2.carbon.core.util.KeyStoreUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.did.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.util.BCEd25519Signer;
 import org.wso2.carbon.identity.openid4vc.presentation.util.DIDKeyManager;
-import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
@@ -117,11 +114,11 @@ public class DIDWebProvider implements DIDProvider {
             if ("EdDSA".equals(algorithm)) {
                 // Use KeyStore for EdDSA keys
                 KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                String edKeyAlias = getEdDSAKeyAlias(tenantId);
+                String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
                 PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey(edKeyAlias);
                 
                 // Convert PrivateKey to OctetKeyPair for BCEd25519Signer
-                OctetKeyPair keyPair = convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
+                OctetKeyPair keyPair = DIDKeyManager.convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
                 return new BCEd25519Signer(keyPair);
             } else if ("ES256".equals(algorithm)) {
                 ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
@@ -192,7 +189,7 @@ public class DIDWebProvider implements DIDProvider {
                     
                     // Use KeyStore for EdDSA keys
                     KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                    String edKeyAlias = getEdDSAKeyAlias(tenantId);
+                    String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
                     java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(edKeyAlias);
 
                     DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
@@ -242,57 +239,6 @@ public class DIDWebProvider implements DIDProvider {
     }
 
     /**
-     * Get the EdDSA key alias for the given tenant.
-     * 
-     * @param tenantId The tenant ID
-     * @return EdDSA key alias
-     * @throws Exception if alias generation fails
-     */
-    private String getEdDSAKeyAlias(int tenantId) throws Exception {
-        if (tenantId == MultitenantConstants.SUPER_TENANT_ID) {
-            // For super tenant, use a fixed alias
-            return "wso2carbon_ed";
-        } else {
-            // For other tenants, use tenant domain + _ed suffix
-            String tenantDomain = org.wso2.carbon.context.PrivilegedCarbonContext
-                    .getThreadLocalCarbonContext().getTenantDomain();
-            return KeyStoreUtil.getTenantEdKeyAlias(tenantDomain);
-        }
-    }
-
-    /**
-     * Convert PrivateKey to OctetKeyPair for EdDSA signing.
-     * 
-     * @param privateKey The private key from KeyStore
-     * @param keyStoreManager KeyStore manager instance
-     * @param alias Key alias
-     * @return OctetKeyPair for use with BCEd25519Signer
-     * @throws Exception if conversion fails
-     */
-    private OctetKeyPair convertToOctetKeyPair(PrivateKey privateKey, 
-                                                KeyStoreManager keyStoreManager, 
-                                                String alias) throws Exception {
-        // Get public key
-        java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(alias);
-        
-        // Extract raw key bytes (Ed25519 keys are 32 bytes each)
-        byte[] privateKeyBytes = privateKey.getEncoded();
-        byte[] publicKeyBytes = publicKey.getEncoded();
-        
-        // Ed25519 private key in PKCS#8 format has the actual key at offset 16 (32 bytes)
-        // Ed25519 public key in X.509 format has the actual key at offset 12 (32 bytes)
-        byte[] rawPrivateKey = java.util.Arrays.copyOfRange(privateKeyBytes, 
-                privateKeyBytes.length - 32, privateKeyBytes.length);
-        byte[] rawPublicKey = java.util.Arrays.copyOfRange(publicKeyBytes, 
-                publicKeyBytes.length - 32, publicKeyBytes.length);
-        
-        Base64URL x = Base64URL.encode(rawPublicKey);
-        Base64URL d = Base64URL.encode(rawPrivateKey);
-        
-        return new OctetKeyPair.Builder(com.nimbusds.jose.jwk.Curve.Ed25519, x).d(d).build();
-    }
-
-    /**
      * Convert PublicKey to multibase format for DID document.
      * 
      * @param publicKey The public key from KeyStore
@@ -327,14 +273,17 @@ public class DIDWebProvider implements DIDProvider {
             return "";
         }
 
+        // Convert to base58
         byte[] inputCopy = new byte[input.length];
         System.arraycopy(input, 0, inputCopy, 0, input.length);
 
+        // Count leading zeros
         int zeros = 0;
         while (zeros < inputCopy.length && inputCopy[zeros] == 0) {
             zeros++;
         }
 
+        // Convert to base58
         byte[] encoded = new byte[inputCopy.length * 2];
         int outputStart = encoded.length;
         for (int inputStart = zeros; inputStart < inputCopy.length;) {
@@ -344,10 +293,12 @@ public class DIDWebProvider implements DIDProvider {
             }
         }
 
+        // Skip leading zeros in encoded result
         while (outputStart < encoded.length && encoded[outputStart] == (byte) alphabet.charAt(0)) {
             outputStart++;
         }
 
+        // Add original leading zeros
         while (--zeros >= 0) {
             encoded[--outputStart] = (byte) alphabet.charAt(0);
         }

@@ -47,6 +47,9 @@ public class VPRequestCreateDTO {
     @SerializedName("didMethod")
     private String didMethod;
 
+    @SerializedName("signingAlgorithm")
+    private String signingAlgorithm;
+
     /**
      * Default constructor.
      */
@@ -118,6 +121,14 @@ public class VPRequestCreateDTO {
 
     public void setDidMethod(String didMethod) {
         this.didMethod = didMethod;
+    }
+
+    public String getSigningAlgorithm() {
+        return signingAlgorithm;
+    }
+
+    public void setSigningAlgorithm(String signingAlgorithm) {
+        this.signingAlgorithm = signingAlgorithm;
     }
 
     /**

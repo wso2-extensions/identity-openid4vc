@@ -107,23 +107,41 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     public boolean doPreDeleteIdP(String idPName, String tenantDomain) {
 
         try {
-            IdentityProvider identityProvider = VPServiceDataHolder.getInstance()
-                    .getApplicationManagementService().getIdentityProvider(idPName, tenantDomain);
+            int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
+            PresentationDefinitionService pdService = VPServiceDataHolder.getInstance()
+                    .getPresentationDefinitionService();
 
-            if (identityProvider != null && StringUtils.isNotBlank(identityProvider.getResourceId())) {
-                PresentationDefinitionService pdService = VPServiceDataHolder.getInstance()
-                        .getPresentationDefinitionService();
-                if (pdService != null) {
-                    PresentationDefinition existingPd = pdService.getPresentationDefinitionByResourceId(
-                            identityProvider.getResourceId(), IdentityTenantUtil.getTenantId(tenantDomain));
-
-                    if (existingPd != null) {
-                        pdService.deletePresentationDefinition(existingPd.getDefinitionId(), 
-                                IdentityTenantUtil.getTenantId(tenantDomain));
-                    }
-                }
+            if (pdService == null) {
+                return true;
             }
-        } catch (IdentityApplicationManagementException | VPException e) {
+
+            PresentationDefinition existingPd = null;
+
+            // 1. Try to get IDP and lookup by Resource ID
+            try {
+                IdentityProvider identityProvider = VPServiceDataHolder.getInstance()
+                        .getApplicationManagementService().getIdentityProvider(idPName, tenantDomain);
+
+                if (identityProvider != null && StringUtils.isNotBlank(identityProvider.getResourceId())) {
+                    existingPd = pdService.getPresentationDefinitionByResourceId(
+                            identityProvider.getResourceId(), tenantId);
+                }
+            } catch (IdentityApplicationManagementException e) {
+                // Ignore and try by name
+            }
+
+            // 2. Fallback: Lookup by Name
+            if (existingPd == null) {
+                String pdName = idPName + " Definition";
+                existingPd = pdService.getPresentationDefinitionByName(pdName, tenantId);
+            }
+
+            // 3. Delete if found
+            if (existingPd != null) {
+                pdService.deletePresentationDefinition(existingPd.getDefinitionId(), tenantId);
+            }
+
+        } catch (VPException e) {
             log.error("Error deleting presentation definition for IDP: " + sanitize(idPName), e);
         }
         return true;
@@ -218,10 +236,19 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
                      existingPd = pdService.getPresentationDefinitionByResourceId(resourceId, tenantId);
                 }
 
+                if (existingPd == null) {
+                    // Try by Name to handle collisions (e.g. if deletion failed previously)
+                    String pdName = identityProvider.getIdentityProviderName() + " Definition";
+                    existingPd = pdService.getPresentationDefinitionByName(pdName, tenantId);
+                }
+
                 if (existingPd != null) {
-                    // Update existing
+                    // Update existing (reusing it)
                     existingPd.setDefinitionJson(json);
                     existingPd.setName(identityProvider.getIdentityProviderName() + " Definition");
+                    // Ensure the Resource ID is updated to the current IDP's Resource ID
+                    // This claims the PD for this IDP
+                    existingPd.setResourceId(resourceId);
                     pdService.updatePresentationDefinition(existingPd, tenantId);
                 } else {
                     // Create new

@@ -91,7 +91,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         // Resolve presentation definition
         String presentationDefinition = resolvePresentationDefinition(requestCreateDTO, tenantId);
         String didMethod = requestCreateDTO.getDidMethod();
-        String signingAlgorithm = null;
+        String signingAlgorithm = requestCreateDTO.getSigningAlgorithm(); // Use explicit algo from DTO
 
         // Extract and clean internal configuration
         if (StringUtils.isBlank(didMethod) && StringUtils.isNotBlank(presentationDefinition)) {
@@ -103,7 +103,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                     if (StringUtils.isBlank(didMethod) && internal.has("did_method")) {
                         didMethod = internal.get("did_method").getAsString();
                     }
-                    if (internal.has("signing_algorithm")) {
+                    if (StringUtils.isBlank(signingAlgorithm) && internal.has("signing_algorithm")) {
                         signingAlgorithm = internal.get("signing_algorithm").getAsString();
                     }
                     // Remove internal config to keep spec compliant
@@ -121,7 +121,7 @@ public class VPRequestServiceImpl implements VPRequestService {
             didMethod = "web";
         }
         if (StringUtils.isBlank(signingAlgorithm)) {
-            signingAlgorithm = "RS256";
+            signingAlgorithm = "EdDSA"; // Default to EdDSA if not provided
         }
 
         // Calculate timestamps

@@ -24,16 +24,4 @@ CREATE TABLE IF NOT EXISTS IDN_PRESENTATION_DEFINITION (
 -- idx_pres_def_default removed as column is dropped
 CREATE INDEX IF NOT EXISTS IDX_PRES_DEF_RESOURCE_ID ON IDN_PRESENTATION_DEFINITION(RESOURCE_ID);
 
--- ---------------------------------------------------------------------
--- Table: IDN_DID_KEYS
--- Description: Stores persistent keys for DIDs (especially Ed25519)
--- ---------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS IDN_DID_KEYS (
-    TENANT_ID INTEGER NOT NULL,
-    KEY_ID VARCHAR(255) NOT NULL,
-    ALGORITHM VARCHAR(50) NOT NULL,
-    PUBLIC_KEY BLOB,
-    PRIVATE_KEY BLOB,
-    CREATED_AT BIGINT NOT NULL,
-    PRIMARY KEY (TENANT_ID, KEY_ID)
-);
+

@@ -37,6 +37,15 @@ Stores the credential requirements that a verifier (Connection) presents to wall
 - Unique on `(NAME, TENANT_ID)` — names must be unique per tenant
 - Index `IDX_PRES_DEF_RESOURCE_ID` on `RESOURCE_ID` — enables fast lookup by Connection
 
+#### Logical Link: IDP to Presentation Definition
+
+The link between a Connection (Identity Provider) and its Presentation Definition is maintained via the **Identity Provider Properties** (`IDP_AUTHENTICATOR_PROPERTY` table).
+
+- **Property Key:** `presentationDefinition` (in `OpenID4VPAuthenticator` config)
+- **Property Value:** The `DEFINITION_ID` (UUID) corresponding to a row in `IDN_PRESENTATION_DEFINITION`.
+
+> **Note:** The UI sends the full JSON in this property during creation/update, but the `OpenID4VPIdentityProviderMgtListener` intercepts it, moves the JSON to the `IDN_PRESENTATION_DEFINITION` table, and replaces the property value with the UUID. This ensures the configuration remains lightweight while the definition data is structured properly.
+
 #### Table: `IDN_DID_KEYS`
 
 Persists cryptographic key pairs for DID identities (primarily Ed25519).

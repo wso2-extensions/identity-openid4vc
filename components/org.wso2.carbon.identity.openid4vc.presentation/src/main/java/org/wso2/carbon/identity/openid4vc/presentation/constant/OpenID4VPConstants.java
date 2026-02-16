@@ -217,7 +217,7 @@ public class OpenID4VPConstants {
         public static final int VP_REQUEST_EXPIRY_SECONDS = 300; // 5 minutes
         public static final int CACHE_ENTRY_EXPIRY_SECONDS = 300; // 5 minutes
         public static final int MAX_CACHE_ENTRIES = 1000;
-        public static final String SIGNING_ALGORITHM = "RS256";
+        public static final String SIGNING_ALGORITHM = "EdDSA";
         public static final int LONG_POLLING_TIMEOUT_SECONDS = 60; // 1 minute
         public static final int MAX_LONG_POLLING_TIMEOUT_SECONDS = 120; // 2 minutes
         public static final int MIN_LONG_POLLING_TIMEOUT_SECONDS = 5;
