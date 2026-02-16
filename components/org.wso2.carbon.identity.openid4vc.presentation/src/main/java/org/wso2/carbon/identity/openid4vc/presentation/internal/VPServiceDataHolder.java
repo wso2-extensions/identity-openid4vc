@@ -22,12 +22,9 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.DIDDocumentServiceImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.service.impl.TrustedIssuerServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VCVerificationServiceImpl;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -41,9 +38,7 @@ public class VPServiceDataHolder {
 
     private RealmService realmService;
     private VPRequestService vpRequestService;
-    private VPSubmissionService vpSubmissionService;
     private PresentationDefinitionService presentationDefinitionService;
-    private TrustedIssuerService trustedIssuerService;
     private VCVerificationService vcVerificationService;
     private DIDDocumentService didDocumentService;
     private ApplicationManagementService applicationManagementService;
@@ -110,26 +105,6 @@ public class VPServiceDataHolder {
     }
 
     /**
-     * Get the VPSubmissionService.
-     * 
-     * @return VPSubmissionService instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public VPSubmissionService getVPSubmissionService() {
-        return vpSubmissionService;
-    }
-
-    /**
-     * Set the VPSubmissionService.
-     * 
-     * @param vpSubmissionService VPSubmissionService instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public void setVPSubmissionService(VPSubmissionService vpSubmissionService) {
-        this.vpSubmissionService = vpSubmissionService;
-    }
-
-    /**
      * Get the PresentationDefinitionService.
      * 
      * @return PresentationDefinitionService instance
@@ -148,31 +123,6 @@ public class VPServiceDataHolder {
     public void setPresentationDefinitionService(
             PresentationDefinitionService presentationDefinitionService) {
         this.presentationDefinitionService = presentationDefinitionService;
-    }
-
-
-
-    /**
-     * Get the TrustedIssuerService.
-     * 
-     * @return TrustedIssuerService instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP")
-    public TrustedIssuerService getTrustedIssuerService() {
-        if (trustedIssuerService == null) {
-            trustedIssuerService = new TrustedIssuerServiceImpl();
-        }
-        return trustedIssuerService;
-    }
-
-    /**
-     * Set the TrustedIssuerService.
-     * 
-     * @param trustedIssuerService TrustedIssuerService instance
-     */
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
-    public void setTrustedIssuerService(TrustedIssuerService trustedIssuerService) {
-        this.trustedIssuerService = trustedIssuerService;
     }
 
     /**

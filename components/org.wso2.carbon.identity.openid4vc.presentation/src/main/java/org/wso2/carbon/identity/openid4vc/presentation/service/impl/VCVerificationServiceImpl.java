@@ -28,14 +28,12 @@ import org.wso2.carbon.identity.openid4vc.presentation.dto.VCVerificationResultD
 import org.wso2.carbon.identity.openid4vc.presentation.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.RevocationCheckException;
-import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VerifiablePresentation;
 import org.wso2.carbon.identity.openid4vc.presentation.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.StatusListService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.TrustedIssuerService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.SignatureVerifier;
 
@@ -1129,32 +1127,14 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         try {
 
-            // 1. Decode JWT header and payload (without verification)
+            // 1. Validate JWT format
             String[] parts = vcJwt.split("\\.");
             if (parts.length != 3) {
                 throw new CredentialVerificationException(VCVerificationStatus.INVALID,
                         "Invalid JWT format");
             }
 
-            String payloadJson = new String(Base64.getUrlDecoder().decode(parts[1]),
-                    StandardCharsets.UTF_8);
-            JsonObject payload = JsonParser.parseString(payloadJson).getAsJsonObject();
-
-            // 2. Extract issuer DID
-            String issuerDid = payload.get("iss").getAsString();
-
-            // 3. Check trusted allowlist
-
-            TrustedIssuerService trustedIssuerService = VPServiceDataHolder.getInstance()
-                    .getTrustedIssuerService();
-
-            if (!trustedIssuerService.isIssuerTrusted(issuerDid, tenantDomain)) {
-
-                throw new CredentialVerificationException(VCVerificationStatus.INVALID,
-                        "Untrusted issuer: " + issuerDid);
-            }
-
-            // 4. Verify signature using existing verification
+            // 2. Verify signature using existing verification
 
             VCVerificationResultDTO result = verify(vcJwt, "application/vc+jwt");
 
@@ -1181,35 +1161,18 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         try {
 
-            // 1. Extract issuer DID
-            String issuerDid;
-            if (vcJsonObject.has("issuer")) {
-                JsonElement issuerElement = vcJsonObject.get("issuer");
-                if (issuerElement.isJsonPrimitive()) {
-                    issuerDid = issuerElement.getAsString();
-                } else if (issuerElement.isJsonObject()) {
-                    issuerDid = issuerElement.getAsJsonObject().get("id").getAsString();
-                } else {
-                    throw new CredentialVerificationException(VCVerificationStatus.INVALID,
-                            "Invalid issuer format");
-                }
-            } else {
+            // 1. Validate issuer field exists
+            if (!vcJsonObject.has("issuer")) {
                 throw new CredentialVerificationException(VCVerificationStatus.INVALID,
                         "Missing issuer field");
             }
-
-            // 2. Check trusted allowlist
-
-            TrustedIssuerService trustedIssuerService = VPServiceDataHolder.getInstance()
-                    .getTrustedIssuerService();
-
-            if (!trustedIssuerService.isIssuerTrusted(issuerDid, tenantDomain)) {
-
+            JsonElement issuerElement = vcJsonObject.get("issuer");
+            if (!issuerElement.isJsonPrimitive() && !issuerElement.isJsonObject()) {
                 throw new CredentialVerificationException(VCVerificationStatus.INVALID,
-                        "Untrusted issuer: " + issuerDid);
+                        "Invalid issuer format");
             }
 
-            // 3. Verify using existing verification
+            // 2. Verify using existing verification
 
             String vcString = GSON.toJson(vcJsonObject);
             VCVerificationResultDTO result = verify(vcString, "application/vc+ld+json");

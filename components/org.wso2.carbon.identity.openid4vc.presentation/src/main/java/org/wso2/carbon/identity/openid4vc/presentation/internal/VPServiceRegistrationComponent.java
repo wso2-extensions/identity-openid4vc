@@ -32,10 +32,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.OpenID4VPAu
 import org.wso2.carbon.identity.openid4vc.presentation.listener.OpenID4VPIdentityProviderMgtListener;
 import org.wso2.carbon.identity.openid4vc.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VPRequestService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.PresentationDefinitionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPRequestServiceImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.idp.mgt.listener.IdentityProviderMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -65,27 +63,20 @@ public class VPServiceRegistrationComponent {
 
             BundleContext bundleContext = context.getBundleContext();
 
-            // Initialize database schema (creates tables if they don't exist)
-            DatabaseSchemaInitializer.initializeSchema();
-
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
-            VPSubmissionService vpSubmissionService = new VPSubmissionServiceImpl();
             PresentationDefinitionService presentationDefinitionService = new PresentationDefinitionServiceImpl();
 
 
             // Register services with OSGi
             bundleContext.registerService(VPRequestService.class.getName(),
                     vpRequestService, new Hashtable<>());
-            bundleContext.registerService(VPSubmissionService.class.getName(),
-                    vpSubmissionService, new Hashtable<>());
             bundleContext.registerService(PresentationDefinitionService.class.getName(),
                     presentationDefinitionService, new Hashtable<>());
 
 
             // Set services in data holder
             VPServiceDataHolder.getInstance().setVPRequestService(vpRequestService);
-            VPServiceDataHolder.getInstance().setVPSubmissionService(vpSubmissionService);
             VPServiceDataHolder.getInstance().setPresentationDefinitionService(presentationDefinitionService);
 
 
@@ -108,7 +99,6 @@ public class VPServiceRegistrationComponent {
     protected void deactivate(ComponentContext context) {
         // Services are automatically unregistered by OSGi
         VPServiceDataHolder.getInstance().setVPRequestService(null);
-        VPServiceDataHolder.getInstance().setVPSubmissionService(null);
         VPServiceDataHolder.getInstance().setPresentationDefinitionService(null);
 
         authenticatorRegistered = false;

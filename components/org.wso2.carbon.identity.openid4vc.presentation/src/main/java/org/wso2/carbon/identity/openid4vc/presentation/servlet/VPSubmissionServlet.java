@@ -41,8 +41,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.model.VCVerificationStatu
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.service.VCVerificationService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.VPSubmissionService;
-import org.wso2.carbon.identity.openid4vc.presentation.service.impl.VPSubmissionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.status.StatusNotificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.util.VPSubmissionValidator;
@@ -82,11 +80,6 @@ public class VPSubmissionServlet extends HttpServlet {
     private static final int DEFAULT_TENANT_ID = -1234;
 
     /**
-     * VP Submission service instance.
-     */
-    private transient VPSubmissionService vpSubmissionService;
-
-    /**
      * Status listener cache for long polling notifications.
      */
     private transient VPStatusListenerCache statusListenerCache;
@@ -105,7 +98,6 @@ public class VPSubmissionServlet extends HttpServlet {
     public void init() throws ServletException {
 
         super.init();
-        this.vpSubmissionService = new VPSubmissionServiceImpl();
         this.statusListenerCache = VPStatusListenerCache.getInstance();
         this.statusNotificationService = StatusNotificationService.getInstance();
         this.walletDataCache = WalletDataCache.getInstance();
