@@ -127,8 +127,13 @@ public class CredentialIssuanceService {
             String credential = credentialIssuer.issueCredential(issuerContext);
             CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();
             respDTO.setCredential(credential);
-            String cNonce = nonceService.generateNonce(reqDTO.getTenantDomain());
-            respDTO.setCNonce(cNonce);
+            try {
+                String cNonce = nonceService.generateNonce(reqDTO.getTenantDomain());
+                respDTO.setCNonce(cNonce);
+            } catch (CredentialIssuanceException e) {
+                LOG.warn("Error while generating c_nonce for credential response for tenant: "
+                        + reqDTO.getTenantDomain(), e);
+            }
             return respDTO;
 
 

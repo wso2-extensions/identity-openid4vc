@@ -63,12 +63,12 @@ public class JwtProofValidator implements ProofValidator {
 
         List<String> proofs = proofDTO.getProofs();
         if (proofs == null || proofs.isEmpty()) {
-            throw new CredentialIssuanceException("JWT proof is required");
+            throw new CredentialIssuanceClientException(INVALID_PROOF, "JWT proof is required");
         }
 
         // Enforce single proof for single credential issuance
         if (proofs.size() > 1) {
-            throw new CredentialIssuanceException("Multiple proofs not supported");
+            throw new CredentialIssuanceClientException(INVALID_PROOF, "Multiple proofs not supported");
         }
 
         validateJwtProof(proofDTO, tenantDomain);
@@ -82,7 +82,7 @@ public class JwtProofValidator implements ProofValidator {
         try {
             signedJWT = SignedJWT.parse(jwtString);
         } catch (Exception e) {
-            throw new CredentialIssuanceException("Invalid JWT proof format", e);
+            throw new CredentialIssuanceClientException(INVALID_PROOF, "Invalid JWT proof format", e);
         }
 
         // Validate header
@@ -130,8 +130,7 @@ public class JwtProofValidator implements ProofValidator {
         // Check algorithm is in the allowed asymmetric algorithm set
         String alg = signedJWT.getHeader().getAlgorithm().getName();
         if (!SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS.contains(alg)) {
-            throw new CredentialIssuanceClientException(INVALID_PROOF,
-                    "Unsupported proof signing algorithm: " + alg +
+            throw new CredentialIssuanceClientException(INVALID_PROOF, "Unsupported proof signing algorithm: " + alg +
                     ". Allowed: " + SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS);
         }
     }
