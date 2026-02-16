@@ -617,12 +617,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     /**
      * Resolve the presentation definition ID for the application.
+
+    /**
+     * Resolve the presentation definition ID for the application.
      * 
-     * Resolution order:
-     * 1. Check application-specific mapping in
-     * IDN_APPLICATION_PRESENTATION_DEFINITION
-     * 2. Check authenticator configuration property
-     * 3. Return null to use inline default
+     * The presentation definition ID is stored directly in the authenticator configuration.
+     * The listener handles creating the definition and updating the configuration with the ID.
      * 
      * @param context Authentication context
      * @return Presentation definition ID or null
@@ -630,53 +630,23 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      */
     @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     private String resolvePresentationDefinitionId(AuthenticationContext context) throws VPException {
-        String applicationId = context.getServiceProviderName();
-        int tenantId = getTenantId(context);
 
-        try {
-            // Step 1: Try application based on Resource ID (Connection ID)
-            // The authenticator context provides the Service Provider NAME
-            // But we associated the PD with the Connection (Application) Resource ID
-
-            // Resolve Application UUID
-            String appResourceId = null;
-            try {
-                ApplicationManagementService applicationMgtService = VPServiceDataHolder.getInstance()
-                        .getApplicationManagementService();
-                if (applicationMgtService != null) {
-                    ServiceProvider serviceProvider = applicationMgtService.getServiceProvider(applicationId,
-                            context.getTenantDomain());
-                    if (serviceProvider != null) {
-                        appResourceId = serviceProvider.getApplicationResourceId();
-                    }
-                }
-            } catch (Exception e) {
-                // Ignored: Application management service might not be available
-            }
-
-            if (StringUtils.isNotBlank(appResourceId)) {
-                // Fetch PD by Resource ID
-                try {
-                    PresentationDefinition pd = VPServiceDataHolder.getInstance().getPresentationDefinitionService()
-                            .getPresentationDefinitionByResourceId(appResourceId, tenantId);
-                    if (pd != null) {
-                        return pd.getDefinitionId();
-                    }
-                } catch (Exception e) {
-                    // Ignored: continue to fallback
-                }
-            }
-
-        } catch (Exception e) {
-            // Ignored: Continue to other resolution methods
-        }
-
-        // Step 2: Fall back to authenticator configuration
         try {
             Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
             String configId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
 
             if (StringUtils.isNotBlank(configId)) {
+                // If the value looks like a JSON object (starts with {), it means the listener hasn't
+                // processed it yet or failed to update it. We should handle this gracefully.
+                if (configId.trim().startsWith("{")) {
+                    // Fallback: try to resolve by resource ID as before, or log warning
+                    // Ideally the listener ensures this is a UUID.
+                    // For now, let's try to assume it might be a raw JSON and we can't use it as ID.
+                    // But wait — if it IS raw JSON, we can't use it as an ID for the request.
+                    // So we must rely on the listener having done its job.
+                    // However, for safety, let's try to fetch by Resource ID if the property is not a valid UUID.
+                    return resolveByResourceId(context);
+                }
                 return configId;
             }
 
@@ -684,7 +654,39 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             // Ignored: Config might not be available
         }
 
-        // Step 3: Will use inline default
+        // Fallback or default
+        return null;
+    }
+
+    /**
+     * Fallback resolution by Resource ID if simpler property lookup fails.
+     */
+    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
+    private String resolveByResourceId(AuthenticationContext context) {
+        try {
+            String applicationId = context.getServiceProviderName();
+            int tenantId = getTenantId(context);
+            
+            ApplicationManagementService applicationMgtService = VPServiceDataHolder.getInstance()
+                    .getApplicationManagementService();
+            if (applicationMgtService != null) {
+                ServiceProvider serviceProvider = applicationMgtService.getServiceProvider(applicationId,
+                        context.getTenantDomain());
+                if (serviceProvider != null) {
+                    String appResourceId = serviceProvider.getApplicationResourceId();
+                    if (StringUtils.isNotBlank(appResourceId)) {
+                         PresentationDefinition pd = VPServiceDataHolder.getInstance()
+                                 .getPresentationDefinitionService()
+                                .getPresentationDefinitionByResourceId(appResourceId, tenantId);
+                        if (pd != null) {
+                            return pd.getDefinitionId();
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore
+        }
         return null;
     }
 
