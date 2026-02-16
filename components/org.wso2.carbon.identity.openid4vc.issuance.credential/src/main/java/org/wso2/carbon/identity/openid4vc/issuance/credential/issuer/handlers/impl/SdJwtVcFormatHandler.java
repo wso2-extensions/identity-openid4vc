@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CONTEXT_OPENID4VCI;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CredentialIssuerMetadata.JWK;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.VC_SD_JWT_FORMAT;
 
 /**
@@ -140,7 +141,7 @@ public class SdJwtVcFormatHandler implements CredentialFormatHandler {
 
         if (context.getHolderPublicKey() != null) {
             Map<String, Object> cnf = new HashMap<>();
-            cnf.put("jwk", context.getHolderPublicKey());
+            cnf.put(JWK, context.getHolderPublicKey());
             builder.putClaim(SDJWTConstants.CLAIM_CNF, cnf);
         }
 

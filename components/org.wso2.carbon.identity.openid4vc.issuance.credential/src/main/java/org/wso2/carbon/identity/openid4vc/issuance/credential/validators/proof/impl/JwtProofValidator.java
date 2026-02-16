@@ -39,6 +39,7 @@ import java.util.List;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF_TYPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.MAX_CLOCK_SKEW_SECONDS;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.NONCE;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_NONCE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_PROOF;
@@ -104,12 +105,12 @@ public class JwtProofValidator implements ProofValidator {
                 proofDTO.setIssuedAt(
                         signedJWT.getJWTClaimsSet().getIssueTime().getTime());
             }
-            Object nonce = signedJWT.getJWTClaimsSet().getClaim("nonce");
+            Object nonce = signedJWT.getJWTClaimsSet().getClaim(NONCE);
             if (nonce != null) {
                 proofDTO.setNonce(nonce.toString());
             }
         } catch (Exception e) {
-            LOG.warn("Error extracting claims from proof JWT", e);
+            throw new CredentialIssuanceException("Error extracting claims from proof JWT", e);
         }
     }
 
@@ -202,18 +203,16 @@ public class JwtProofValidator implements ProofValidator {
             throws CredentialIssuanceException {
 
         try {
-            // Validate iss - MUST be present and match client_id per OID4VCI spec
+            // Validate iss
             String issuer = signedJWT.getJWTClaimsSet().getIssuer();
+            if (issuer == null) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Missing iss claim. Required when client_id is present.");
+            }
             String expectedClientId = proofDTO.getClientId();
-            if (expectedClientId != null) {
-                if (issuer == null) {
-                    throw new CredentialIssuanceClientException(INVALID_PROOF,
-                            "Missing iss claim. Required when client_id is present.");
-                }
-                if (!issuer.equals(expectedClientId)) {
-                    throw new CredentialIssuanceClientException(INVALID_PROOF,
-                            "Invalid iss claim. Must match client_id.");
-                }
+            if (!issuer.equals(expectedClientId)) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Invalid iss claim. Must match client_id.");
             }
 
             // Validate aud
@@ -244,8 +243,8 @@ public class JwtProofValidator implements ProofValidator {
                         "Proof is too old or from the future");
             }
 
-            // Validate nonce — MUST be present and valid when the issuer operates a Nonce Endpoint (draft 16).
-            Object nonceObj = signedJWT.getJWTClaimsSet().getClaim("nonce");
+            // Validate nonce
+            Object nonceObj = signedJWT.getJWTClaimsSet().getClaim(NONCE);
             if (nonceObj == null) {
                 throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Missing nonce claim in proof JWT. A nonce from the Nonce Endpoint is required.");

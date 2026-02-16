@@ -18,8 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.common.constant;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -28,8 +26,7 @@ import java.util.List;
 public class Constants {
 
     public static final List<String> SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS =
-            Collections.unmodifiableList(Arrays.asList(
-                    "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512"));
+            List.of("RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512");
 
     public static final String CONTEXT_OPENID4VCI = "oid4vci";
     public static final String SEGMENT_CREDENTIAL = "credential";
@@ -45,8 +42,9 @@ public class Constants {
     public static final String PROOF_TYPE = "proof_type";
     public static final String JWT_PROOF = "jwt";
     public static final String JWT_PROOF_TYPE = "openid4vci-proof+jwt";
-    public static final long MAX_CLOCK_SKEW_SECONDS = 60;
-    public static final long DEFAULT_NONCE_TTL_SECONDS = 300;
+    public static final int MAX_CLOCK_SKEW_SECONDS = 60;
+    public static final int DEFAULT_NONCE_TTL_SECONDS = 300;
+    public static final String NONCE = "nonce";
     public static final String C_NONCE = "c_nonce";
 
 

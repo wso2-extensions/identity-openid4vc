@@ -31,7 +31,6 @@ public class CredentialIssuanceReqDTO {
     private AuthenticatedUser authenticatedUser;
     private ProofDTO proofDTO;
 
-
     public String getTenantDomain() {
 
         return tenantDomain;

@@ -224,28 +224,33 @@ public class JwtProofValidatorTest {
     @Test(description = "Test validation failure when aud claim is missing")
     public void testValidateProofWithMissingAudienceClaim() throws Exception {
 
-        String jwtWithoutAudience = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), false, null);
+        String clientId = "test-client-id";
+        String jwtWithoutAudience = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), false, null, clientId);
 
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
         proofDTO.setProofs(Collections.singletonList(jwtWithoutAudience));
+        proofDTO.setClientId(clientId);
 
         try {
             validator.validateProof(proofDTO, TENANT_DOMAIN);
             Assert.fail("Expected CredentialIssuanceException for missing aud claim");
         } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getMessage().contains("Missing aud claim"));
+            Assert.assertTrue(e.getMessage().contains("Missing aud claim"),
+                    "Exception should indicate missing aud claim. Actual: " + e.getMessage());
         }
     }
 
     @Test(description = "Test validation failure when nonce claim is missing")
     public void testValidateProofWithMissingNonce() throws Exception {
 
-        String jwtWithoutNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, null);
+        String clientId = "test-client-id";
+        String jwtWithoutNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, null, clientId);
 
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
         proofDTO.setProofs(Collections.singletonList(jwtWithoutNonce));
+        proofDTO.setClientId(clientId);
 
         try {
             validator.validateProof(proofDTO, TENANT_DOMAIN);
@@ -261,7 +266,8 @@ public class JwtProofValidatorTest {
     public void testValidateProofWithInvalidNonce() throws Exception {
 
         String invalidNonce = "invalid-nonce-value";
-        String jwtWithInvalidNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, invalidNonce);
+        String clientId = "test-client-id";
+        String jwtWithInvalidNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, invalidNonce, clientId);
 
         // Mock nonceService to return false (invalid nonce)
         when(mockNonceService.validateAndConsumeNonce(invalidNonce, TENANT_DOMAIN)).thenReturn(false);
@@ -269,6 +275,7 @@ public class JwtProofValidatorTest {
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
         proofDTO.setProofs(Collections.singletonList(jwtWithInvalidNonce));
+        proofDTO.setClientId(clientId);
 
         try {
             validator.validateProof(proofDTO, TENANT_DOMAIN);
@@ -387,11 +394,13 @@ public class JwtProofValidatorTest {
     @Test(description = "Test validation failure when audience list is too large")
     public void testValidateProofWithExcessiveAudienceSize() throws Exception {
 
-        String jwtWithLargeAudience = createRS256JwtWithLargeAudience();
+        String clientId = "test-client-id";
+        String jwtWithLargeAudience = createRS256JwtWithLargeAudience(clientId);
 
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
         proofDTO.setProofs(Collections.singletonList(jwtWithLargeAudience));
+        proofDTO.setClientId(clientId);
 
         try {
             validator.validateProof(proofDTO, TENANT_DOMAIN);
@@ -466,7 +475,7 @@ public class JwtProofValidatorTest {
         return signedJWT.serialize();
     }
 
-    private String createRS256JwtWithLargeAudience() throws Exception {
+    private String createRS256JwtWithLargeAudience(String issuer) throws Exception {
 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
@@ -487,12 +496,14 @@ public class JwtProofValidatorTest {
             largeAudience.add("https://audience" + i + ".example.com");
         }
 
-        JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+        JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .issueTime(new Date())
-                .audience(largeAudience)
-                .build();
+                .audience(largeAudience);
+        if (issuer != null) {
+            claimsBuilder.issuer(issuer);
+        }
 
-        SignedJWT signedJWT = new SignedJWT(header, claimsSet);
+        SignedJWT signedJWT = new SignedJWT(header, claimsBuilder.build());
         signedJWT.sign(new RSASSASigner(keyPair.getPrivate()));
         return signedJWT.serialize();
     }
