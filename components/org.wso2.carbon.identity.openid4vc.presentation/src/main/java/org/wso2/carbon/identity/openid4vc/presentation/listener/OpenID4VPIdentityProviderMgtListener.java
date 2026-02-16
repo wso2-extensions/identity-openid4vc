@@ -23,8 +23,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
+import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
-import org.wso2.carbon.identity.application.common.model.IdentityProviderProperty;
+import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.internal.VPServiceDataHolder;
@@ -44,6 +45,7 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
 
     private static final Log log = LogFactory.getLog(OpenID4VPIdentityProviderMgtListener.class);
     private static final String PROP_PRESENTATION_DEFINITION = "presentationDefinition";
+    private static final String OPENID4VP_AUTHENTICATOR_NAME = "OpenID4VPAuthenticator";
     private static final String DIGITAL_CREDENTIALS_TEMPLATE_ID = "digital-credentials"; 
     
     // Cache to pass JSON from Pre to Post listeners
@@ -139,22 +141,32 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
         }
 
         try {
-            IdentityProviderProperty[] properties = identityProvider.getIdpProperties();
-            if (properties != null) {
-                for (IdentityProviderProperty prop : properties) {
-                    if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
-                        String value = prop.getValue();
-                        if (StringUtils.isNotBlank(value) && value.trim().startsWith("{")) {
-                            // It's JSON. Generate UUID and swap.
-                            String definitionId = UUID.randomUUID().toString();
-                            
-                            // Cache the JSON and UUID for Post-listener
-                            Map<String, String> cache = pdJsonCache.get();
-                            cache.put("json", value);
-                            cache.put("uuid", definitionId);
-                            
-                            // Replace property value with UUID
-                            prop.setValue(definitionId);
+            // Check Federated Authenticators
+            FederatedAuthenticatorConfig[] fedAuthConfigs = identityProvider.getFederatedAuthenticatorConfigs();
+            if (fedAuthConfigs != null) {
+                for (FederatedAuthenticatorConfig config : fedAuthConfigs) {
+                    if (OPENID4VP_AUTHENTICATOR_NAME.equals(config.getName())) {
+                        
+                        Property[] properties = config.getProperties();
+                        if (properties != null) {
+                            for (Property prop : properties) {
+                                if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
+                                    String value = prop.getValue();
+                                    if (StringUtils.isNotBlank(value) && value.trim().startsWith("{")) {
+                                        // It's JSON. Generate UUID and swap.
+                                        String definitionId = UUID.randomUUID().toString();
+                                        
+                                        // Cache the JSON and UUID for Post-listener
+                                        Map<String, String> cache = pdJsonCache.get();
+                                        cache.put("json", value);
+                                        cache.put("uuid", definitionId);
+                                        
+                                        // Replace property value with UUID
+                                        prop.setValue(definitionId);
+                                    }
+                                    break;
+                                }
+                            }
                         }
                         break;
                     }
