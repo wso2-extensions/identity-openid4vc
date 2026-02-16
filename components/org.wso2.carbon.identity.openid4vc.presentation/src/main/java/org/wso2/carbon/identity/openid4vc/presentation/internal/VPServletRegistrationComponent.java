@@ -31,7 +31,6 @@ import org.osgi.service.http.NamespaceException;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.RequestUriServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPDefinitionServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPRequestServlet;
-import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPResultServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.VPSubmissionServlet;
 import org.wso2.carbon.identity.openid4vc.presentation.servlet.WellKnownDIDServlet;
 import org.wso2.carbon.user.core.service.RealmService;
@@ -54,7 +53,6 @@ public class VPServletRegistrationComponent {
     private static final String VP_REQUEST_PATH = API_BASE_PATH + "/vp-request";
     private static final String REQUEST_URI_PATH = API_BASE_PATH + "/request-uri";
     private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/response";
-    private static final String VP_RESULT_PATH = API_BASE_PATH + "/vp-result";
     private static final String PRESENTATION_DEFINITIONS_PATH = API_BASE_PATH + "/presentation-definitions";
     private static final String WELL_KNOWN_DID_PATH = "/.well-known/did.json";
 
@@ -94,9 +92,6 @@ public class VPServletRegistrationComponent {
         // Register VP Submission Servlet
         httpService.registerServlet(VP_RESPONSE_PATH, new VPSubmissionServlet(), null, null);
 
-        // Register VP Result Servlet
-        httpService.registerServlet(VP_RESULT_PATH, new VPResultServlet(), null, null);
-
         // Register Presentation Definition Servlet
         httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
 
@@ -125,11 +120,6 @@ public class VPServletRegistrationComponent {
 
         try {
             httpService.unregister(VP_RESPONSE_PATH);
-        } catch (Exception e) {
-        }
-
-        try {
-            httpService.unregister(VP_RESULT_PATH);
         } catch (Exception e) {
         }
 
