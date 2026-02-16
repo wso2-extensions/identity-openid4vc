@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
@@ -44,6 +45,7 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -75,12 +77,18 @@ public class CredentialIssuanceServiceTest {
     private static final UserRealm userRealm = mock(UserRealm.class);
     private static final AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
     private static final VCTemplateManager vcTemplateManager = mock(VCTemplateManager.class);
+    private static final NonceService nonceService = mock(NonceService.class);
 
     @BeforeClass
-    public void setUpClass() {
+    public void setUpClass() throws Exception {
 
         // Initialize the service
         credentialIssuanceService = new CredentialIssuanceService();
+
+        // Inject mock NonceService using reflection
+        Field nonceServiceField = CredentialIssuanceService.class.getDeclaredField("nonceService");
+        nonceServiceField.setAccessible(true);
+        nonceServiceField.set(credentialIssuanceService, nonceService);
     }
 
     @BeforeMethod
@@ -165,6 +173,9 @@ public class CredentialIssuanceServiceTest {
         // Mock IdentityTenantUtil
         identityTenantUtilMockedStatic.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
                 .thenReturn(-1234);
+
+        // Mock NonceService
+        when(nonceService.generateNonce(TENANT_DOMAIN)).thenReturn("test-c-nonce-value");
 
         // Execute the test
         CredentialIssuanceRespDTO response = credentialIssuanceService.issueCredential(reqDTO);
