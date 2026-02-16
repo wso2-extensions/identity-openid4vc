@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.response;
 import com.google.gson.Gson;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -48,13 +48,20 @@ public class CredentialIssuanceResponse {
      * Builder class for constructing CredentialIssuanceResponse instances.
      */
     public static class Builder {
-        private final Map<String, Object> payload = new HashMap<>();
+        private final Map<String, Object> payload = new LinkedHashMap<>();
 
         public Builder credential(String credential) {
             if (credential == null) {
                 throw new IllegalArgumentException("Credential cannot be null");
             }
             payload.put("credential", credential);
+            return this;
+        }
+
+        public Builder cNonce(String cNonce) {
+            if (cNonce != null) {
+                payload.put("c_nonce", cNonce);
+            }
             return this;
         }
 

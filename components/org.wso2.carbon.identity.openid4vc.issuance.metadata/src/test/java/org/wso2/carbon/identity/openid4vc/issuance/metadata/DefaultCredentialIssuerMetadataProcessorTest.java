@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -102,9 +103,50 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         // Verify URLs
         Assert.assertEquals(metadata.get("credential_issuer"), TEST_ISSUER_URL);
         Assert.assertEquals(metadata.get("credential_endpoint"), TEST_CREDENTIAL_ENDPOINT_URL);
+
+        Map<String, Object> configurations =
+                (Map<String, Object>) metadata.get("credential_configurations_supported");
+        Map<String, Object> jwtVcConfiguration = (Map<String, Object>) configurations.get("employee_badge");
+        Assert.assertFalse(jwtVcConfiguration.containsKey("proof_types_supported"),
+                "JWT VC JSON configuration should not include proof_types_supported");
+        Assert.assertFalse(jwtVcConfiguration.containsKey("cryptographic_binding_methods_supported"),
+                "JWT VC JSON configuration should not include cryptographic_binding_methods_supported");
     }
 
-    @Test(priority = 2, description = "Test tenant domain resolution with null/empty tenant")
+    @Test(priority = 2, description = "Test SD-JWT metadata includes proof support details")
+    public void testGetMetadataResponseForSdJwtProofSupport() throws Exception {
+
+        commonUtilMockedStatic = mockCommonUtil();
+
+        VCTemplate sdJwtConfiguration = createSdJwtTestConfiguration();
+        when(configManager.list(TEST_TENANT_DOMAIN)).thenReturn(Collections.singletonList(sdJwtConfiguration));
+        when(configManager.get(sdJwtConfiguration.getId(), TEST_TENANT_DOMAIN)).thenReturn(sdJwtConfiguration);
+
+        CredentialIssuerMetadataResponse response = processor.getMetadataResponse(TEST_TENANT_DOMAIN);
+        Map<String, Object> metadata = response.getMetadata();
+
+        Map<String, Object> configurations =
+                (Map<String, Object>) metadata.get("credential_configurations_supported");
+        Map<String, Object> sdJwtConfig =
+                (Map<String, Object>) configurations.get("employee_badge_sd_jwt");
+        Assert.assertNotNull(sdJwtConfig, "SD-JWT configuration should exist");
+
+        List<String> bindingMethods =
+                (List<String>) sdJwtConfig.get("cryptographic_binding_methods_supported");
+        Assert.assertEquals(bindingMethods, Collections.singletonList("jwk"));
+
+        Map<String, Object> proofTypes = (Map<String, Object>) sdJwtConfig.get("proof_types_supported");
+        Assert.assertNotNull(proofTypes, "proof_types_supported should be present");
+        Assert.assertTrue(proofTypes.containsKey("jwt"), "JWT proof metadata should be present");
+
+        Map<String, Object> jwtProof = (Map<String, Object>) proofTypes.get("jwt");
+        List<String> proofAlgorithms =
+                (List<String>) jwtProof.get("proof_signing_alg_values_supported");
+        Assert.assertTrue(proofAlgorithms.contains("RS256"));
+        Assert.assertTrue(proofAlgorithms.contains("ES256"));
+    }
+
+    @Test(priority = 3, description = "Test tenant domain resolution with null/empty tenant")
     public void testGetMetadataResponseWithNullTenant() throws Exception {
         // Mock URL building
         commonUtilMockedStatic = mockCommonUtil();
@@ -125,7 +167,7 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         Assert.assertNotNull(response3, "Response should not be null for whitespace tenant");
     }
 
-    @Test(priority = 3, description = "Test error handling when config retrieval fails",
+    @Test(priority = 4, description = "Test error handling when config retrieval fails",
             expectedExceptions = CredentialIssuerMetadataException.class,
             expectedExceptionsMessageRegExp = ".*Error while retrieving VC templates.*")
     public void testGetMetadataResponseWithConfigRetrievalError() throws Exception {
@@ -181,6 +223,21 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         config.setClaims(Arrays.asList("email", "name", "employee_id"));
         config.setDisplayName("Employee Badge Credential");
 
+        return config;
+    }
+
+    /**
+     * Helper method to create a test SD-JWT VC template.
+     */
+    private VCTemplate createSdJwtTestConfiguration() {
+
+        VCTemplate config = new VCTemplate();
+        config.setId("config-456");
+        config.setIdentifier("employee_badge_sd_jwt");
+        config.setFormat("dc+sd-jwt");
+        config.setSigningAlgorithm("RS256");
+        config.setClaims(Arrays.asList("email", "name", "employee_id"));
+        config.setDisplayName("Employee Badge SD-JWT Credential");
         return config;
     }
 }

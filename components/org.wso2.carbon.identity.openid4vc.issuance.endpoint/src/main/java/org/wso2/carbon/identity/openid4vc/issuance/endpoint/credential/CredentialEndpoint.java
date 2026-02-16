@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -28,12 +30,17 @@ import org.wso2.carbon.identity.openid4vc.issuance.common.util.CommonUtil;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.response.CredentialIssuanceResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.error.CredentialErrorResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.factories.CredentialIssuanceServiceFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,6 +51,11 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.PROOF;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.PROOFS;
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.PROOF_TYPE;
 
 
 /**
@@ -77,9 +89,6 @@ public class CredentialEndpoint {
                         .build();
             }
 
-
-
-            // Parse the JSON payload to extract credential_configuration_id
             JsonObject jsonObject;
             try {
                 jsonObject = JsonParser.parseString(payload).getAsJsonObject();
@@ -93,8 +102,10 @@ public class CredentialEndpoint {
                 return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
             }
 
+            ProofDTO proofDTO = parseProofs(jsonObject);
+
             CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(authHeader,
-                    tenantDomain);
+                    proofDTO, tenantDomain);
             return buildResponse(credentialIssuanceRespDTO);
 
         } catch (CredentialIssuanceClientException e) {
@@ -104,12 +115,22 @@ public class CredentialEndpoint {
 
             String errorCode = e.getOAuth2ErrorCode() != null ? e.getOAuth2ErrorCode() :
                     CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST;
-            String errorResponse = CredentialErrorResponse.builder()
-                    .error(errorCode)
-                    .errorDescription(e.getMessage())
-                    .build()
-                    .toJson();
 
+            CredentialErrorResponse.Builder errorBuilder = CredentialErrorResponse.builder()
+                    .error(errorCode)
+                    .errorDescription(e.getMessage());
+
+            // on invalid_nonce, include a fresh c_nonce in the error response.
+            if (CredentialErrorResponse.INVALID_NONCE.equals(errorCode)) {
+                try {
+                    NonceService nonceService = CredentialIssuanceServiceFactory.getNonceService();
+                    errorBuilder.cNonce(nonceService.generateNonce(tenantDomain));
+                } catch (Exception nonceEx) {
+                    LOG.warn("Failed to generate fresh nonce for invalid_nonce error response", nonceEx);
+                }
+            }
+
+            String errorResponse = errorBuilder.build().toJson();
             Response.Status status = determineHttpStatus(errorCode);
 
             return Response.status(status)
@@ -160,7 +181,128 @@ public class CredentialEndpoint {
         }
     }
 
-    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader, String tenantDomain)
+    /**
+     * Parse proof/proofs from the JSON request payload.
+     * Supports both:
+     * - {@code proof} (singular): {"proof_type":"jwt","jwt":"<jwt>"}  -- single credential issuance
+     * - {@code proofs} (plural):  {"jwt":["<jwt>"]}                   -- batch / multi-proof
+     * The request MUST NOT contain both.
+     *
+     * @param jsonObject the parsed JSON object
+     * @return ProofDTO, or null if neither field is present
+     */
+    private static ProofDTO parseProofs(JsonObject jsonObject) throws CredentialIssuanceException {
+
+        boolean hasProof = jsonObject.has(PROOF);
+        boolean hasProofs = jsonObject.has(PROOFS);
+
+        if (hasProof && hasProofs) {
+            throw new CredentialIssuanceClientException(
+                    "Request MUST NOT contain both 'proof' and 'proofs'",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        if (hasProof) {
+            return parseSingularProof(jsonObject.getAsJsonObject(PROOF));
+        }
+
+        if (hasProofs) {
+            return parsePluralProofs(jsonObject.getAsJsonObject(PROOFS));
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse the singular {@code proof} object.
+     * Expected structure: {"proof_type":"jwt","jwt":"<jwt-string>"}
+     */
+    private static ProofDTO parseSingularProof(JsonObject proofObject) throws CredentialIssuanceException {
+
+        if (proofObject == null) {
+            throw new CredentialIssuanceClientException("'proof' must be a JSON object",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        if (!proofObject.has(PROOF_TYPE)) {
+            throw new CredentialIssuanceClientException("Missing 'proof_type' in proof",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        String proofType = proofObject.get(PROOF_TYPE).getAsString();
+        if (!JWT_PROOF.equals(proofType)) {
+            throw new CredentialIssuanceClientException("Unsupported proof type: " + proofType,
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        if (!proofObject.has(JWT_PROOF) || !proofObject.get(JWT_PROOF).isJsonPrimitive()) {
+            throw new CredentialIssuanceClientException("Missing or invalid 'jwt' value in proof",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        String jwt = proofObject.get(JWT_PROOF).getAsString().trim();
+        if (jwt.isEmpty()) {
+            throw new CredentialIssuanceClientException("JWT proof cannot be empty",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType(proofType);
+        proofDTO.setProofs(Collections.singletonList(jwt));
+        return proofDTO;
+    }
+
+    /**
+     * Parse the plural {@code proofs} object.
+     * Expected structure: {"jwt":["<jwt-string-1>", ...]}
+     */
+    private static ProofDTO parsePluralProofs(JsonObject proofsObject) throws CredentialIssuanceException {
+
+        if (proofsObject == null) {
+            throw new CredentialIssuanceClientException("'proofs' must be a JSON object",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        if (proofsObject.keySet().size() != 1) {
+            throw new CredentialIssuanceClientException("'proofs' must contain exactly one proof type",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        String proofType = proofsObject.keySet().iterator().next();
+        if (!JWT_PROOF.equals(proofType)) {
+            throw new CredentialIssuanceClientException("Unsupported proof type: " + proofType,
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        JsonArray proofsArray = proofsObject.getAsJsonArray(proofType);
+        if (proofsArray == null) {
+            throw new CredentialIssuanceClientException("'proofs." + proofType + "' must be an array",
+                    CredentialErrorResponse.INVALID_PROOF);
+        }
+
+        List<String> jwtProofs = new ArrayList<>(proofsArray.size());
+        for (JsonElement e : proofsArray) {
+            if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isString()) {
+                throw new CredentialIssuanceClientException("Each entry in 'proofs.jwt' must be a JWT string",
+                        CredentialErrorResponse.INVALID_PROOF);
+            }
+            String jwt = e.getAsString().trim();
+            if (jwt.isEmpty()) {
+                throw new CredentialIssuanceClientException("JWT proof cannot be empty",
+                        CredentialErrorResponse.INVALID_PROOF);
+            }
+            jwtProofs.add(jwt);
+        }
+
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType(proofType);
+        proofDTO.setProofs(jwtProofs);
+        return proofDTO;
+    }
+
+    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader,
+                                                                          ProofDTO proofDTO,
+                                                                          String tenantDomain)
             throws CredentialIssuanceException {
 
         String token = authHeader.substring(7);
@@ -168,6 +310,7 @@ public class CredentialEndpoint {
         CredentialIssuanceReqDTO credentialIssuanceReqDTO = new CredentialIssuanceReqDTO();
         credentialIssuanceReqDTO.setTenantDomain(tenantDomain);
         credentialIssuanceReqDTO.setToken(token);
+        credentialIssuanceReqDTO.setProofDTO(proofDTO);
 
         CredentialIssuanceService credentialIssuanceService = CredentialIssuanceServiceFactory
                 .getCredentialIssuanceService();
@@ -216,6 +359,7 @@ public class CredentialEndpoint {
 
         String payload = CredentialIssuanceResponse.builder()
                 .credential(credentialIssuanceRespDTO.getCredential())
+                .cNonce(credentialIssuanceRespDTO.getCNonce())
                 .build()
                 .toJson();
         return Response.ok(payload, MediaType.APPLICATION_JSON).build();

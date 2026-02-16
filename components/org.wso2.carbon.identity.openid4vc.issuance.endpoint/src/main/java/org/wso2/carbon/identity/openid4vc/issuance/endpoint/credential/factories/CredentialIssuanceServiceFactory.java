@@ -20,6 +20,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.factorie
 
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 
 /**
  * Factory for retrieving the credential issuance processor instance.
@@ -27,6 +28,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuance
 public class CredentialIssuanceServiceFactory {
 
     private static final CredentialIssuanceService SERVICE;
+    private static final NonceService NONCE_SERVICE;;
 
     static {
         CredentialIssuanceService credentialIssuanceService = (CredentialIssuanceService) PrivilegedCarbonContext
@@ -36,10 +38,23 @@ public class CredentialIssuanceServiceFactory {
             throw new IllegalStateException("CredentialIssuanceService is not available from OSGI context.");
         }
         SERVICE = credentialIssuanceService;
+
+        NonceService nonceService = (NonceService) PrivilegedCarbonContext
+                .getThreadLocalCarbonContext().getOSGiService(NonceService.class, null);
+
+        if (nonceService == null) {
+            throw new IllegalStateException("NonceService is not available from OSGI context.");
+        }
+        NONCE_SERVICE = nonceService;
     }
 
     public static CredentialIssuanceService getCredentialIssuanceService() {
 
         return SERVICE;
+    }
+
+    public static NonceService getNonceService() {
+
+        return NONCE_SERVICE;
     }
 }

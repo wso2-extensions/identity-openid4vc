@@ -18,18 +18,37 @@
 
 package org.wso2.carbon.identity.openid4vc.issuance.common.constant;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Constants related to OpenID for Verifiable Credential Issuance (OID4VCI).
  */
 public class Constants {
+
+    public static final List<String> SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS =
+            Collections.unmodifiableList(Arrays.asList(
+                    "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512"));
+
     public static final String CONTEXT_OPENID4VCI = "oid4vci";
     public static final String SEGMENT_CREDENTIAL = "credential";
+    public static final String SEGMENT_NONCE = "nonce";
     public static final String SEGMENT_OAUTH2 = "oauth2";
     public static final String SEGMENT_TOKEN = "token";
     public static final String VC_CLAIM = "vc";
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
     public static final String VC_SD_JWT_FORMAT = "dc+sd-jwt";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
+    public static final String PROOF = "proof";
+    public static final String PROOFS = "proofs";
+    public static final String PROOF_TYPE = "proof_type";
+    public static final String JWT_PROOF = "jwt";
+    public static final String JWT_PROOF_TYPE = "openid4vci-proof+jwt";
+    public static final long MAX_CLOCK_SKEW_SECONDS = 60;
+    public static final long DEFAULT_NONCE_TTL_SECONDS = 300;
+    public static final String C_NONCE = "c_nonce";
+
 
     /**
      * W3C Verifiable Credential Data Model related constants.
@@ -56,18 +75,24 @@ public class Constants {
     public static class CredentialIssuerMetadata {
         public static final String CREDENTIAL_ISSUER = "credential_issuer";
         public static final String CREDENTIAL_ENDPOINT = "credential_endpoint";
+        public static final String NONCE_ENDPOINT = "nonce_endpoint";
         public static final String AUTHORIZATION_SERVERS = "authorization_servers";
         public static final String CREDENTIAL_CONFIGURATIONS_SUPPORTED = "credential_configurations_supported";
 
         public static final String FORMAT = "format";
         public static final String SCOPE = "scope";
         public static final String CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED = "credential_signing_alg_values_supported";
+        public static final String CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED =
+                "cryptographic_binding_methods_supported";
+        public static final String PROOF_TYPES_SUPPORTED = "proof_types_supported";
+        public static final String PROOF_SIGNING_ALG_VALUES_SUPPORTED = "proof_signing_alg_values_supported";
         public static final String CREDENTIAL_DEFINITION = "credential_definition";
         public static final String CREDENTIAL_METADATA = "credential_metadata";
         public static final String DISPLAY = "display";
         public static final String CLAIMS = "claims";
         public static final String NAME = "name";
         public static final String PATH = "path";
+        public static final String JWK = "jwk";
         public static final String SUBJECT_IDENTIFIER = "sub";
         public static final String VCT = "vct";
     }
