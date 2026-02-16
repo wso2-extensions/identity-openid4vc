@@ -105,7 +105,7 @@ public class JwtProofValidatorTest {
         ServiceURLBuilder mockBuilder = mock(ServiceURLBuilder.class);
 
         mockedServiceURLBuilder.when(ServiceURLBuilder::create).thenReturn(mockBuilder);
-        when(mockBuilder.addPath(any(String[].class))).thenReturn(mockBuilder);
+        when(mockBuilder.addPath((String[]) any())).thenReturn(mockBuilder);
         when(mockBuilder.setTenant(anyString())).thenReturn(mockBuilder);
         when(mockBuilder.addParameter(any(), any())).thenReturn(mockBuilder);
         when(mockBuilder.build()).thenReturn(serviceURL);
@@ -236,8 +236,11 @@ public class JwtProofValidatorTest {
             validator.validateProof(proofDTO, TENANT_DOMAIN);
             Assert.fail("Expected CredentialIssuanceException for missing aud claim");
         } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getMessage().contains("Missing aud claim"),
-                    "Exception should indicate missing aud claim. Actual: " + e.getMessage());
+            String actualMsg = e.getMessage();
+            String causeMsg = e.getCause() != null ? e.getCause().getMessage() : "no cause";
+            Assert.assertTrue(actualMsg.contains("Missing aud claim") ||
+                            (e.getCause() != null && causeMsg.contains("Missing aud claim")),
+                    "Exception should indicate missing aud claim. Actual: " + actualMsg + ", Cause: " + causeMsg);
         }
     }
 

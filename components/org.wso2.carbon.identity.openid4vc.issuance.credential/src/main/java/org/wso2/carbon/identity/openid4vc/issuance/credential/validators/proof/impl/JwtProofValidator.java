@@ -75,8 +75,7 @@ public class JwtProofValidator implements ProofValidator {
         validateJwtProof(proofDTO, tenantDomain);
     }
 
-    private void validateJwtProof(ProofDTO proofDTO, String tenantDomain)
-            throws CredentialIssuanceException {
+    private void validateJwtProof(ProofDTO proofDTO, String tenantDomain) throws CredentialIssuanceException {
 
         String jwtString = proofDTO.getProofs().get(0);
         SignedJWT signedJWT;
@@ -114,8 +113,7 @@ public class JwtProofValidator implements ProofValidator {
         }
     }
 
-    private void validateHeader(SignedJWT signedJWT)
-            throws CredentialIssuanceException {
+    private void validateHeader(SignedJWT signedJWT) throws CredentialIssuanceException {
 
         // Check typ header
         if (signedJWT.getHeader().getType() == null) {
@@ -136,8 +134,7 @@ public class JwtProofValidator implements ProofValidator {
         }
     }
 
-    private JWK extractPublicKey(SignedJWT signedJWT)
-            throws CredentialIssuanceException {
+    private JWK extractPublicKey(SignedJWT signedJWT) throws CredentialIssuanceException {
 
         try {
             JWK jwk = signedJWT.getHeader().getJWK();
@@ -147,20 +144,17 @@ public class JwtProofValidator implements ProofValidator {
             }
             // Security: Ensure JWK does not contain private key material
             if (jwk.isPrivate()) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "JWK must not contain private key material");
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "JWK must not contain private key material");
             }
             return jwk;
-        } catch (CredentialIssuanceException e) {
+        } catch (CredentialIssuanceClientException e) {
             throw e;
         } catch (Exception e) {
-            throw new CredentialIssuanceClientException(INVALID_PROOF,
-                    "Failed to extract public key");
+            throw new CredentialIssuanceException("Failed to extract public key", e);
         }
     }
 
-    private void verifySignature(SignedJWT signedJWT, JWK publicKey)
-            throws CredentialIssuanceException {
+    private void verifySignature(SignedJWT signedJWT, JWK publicKey) throws CredentialIssuanceException {
 
         try {
             JWSVerifier verifier;
@@ -184,15 +178,13 @@ public class JwtProofValidator implements ProofValidator {
                 RSAKey rsaKey = RSAKey.parse(publicKey.toJSONObject());
                 verifier = new RSASSAVerifier(rsaKey);
             } else {
-                throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "Unsupported key type: " + keyType);
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Unsupported key type: " + keyType);
             }
 
             if (!signedJWT.verify(verifier)) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "Proof signature verification failed");
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Proof signature verification failed");
             }
-        } catch (CredentialIssuanceException e) {
+        } catch (CredentialIssuanceClientException e) {
             throw e;
         } catch (Exception e) {
             throw new CredentialIssuanceException("Signature verification failed", e);
@@ -211,8 +203,7 @@ public class JwtProofValidator implements ProofValidator {
             }
             String expectedClientId = proofDTO.getClientId();
             if (!issuer.equals(expectedClientId)) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "Invalid iss claim. Must match client_id.");
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Invalid iss claim. Must match client_id.");
             }
 
             // Validate aud
@@ -254,7 +245,7 @@ public class JwtProofValidator implements ProofValidator {
                         "Invalid or expired nonce");
             }
 
-        } catch (CredentialIssuanceException e) {
+        } catch (CredentialIssuanceClientException e) {
             throw e;
         } catch (Exception e) {
             throw new CredentialIssuanceException("Claim validation failed", e);
