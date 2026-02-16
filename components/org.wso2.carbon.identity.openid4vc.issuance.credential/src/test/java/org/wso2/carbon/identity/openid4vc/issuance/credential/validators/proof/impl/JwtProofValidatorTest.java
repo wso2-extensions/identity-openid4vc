@@ -29,14 +29,20 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+import org.mockito.MockedStatic;
 import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.ServiceURL;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 
+import java.lang.reflect.Field;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPublicKey;
@@ -44,6 +50,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF_TYPE;
 
 /**
@@ -52,13 +63,52 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class JwtProofValidatorTest {
 
     private static final String TENANT_DOMAIN = "carbon.super";
+    private static final String CREDENTIAL_ISSUER_URL = "https://localhost:9443/oid4vci";
     private JwtProofValidator validator;
+    private NonceService mockNonceService;
+    private MockedStatic<ServiceURLBuilder> serviceUrlBuilderMockedStatic;
 
     @BeforeMethod
-    public void setUp() {
+    public void setUp() throws Exception {
 
         validator = new JwtProofValidator();
+        mockNonceService = mock(NonceService.class);
+
+        // Inject mock NonceService using reflection
+        Field nonceServiceField = JwtProofValidator.class.getDeclaredField("nonceService");
+        nonceServiceField.setAccessible(true);
+        nonceServiceField.set(validator, mockNonceService);
+
         CredentialIssuanceDataHolder.getInstance().getProofValidators().clear();
+
+        // Mock ServiceURLBuilder for credential issuer URL
+        serviceUrlBuilderMockedStatic = mockServiceUrlBuilder();
+    }
+
+    @AfterMethod
+    public void tearDown() {
+
+        if (serviceUrlBuilderMockedStatic != null) {
+            serviceUrlBuilderMockedStatic.close();
+            serviceUrlBuilderMockedStatic = null;
+        }
+    }
+
+    private MockedStatic<ServiceURLBuilder> mockServiceUrlBuilder() throws Exception {
+
+        ServiceURL serviceURL = mock(ServiceURL.class);
+        when(serviceURL.getAbsolutePublicURL()).thenReturn(CREDENTIAL_ISSUER_URL);
+
+        MockedStatic<ServiceURLBuilder> mockedServiceURLBuilder = mockStatic(ServiceURLBuilder.class);
+        ServiceURLBuilder mockBuilder = mock(ServiceURLBuilder.class);
+
+        mockedServiceURLBuilder.when(ServiceURLBuilder::create).thenReturn(mockBuilder);
+        when(mockBuilder.addPath(any(String[].class))).thenReturn(mockBuilder);
+        when(mockBuilder.setTenant(anyString())).thenReturn(mockBuilder);
+        when(mockBuilder.addParameter(any(), any())).thenReturn(mockBuilder);
+        when(mockBuilder.build()).thenReturn(serviceURL);
+
+        return mockedServiceURLBuilder;
     }
 
     @Test(description = "Test DataHolder proof validator operations and ProofDTO state")
@@ -138,7 +188,7 @@ public class JwtProofValidatorTest {
     @Test(description = "Test validation failure when typ header is missing")
     public void testValidateProofWithMissingTypHeader() throws Exception {
 
-        String jwtWithoutTyp = createRS256Jwt(null, false);
+        String jwtWithoutTyp = createRS256Jwt(null, false, null);
 
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
@@ -172,7 +222,7 @@ public class JwtProofValidatorTest {
     @Test(description = "Test validation failure when aud claim is missing")
     public void testValidateProofWithMissingAudienceClaim() throws Exception {
 
-        String jwtWithoutAudience = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), false);
+        String jwtWithoutAudience = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), false, null);
 
         ProofDTO proofDTO = new ProofDTO();
         proofDTO.setType("jwt");
@@ -186,7 +236,69 @@ public class JwtProofValidatorTest {
         }
     }
 
-    private String createRS256Jwt(JOSEObjectType typ, boolean withAudience) throws Exception {
+    @Test(description = "Test validation failure when nonce claim is missing")
+    public void testValidateProofWithMissingNonce() throws Exception {
+
+        String jwtWithoutNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, null);
+
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        proofDTO.setProofs(Collections.singletonList(jwtWithoutNonce));
+
+        try {
+            validator.validateProof(proofDTO, TENANT_DOMAIN);
+            Assert.fail("Expected CredentialIssuanceException for missing nonce");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getMessage().contains("Missing nonce claim") ||
+                            e.getMessage().contains("nonce"),
+                    "Exception should indicate missing nonce. Actual: " + e.getMessage());
+        }
+    }
+
+    @Test(description = "Test validation failure when nonce is invalid or expired")
+    public void testValidateProofWithInvalidNonce() throws Exception {
+
+        String invalidNonce = "invalid-nonce-value";
+        String jwtWithInvalidNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, invalidNonce);
+
+        // Mock nonceService to return false (invalid nonce)
+        when(mockNonceService.validateAndConsumeNonce(invalidNonce, TENANT_DOMAIN)).thenReturn(false);
+
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        proofDTO.setProofs(Collections.singletonList(jwtWithInvalidNonce));
+
+        try {
+            validator.validateProof(proofDTO, TENANT_DOMAIN);
+            Assert.fail("Expected CredentialIssuanceException for invalid nonce");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertTrue(e.getMessage().contains("Invalid") || e.getMessage().contains("expired"),
+                    "Exception should indicate invalid or expired nonce. Actual: " + e.getMessage());
+        }
+    }
+
+    @Test(description = "Test successful proof validation with valid nonce")
+    public void testValidateProofWithValidNonce() throws Exception {
+
+        String validNonce = "valid-nonce-value";
+        String jwtWithValidNonce = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, validNonce);
+
+        // Mock nonceService to return true (valid nonce)
+        when(mockNonceService.validateAndConsumeNonce(validNonce, TENANT_DOMAIN)).thenReturn(true);
+
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        proofDTO.setProofs(Collections.singletonList(jwtWithValidNonce));
+
+        // Should not throw exception
+        validator.validateProof(proofDTO, TENANT_DOMAIN);
+
+        // Verify public key was extracted
+        Assert.assertNotNull(proofDTO.getPublicKey(), "Public key should be extracted from proof");
+        Assert.assertEquals(proofDTO.getNonce(), validNonce, "Nonce should be set in proofDTO");
+    }
+
+    private String createRS256Jwt(JOSEObjectType typ, boolean withAudience, String nonce) throws Exception {
 
         KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
         keyPairGenerator.initialize(2048);
@@ -204,7 +316,10 @@ public class JwtProofValidatorTest {
         JWTClaimsSet.Builder claimsBuilder = new JWTClaimsSet.Builder()
                 .issueTime(new Date());
         if (withAudience) {
-            claimsBuilder.audience("https://localhost:9443/oid4vci");
+            claimsBuilder.audience(CREDENTIAL_ISSUER_URL);
+        }
+        if (nonce != null) {
+            claimsBuilder.claim("nonce", nonce);
         }
 
         SignedJWT signedJWT = new SignedJWT(headerBuilder.build(), claimsBuilder.build());
