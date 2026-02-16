@@ -40,12 +40,17 @@ public class NonceDAOImpl implements NonceDAO {
 
         try (Connection conn = IdentityDatabaseUtil.getDBConnection(true);
              PreparedStatement ps = conn.prepareStatement(NonceSQLConstants.STORE_NONCE)) {
-            ps.setInt(1, tenantId);
-            ps.setString(2, nonceValue);
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            ps.setTimestamp(4, expiryTime);
-            ps.executeUpdate();
-            IdentityDatabaseUtil.commitTransaction(conn);
+            try {
+                ps.setInt(1, tenantId);
+                ps.setString(2, nonceValue);
+                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+                ps.setTimestamp(4, expiryTime);
+                ps.executeUpdate();
+                IdentityDatabaseUtil.commitTransaction(conn);
+            } catch (SQLException e) {
+                IdentityDatabaseUtil.rollbackTransaction(conn);
+                throw e;
+            }
         } catch (SQLException e) {
             throw new CredentialIssuanceException("Error storing nonce in database", e);
         }
@@ -57,12 +62,17 @@ public class NonceDAOImpl implements NonceDAO {
 
         try (Connection conn = IdentityDatabaseUtil.getDBConnection(true);
              PreparedStatement ps = conn.prepareStatement(NonceSQLConstants.VALIDATE_AND_CONSUME_NONCE)) {
-            ps.setString(1, nonceValue);
-            ps.setInt(2, tenantId);
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            int rowsDeleted = ps.executeUpdate();
-            IdentityDatabaseUtil.commitTransaction(conn);
-            return rowsDeleted == 1;
+            try {
+                ps.setString(1, nonceValue);
+                ps.setInt(2, tenantId);
+                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
+                int rowsDeleted = ps.executeUpdate();
+                IdentityDatabaseUtil.commitTransaction(conn);
+                return rowsDeleted == 1;
+            } catch (SQLException e) {
+                IdentityDatabaseUtil.rollbackTransaction(conn);
+                throw e;
+            }
         } catch (SQLException e) {
             throw new CredentialIssuanceException("Error validating and consuming nonce", e);
         }
@@ -73,9 +83,14 @@ public class NonceDAOImpl implements NonceDAO {
 
         try (Connection conn = IdentityDatabaseUtil.getDBConnection(true);
              PreparedStatement ps = conn.prepareStatement(NonceSQLConstants.DELETE_EXPIRED_NONCES)) {
-            ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
-            ps.executeUpdate();
-            IdentityDatabaseUtil.commitTransaction(conn);
+            try {
+                ps.setTimestamp(1, new Timestamp(System.currentTimeMillis()));
+                ps.executeUpdate();
+                IdentityDatabaseUtil.commitTransaction(conn);
+            } catch (SQLException e) {
+                IdentityDatabaseUtil.rollbackTransaction(conn);
+                throw e;
+            }
         } catch (SQLException e) {
             throw new CredentialIssuanceException("Error deleting expired nonces", e);
         }

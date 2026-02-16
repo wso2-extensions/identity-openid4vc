@@ -125,7 +125,7 @@ public class CredentialEndpoint {
                 try {
                     NonceService nonceService = CredentialIssuanceServiceFactory.getNonceService();
                     errorBuilder.cNonce(nonceService.generateNonce(tenantDomain));
-                } catch (Exception nonceEx) {
+                } catch (CredentialIssuanceException nonceEx) {
                     LOG.warn("Failed to generate fresh nonce for invalid_nonce error response", nonceEx);
                 }
             }
@@ -197,16 +197,25 @@ public class CredentialEndpoint {
         boolean hasProofs = jsonObject.has(PROOFS);
 
         if (hasProof && hasProofs) {
-            throw new CredentialIssuanceClientException(
-                    "Request MUST NOT contain both 'proof' and 'proofs'",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "Request MUST NOT contain both 'proof' and 'proofs'");
         }
 
         if (hasProof) {
+            JsonElement proofElement = jsonObject.get(PROOF);
+            if (proofElement == null || !proofElement.isJsonObject()) {
+                throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                        "'proof' must be a JSON object");
+            }
             return parseSingularProof(jsonObject.getAsJsonObject(PROOF));
         }
 
         if (hasProofs) {
+            JsonElement proofsElement = jsonObject.get(PROOFS);
+            if (proofsElement == null || !proofsElement.isJsonObject()) {
+                throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                        "'proofs' must be a JSON object");
+            }
             return parsePluralProofs(jsonObject.getAsJsonObject(PROOFS));
         }
 
@@ -220,30 +229,30 @@ public class CredentialEndpoint {
     private static ProofDTO parseSingularProof(JsonObject proofObject) throws CredentialIssuanceException {
 
         if (proofObject == null) {
-            throw new CredentialIssuanceClientException("'proof' must be a JSON object",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "'proof' must be a JSON object");
         }
 
         if (!proofObject.has(PROOF_TYPE)) {
-            throw new CredentialIssuanceClientException("Missing 'proof_type' in proof",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "Missing 'proof_type' in proof");
         }
 
         String proofType = proofObject.get(PROOF_TYPE).getAsString();
         if (!JWT_PROOF.equals(proofType)) {
-            throw new CredentialIssuanceClientException("Unsupported proof type: " + proofType,
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "Unsupported proof type: " + proofType);
         }
 
         if (!proofObject.has(JWT_PROOF) || !proofObject.get(JWT_PROOF).isJsonPrimitive()) {
-            throw new CredentialIssuanceClientException("Missing or invalid 'jwt' value in proof",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "Missing or invalid 'jwt' value in proof");
         }
 
         String jwt = proofObject.get(JWT_PROOF).getAsString().trim();
         if (jwt.isEmpty()) {
-            throw new CredentialIssuanceClientException("JWT proof cannot be empty",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "JWT proof cannot be empty");
         }
 
         ProofDTO proofDTO = new ProofDTO();
@@ -259,37 +268,37 @@ public class CredentialEndpoint {
     private static ProofDTO parsePluralProofs(JsonObject proofsObject) throws CredentialIssuanceException {
 
         if (proofsObject == null) {
-            throw new CredentialIssuanceClientException("'proofs' must be a JSON object",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "'proofs' must be a JSON object");
         }
 
         if (proofsObject.keySet().size() != 1) {
-            throw new CredentialIssuanceClientException("'proofs' must contain exactly one proof type",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "'proofs' must contain exactly one proof type");
         }
 
         String proofType = proofsObject.keySet().iterator().next();
         if (!JWT_PROOF.equals(proofType)) {
-            throw new CredentialIssuanceClientException("Unsupported proof type: " + proofType,
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "Unsupported proof type: " + proofType);
         }
 
         JsonArray proofsArray = proofsObject.getAsJsonArray(proofType);
         if (proofsArray == null) {
-            throw new CredentialIssuanceClientException("'proofs." + proofType + "' must be an array",
-                    CredentialErrorResponse.INVALID_PROOF);
+            throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                    "'proofs." + proofType + "' must be an array");
         }
 
         List<String> jwtProofs = new ArrayList<>(proofsArray.size());
         for (JsonElement e : proofsArray) {
             if (e == null || !e.isJsonPrimitive() || !e.getAsJsonPrimitive().isString()) {
-                throw new CredentialIssuanceClientException("Each entry in 'proofs.jwt' must be a JWT string",
-                        CredentialErrorResponse.INVALID_PROOF);
+                throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                        "Each entry in 'proofs.jwt' must be a JWT string");
             }
             String jwt = e.getAsString().trim();
             if (jwt.isEmpty()) {
-                throw new CredentialIssuanceClientException("JWT proof cannot be empty",
-                        CredentialErrorResponse.INVALID_PROOF);
+                throw new CredentialIssuanceClientException(CredentialErrorResponse.INVALID_PROOF,
+                        "JWT proof cannot be empty");
             }
             jwtProofs.add(jwt);
         }

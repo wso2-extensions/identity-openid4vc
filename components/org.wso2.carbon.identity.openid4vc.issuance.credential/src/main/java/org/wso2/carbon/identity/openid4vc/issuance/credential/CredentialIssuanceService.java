@@ -94,6 +94,9 @@ public class CredentialIssuanceService {
         validateAccessToken(reqDTO);
 
         if (reqDTO.getProofDTO() != null) {
+            if (reqDTO.getProofDTO().getType() == null) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Proof type is required");
+            }
             List<ProofValidator> proofValidators = CredentialIssuanceDataHolder.getInstance()
                     .getProofValidators();
             ProofValidator proofValidator = proofValidators.stream()

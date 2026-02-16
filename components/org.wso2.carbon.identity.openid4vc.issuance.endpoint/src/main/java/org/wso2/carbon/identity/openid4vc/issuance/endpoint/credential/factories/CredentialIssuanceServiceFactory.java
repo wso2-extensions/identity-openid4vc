@@ -28,7 +28,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService
 public class CredentialIssuanceServiceFactory {
 
     private static final CredentialIssuanceService SERVICE;
-    private static final NonceService NONCE_SERVICE;;
+    private static final NonceService NONCE_SERVICE;
 
     static {
         CredentialIssuanceService credentialIssuanceService = (CredentialIssuanceService) PrivilegedCarbonContext
