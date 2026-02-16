@@ -31,6 +31,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuance
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.JwtVcJsonFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.SdJwtVcFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.impl.JwtProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
@@ -55,11 +56,19 @@ public class CredentialIssuanceServiceComponent {
             bundleContext.registerService(CredentialFormatHandler.class, new JwtVcJsonFormatHandler(), null);
             bundleContext.registerService(CredentialFormatHandler.class, new SdJwtVcFormatHandler(), null);
             bundleContext.registerService(ProofValidator.class, new JwtProofValidator(), null);
+            bundleContext.registerService(NonceService.class, new NonceService(), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("OID4VCI credential issuance component activated");
             }
         } catch (Throwable throwable) {
             LOG.error("Error while activating CredentialIssuanceServiceComponent", throwable);
+        }
+    }
+
+    protected void deactivate(ComponentContext context) {
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("OID4VCI credential issuance component deactivated");
         }
     }
 

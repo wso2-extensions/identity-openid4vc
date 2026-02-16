@@ -73,6 +73,8 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                     buildCredentialIssuerUrl(effectiveTenant));
             metadata.put(Constants.CredentialIssuerMetadata.CREDENTIAL_ENDPOINT,
                     buildCredentialEndpointUrl(effectiveTenant));
+            metadata.put(Constants.CredentialIssuerMetadata.NONCE_ENDPOINT,
+                    buildNonceEndpointUrl(effectiveTenant));
             metadata.put(Constants.CredentialIssuerMetadata.AUTHORIZATION_SERVERS,
                     Collections.singletonList(buildAuthorizationServerUrl(effectiveTenant)));
             Map<String, Object> credentialConfigurations = getCredentialConfigurations(effectiveTenant);
@@ -101,6 +103,12 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
     private String buildCredentialEndpointUrl(String tenantDomain) throws URLBuilderException {
 
         return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_CREDENTIAL)
+                .getAbsolutePublicURL();
+    }
+
+    private String buildNonceEndpointUrl(String tenantDomain) throws URLBuilderException {
+
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_NONCE)
                 .getAbsolutePublicURL();
     }
 

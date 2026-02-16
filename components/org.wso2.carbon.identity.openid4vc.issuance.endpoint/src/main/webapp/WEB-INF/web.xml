@@ -82,7 +82,8 @@
             <param-value>
                 org.wso2.carbon.identity.openid4vc.issuance.endpoint.metadata.MetadataEndpoint,
                 org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.CredentialEndpoint,
-                org.wso2.carbon.identity.openid4vc.issuance.endpoint.offer.OfferEndpoint
+                org.wso2.carbon.identity.openid4vc.issuance.endpoint.offer.OfferEndpoint,
+                org.wso2.carbon.identity.openid4vc.issuance.endpoint.nonce.NonceEndpoint
             </param-value>
         </init-param>
         <init-param>

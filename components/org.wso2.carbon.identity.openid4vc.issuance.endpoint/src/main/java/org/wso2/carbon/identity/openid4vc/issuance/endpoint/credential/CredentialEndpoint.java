@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssu
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.response.CredentialIssuanceResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.error.CredentialErrorResponse;
 import org.wso2.carbon.identity.openid4vc.issuance.endpoint.credential.factories.CredentialIssuanceServiceFactory;
@@ -114,12 +115,22 @@ public class CredentialEndpoint {
 
             String errorCode = e.getOAuth2ErrorCode() != null ? e.getOAuth2ErrorCode() :
                     CredentialErrorResponse.INVALID_CREDENTIAL_REQUEST;
-            String errorResponse = CredentialErrorResponse.builder()
-                    .error(errorCode)
-                    .errorDescription(e.getMessage())
-                    .build()
-                    .toJson();
 
+            CredentialErrorResponse.Builder errorBuilder = CredentialErrorResponse.builder()
+                    .error(errorCode)
+                    .errorDescription(e.getMessage());
+
+            // on invalid_nonce, include a fresh c_nonce in the error response.
+            if (CredentialErrorResponse.INVALID_NONCE.equals(errorCode)) {
+                try {
+                    NonceService nonceService = CredentialIssuanceServiceFactory.getNonceService();
+                    errorBuilder.cNonce(nonceService.generateNonce(tenantDomain));
+                } catch (Exception nonceEx) {
+                    LOG.warn("Failed to generate fresh nonce for invalid_nonce error response", nonceEx);
+                }
+            }
+
+            String errorResponse = errorBuilder.build().toJson();
             Response.Status status = determineHttpStatus(errorCode);
 
             return Response.status(status)
@@ -348,6 +359,7 @@ public class CredentialEndpoint {
 
         String payload = CredentialIssuanceResponse.builder()
                 .credential(credentialIssuanceRespDTO.getCredential())
+                .cNonce(credentialIssuanceRespDTO.getCNonce())
                 .build()
                 .toJson();
         return Response.ok(payload, MediaType.APPLICATION_JSON).build();
