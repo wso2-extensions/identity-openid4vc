@@ -162,6 +162,10 @@ public class CredentialIssuanceService {
         reqDTO.setCredentialConfigurationId(scopes[0]);
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
         reqDTO.setAuthenticatedUser(authenticatedUser);
+
+        if (reqDTO.getProofDTO() != null) {
+            reqDTO.getProofDTO().setClientId(accessTokenDO.getConsumerKey());
+        }
     }
 
     /**

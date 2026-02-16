@@ -32,6 +32,7 @@ public class ProofDTO {
     private String keyId;
     private long issuedAt;
     private String nonce;
+    private String clientId;
 
     public String getType() {
         return type;
@@ -79,5 +80,13 @@ public class ProofDTO {
 
     public void setProofs(List<String> proofs) {
         this.proofs = proofs;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 }

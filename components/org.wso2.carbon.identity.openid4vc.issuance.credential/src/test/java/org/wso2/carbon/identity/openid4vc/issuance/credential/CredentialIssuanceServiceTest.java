@@ -33,6 +33,7 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
@@ -68,6 +69,7 @@ public class CredentialIssuanceServiceTest {
     private static final String TEST_TOKEN = "test-access-token";
     private static final String TEST_USER_ID = "user-123";
     private static final String TEST_USERNAME = "testuser@carbon.super";
+    private static final String TEST_CLIENT_ID = "test-client-id";
 
     private CredentialIssuanceService credentialIssuanceService;
     MockedStatic<IdentityTenantUtil> identityTenantUtilMockedStatic;
@@ -255,6 +257,41 @@ public class CredentialIssuanceServiceTest {
                     || e.getDescription().contains("does not exist"),
                     "Exception description should indicate unknown configuration. Actual: " + e.getDescription());
             throw e;
+        }
+    }
+
+    @Test(priority = 5, description = "Test clientId is set on ProofDTO from access token consumer key")
+    public void testClientIdSetOnProofDTO() throws Exception {
+        // Mock template manager
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+
+        // Mock token provider with valid token including consumer key
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
+        AccessTokenDO accessTokenDO = new AccessTokenDO();
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID, "openid"});
+        accessTokenDO.setConsumerKey(TEST_CLIENT_ID);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+        authenticatedUser.setUserName(TEST_USERNAME);
+        authenticatedUser.setUserId(TEST_USER_ID);
+        accessTokenDO.setAuthzUser(authenticatedUser);
+        when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
+
+        // Create request with ProofDTO
+        CredentialIssuanceReqDTO reqDTO = createTestRequest();
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        reqDTO.setProofDTO(proofDTO);
+
+        // We expect the credential issuance to fail at proof validation (no actual JWT provided)
+        // but the clientId should be set on the ProofDTO before that
+        try {
+            credentialIssuanceService.issueCredential(reqDTO);
+            Assert.fail("Expected exception due to proof validation");
+        } catch (Exception e) {
+            // Verify clientId was set on ProofDTO from access token
+            Assert.assertEquals(reqDTO.getProofDTO().getClientId(), TEST_CLIENT_ID,
+                    "clientId should be set on ProofDTO from access token consumer key");
         }
     }
 

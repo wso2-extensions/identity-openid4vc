@@ -49,6 +49,7 @@ import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.C
 public class JwtProofValidator implements ProofValidator {
 
     private static final Log LOG = LogFactory.getLog(JwtProofValidator.class);
+    private static final int MAX_AUDIENCE_SIZE = 10;
     private final NonceService nonceService = new NonceService();
 
     @Override
@@ -61,14 +62,13 @@ public class JwtProofValidator implements ProofValidator {
     public void validateProof(ProofDTO proofDTO, String tenantDomain) throws CredentialIssuanceException {
 
         List<String> proofs = proofDTO.getProofs();
-        if (proofs.isEmpty()) {
+        if (proofs == null || proofs.isEmpty()) {
             throw new CredentialIssuanceException("JWT proof is required");
         }
 
         // Enforce single proof for single credential issuance
         if (proofs.size() > 1) {
-            throw new CredentialIssuanceException(
-                    "Multiple proofs not supported");
+            throw new CredentialIssuanceException("Multiple proofs not supported");
         }
 
         validateJwtProof(proofDTO, tenantDomain);
@@ -95,9 +95,9 @@ public class JwtProofValidator implements ProofValidator {
         verifySignature(signedJWT, publicKey);
 
         // Validate claims
-        validateClaims(signedJWT, tenantDomain);
+        validateClaims(signedJWT, tenantDomain, proofDTO);
 
-        proofDTO.setPublicKey(publicKey.toJSONObject());
+        proofDTO.setPublicKey(publicKey.toPublicJWK().toJSONObject());
 
         try {
             if (signedJWT.getJWTClaimsSet().getIssueTime() != null) {
@@ -118,19 +118,19 @@ public class JwtProofValidator implements ProofValidator {
 
         // Check typ header
         if (signedJWT.getHeader().getType() == null) {
-            throw new CredentialIssuanceException("Missing typ header in proof JWT");
+            throw new CredentialIssuanceClientException(INVALID_PROOF, "Missing typ header in proof JWT");
         }
 
         String typ = signedJWT.getHeader().getType().toString();
         if (!JWT_PROOF_TYPE.equals(typ)) {
-            throw new CredentialIssuanceException(
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
                     "Invalid typ header. Expected: " + JWT_PROOF_TYPE + ", got: " + typ);
         }
 
         // Check algorithm is in the allowed asymmetric algorithm set
         String alg = signedJWT.getHeader().getAlgorithm().getName();
         if (!SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS.contains(alg)) {
-            throw new CredentialIssuanceException(
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
                     "Unsupported proof signing algorithm: " + alg +
                     ". Allowed: " + SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS);
         }
@@ -142,14 +142,20 @@ public class JwtProofValidator implements ProofValidator {
         try {
             JWK jwk = signedJWT.getHeader().getJWK();
             if (jwk == null) {
-                throw new CredentialIssuanceException(
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Public key (jwk) must be present in proof header");
+            }
+            // Security: Ensure JWK does not contain private key material
+            if (jwk.isPrivate()) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "JWK must not contain private key material");
             }
             return jwk;
         } catch (CredentialIssuanceException e) {
             throw e;
         } catch (Exception e) {
-            throw new CredentialIssuanceException("Failed to extract public key", e);
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
+                    "Failed to extract public key");
         }
     }
 
@@ -159,20 +165,31 @@ public class JwtProofValidator implements ProofValidator {
         try {
             JWSVerifier verifier;
             String keyType = publicKey.getKeyType().getValue();
+            String algorithm = signedJWT.getHeader().getAlgorithm().getName();
 
             if ("EC".equals(keyType)) {
+                // Verify EC key is used with ES* algorithms only
+                if (!algorithm.startsWith("ES")) {
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Algorithm mismatch: EC key cannot be used with " + algorithm + " algorithm");
+                }
                 ECKey ecKey = ECKey.parse(publicKey.toJSONObject());
                 verifier = new ECDSAVerifier(ecKey);
             } else if ("RSA".equals(keyType)) {
+                // Verify RSA key is used with RS* or PS* algorithms only
+                if (!algorithm.startsWith("RS") && !algorithm.startsWith("PS")) {
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Algorithm mismatch: RSA key cannot be used with " + algorithm + " algorithm");
+                }
                 RSAKey rsaKey = RSAKey.parse(publicKey.toJSONObject());
                 verifier = new RSASSAVerifier(rsaKey);
             } else {
-                throw new CredentialIssuanceException(
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Unsupported key type: " + keyType);
             }
 
             if (!signedJWT.verify(verifier)) {
-                throw new CredentialIssuanceException(
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Proof signature verification failed");
             }
         } catch (CredentialIssuanceException e) {
@@ -182,29 +199,49 @@ public class JwtProofValidator implements ProofValidator {
         }
     }
 
-    private void validateClaims(SignedJWT signedJWT, String tenantDomain) throws CredentialIssuanceException {
+    private void validateClaims(SignedJWT signedJWT, String tenantDomain, ProofDTO proofDTO)
+            throws CredentialIssuanceException {
 
         try {
+            // Validate iss - MUST be present and match client_id per OID4VCI spec
+            String issuer = signedJWT.getJWTClaimsSet().getIssuer();
+            String expectedClientId = proofDTO.getClientId();
+            if (expectedClientId != null) {
+                if (issuer == null) {
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Missing iss claim. Required when client_id is present.");
+                }
+                if (!issuer.equals(expectedClientId)) {
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Invalid iss claim. Must match client_id.");
+                }
+            }
+
             // Validate aud
             List<String> audience = signedJWT.getJWTClaimsSet().getAudience();
             if (audience == null || audience.isEmpty()) {
-                throw new CredentialIssuanceException("Missing aud claim in proof");
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Missing aud claim in proof");
+            }
+            if (audience.size() > MAX_AUDIENCE_SIZE) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Audience list exceeds maximum allowed size");
             }
 
-            String issuer = CommonUtil.buildCredentialIssuerUrl(tenantDomain);
-            if (!audience.contains(issuer)) {
-                throw new CredentialIssuanceException("Invalid aud claim in proof. Expected to contain: " + issuer);
+            String credentialIssuerUrl = CommonUtil.buildCredentialIssuerUrl(tenantDomain);
+            if (!audience.contains(credentialIssuerUrl)) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Invalid aud claim in proof. Expected to contain: " + credentialIssuerUrl);
             }
 
             // Validate iat
             if (signedJWT.getJWTClaimsSet().getIssueTime() == null) {
-                throw new CredentialIssuanceException("Missing iat claim in proof");
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Missing iat claim in proof");
             }
 
             long iat = signedJWT.getJWTClaimsSet().getIssueTime().getTime() / 1000;
             long now = System.currentTimeMillis() / 1000;
             if (Math.abs(now - iat) > MAX_CLOCK_SKEW_SECONDS) {
-                throw new CredentialIssuanceException(
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Proof is too old or from the future");
             }
 
