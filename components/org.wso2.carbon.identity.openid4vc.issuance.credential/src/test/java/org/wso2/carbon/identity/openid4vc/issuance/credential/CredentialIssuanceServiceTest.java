@@ -110,9 +110,6 @@ public class CredentialIssuanceServiceTest {
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(null);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
         CredentialIssuanceDataHolder.getInstance().setRealmService(null);
-
-        // Clear format handlers
-        CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().clear();
     }
 
     @AfterMethod

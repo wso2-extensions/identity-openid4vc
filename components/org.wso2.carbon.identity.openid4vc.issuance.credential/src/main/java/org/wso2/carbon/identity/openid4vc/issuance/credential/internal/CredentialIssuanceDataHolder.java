@@ -26,6 +26,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -61,7 +62,7 @@ public class CredentialIssuanceDataHolder {
 
     public List<CredentialFormatHandler> getCredentialFormatHandlers() {
 
-        return credentialFormatHandlers;
+        return Collections.unmodifiableList(credentialFormatHandlers);
     }
 
     public void addCredentialFormatHandler(CredentialFormatHandler handler) {
@@ -74,9 +75,14 @@ public class CredentialIssuanceDataHolder {
         this.credentialFormatHandlers.remove(handler);
     }
 
+    public void clearCredentialFormatHandlers() {
+
+        this.credentialFormatHandlers.clear();
+    }
+
     public List<ProofValidator> getProofValidators() {
 
-        return proofValidators;
+        return Collections.unmodifiableList(proofValidators);
     }
 
     public void addProofValidator(ProofValidator validator) {

@@ -27,9 +27,9 @@ public class NonceSQLConstants {
     }
 
     public static final String STORE_NONCE =
-            "INSERT INTO IDN_VC_NONCE (TENANT_ID, NONCE_VALUE, TIME_CREATED, EXPIRY_TIME) " +
-            "VALUES (?, ?, ?, ?)";
+            "INSERT INTO IDN_VC_NONCE (TENANT_ID, NONCE, EXPIRY_TIME) " +
+            "VALUES (?, ?, ?)";
 
     public static final String VALIDATE_AND_CONSUME_NONCE =
-            "DELETE FROM IDN_VC_NONCE WHERE NONCE_VALUE = ? AND TENANT_ID = ? AND EXPIRY_TIME > ?";
+            "DELETE FROM IDN_VC_NONCE WHERE NONCE = ? AND TENANT_ID = ? AND EXPIRY_TIME > ?";
 }

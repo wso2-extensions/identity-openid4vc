@@ -56,9 +56,8 @@ public class CredentialIssuerTest {
     @BeforeMethod
     public void setUp() {
         credentialIssuer = new CredentialIssuer();
-
-        // Clear format handlers before each test
-        CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().clear();
+        // Clear all handlers to ensure test isolation
+        CredentialIssuanceDataHolder.getInstance().clearCredentialFormatHandlers();
     }
 
     @Test(priority = 1, description = "Test successful credential issuance with valid format handler")

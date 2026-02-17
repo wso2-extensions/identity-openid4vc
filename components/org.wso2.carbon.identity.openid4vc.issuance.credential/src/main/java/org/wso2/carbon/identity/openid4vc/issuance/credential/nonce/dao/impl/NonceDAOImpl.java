@@ -43,8 +43,7 @@ public class NonceDAOImpl implements NonceDAO {
             try {
                 ps.setInt(1, tenantId);
                 ps.setString(2, nonceValue);
-                ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-                ps.setTimestamp(4, expiryTime);
+                ps.setTimestamp(3, expiryTime);
                 ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(conn);
             } catch (SQLException e) {
