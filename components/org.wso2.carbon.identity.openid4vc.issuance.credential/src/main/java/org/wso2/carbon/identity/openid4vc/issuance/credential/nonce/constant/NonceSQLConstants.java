@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -16,33 +16,20 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.issuance.credential.dto;
+package org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.constant;
 
 /**
- * DTO for credential issuance response.
+ * SQL constants for the nonce store.
  */
-public class CredentialIssuanceRespDTO {
+public class NonceSQLConstants {
 
-    private String credential;
-    private String cNonce;
-
-    public String getCredential() {
-
-        return credential;
+    private NonceSQLConstants() {
     }
 
-    public void setCredential(String credential) {
+    public static final String STORE_NONCE =
+            "INSERT INTO IDN_VC_NONCE (TENANT_ID, NONCE, EXPIRY_TIME) " +
+            "VALUES (?, ?, ?)";
 
-        this.credential = credential;
-    }
-
-    public String getCNonce() {
-
-        return cNonce;
-    }
-
-    public void setCNonce(String cNonce) {
-
-        this.cNonce = cNonce;
-    }
+    public static final String VALIDATE_AND_CONSUME_NONCE =
+            "DELETE FROM IDN_VC_NONCE WHERE NONCE = ? AND TENANT_ID = ? AND EXPIRY_TIME > ?";
 }

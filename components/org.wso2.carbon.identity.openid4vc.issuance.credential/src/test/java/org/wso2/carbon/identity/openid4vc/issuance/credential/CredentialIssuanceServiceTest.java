@@ -33,10 +33,12 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
@@ -44,6 +46,7 @@ import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +69,7 @@ public class CredentialIssuanceServiceTest {
     private static final String TEST_TOKEN = "test-access-token";
     private static final String TEST_USER_ID = "user-123";
     private static final String TEST_USERNAME = "testuser@carbon.super";
+    private static final String TEST_CLIENT_ID = "test-client-id";
 
     private CredentialIssuanceService credentialIssuanceService;
     MockedStatic<IdentityTenantUtil> identityTenantUtilMockedStatic;
@@ -75,12 +79,18 @@ public class CredentialIssuanceServiceTest {
     private static final UserRealm userRealm = mock(UserRealm.class);
     private static final AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
     private static final VCTemplateManager vcTemplateManager = mock(VCTemplateManager.class);
+    private static final NonceService nonceService = mock(NonceService.class);
 
     @BeforeClass
-    public void setUpClass() {
+    public void setUpClass() throws Exception {
 
         // Initialize the service
         credentialIssuanceService = new CredentialIssuanceService();
+
+        // Inject mock NonceService using reflection
+        Field nonceServiceField = CredentialIssuanceService.class.getDeclaredField("nonceService");
+        nonceServiceField.setAccessible(true);
+        nonceServiceField.set(credentialIssuanceService, nonceService);
     }
 
     @BeforeMethod
@@ -100,9 +110,6 @@ public class CredentialIssuanceServiceTest {
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(null);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
         CredentialIssuanceDataHolder.getInstance().setRealmService(null);
-
-        // Clear format handlers
-        CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().clear();
     }
 
     @AfterMethod
@@ -165,6 +172,9 @@ public class CredentialIssuanceServiceTest {
         // Mock IdentityTenantUtil
         identityTenantUtilMockedStatic.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
                 .thenReturn(-1234);
+
+        // Mock NonceService
+        when(nonceService.generateNonce(TENANT_DOMAIN)).thenReturn("test-c-nonce-value");
 
         // Execute the test
         CredentialIssuanceRespDTO response = credentialIssuanceService.issueCredential(reqDTO);
@@ -244,6 +254,41 @@ public class CredentialIssuanceServiceTest {
                     || e.getDescription().contains("does not exist"),
                     "Exception description should indicate unknown configuration. Actual: " + e.getDescription());
             throw e;
+        }
+    }
+
+    @Test(priority = 5, description = "Test clientId is set on ProofDTO from access token consumer key")
+    public void testClientIdSetOnProofDTO() throws Exception {
+        // Mock template manager
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+
+        // Mock token provider with valid token including consumer key
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
+        AccessTokenDO accessTokenDO = new AccessTokenDO();
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID, "openid"});
+        accessTokenDO.setConsumerKey(TEST_CLIENT_ID);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser();
+        authenticatedUser.setUserName(TEST_USERNAME);
+        authenticatedUser.setUserId(TEST_USER_ID);
+        accessTokenDO.setAuthzUser(authenticatedUser);
+        when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
+
+        // Create request with ProofDTO
+        CredentialIssuanceReqDTO reqDTO = createTestRequest();
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        reqDTO.setProofDTO(proofDTO);
+
+        // We expect the credential issuance to fail at proof validation (no actual JWT provided)
+        // but the clientId should be set on the ProofDTO before that
+        try {
+            credentialIssuanceService.issueCredential(reqDTO);
+            Assert.fail("Expected exception due to proof validation");
+        } catch (Exception e) {
+            // Verify clientId was set on ProofDTO from access token
+            Assert.assertEquals(reqDTO.getProofDTO().getClientId(), TEST_CLIENT_ID,
+                    "clientId should be set on ProofDTO from access token consumer key");
         }
     }
 

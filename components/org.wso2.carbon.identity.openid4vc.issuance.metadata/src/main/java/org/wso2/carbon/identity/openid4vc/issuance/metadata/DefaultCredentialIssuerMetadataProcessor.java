@@ -37,6 +37,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS;
+
 
 /**
  * Default implementation for credential issuer metadata processing.
@@ -71,6 +73,8 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
                     buildCredentialIssuerUrl(effectiveTenant));
             metadata.put(Constants.CredentialIssuerMetadata.CREDENTIAL_ENDPOINT,
                     buildCredentialEndpointUrl(effectiveTenant));
+            metadata.put(Constants.CredentialIssuerMetadata.NONCE_ENDPOINT,
+                    buildNonceEndpointUrl(effectiveTenant));
             metadata.put(Constants.CredentialIssuerMetadata.AUTHORIZATION_SERVERS,
                     Collections.singletonList(buildAuthorizationServerUrl(effectiveTenant)));
             Map<String, Object> credentialConfigurations = getCredentialConfigurations(effectiveTenant);
@@ -99,6 +103,12 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
     private String buildCredentialEndpointUrl(String tenantDomain) throws URLBuilderException {
 
         return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_CREDENTIAL)
+                .getAbsolutePublicURL();
+    }
+
+    private String buildNonceEndpointUrl(String tenantDomain) throws URLBuilderException {
+
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.CONTEXT_OPENID4VCI, Constants.SEGMENT_NONCE)
                 .getAbsolutePublicURL();
     }
 
@@ -135,7 +145,9 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
 
                 // For SD-JWT VC format, use vct instead of type
                 if (Constants.VC_SD_JWT_FORMAT.equals(configuration.getFormat())) {
-                    builder.vct(configuration.getIdentifier());
+                    builder.vct(configuration.getIdentifier())
+                            .cryptographicBindingMethod(Constants.CredentialIssuerMetadata.JWK)
+                            .jwtProofSigningAlgorithms(SUPPORTED_JWT_PROOF_SIGNING_ALGORITHMS);
                 } else {
                     builder.type(Constants.W3CVCDataModel.VERIFIABLE_CREDENTIAL_TYPE)
                            .type(configuration.getIdentifier());

@@ -87,4 +87,9 @@ public final class SDJWTConstants {
      * The claim name for Verifiable Credential Type in SD-JWT VC.
      */
     public static final String CLAIM_VCT = "vct";
+
+    /**
+     * The claim name for confirmation (key binding) in SD-JWT.
+     */
+    public static final String CLAIM_CNF = "cnf";
 }
