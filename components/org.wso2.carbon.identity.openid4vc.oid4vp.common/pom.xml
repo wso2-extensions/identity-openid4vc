@@ -94,6 +94,7 @@
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
+                        <Bundle-RequiredExecutionEnvironment>JavaSE-11</Bundle-RequiredExecutionEnvironment>
                         <Export-Package>
                             org.wso2.carbon.identity.openid4vc.oid4vp.common.*;version="${identity.oid4vc.pkg.version}"
                         </Export-Package>
@@ -103,6 +104,7 @@
                             *
                         </Import-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <_removeheaders>Require-Capability</_removeheaders>
                     </instructions>
                 </configuration>
             </plugin>

@@ -28,9 +28,9 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>org.wso2.carbon.identity.openid4vc.oid4vp.presentation</artifactId>
+    <artifactId>org.wso2.carbon.identity.openid4vc.presentation</artifactId>
     <packaging>bundle</packaging>
-    <name>WSO2 Carbon - OpenID4VP Presentation (Verifier Flow)</name>
+    <name>WSO2 Carbon - OpenID4VC Presentation (Wallet Authentication)</name>
     <description>Wallet-based authentication for OpenID4VC</description>
 
     <dependencies>
@@ -191,13 +191,13 @@
                 <configuration>
                     <instructions>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-                        <Bundle-Name>${project.artifactId}</Bundle-Name>                        <Bundle-RequiredExecutionEnvironment>JavaSE-11</Bundle-RequiredExecutionEnvironment>
+                        <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Private-Package>
-                            org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal
+                            org.wso2.carbon.identity.openid4vc.presentation.internal
                         </Private-Package>
                         <Export-Package>
-                            !org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal,
-                            org.wso2.carbon.identity.openid4vc.oid4vp.presentation.*;version="${identity.oid4vc.pkg.version}"
+                            !org.wso2.carbon.identity.openid4vc.presentation.internal,
+                            org.wso2.carbon.identity.openid4vc.presentation.*;version="${identity.oid4vc.pkg.version}"
                         </Export-Package>
                         <Import-Package>
                             javax.servlet; version="${imp.pkg.version.javax.servlet}",
