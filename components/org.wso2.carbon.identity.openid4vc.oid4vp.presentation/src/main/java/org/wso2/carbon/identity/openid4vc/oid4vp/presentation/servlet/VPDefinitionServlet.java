@@ -96,13 +96,19 @@ public class VPDefinitionServlet extends HttpServlet {
 
                 handleListDefinitions(request, response, tenantId);
             } else {
-                // Get specific definition
-                String definitionId = pathInfo.substring(1);
-                if (definitionId.contains("/")) {
-                    definitionId = definitionId.split("/")[0];
-                }
+                String[] parts = pathInfo.split("/");
+                if (parts.length >= 3 && "claims".equals(parts[2])) {
+                    String definitionId = parts[1];
+                    handleGetClaims(request, response, definitionId, tenantId);
+                } else {
+                    // Get specific definition
+                    String definitionId = pathInfo.substring(1);
+                    if (definitionId.contains("/")) {
+                        definitionId = definitionId.split("/")[0];
+                    }
 
-                handleGetDefinition(request, response, definitionId, tenantId);
+                    handleGetDefinition(request, response, definitionId, tenantId);
+                }
             }
         } catch (PresentationDefinitionNotFoundException e) {
             sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
@@ -226,8 +232,24 @@ public class VPDefinitionServlet extends HttpServlet {
         sendJsonResponse(request, response, HttpServletResponse.SC_OK, toResponseDTO(definition));
     }
 
+    /**
+     * Handle get claims from presentation definition.
+     */
+    private void handleGetClaims(HttpServletRequest request, HttpServletResponse response, String definitionId,
+                                 int tenantId) throws IOException {
 
-
+        try {
+            List<PresentationDefinitionService.InputDescriptorClaimsDTO> claims = presentationDefinitionService
+                    .getClaimsFromPresentationDefinition(definitionId, tenantId);
+            sendJsonResponse(request, response, HttpServletResponse.SC_OK, claims);
+        } catch (PresentationDefinitionNotFoundException e) {
+            sendErrorResponse(request, response, HttpServletResponse.SC_NOT_FOUND,
+                    ErrorDTO.ErrorCode.PRESENTATION_DEFINITION_NOT_FOUND, e.getMessage());
+        } catch (VPException e) {
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+                    ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
+        }
+    }
 
 
     /**

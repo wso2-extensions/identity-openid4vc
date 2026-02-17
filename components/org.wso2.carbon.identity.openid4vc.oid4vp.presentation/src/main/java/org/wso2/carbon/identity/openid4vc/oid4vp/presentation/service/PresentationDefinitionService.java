@@ -18,10 +18,12 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service;
 
+import com.google.gson.annotations.SerializedName;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -136,4 +138,64 @@ public interface PresentationDefinitionService {
      * @throws VPException If an error occurs.
      */
     PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException;
+    /**
+     * Get claims from a presentation definition.
+     *
+     * @param definitionId The definition identifier
+     * @param tenantId     The tenant ID
+     * @return List of input descriptor claims
+     * @throws PresentationDefinitionNotFoundException If the definition is not found
+     * @throws VPException                             If an error occurs
+     */
+    List<InputDescriptorClaimsDTO> getClaimsFromPresentationDefinition(String definitionId, int tenantId)
+            throws PresentationDefinitionNotFoundException, VPException;
+
+    /**
+     * DTO for Input Descriptor Claims.
+     */
+    class InputDescriptorClaimsDTO {
+        @SerializedName("input_descriptor_id")
+        private String inputDescriptorId;
+        private List<ClaimDTO> claims;
+
+        public String getInputDescriptorId() {
+            return inputDescriptorId;
+        }
+
+        public void setInputDescriptorId(String inputDescriptorId) {
+            this.inputDescriptorId = inputDescriptorId;
+        }
+
+        public List<ClaimDTO> getClaims() {
+            return claims != null ? new ArrayList<>(claims) : null;
+        }
+
+        public void setClaims(List<ClaimDTO> claims) {
+            this.claims = claims != null ? new ArrayList<>(claims) : null;
+        }
+    }
+
+    /**
+     * DTO for Claim.
+     */
+    class ClaimDTO {
+        private String name;
+        private String path;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getPath() {
+            return path;
+        }
+
+        public void setPath(String path) {
+            this.path = path;
+        }
+    }
 }
