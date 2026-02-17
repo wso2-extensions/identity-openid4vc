@@ -26,6 +26,8 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl.PresentationDefinitionDAOImpl;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService.ClaimDTO;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService.InputDescriptorClaimsDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.PresentationDefinitionUtil;
 
 import java.util.List;
@@ -224,5 +226,84 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         }
 
         return presentationDefinitionDAO.getPresentationDefinitionByName(name, tenantId);
+    }
+
+    @Override
+    public List<InputDescriptorClaimsDTO> getClaimsFromPresentationDefinition(String definitionId, int tenantId)
+            throws PresentationDefinitionNotFoundException, VPException {
+
+        PresentationDefinition definition = getPresentationDefinitionById(definitionId, tenantId);
+        List<InputDescriptorClaimsDTO> claimsList = new java.util.ArrayList<>();
+
+        try {
+            com.google.gson.JsonElement root = com.google.gson.JsonParser.parseString(definition.getDefinitionJson());
+            if (!root.isJsonObject()) {
+                return claimsList;
+            }
+            com.google.gson.JsonObject rootObj = root.getAsJsonObject();
+            if (!rootObj.has("input_descriptors")) {
+                return claimsList;
+            }
+
+            com.google.gson.JsonArray descriptors = rootObj.getAsJsonArray("input_descriptors");
+            for (com.google.gson.JsonElement descElem : descriptors) {
+                if (!descElem.isJsonObject()) {
+                    continue;
+                }
+                com.google.gson.JsonObject desc = descElem.getAsJsonObject();
+
+                InputDescriptorClaimsDTO dto = new InputDescriptorClaimsDTO();
+                dto.setInputDescriptorId(desc.has("id") ? desc.get("id").getAsString() : "unknown");
+
+                List<ClaimDTO> fieldClaims = new java.util.ArrayList<>();
+
+                if (desc.has("constraints")) {
+                    com.google.gson.JsonObject constraints = desc.getAsJsonObject("constraints");
+                    if (constraints.has("fields")) {
+                        com.google.gson.JsonArray fields = constraints.getAsJsonArray("fields");
+                        for (com.google.gson.JsonElement fieldElem : fields) {
+                            if (!fieldElem.isJsonObject()) {
+                                continue;
+                            }
+                            com.google.gson.JsonObject field = fieldElem.getAsJsonObject();
+
+                            ClaimDTO claim = new ClaimDTO();
+                            // Path
+                            if (field.has("path")) {
+                                com.google.gson.JsonArray paths = field.getAsJsonArray("path");
+                                if (paths.size() > 0) {
+                                    claim.setPath(paths.get(0).getAsString());
+                                }
+                            }
+
+                            // Name
+                            if (field.has("name")) {
+                                claim.setName(field.get("name").getAsString());
+                            } else if (claim.getPath() != null) {
+                                // Fallback: Derive name from path (e.g. $.credentialSubject.email -> email)
+                                String p = claim.getPath();
+                                int lastDot = p.lastIndexOf('.');
+                                if (lastDot != -1 && lastDot < p.length() - 1) {
+                                    claim.setName(p.substring(lastDot + 1));
+                                } else {
+                                    claim.setName(p);
+                                }
+                            }
+
+                            if (claim.getPath() != null) {
+                                fieldClaims.add(claim);
+                            }
+                        }
+                    }
+                }
+                dto.setClaims(fieldClaims);
+                claimsList.add(dto);
+            }
+
+        } catch (RuntimeException e) {
+            throw new VPException("Error parsing presentation definition JSON", e);
+        }
+
+        return claimsList;
     }
 }
