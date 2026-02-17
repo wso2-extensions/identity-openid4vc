@@ -123,16 +123,47 @@ public class VPDefinitionServlet extends HttpServlet {
     }
 
     /**
-     * Handle POST requests - Disabled.
-     * Definitions are created automatically when a Digital Credentials connection is created.
+     * Handle POST requests - Create new presentation definition.
      */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        sendErrorResponse(request, response, HttpServletResponse.SC_METHOD_NOT_ALLOWED,
-                ErrorDTO.ErrorCode.INVALID_REQUEST,
-                "Definitions are created automatically with connections. Use PUT to update.");
+        try {
+            String requestBody = IOUtils.toString(request.getInputStream(), StandardCharsets.UTF_8);
+            PresentationDefinitionRequest createRequest = gson.fromJson(requestBody,
+                    PresentationDefinitionRequest.class);
+
+            int tenantId = getTenantId(request);
+
+            // Handle 'definition' object vs 'definitionJson' string
+            String definitionJson = createRequest.getDefinitionJson();
+            if (StringUtils.isBlank(definitionJson) && createRequest.getDefinition() != null) {
+                definitionJson = gson.toJson(createRequest.getDefinition());
+            }
+
+            // Build definition
+            PresentationDefinition definition = new PresentationDefinition.Builder()
+                    .name(createRequest.getName())
+                    .description(createRequest.getDescription())
+                    .definitionJson(definitionJson)
+                    .tenantId(tenantId)
+                    .build();
+
+            // Create
+            PresentationDefinition created = presentationDefinitionService
+                    .createPresentationDefinition(definition, tenantId);
+
+            // Send response
+            sendJsonResponse(request, response, HttpServletResponse.SC_CREATED, toResponseDTO(created));
+
+        } catch (VPException e) {
+            sendErrorResponse(request, response, HttpServletResponse.SC_BAD_REQUEST,
+                    ErrorDTO.ErrorCode.INVALID_REQUEST, e.getMessage());
+        } catch (RuntimeException e) {
+            sendErrorResponse(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    ErrorDTO.ErrorCode.INTERNAL_ERROR, "Internal server error");
+        }
     }
 
     /**
@@ -260,7 +291,14 @@ public class VPDefinitionServlet extends HttpServlet {
         dto.setDefinitionId(definition.getDefinitionId());
         dto.setName(definition.getName());
         dto.setDescription(definition.getDescription());
-        dto.setDefinitionJson(definition.getDefinitionJson());
+        if (StringUtils.isNotBlank(definition.getDefinitionJson())) {
+            try {
+                dto.setDefinition(gson.fromJson(definition.getDefinitionJson(), Object.class));
+            } catch (Exception e) {
+                // Return as string if parsing fails, though unlikely given prior validation
+                dto.setDefinition(definition.getDefinitionJson());
+            }
+        }
         return dto;
     }
 
@@ -332,6 +370,7 @@ public class VPDefinitionServlet extends HttpServlet {
         private String name;
         private String description;
         private String definitionJson;
+        private Object definition;
 
         public String getDefinitionId() {
             return definitionId;
@@ -348,6 +387,10 @@ public class VPDefinitionServlet extends HttpServlet {
         public String getDefinitionJson() {
             return definitionJson;
         }
+
+        public Object getDefinition() {
+            return definition;
+        }
     }
 
     /**
@@ -363,7 +406,7 @@ public class VPDefinitionServlet extends HttpServlet {
         @SuppressWarnings("unused")
         private String description;
         @SuppressWarnings("unused")
-        private String definitionJson;
+        private Object definition;
 
         public void setDefinitionId(String definitionId) {
             this.definitionId = definitionId;
@@ -377,8 +420,8 @@ public class VPDefinitionServlet extends HttpServlet {
             this.description = description;
         }
 
-        public void setDefinitionJson(String definitionJson) {
-            this.definitionJson = definitionJson;
+        public void setDefinition(Object definition) {
+            this.definition = definition;
         }
     }
 }
