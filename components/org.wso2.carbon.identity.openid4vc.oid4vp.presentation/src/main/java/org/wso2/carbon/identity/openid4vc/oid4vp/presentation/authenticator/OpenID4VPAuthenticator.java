@@ -62,6 +62,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -247,206 +248,221 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
 
     @Override
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION", "NP_NULL_ON_SOME_PATH" })
-    protected void processAuthenticationResponse(HttpServletRequest request,
-            HttpServletResponse response,
-            AuthenticationContext context)
-            throws AuthenticationFailedException {
+    protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
+            AuthenticationContext context) throws AuthenticationFailedException {
 
-        // Get submission from callback (direct processing - no database read!)
         VPSubmission submission = this.receivedSubmission;
-
-        if (submission == null || StringUtils.isBlank(submission.getVpToken())) {
-            throw new AuthenticationFailedException("VP token not found in submission");
+        if (submission == null) {
+            throw new AuthenticationFailedException("No VP submission received");
         }
 
-        // Store generic VP artifacts in context for downstream usage
-        context.setProperty(OpenID4VPConstants.RequestParams.OPENID4VP_VP_TOKEN, submission.getVpToken());
-        context.setProperty(OpenID4VPConstants.RequestParams.OPENID4VP_PRESENTATION_SUBMISSION, 
-                submission.getPresentationSubmission());
-
-        // Extract credentials from VP Token
-        String vpToken = submission.getVpToken();
-        String username = null;
-
         try {
-                // Extract format from presentation_submission using DIF Presentation Exchange standard
-                String format = extractVPTokenFormat(submission);
+            // Retrieve Session Info
+            String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
+            int tenantId = getTenantId(context);
+            VPRequest vpRequest = null;
+            PresentationDefinition presentationDefinition = null;
+
+            if (StringUtils.isNotBlank(requestId)) {
+                try {
+                    vpRequest = getVPRequestService().getVPRequestById(requestId, tenantId);
+                    if (vpRequest != null && StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
+                        presentationDefinition = VPServiceDataHolder.getInstance()
+                                .getPresentationDefinitionService()
+                                .getPresentationDefinitionById(vpRequest.getPresentationDefinitionId(), tenantId);
+                    }
+                } catch (VPException e) {
+                    // Ignore
+                }
+            }
+
+            String format = extractVPTokenFormat(submission);
+            String vpToken = submission.getVpToken();
+            String username = null;
+            Map<String, Object> verifiedClaims = new HashMap<>();
+
+            if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
+                String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : "unknown";
+                String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : "unknown";
+                String pdJson = (presentationDefinition != null) ? presentationDefinition.getDefinitionJson() : "{}";
+                
+                // Call VC Verification Service
+                verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
+                    .verifySdJwtToken(vpToken, expectedNonce, expectedAudience, pdJson);
+
+                if (verifiedClaims.containsKey("email")) {
+                    username = (String) verifiedClaims.get("email");
+                } else if (verifiedClaims.containsKey("username")) {
+                    username = (String) verifiedClaims.get("username");
+                } else if (verifiedClaims.containsKey("sub")) {
+                    username = (String) verifiedClaims.get("sub");
+                }
+            
+            } else {
+                // Legacy / Other formats
+                try {
+                    // Verify basic signature/expiry
+                    VPServiceDataHolder.getInstance().getVCVerificationService().verifyVPToken(vpToken);
+                } catch (Exception e) {
+                     throw new AuthenticationFailedException("VP Token verification failed: " + e.getMessage(), e);
+                }
+
                 JsonObject vpData = null;
-
-                // Parse VP token based on format from presentation_submission
-                if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
-                    // SD-JWT format: <Issuer-signed JWT>~<Disclosure 1>~...~<KB-JWT>
-                    String[] sdParts = vpToken.split("~");
-                    String issuerJwt = sdParts[0];
-
-                    String[] jwtParts = issuerJwt.split("\\.");
-                    if (jwtParts.length >= 2) {
-                        String payload = new String(Base64.getUrlDecoder().decode(jwtParts[1]), StandardCharsets.UTF_8);
-                        vpData = JsonParser.parseString(payload).getAsJsonObject();
-                    }
-
-                } else if (OpenID4VPConstants.VCFormats.LDP_VP.equals(format)) {
-                    // JSON-LD format
-                    String trimmedToken = vpToken.trim();
-                    JsonElement parsed = JsonParser.parseString(trimmedToken);
-                    if (parsed.isJsonObject()) {
-                        vpData = parsed.getAsJsonObject();
-                    }
-
+                if (OpenID4VPConstants.VCFormats.LDP_VP.equals(format)) {
+                    vpData = JsonParser.parseString(vpToken).getAsJsonObject();
                 } else if (OpenID4VPConstants.VCFormats.JWT_VP.equals(format) ||
                            OpenID4VPConstants.VCFormats.JWT_VP_JSON.equals(format)) {
-                    // Standard JWT format (3 parts)
-                    String[] dotParts = vpToken.split("\\.");
-                    if (dotParts.length >= 2) {
-                        String payload = new String(Base64.getUrlDecoder().decode(dotParts[1]), StandardCharsets.UTF_8);
+                    String[] parts = vpToken.split("\\.");
+                    if (parts.length >= 2) {
+                        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
                         vpData = JsonParser.parseString(payload).getAsJsonObject();
                     }
-
-                } else {
-                    throw new VPException("Unsupported VP token format: " + format);
                 }
-
-                if (vpData == null) {
-                    throw new VPException("Failed to parse VP token with format: " + format);
+                
+                if (vpData != null) {
+                    username = extractUsernameFromVpData(vpData);
                 }
-
-
-                // Extract VP wrapper if present
-                JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
-                // VP object extracted
-
-                // Get verifiable credentials
-                if (!vp.has("verifiableCredential")) {
-                    throw new VPException("No verifiableCredential found in VP");
-                }
-
-                JsonElement vcElement = vp.get("verifiableCredential");
-                String vcToken;
-
-                if (vcElement.isJsonArray()) {
-                    JsonArray vcArray = vcElement.getAsJsonArray();
-                    if (vcArray.size() == 0) {
-                        throw new VPException("Empty verifiableCredential array");
-                    }
-                    JsonElement firstVc = vcArray.get(0);
-                    if (firstVc.isJsonPrimitive()) {
-                        vcToken = firstVc.getAsString();
-                    } else if (firstVc.isJsonObject()) {
-                        JsonObject vcObj = firstVc.getAsJsonObject();
-                        JsonObject credentialSubject = vcObj.has("credentialSubject")
-                                ? vcObj.getAsJsonObject("credentialSubject")
-                                : null;
-
-                        if (credentialSubject != null) {
-                            // Extracting user identifier from credential subject
-                            if (credentialSubject.has("email")) {
-                                username = credentialSubject.get("email").getAsString();
-                            } else if (credentialSubject.has("username")) {
-                                username = credentialSubject.get("username").getAsString();
-                            } else if (credentialSubject.has("id")) {
-                                username = credentialSubject.get("id").getAsString();
-                            }
-                        }
-                        vcToken = null;
-                    } else {
-                        throw new VPException("Unexpected VC format in array");
-                    }
-                } else if (vcElement.isJsonPrimitive()) {
-                    vcToken = vcElement.getAsString();
-                } else if (vcElement.isJsonObject()) {
-                    JsonObject vcObj = vcElement.getAsJsonObject();
-                    vcToken = null;
-                    if (vcObj.has("credentialSubject")) {
-                        JsonObject credentialSubject = vcObj.getAsJsonObject("credentialSubject");
-                        if (credentialSubject.has("email")) {
-                            username = credentialSubject.get("email").getAsString();
-                        } else if (credentialSubject.has("username")) {
-                            username = credentialSubject.get("username").getAsString();
-                        }
-                    }
-                } else {
-                    throw new VPException("Unexpected verifiableCredential format");
-                }
-
-                // If we have a JWT/SD-JWT VC token, decode it
-                if (StringUtils.isNotBlank(vcToken)) {
-
-                    String vcIssuerJwt;
-                    if (vcToken.contains("~")) {
-                        vcIssuerJwt = vcToken.split("~")[0];
-                    } else {
-                        vcIssuerJwt = vcToken;
-                    }
-
-                    String[] vcParts = vcIssuerJwt.split("\\.");
-                    if (vcParts.length >= 2) {
-                        String vcPayloadStr = new String(Base64.getUrlDecoder().decode(vcParts[1]),
-                                StandardCharsets.UTF_8);
-
-                        JsonElement vcParsed = JsonParser.parseString(vcPayloadStr);
-                        if (vcParsed.isJsonObject()) {
-                            JsonObject vcPayload = vcParsed.getAsJsonObject();
-                            JsonObject vc = vcPayload.has("vc") ? vcPayload.getAsJsonObject("vc") : vcPayload;
-                            JsonObject credentialSubject = vc.getAsJsonObject("credentialSubject");
-
-                            if (credentialSubject != null) {
-                                if (credentialSubject.has("email")) {
-                                    username = credentialSubject.get("email").getAsString();
-                                }
-                                if (credentialSubject.has("username")) {
-                                    username = credentialSubject.get("username").getAsString();
-                                }
-                                if (StringUtils.isBlank(username)) {
-                                    String[] fields = { "id", "sub", "name", "holder" };
-                                    for (String field : fields) {
-                                        if (credentialSubject.has(field)
-                                                && credentialSubject.get(field).isJsonPrimitive()) {
-                                            username = credentialSubject.get(field).getAsString();
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-            } catch (Exception e) {
-                throw new AuthenticationFailedException(
-                        "Failed to extract credentials from VP token: " + e.getMessage(), e);
             }
 
             if (StringUtils.isBlank(username)) {
-                throw new AuthenticationFailedException("No user identifier found in VP");
+                throw new AuthenticationFailedException("No user identifier found in verified credentials");
             }
 
-            // Create Federated Authenticated User
             AuthenticatedUser authenticatedUser = AuthenticatedUser
                     .createFederateAuthenticatedUserFromSubjectIdentifier(username);
             authenticatedUser.setFederatedUser(true);
-
             if (context.getExternalIdP() != null) {
                 authenticatedUser.setFederatedIdPName(context.getExternalIdP().getIdPName());
             }
-
             authenticatedUser.setTenantDomain(context.getTenantDomain());
 
-            // Get configured IDP claim mappings for claim validation and filtering
+            // Map Attributes
             ClaimMapping[] idpClaimMappings = new ClaimMapping[0];
             if (context.getExternalIdP() != null) {
                 idpClaimMappings = context.getExternalIdP().getClaimMappings();
             }
 
-            // Extract and set user claims/attributes from VP
-            Map<ClaimMapping, String> userAttributes = extractClaimsFromVP(
-                    submission.getVpToken(), idpClaimMappings);
-            authenticatedUser.setUserAttributes(userAttributes);
+            Map<ClaimMapping, String> userAttributes;
+            if (!verifiedClaims.isEmpty()) {
+                userAttributes = mapVerifiedClaimsToLocal(verifiedClaims, idpClaimMappings);
+            } else {
+                userAttributes = extractClaimsFromVP(vpToken, idpClaimMappings);
+            }
 
+            authenticatedUser.setUserAttributes(userAttributes);
             context.setSubject(authenticatedUser);
 
-            // No cleanup needed - submission processed in-memory (direct processing)
+        } catch (VPException | RuntimeException e) {
+            throw new AuthenticationFailedException("Authentication failed: " + e.getMessage(), e);
+        }
     }
+
+    /**
+     * Helper to extract username from generic VP Data (JSON-LD/JWT Payload).
+     */
+    private String extractUsernameFromVpData(JsonObject vpData) {
+        // Wrapper for the existing logic to keep the main method clean
+        // ... (Logic from original method) ...
+        try {
+            JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
+            if (!vp.has("verifiableCredential")) {
+                return null;
+            }
+
+            JsonElement vcElement = vp.get("verifiableCredential");
+            String vcToken = null;
+
+            if (vcElement.isJsonArray() && vcElement.getAsJsonArray().size() > 0) {
+               JsonElement first = vcElement.getAsJsonArray().get(0);
+               if (first.isJsonPrimitive()) {
+                   vcToken = first.getAsString();
+               } else if (first.isJsonObject()) {
+                   return extractSubjectFromJsonObject(first.getAsJsonObject());
+               }
+            } else if (vcElement.isJsonPrimitive()) {
+                vcToken = vcElement.getAsString();
+            } else if (vcElement.isJsonObject()) {
+                return extractSubjectFromJsonObject(vcElement.getAsJsonObject());
+            }
+
+            if (vcToken != null) {
+                 return extractSubjectFromJwt(vcToken);
+            }
+        } catch (RuntimeException e) {
+            // Ignore extraction errors
+        }
+        return null;
+    }
+
+    private String extractSubjectFromJsonObject(JsonObject vcObj) {
+        if (vcObj.has("credentialSubject")) {
+            JsonObject cs = vcObj.getAsJsonObject("credentialSubject");
+            if (cs.has("email")) {
+                return cs.get("email").getAsString();
+            }
+            if (cs.has("username")) {
+                return cs.get("username").getAsString();
+            }
+            if (cs.has("id")) {
+                return cs.get("id").getAsString();
+            }
+        }
+        return null;
+    }
+
+    private String extractSubjectFromJwt(String jwt) {
+         try {
+             String part = jwt.contains("~") ? jwt.split("~")[0] : jwt;
+             String[] parts = part.split("\\.");
+             if (parts.length < 2) {
+                 return null;
+             }
+             String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
+             JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
+             // Handle standard JWT payload or nested vc
+             if (json.has("vc")) {
+                 return extractSubjectFromJsonObject(json.getAsJsonObject("vc"));
+             } else {
+                 return extractSubjectFromJsonObject(json);
+             }
+         } catch (RuntimeException e) { 
+             return null; 
+         }
+    }
+    
+    /**
+     * Map Verified Claims map to WSO2 Claim Mappings.
+     */
+    private Map<ClaimMapping, String> mapVerifiedClaimsToLocal(Map<String, Object> verifiedClaims, 
+                                                              ClaimMapping[] idpClaimMappings) {
+        Map<ClaimMapping, String> mappedClaims = new HashMap<>();
+        if (idpClaimMappings == null || idpClaimMappings.length == 0) {
+             // If no mappings, return all as local claims (backward compatibility)
+             for (Map.Entry<String, Object> entry : verifiedClaims.entrySet()) {
+                 mappedClaims.put(ClaimMapping.build(entry.getKey(), entry.getKey(), null, false), 
+                                  entry.getValue().toString());
+             }
+             return mappedClaims;
+        }
+
+        for (ClaimMapping mapping : idpClaimMappings) {
+            String remoteClaim = mapping.getRemoteClaim().getClaimUri();
+            // Try direct match first
+            if (verifiedClaims.containsKey(remoteClaim)) {
+                mappedClaims.put(mapping, verifiedClaims.get(remoteClaim).toString());
+            } else {
+                // Try nested path if supported (e.g. address.street)
+                // For SD-JWT map, it is usually flat unless complex objects were disclosed.
+                // Simple implementation:
+                // ...
+            }
+        }
+        return mappedClaims;
+    }
+
+    // --- SD-JWT Verification Methods ---
+
+
 
     @Override
     @SuppressFBWarnings("SERVLET_PARAMETER")

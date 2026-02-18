@@ -33,10 +33,6 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPService
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.idp.mgt.listener.AbstractIdentityProviderMgtListener;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 /**
  * Identity Provider Management Listener for OpenIDoa4VP.
  * This listener manages the lifecycle of Presentation Definitions associated with Identity Providers.
@@ -46,10 +42,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     private static final Log log = LogFactory.getLog(OpenID4VPIdentityProviderMgtListener.class);
     private static final String PROP_PRESENTATION_DEFINITION = "presentationDefinition";
     private static final String OPENID4VP_AUTHENTICATOR_NAME = "OpenID4VPAuthenticator";
-    private static final String DIGITAL_CREDENTIALS_TEMPLATE_ID = "digital-credentials"; 
-    
-    // Cache to pass JSON from Pre to Post listeners
-    private static final ThreadLocal<Map<String, String>> pdJsonCache = ThreadLocal.withInitial(HashMap::new); 
 
     @Override
     public int getDefaultOrderId() {
@@ -149,73 +141,53 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
 
     /**
      * Handle pre-persistence logic (PreAdd and PreUpdate).
-     * Intercepts JSON property, generates UUID, swaps property, and caches JSON.
+     * No longer intercepts JSON or generates UUIDs.
      */
     @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION"})
     private void handlePrePersistence(IdentityProvider identityProvider) {
+        // No-op for ID reference flow
+    }
+
+    /**
+     * Handle post-persistence logic (PostAdd and PostUpdate).
+     * Links the provided Presentation Definition ID to the Identity Provider.
+     */
+    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION", "DE_MIGHT_IGNORE"})
+    private void handlePostPersistence(IdentityProvider identityProvider, String tenantDomain) {
 
         if (identityProvider == null) {
             return;
         }
 
         try {
-            // Check Federated Authenticators
             FederatedAuthenticatorConfig[] fedAuthConfigs = identityProvider.getFederatedAuthenticatorConfigs();
-            if (fedAuthConfigs != null) {
-                for (FederatedAuthenticatorConfig config : fedAuthConfigs) {
-                    if (OPENID4VP_AUTHENTICATOR_NAME.equals(config.getName())) {
-                        
-                        Property[] properties = config.getProperties();
-                        if (properties != null) {
-                            for (Property prop : properties) {
-                                if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
-                                    String value = prop.getValue();
-                                    if (StringUtils.isNotBlank(value) && value.trim().startsWith("{")) {
-                                        // It's JSON. Generate UUID and swap.
-                                        String definitionId = UUID.randomUUID().toString();
-                                        
-                                        // Cache the JSON and UUID for Post-listener
-                                        Map<String, String> cache = pdJsonCache.get();
-                                        cache.put("json", value);
-                                        cache.put("uuid", definitionId);
-                                        
-                                        // Replace property value with UUID
-                                        prop.setValue(definitionId);
-                                    }
-                                    break;
-                                }
+            if (fedAuthConfigs == null) {
+                return;
+            }
+
+            String presentationDefinitionId = null;
+
+            // Find the presentation definition ID property
+            for (FederatedAuthenticatorConfig config : fedAuthConfigs) {
+                if (OPENID4VP_AUTHENTICATOR_NAME.equals(config.getName())) {
+                    Property[] properties = config.getProperties();
+                    if (properties != null) {
+                        for (Property prop : properties) {
+                            if (PROP_PRESENTATION_DEFINITION.equals(prop.getName())) {
+                                presentationDefinitionId = prop.getValue();
+                                break;
                             }
                         }
-                        break;
                     }
+                    break;
                 }
             }
-        } catch (Exception e) {
-            log.error("Error in pre-persistence handling for IDP: " + 
-            sanitize(identityProvider.getIdentityProviderName()), e);
-        }
-    }
 
-    /**
-     * Handle post-persistence logic (PostAdd and PostUpdate).
-     * Retrieves cached JSON and creates/updates the Presentation Definition in DB.
-     */
-    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION", "DE_MIGHT_IGNORE"})
-    private void handlePostPersistence(IdentityProvider identityProvider, String tenantDomain) {
+            if (StringUtils.isNotBlank(presentationDefinitionId)) {
 
-        try {
-            Map<String, String> cache = pdJsonCache.get();
-            String json = cache.get("json");
-            String uuid = cache.get("uuid");
-            
-            // Clean up cache immediately
-            pdJsonCache.remove();
-
-            if (StringUtils.isNotBlank(json) && StringUtils.isNotBlank(uuid)) {
-                
                 String resourceId = identityProvider.getResourceId();
                 if (StringUtils.isBlank(resourceId)) {
-                    log.error("Resource ID not available in post-persistence for IDP: " + 
+                    log.error("Resource ID not available in post-persistence for IDP: " +
                             sanitize(identityProvider.getIdentityProviderName()));
                     return;
                 }
@@ -226,48 +198,24 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
 
                 PresentationDefinition existingPd = null;
                 try {
-                     existingPd = pdService.getPresentationDefinitionById(uuid, tenantId);
+                    existingPd = pdService.getPresentationDefinitionById(presentationDefinitionId, tenantId);
                 } catch (Exception e) {
                     // Ignore, might not exist
                 }
-                
-                if (existingPd == null) {
-                    // Try by resource ID to be safe
-                     existingPd = pdService.getPresentationDefinitionByResourceId(resourceId, tenantId);
-                }
-
-                if (existingPd == null) {
-                    // Try by Name to handle collisions (e.g. if deletion failed previously)
-                    String pdName = identityProvider.getIdentityProviderName() + " Definition";
-                    existingPd = pdService.getPresentationDefinitionByName(pdName, tenantId);
-                }
 
                 if (existingPd != null) {
-                    // Update existing (reusing it)
-                    existingPd.setDefinitionJson(json);
-                    existingPd.setName(identityProvider.getIdentityProviderName() + " Definition");
-                    // Ensure the Resource ID is updated to the current IDP's Resource ID
-                    // This claims the PD for this IDP
+                    // Link to this IDP by updating resourceId
                     existingPd.setResourceId(resourceId);
                     pdService.updatePresentationDefinition(existingPd, tenantId);
                 } else {
-                    // Create new
-                    PresentationDefinition newPd = new PresentationDefinition.Builder()
-                            .definitionId(uuid) // Use the same UUID we saved in the property
-                            .resourceId(resourceId)
-                            .name(identityProvider.getIdentityProviderName() + " Definition")
-                            .description("Auto-generated definition for connection: " +
-                                    identityProvider.getIdentityProviderName())
-                            .definitionJson(json)
-                            .tenantId(tenantId)
-                            .build();
-                    pdService.createPresentationDefinition(newPd, tenantId);
+                    log.warn("Presentation Definition not found for ID: " + sanitize(presentationDefinitionId) +
+                            " during IDP creation: " + sanitize(identityProvider.getIdentityProviderName()));
                 }
             }
-        
+
         } catch (Exception e) {
-            log.error("Error in post-persistence handling for IDP: " + 
-            sanitize(identityProvider.getIdentityProviderName()), e);
+            log.error("Error in post-persistence handling for IDP: " +
+                    sanitize(identityProvider.getIdentityProviderName()), e);
         }
     }
 
