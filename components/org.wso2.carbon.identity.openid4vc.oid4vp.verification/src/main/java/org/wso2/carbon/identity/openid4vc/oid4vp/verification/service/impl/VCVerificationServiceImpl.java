@@ -26,7 +26,9 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.minidev.json.JSONArray;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
@@ -80,6 +82,10 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             CONTENT_TYPE_JSON
     };
 
+    // HTTP constants
+    private static final int HTTP_CONNECT_TIMEOUT = 5000;
+    private static final int HTTP_READ_TIMEOUT = 5000;
+    private static final int HTTP_OK = 200;
     // Date format for ISO 8601 dates
     private static final String[] DATE_FORMATS = {
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
@@ -296,33 +302,45 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
 
         try {
+            // Parse header once and reuse
+            Map<String, Object> header = parseJwtPart(parts[0]);
+            String alg = header.containsKey("alg") ? header.get("alg").toString() : "RS256";
+            String kid = header.containsKey("kid") ? header.get("kid").toString() : null;
+
             // Get issuer DID from credential
             String issuer = credential.getIssuerId();
             if (issuer == null || !issuer.startsWith("did:")) {
-                // Try to get from JWT header kid
-                Map<String, Object> header = parseJwtPart(parts[0]);
-                if (header.containsKey("kid")) {
-                    String kid = header.get("kid").toString();
-                    if (kid.startsWith("did:")) {
-                        issuer = kid.split("#")[0];
-                    }
+                // Try to get from JWT header kid (e.g., "did:web:example.com#key-1")
+                if (kid != null && kid.startsWith("did:")) {
+                    issuer = kid.split("#")[0];
                 }
             }
 
-            if (issuer == null || !issuer.startsWith("did:")) {
-                // For non-DID issuers, we cannot verify without additional configuration
-                return true; // Skip verification for non-DID issuers
+            PublicKey publicKey;
+
+            if (issuer != null && issuer.startsWith("did:")) {
+                // Bug fix: use getPublicKeyFromReference(kid) when kid is a full DID URL
+                // (e.g., "did:web:example.com#key-1") so the resolver finds the exact key.
+                // Falling back to getPublicKey(issuer, null) uses getFirstAssertionMethod()
+                // which picks the wrong key when a DID document contains multiple keys.
+                if (kid != null && kid.startsWith("did:") && kid.contains("#")) {
+                    publicKey = didResolverService.getPublicKeyFromReference(kid);
+                } else {
+                    publicKey = didResolverService.getPublicKey(issuer, null);
+                }
+                return signatureVerifier.verifyJwtSignature(rawCredential, publicKey, alg);
             }
 
-            // Get the public key
-            PublicKey publicKey = didResolverService.getPublicKey(issuer, null);
+            // For non-DID issuers, try to resolve from issuer URL
+            if (issuer != null && issuer.startsWith("http")) {
+                publicKey = resolveIssuerPublicKey(issuer, kid);
+                if (publicKey != null) {
+                    return signatureVerifier.verifyJwtSignature(rawCredential, publicKey, alg);
+                }
+            }
 
-            // Determine algorithm from header
-            Map<String, Object> header = parseJwtPart(parts[0]);
-            String alg = header.containsKey("alg") ? header.get("alg").toString() : "RS256";
-
-            // Verify signature
-            return signatureVerifier.verifyJwtSignature(rawCredential, publicKey, alg);
+            // For non-DID, non-URL issuers we cannot verify without additional configuration
+            return true;
 
         } catch (DIDResolutionException e) {
             throw new CredentialVerificationException(
@@ -1080,7 +1098,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     }
 
     private Map<String, Object> parseJwtPart(String part) {
-        String decoded = new String(Base64.getUrlDecoder().decode(part), StandardCharsets.UTF_8);
+        String decoded = Base64URL.from(part).decodeToString();
         @SuppressWarnings("unchecked")
         Map<String, Object> map = GSON.fromJson(decoded, Map.class);
         return map;
@@ -1439,6 +1457,125 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] encodedhash = digest.digest(input.getBytes(StandardCharsets.US_ASCII));
         return Base64.getUrlEncoder().withoutPadding().encodeToString(encodedhash);
+    }
+
+    /**
+     * Resolve public key from issuer URL using OID4VCI metadata and Authorization Server fallback.
+     */
+    private PublicKey resolveIssuerPublicKey(String issuer, String kid) throws CredentialVerificationException {
+        
+        try {
+            // 1. Fetch Issuer Metadata
+            String metadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-credential-issuer" 
+                    : issuer + "/.well-known/openid-credential-issuer";
+            
+            JsonObject metadata = fetchJson(metadataUrl);
+            if (metadata == null) {
+                throw new CredentialVerificationException("Failed to fetch issuer metadata from: " + metadataUrl);
+            }
+
+            String jwksUri = null;
+
+            // 2. Check for jwks_uri in metadata
+            if (metadata.has("jwks_uri")) {
+                jwksUri = metadata.get("jwks_uri").getAsString();
+            }
+
+            // 3. Fallback: Check authorization_servers
+            if (jwksUri == null && metadata.has("authorization_servers")) {
+                JsonArray authServers = metadata.getAsJsonArray("authorization_servers");
+                if (authServers.size() > 0) {
+                    String authServer = authServers.get(0).getAsString();
+                    jwksUri = authServer.endsWith("/") ? authServer + "oauth2/jwks" : authServer + "/oauth2/jwks";
+                }
+            }
+
+            if (jwksUri == null) {
+                 throw new CredentialVerificationException("No jwks_uri found in issuer metadata " +
+                         "or authorization servers.");
+            }
+
+            // 4. Fetch JWKS
+            JsonObject jwks = fetchJson(jwksUri);
+            if (jwks == null || !jwks.has("keys")) {
+                 throw new CredentialVerificationException("Invalid JWKS response from: " + jwksUri);
+            }
+
+            // 5. Extract Key - match by kid when present, otherwise use first suitable key
+            JsonArray keys = jwks.getAsJsonArray("keys");
+            JsonObject fallbackKey = null;
+            for (JsonElement keyEl : keys) {
+                JsonObject key = keyEl.getAsJsonObject();
+                boolean kidMatches = (kid != null) && key.has("kid")
+                        && key.get("kid").getAsString().equals(kid);
+                boolean noKidFilter = (kid == null);
+                if (kidMatches || (noKidFilter && fallbackKey == null)) {
+                    // Start of new JWK parsing logic using Nimbus to avoid manual RSA parsing complexity
+                    com.nimbusds.jose.jwk.JWK jwk = com.nimbusds.jose.jwk.JWK.parse(key.toString());
+                    if (jwk instanceof com.nimbusds.jose.jwk.RSAKey) {
+                        return ((com.nimbusds.jose.jwk.RSAKey) jwk).toPublicKey();
+                    } else if (jwk instanceof com.nimbusds.jose.jwk.ECKey) {
+                        return ((com.nimbusds.jose.jwk.ECKey) jwk).toPublicKey();
+                    }
+                    if (noKidFilter) {
+                        fallbackKey = key; // track in case parsing above fails
+                    }
+                    if (kidMatches) {
+                        break;
+                    }
+                }
+            }
+
+            throw new CredentialVerificationException("Key with kid '" + kid + "' not found in JWKS.");
+
+        } catch (java.io.IOException | java.text.ParseException | com.nimbusds.jose.JOSEException e) {
+            throw new CredentialVerificationException("Failed to resolve issuer public key: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Fetch JSON content from a URL.
+     *
+     * @param urlString The URL to fetch from.
+     * @return The JSON object.
+     * @throws java.io.IOException If an I/O error occurs.
+     */
+    @SuppressFBWarnings("URLCONNECTION_SSRF_FD")
+    private JsonObject fetchJson(final String urlString) throws java.io.IOException {
+        java.net.URI uri;
+        try {
+            uri = new java.net.URI(urlString);
+        } catch (java.net.URISyntaxException e) {
+            throw new java.io.IOException("Invalid URL: " + urlString, e);
+        }
+        if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new java.io.IOException("Unsupported protocol: " + uri.getScheme());
+        }
+
+        if (uri.getHost() == null) {
+            throw new java.io.IOException("Invalid host in URL: " + urlString);
+        }
+
+        java.net.URL url = uri.toURL();
+        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+        con.setRequestMethod("GET");
+        con.setConnectTimeout(HTTP_CONNECT_TIMEOUT);
+        con.setReadTimeout(HTTP_READ_TIMEOUT);
+
+        int status = con.getResponseCode();
+        if (status != HTTP_OK) {
+            return null;
+        }
+
+        try (java.io.BufferedReader in = new java.io.BufferedReader(
+                new java.io.InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+            String inputLine;
+            StringBuilder content = new StringBuilder();
+            while ((inputLine = in.readLine()) != null) {
+                content.append(inputLine);
+            }
+            return JsonParser.parseString(content.toString()).getAsJsonObject();
+        }
     }
     
 

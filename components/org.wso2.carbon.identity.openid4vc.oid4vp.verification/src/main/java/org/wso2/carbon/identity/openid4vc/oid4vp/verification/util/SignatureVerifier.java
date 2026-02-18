@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.verification.util;
 
+import com.nimbusds.jose.util.Base64URL;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
 
@@ -70,7 +71,7 @@ public class SignatureVerifier {
         try {
             // Get the signing input (header.payload)
             String signingInput = parts[0] + "." + parts[1];
-            byte[] signatureBytes = Base64.getUrlDecoder().decode(parts[2]);
+            byte[] signatureBytes = Base64URL.from(parts[2]).decode();
 
             // Get the signature algorithm
             String jcaAlgorithm = getJcaAlgorithm(algorithm);
@@ -184,7 +185,7 @@ public class SignatureVerifier {
         }
 
         // Get algorithm from header
-        String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+        String headerJson = Base64URL.from(parts[0]).decodeToString();
         String algorithm = extractAlgorithmFromHeader(headerJson);
 
         // For detached JWS, create the payload from the document

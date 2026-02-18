@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util;
 
+import com.nimbusds.jose.util.Base64URL;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.DIDResolverService;
 
@@ -46,6 +49,8 @@ public class SignatureVerifier {
         // stability
     }
 
+    private static final Log LOG = LogFactory.getLog(SignatureVerifier.class);
+
     /**
      * Verify a JWT signature.
      *
@@ -59,7 +64,16 @@ public class SignatureVerifier {
             throws CredentialVerificationException {
 
         if (jwt == null || publicKey == null || algorithm == null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("verifyJwtSignature called with missing params. jwt=" + (jwt != null) +
+                        ", key=" + (publicKey != null) + ", alg=" + algorithm);
+            }
             throw new CredentialVerificationException("JWT, public key, and algorithm are required");
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("verifyJwtSignature called with algorithm: " + algorithm);
+            LOG.debug("PublicKey: " + publicKey);
         }
 
         String[] parts = jwt.split("\\.");
@@ -70,7 +84,12 @@ public class SignatureVerifier {
         try {
             // Get the signing input (header.payload)
             String signingInput = parts[0] + "." + parts[1];
-            byte[] signatureBytes = Base64.getUrlDecoder().decode(parts[2]);
+            byte[] signatureBytes = Base64URL.from(parts[2]).decode();
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Signing Input: " + signingInput);
+                LOG.debug("Signature Bytes Length: " + signatureBytes.length);
+            }
 
             // Get the signature algorithm
             String jcaAlgorithm = getJcaAlgorithm(algorithm);
@@ -184,7 +203,7 @@ public class SignatureVerifier {
         }
 
         // Get algorithm from header
-        String headerJson = new String(Base64.getUrlDecoder().decode(parts[0]), StandardCharsets.UTF_8);
+        String headerJson = Base64URL.from(parts[0]).decodeToString();
         String algorithm = extractAlgorithmFromHeader(headerJson);
 
         // For detached JWS, create the payload from the document
