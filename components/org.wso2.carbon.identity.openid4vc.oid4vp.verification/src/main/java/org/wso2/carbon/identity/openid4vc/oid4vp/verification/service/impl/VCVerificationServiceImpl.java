@@ -24,6 +24,10 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
+import com.jayway.jsonpath.JsonPath;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jwt.SignedJWT;
+import net.minidev.json.JSONArray;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDResolutionException;
@@ -39,6 +43,8 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerifica
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.SignatureVerifier;
 
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -56,7 +62,7 @@ import java.util.TimeZone;
  * Supports JSON-LD, JWT, and SD-JWT credential formats.
  */
 public class VCVerificationServiceImpl implements VCVerificationService {
-
+    
     private static final Gson GSON = new Gson();
 
     // Content type constants
@@ -1198,5 +1204,243 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     /**
      * Helper to get tenant ID from domain.
      */
+
+    @Override
+    public Map<String, Object> verifySdJwtToken(String vpToken, 
+                                            String expectedNonce, 
+                                            String expectedAudience, 
+                                            String presentationDefinitionJson) 
+            throws CredentialVerificationException {
+
+        try {
+            // Split the SD-JWT
+            String[] parts = vpToken.split("~");
+            if (parts.length < 1) {
+                throw new CredentialVerificationException("Invalid SD-JWT format.");
+            }
+
+            String issuerJwtString = parts[0];
+            List<String> disclosures = new ArrayList<>();
+            String keyBindingJwtString = null;
+
+            for (int i = 1; i < parts.length; i++) {
+                String part = parts[i];
+                if (i == parts.length - 1 && part.contains(".")) {
+                    keyBindingJwtString = part;
+                } else {
+                    disclosures.add(part);
+                }
+            }
+
+            // 1. Verify Issuer JWT Signature
+            VerifiableCredential paramCred = new VerifiableCredential();
+            paramCred.setFormat(VerifiableCredential.Format.JWT);
+            paramCred.setRawCredential(issuerJwtString);
+            
+            SignedJWT signedIssuerJwt = SignedJWT.parse(issuerJwtString);
+            String issuer = signedIssuerJwt.getJWTClaimsSet().getIssuer();
+            paramCred.setIssuer(issuer);
+            paramCred.setIssuerId(issuer);
+
+            if (!verifySignature(paramCred)) {
+                throw new CredentialVerificationException("Issuer JWT signature verification failed.");
+            }
+
+            // 2. Verify Issuer JWT Time Claims
+            Date exp = signedIssuerJwt.getJWTClaimsSet().getExpirationTime();
+            Date nbf = signedIssuerJwt.getJWTClaimsSet().getNotBeforeTime();
+            Date now = new Date();
+
+            if (exp != null && now.after(exp)) {
+                throw new CredentialVerificationException("SD-JWT expired.");
+            }
+            if (nbf != null && now.before(nbf)) {
+                throw new CredentialVerificationException("SD-JWT not valid yet.");
+            }
+
+            // 3. Verify Disclosures against _sd in Issuer JWT
+            Map<String, Object> issuerClaims = signedIssuerJwt.getJWTClaimsSet().getClaims();
+            Map<String, String> disclosureDigestMap = new HashMap<>(); 
+            for (String d : disclosures) {
+                disclosureDigestMap.put(hashDisclosure(d), d);
+            }
+
+            // Reconstruct the verified claims map
+            Map<String, Object> verifiedClaims = new HashMap<>(issuerClaims);
+            verifiedClaims.remove("_sd");
+            verifiedClaims.remove("_sd_alg");
+            
+            if (issuerClaims.containsKey("_sd")) {
+                Object sdObj = issuerClaims.get("_sd");
+                if (sdObj instanceof List) {
+                    List<?> sdList = (List<?>) sdObj;
+                    for (Object digestObj : sdList) {
+                        if (digestObj instanceof String) {
+                            String digest = (String) digestObj;
+                            if (disclosureDigestMap.containsKey(digest)) {
+                                String disclosure = disclosureDigestMap.get(digest);
+                                String decoded = new String(Base64.getUrlDecoder().decode(disclosure), 
+                                        StandardCharsets.UTF_8);
+                                JSONArray arr = (JSONArray) net.minidev.json.JSONValue.parse(decoded);
+                                if (arr != null && arr.size() >= 3) {
+                                    String key = (String) arr.get(1);
+                                    Object val = arr.get(2);
+                                    verifiedClaims.put(key, val);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Verify Key Binding JWT (KB-JWT)
+            if (keyBindingJwtString == null) {
+                throw new CredentialVerificationException("Key Binding JWT missing.");
+            }
+
+            SignedJWT kbJwt = SignedJWT.parse(keyBindingJwtString);
+            
+            String kbNonce = (String) kbJwt.getJWTClaimsSet().getClaim("nonce");
+            Object kbAudObj = kbJwt.getJWTClaimsSet().getClaim("aud");
+            String kbAud = kbAudObj instanceof String ? (String) kbAudObj : 
+                          (kbAudObj instanceof List ? ((List<?>) kbAudObj).get(0).toString() : null);
+
+            if (expectedNonce != null) {
+                byte[] expected = expectedNonce.getBytes(StandardCharsets.UTF_8);
+                byte[] actual = kbNonce != null ? kbNonce.getBytes(StandardCharsets.UTF_8) : new byte[0];
+                if (!MessageDigest.isEqual(expected, actual)) {
+                    throw new CredentialVerificationException("Key Binding nonce mismatch.");
+                }
+            }
+            if (expectedAudience != null) {
+                byte[] expected = expectedAudience.getBytes(StandardCharsets.UTF_8);
+                byte[] actual = kbAud != null ? kbAud.getBytes(StandardCharsets.UTF_8) : new byte[0];
+                if (!MessageDigest.isEqual(expected, actual)) {
+                    throw new CredentialVerificationException("Key Binding audience mismatch.");
+                }
+            }
+
+            String sdHash = (String) kbJwt.getJWTClaimsSet().getClaim("sd_hash");
+            if (sdHash == null) {
+                throw new CredentialVerificationException("sd_hash missing in Key Binding JWT.");
+            }
+            
+            String calculatedSdHash = hashSd(issuerJwtString, disclosures);
+            byte[] calculatedSdHashBytes = calculatedSdHash.getBytes(StandardCharsets.UTF_8);
+            byte[] sdHashBytes = sdHash.getBytes(StandardCharsets.UTF_8);
+            if (!MessageDigest.isEqual(calculatedSdHashBytes, sdHashBytes)) {
+                 throw new CredentialVerificationException("sd_hash mismatch.");
+            }
+
+            // Verify KB-JWT Signature
+            Map<String, Object> cnf = (Map<String, Object>) issuerClaims.get("cnf");
+            if (cnf == null || !cnf.containsKey("jwk")) {
+                 throw new CredentialVerificationException("cnf.jwk missing in Issuer JWT.");
+            }
+            Map<String, Object> jwkMap = (Map<String, Object>) cnf.get("jwk");
+            com.nimbusds.jose.jwk.JWK holderKey = com.nimbusds.jose.jwk.JWK.parse(jwkMap);
+
+            com.nimbusds.jose.JWSVerifier verifier = 
+                new com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory()
+                    .createJWSVerifier(kbJwt.getHeader(), holderKey.toECKey().toPublicKey());
+
+            if (!kbJwt.verify(verifier)) {
+                throw new CredentialVerificationException("Key Binding JWT signature invalid.");
+            }
+
+            // 5. Verify Claims against Presentation Definition
+            if (presentationDefinitionJson != null && !presentationDefinitionJson.isEmpty()) {
+                verifyClaimsAgainstDefinition(verifiedClaims, presentationDefinitionJson);
+            }
+
+            return verifiedClaims;
+
+        } catch (ParseException | NoSuchAlgorithmException | CredentialVerificationException | JOSEException e) {
+             throw new CredentialVerificationException("SD-JWT verification failed: " + e.getMessage(), e);
+        } catch (RuntimeException e) {
+             throw new CredentialVerificationException("SD-JWT verification failed: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void verifyClaimsAgainstDefinition(Map<String, Object> claims, String presentationDefinitionJson)
+            throws CredentialVerificationException {
+        
+        try {
+            Object pdObj = net.minidev.json.JSONValue.parse(presentationDefinitionJson);
+            if (!(pdObj instanceof net.minidev.json.JSONObject)) {
+                 throw new CredentialVerificationException("Invalid Presentation Definition JSON.");
+            }
+            net.minidev.json.JSONObject pd = (net.minidev.json.JSONObject) pdObj;
+            
+            JSONArray inputDescriptors = (JSONArray) pd.get("input_descriptors");
+            if (inputDescriptors == null) {
+                return;
+            }
+
+            String claimsJson = new com.google.gson.Gson().toJson(claims);
+            Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(claimsJson);
+
+            for (Object desc : inputDescriptors) {
+                net.minidev.json.JSONObject descriptor = (net.minidev.json.JSONObject) desc;
+                net.minidev.json.JSONObject constraints = (net.minidev.json.JSONObject) descriptor.get("constraints");
+                if (constraints != null) {
+                    JSONArray fields = (JSONArray) constraints.get("fields");
+                    if (fields != null) {
+                        for (Object f : fields) {
+                            net.minidev.json.JSONObject field = (net.minidev.json.JSONObject) f;
+                            JSONArray paths = (JSONArray) field.get("path");
+                            if (paths != null) {
+                                boolean matchFound = false;
+                                for (Object p : paths) {
+                                    String jsonPath = (String) p;
+                                    try {
+                                        JsonPath.read(document, jsonPath);
+                                        matchFound = true;
+                                        break; 
+                                    } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                                    }
+                                }
+                                if (!matchFound) {
+                                    // Split long string to avoid line length error
+                                    throw new 
+                                    CredentialVerificationException("Claim constraint not met for field path(s): " 
+                                            + paths);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+        } catch (CredentialVerificationException e) {
+            throw e;
+        } catch (Exception e) {
+             throw new CredentialVerificationException("Claim constraint check failed: " + e.getMessage(), e);
+        }
+    }
+
+
+    private String hashDisclosure(String disclosure) throws NoSuchAlgorithmException {
+        return createHash(disclosure);
+    }
+
+    private String hashSd(String issuerJwt, List<String> disclosures) throws NoSuchAlgorithmException {
+        StringBuilder sb = new StringBuilder();
+        sb.append(issuerJwt);
+        for (String d : disclosures) {
+            sb.append("~").append(d);
+        }
+        sb.append("~");
+        return createHash(sb.toString());
+    }
+
+    private String createHash(String input) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] encodedhash = digest.digest(input.getBytes(StandardCharsets.US_ASCII));
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(encodedhash);
+    }
+    
+
 
 }

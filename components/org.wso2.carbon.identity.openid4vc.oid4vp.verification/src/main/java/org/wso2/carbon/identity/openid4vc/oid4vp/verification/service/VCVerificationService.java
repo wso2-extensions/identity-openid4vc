@@ -197,4 +197,29 @@ public interface VCVerificationService {
      */
     boolean verifyJSONLDVCIssuer(com.google.gson.JsonObject vcJsonObject, String tenantDomain) 
             throws CredentialVerificationException;
+    /**
+     * Verify SD-JWT Token with Key Binding and Disclosure verification.
+     *
+     * @param vpToken                   The VP token string (SD-JWT format)
+     * @param expectedNonce             The nonce value expected in the KB-JWT
+     * @param expectedAudience          The audience value expected in the KB-JWT
+     * @param presentationDefinitionJson The JSON string of the Presentation Definition for constraint checking
+     * @return A Map of verified user attributes/claims
+     * @throws CredentialVerificationException If verification fails
+     */
+    java.util.Map<String, Object> verifySdJwtToken(String vpToken, 
+                                                String expectedNonce, 
+                                                String expectedAudience, 
+                                                String presentationDefinitionJson) 
+            throws CredentialVerificationException;
+
+    /**
+     * Verify claims against a Presentation Definition's input descriptors.
+     *
+     * @param claims                    The map of verified claims
+     * @param presentationDefinitionJson The JSON string of the Presentation Definition
+     * @throws CredentialVerificationException If constraints are not satisfied
+     */
+    void verifyClaimsAgainstDefinition(java.util.Map<String, Object> claims, String presentationDefinitionJson)
+            throws CredentialVerificationException;
 }
