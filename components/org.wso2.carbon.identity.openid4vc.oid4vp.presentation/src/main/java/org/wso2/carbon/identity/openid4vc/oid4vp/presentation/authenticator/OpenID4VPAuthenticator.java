@@ -49,6 +49,7 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.VPStatusListenerCache;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.QRCodeUtil;
@@ -251,14 +252,23 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
             AuthenticationContext context) throws AuthenticationFailedException {
 
+        // Retrieve Session Info first to get requestId
+        String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
+
+        // Try to get submission from instance variable (direct listener) or Cache (polling/redirect)
         VPSubmission submission = this.receivedSubmission;
+        if (submission == null && StringUtils.isNotBlank(requestId)) {
+            // Fallback: Check WalletDataCache
+             submission = WalletDataCache.getInstance().getSubmission(requestId);
+        }
+
         if (submission == null) {
             throw new AuthenticationFailedException("No VP submission received");
         }
 
         try {
             // Retrieve Session Info
-            String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
+            // String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID); // Already retrieved above
             int tenantId = getTenantId(context);
             VPRequest vpRequest = null;
             PresentationDefinition presentationDefinition = null;
