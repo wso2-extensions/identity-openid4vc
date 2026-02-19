@@ -41,9 +41,9 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCa
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl.VPRequestDAOImpl;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.status.StatusNotificationService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.VPSubmissionValidator;
+import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
+import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.VPSubmissionValidator;
 
 import java.io.IOException;
 import java.io.PrintWriter;
