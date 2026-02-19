@@ -1254,16 +1254,18 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                                             String presentationDefinitionJson) 
             throws CredentialVerificationException {
 
+        if (vpToken == null) {
+            throw new CredentialVerificationException("VP token cannot be null.");
+        }
+
         // Fix: Remove extra quotes if present
-        if (vpToken != null) {
-            String trimmed = vpToken.trim();
-            if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
-                try {
-                    vpToken = GSON.fromJson(trimmed, String.class);
-                } catch (Exception e) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Failed to unquote SD-JWT string, using original", e);
-                    }
+        String trimmed = vpToken.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+            try {
+                vpToken = GSON.fromJson(trimmed, String.class);
+            } catch (Exception e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to unquote SD-JWT string, using original", e);
                 }
             }
         }

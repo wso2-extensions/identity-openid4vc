@@ -470,11 +470,12 @@
                                                     return;
                                                 }
 
-                                                if (data.status === 'verified' || data.status === 'submitted' || data.status === 'VP_SUBMITTED') {
+                                                const s = data.status ? data.status.toUpperCase() : '';
+                                                if (s === 'VP_SUBMITTED' || s === 'COMPLETED' || s === 'VERIFIED' || s === 'SUBMITTED') {
                                                     handleSuccess();
-                                                } else if (data.status === 'failed') {
-                                                    handleError(data.error || 'Verification failed');
-                                                } else if (data.status === 'expired') {
+                                                } else if (s === 'FAILED') {
+                                                    handleError(data.error || data.message || 'Verification failed');
+                                                } else if (s === 'EXPIRED') {
                                                     handleExpired();
                                                 } else {
                                                     // Still pending, continue polling
