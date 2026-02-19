@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util;
+package org.wso2.carbon.identity.openid4vc.oid4vp.verification.util;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

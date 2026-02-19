@@ -26,8 +26,8 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConsta
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VCVerificationService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.VCVerificationServiceImpl;
+import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
+import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.impl.VCVerificationServiceImpl;
 
 import java.io.BufferedReader;
 import java.io.IOException;

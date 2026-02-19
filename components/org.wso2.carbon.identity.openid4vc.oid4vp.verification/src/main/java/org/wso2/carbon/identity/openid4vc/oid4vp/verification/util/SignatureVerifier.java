@@ -18,7 +18,14 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.verification.util;
 
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.util.Base64URL;
+import com.nimbusds.jwt.SignedJWT;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
 
@@ -28,6 +35,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.text.ParseException;
 import java.util.Base64;
 
 /**
@@ -47,6 +55,8 @@ public class SignatureVerifier {
         // stability
     }
 
+    private static final Log LOG = LogFactory.getLog(SignatureVerifier.class);
+
     /**
      * Verify a JWT signature.
      *
@@ -56,11 +66,21 @@ public class SignatureVerifier {
      * @return true if signature is valid
      * @throws CredentialVerificationException if verification fails
      */
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public boolean verifyJwtSignature(String jwt, PublicKey publicKey, String algorithm)
             throws CredentialVerificationException {
 
         if (jwt == null || publicKey == null || algorithm == null) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("verifyJwtSignature called with missing params. jwt=" + (jwt != null) +
+                        ", key=" + (publicKey != null) + ", alg=" + removeCRLF(algorithm));
+            }
             throw new CredentialVerificationException("JWT, public key, and algorithm are required");
+        }
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("verifyJwtSignature called with algorithm: " + removeCRLF(algorithm));
+            LOG.debug("PublicKey: " + removeCRLF(String.valueOf(publicKey)));
         }
 
         String[] parts = jwt.split("\\.");
@@ -69,30 +89,91 @@ public class SignatureVerifier {
         }
 
         try {
-            // Get the signing input (header.payload)
-            String signingInput = parts[0] + "." + parts[1];
-            byte[] signatureBytes = Base64URL.from(parts[2]).decode();
+            boolean result;
 
-            // Get the signature algorithm
-            String jcaAlgorithm = getJcaAlgorithm(algorithm);
+            if (publicKey instanceof RSAPublicKey) {
+                // Use Nimbus RSASSAVerifier for RSA keys (idiomatic JWT handling;
+                // avoids manual base64url decoding, consistent with EC path below).
+                SignedJWT signedJWT = SignedJWT.parse(jwt);
+                RSASSAVerifier verifier = new RSASSAVerifier((RSAPublicKey) publicKey);
+                result = signedJWT.verify(verifier);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("RSASSAVerifier result=" + result);
+                }
 
-            // Verify the signature
-            Signature sig = Signature.getInstance(jcaAlgorithm);
-            sig.initVerify(publicKey);
-            sig.update(signingInput.getBytes(StandardCharsets.UTF_8));
+            } else if (publicKey instanceof ECPublicKey) {
+                // Use Nimbus ECDSAVerifier for EC keys.
+                SignedJWT signedJWT = SignedJWT.parse(jwt);
+                ECDSAVerifier verifier = new ECDSAVerifier((ECPublicKey) publicKey);
+                result = signedJWT.verify(verifier);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("ECDSAVerifier result=" + result);
+                }
 
-            // For ECDSA, convert from JWT format to DER format if needed
-            if (algorithm.startsWith("ES")) {
-                signatureBytes = convertJwtEcdsaToDer(signatureBytes, algorithm);
+            } else {
+                // Fallback to JCA for EdDSA and other key types.
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Falling back to JCA for key type: " + removeCRLF(publicKey.getAlgorithm()));
+                }
+                result = verifyJwtSignatureWithJca(parts, publicKey, algorithm);
             }
 
-            return sig.verify(signatureBytes);
+            if (!result) {
+                LOG.info("JWT signature verification failed: algorithm=" + removeCRLF(algorithm)
+                        + ", keyType=" + publicKey.getAlgorithm()
+                        + ", jwtHeader=" + removeCRLF(Base64URL.from(parts[0]).decodeToString()));
+            }
+            return result;
 
+        } catch (ParseException | JOSEException e) {
+            throw new CredentialVerificationException(
+                    "JWT signature verification failed: " + e.getMessage(), e);
         } catch (CredentialVerificationException e) {
             throw e;
         } catch (Exception e) {
             throw new CredentialVerificationException(
                     "JWT signature verification failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Verify a JWT signature using the JCA Signature API.
+     * Used as a fallback for key types not supported by Nimbus verifiers (e.g. EdDSA).
+     */
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
+    private boolean verifyJwtSignatureWithJca(String[] parts, PublicKey publicKey, String algorithm)
+            throws CredentialVerificationException {
+
+        try {
+            String signingInput = parts[0] + "." + parts[1];
+            byte[] signatureBytes = Base64URL.from(parts[2]).decode();
+            String jcaAlgorithm = getJcaAlgorithm(algorithm);
+
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("JCA verification: jcaAlgorithm=" + removeCRLF(jcaAlgorithm)
+                        + ", signingInputLength=" + signingInput.length()
+                        + ", signatureBytesLength=" + signatureBytes.length);
+            }
+
+            Signature sig = Signature.getInstance(jcaAlgorithm);
+            sig.initVerify(publicKey);
+            sig.update(signingInput.getBytes(StandardCharsets.UTF_8));
+
+            if (algorithm.startsWith("ES")) {
+                signatureBytes = convertJwtEcdsaToDer(signatureBytes, algorithm);
+            }
+
+            boolean result = sig.verify(signatureBytes);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("JCA verification result=" + result);
+            }
+            return result;
+
+        } catch (CredentialVerificationException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CredentialVerificationException(
+                    "JCA JWT signature verification failed: " + e.getMessage(), e);
         }
     }
 
@@ -480,5 +561,15 @@ public class SignatureVerifier {
         }
 
         return decoded;
+    }
+
+    /**
+     * Remove CRLF characters from a string to prevent log injection.
+     */
+    private String removeCRLF(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace('\n', '_').replace('\r', '_');
     }
 }

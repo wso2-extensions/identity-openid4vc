@@ -30,6 +30,8 @@ import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.minidev.json.JSONArray;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDResolutionException;
@@ -40,6 +42,7 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiableCredenti
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiablePresentation;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.impl.DIDResolverServiceImpl;
+import org.wso2.carbon.identity.openid4vc.oid4vp.verification.jwt.ExtendedJWKSValidator;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.StatusListService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.SignatureVerifier;
@@ -65,6 +68,7 @@ import java.util.TimeZone;
  */
 public class VCVerificationServiceImpl implements VCVerificationService {
     
+    private static final Log LOG = LogFactory.getLog(VCVerificationServiceImpl.class);
     private static final Gson GSON = new Gson();
 
     // Content type constants
@@ -98,6 +102,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     private final DIDResolverService didResolverService;
     private final SignatureVerifier signatureVerifier;
     private final StatusListService statusListService;
+    private final ExtendedJWKSValidator extendedJWKSValidator;
 
     /**
      * Default constructor.
@@ -106,6 +111,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         this.didResolverService = new DIDResolverServiceImpl();
         this.signatureVerifier = new SignatureVerifier(didResolverService);
         this.statusListService = new StatusListServiceImpl();
+        this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
 
     /**
@@ -118,6 +124,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         this.didResolverService = didResolverService;
         this.signatureVerifier = new SignatureVerifier(didResolverService);
         this.statusListService = new StatusListServiceImpl();
+        this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
 
     /**
@@ -132,6 +139,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         this.didResolverService = didResolverService;
         this.signatureVerifier = new SignatureVerifier(didResolverService);
         this.statusListService = statusListService;
+        this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
 
     @Override
@@ -333,9 +341,11 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
             // For non-DID issuers, try to resolve from issuer URL
             if (issuer != null && issuer.startsWith("http")) {
-                publicKey = resolveIssuerPublicKey(issuer, kid);
-                if (publicKey != null) {
-                    return signatureVerifier.verifyJwtSignature(rawCredential, publicKey, alg);
+                String jwksUri = resolveJwksUri(issuer);
+                if (jwksUri != null) {
+                    return extendedJWKSValidator.validateSignature(rawCredential, jwksUri, alg);
+                } else {
+                     throw new CredentialVerificationException("Could not resolve JWKS URI for issuer: " + issuer);
                 }
             }
 
@@ -488,6 +498,20 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         if (vcString == null || vcString.trim().isEmpty()) {
             throw new CredentialVerificationException("Credential string is null or empty");
+        }
+
+        // Fix: Remove extra quotes if present (e.g. from incorrect JSON serialization)
+        String trimmed = vcString.trim();
+        if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+            try {
+                // Use GSON to correctly unquote/unescape the JSON string
+                vcString = GSON.fromJson(trimmed, String.class);
+            } catch (Exception e) {
+                // Return original string if unquoting fails, though unlikely for valid JSON strings
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Failed to unquote credential string, using original", e);
+                }
+            }
         }
 
         String normalizedContentType = normalizeContentType(contentType);
@@ -1230,6 +1254,20 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                                             String presentationDefinitionJson) 
             throws CredentialVerificationException {
 
+        // Fix: Remove extra quotes if present
+        if (vpToken != null) {
+            String trimmed = vpToken.trim();
+            if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
+                try {
+                    vpToken = GSON.fromJson(trimmed, String.class);
+                } catch (Exception e) {
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Failed to unquote SD-JWT string, using original", e);
+                    }
+                }
+            }
+        }
+
         try {
             // Split the SD-JWT
             String[] parts = vpToken.split("~");
@@ -1459,79 +1497,79 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(encodedhash);
     }
 
-    /**
-     * Resolve public key from issuer URL using OID4VCI metadata and Authorization Server fallback.
-     */
-    private PublicKey resolveIssuerPublicKey(String issuer, String kid) throws CredentialVerificationException {
-        
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"REC_CATCH_EXCEPTION", "CRLF_INJECTION_LOGS"})
+    private String resolveJwksUri(String issuer) throws CredentialVerificationException {
         try {
             // 1. Fetch Issuer Metadata
-            String metadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-credential-issuer" 
+            String metadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-credential-issuer"
                     : issuer + "/.well-known/openid-credential-issuer";
-            
+
             JsonObject metadata = fetchJson(metadataUrl);
             if (metadata == null) {
-                throw new CredentialVerificationException("Failed to fetch issuer metadata from: " + metadataUrl);
+                // If standard metadata fails, optionally check openid-configuration (standard OIDC)
+                String oidcMetadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-configuration"
+                        : issuer + "/.well-known/openid-configuration";
+                try {
+                    metadata = fetchJson(oidcMetadataUrl);
+                } catch (Exception e) {
+                   if (LOG.isDebugEnabled()) {
+                       LOG.debug("Failed to fetch OIDC metadata from " + removeCRLF(oidcMetadataUrl), e);
+                   }
+                }
             }
 
-            String jwksUri = null;
+            if (metadata == null) {
+                return null;
+            }
 
             // 2. Check for jwks_uri in metadata
             if (metadata.has("jwks_uri")) {
-                jwksUri = metadata.get("jwks_uri").getAsString();
+                return metadata.get("jwks_uri").getAsString();
             }
 
             // 3. Fallback: Check authorization_servers
-            if (jwksUri == null && metadata.has("authorization_servers")) {
+            if (metadata.has("authorization_servers")) {
                 JsonArray authServers = metadata.getAsJsonArray("authorization_servers");
                 if (authServers.size() > 0) {
                     String authServer = authServers.get(0).getAsString();
-                    jwksUri = authServer.endsWith("/") ? authServer + "oauth2/jwks" : authServer + "/oauth2/jwks";
+                    
+                    // Try to fetch OIDC metadata for this auth server
+                    String authServerMetadataUrl = authServer.endsWith("/") ? authServer + 
+                    ".well-known/openid-configuration"
+                            : authServer + "/.well-known/openid-configuration";
+                    
+                    try {
+                        JsonObject authServerMetadata = fetchJson(authServerMetadataUrl);
+                        if (authServerMetadata != null && authServerMetadata.has("jwks_uri")) {
+                            return authServerMetadata.get("jwks_uri").getAsString();
+                        }
+                    } catch (Exception e) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Failed to fetch OIDC metadata from auth server: " + 
+                            removeCRLF(authServerMetadataUrl), e);
+                        }
+                    }
+                    
+                    // Keep the hardcoded fallback as a last resort, but maybe log a warning?
+                    // Or relies on the metadata fetch above.
+                    // Given the user's specific error, the hardcoded path was WRONG. 
+                    // So we probably shouldn't fallback to it if it's known to be wrong for their case.
+                    // But for backward compatibility? 
+                    // The user's error showed .../oauth2/token/oauth2/jwks.
+                    // It seems the authServer variable was `.../oauth2/token`.
+                    // If we just return null here, it will throw "Failed to resolve JWKS URI".
                 }
             }
-
-            if (jwksUri == null) {
-                 throw new CredentialVerificationException("No jwks_uri found in issuer metadata " +
-                         "or authorization servers.");
-            }
-
-            // 4. Fetch JWKS
-            JsonObject jwks = fetchJson(jwksUri);
-            if (jwks == null || !jwks.has("keys")) {
-                 throw new CredentialVerificationException("Invalid JWKS response from: " + jwksUri);
-            }
-
-            // 5. Extract Key - match by kid when present, otherwise use first suitable key
-            JsonArray keys = jwks.getAsJsonArray("keys");
-            JsonObject fallbackKey = null;
-            for (JsonElement keyEl : keys) {
-                JsonObject key = keyEl.getAsJsonObject();
-                boolean kidMatches = (kid != null) && key.has("kid")
-                        && key.get("kid").getAsString().equals(kid);
-                boolean noKidFilter = (kid == null);
-                if (kidMatches || (noKidFilter && fallbackKey == null)) {
-                    // Start of new JWK parsing logic using Nimbus to avoid manual RSA parsing complexity
-                    com.nimbusds.jose.jwk.JWK jwk = com.nimbusds.jose.jwk.JWK.parse(key.toString());
-                    if (jwk instanceof com.nimbusds.jose.jwk.RSAKey) {
-                        return ((com.nimbusds.jose.jwk.RSAKey) jwk).toPublicKey();
-                    } else if (jwk instanceof com.nimbusds.jose.jwk.ECKey) {
-                        return ((com.nimbusds.jose.jwk.ECKey) jwk).toPublicKey();
-                    }
-                    if (noKidFilter) {
-                        fallbackKey = key; // track in case parsing above fails
-                    }
-                    if (kidMatches) {
-                        break;
-                    }
-                }
-            }
-
-            throw new CredentialVerificationException("Key with kid '" + kid + "' not found in JWKS.");
-
-        } catch (java.io.IOException | java.text.ParseException | com.nimbusds.jose.JOSEException e) {
-            throw new CredentialVerificationException("Failed to resolve issuer public key: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new CredentialVerificationException("Failed to resolve JWKS URI: " + e.getMessage(), e);
         }
+        return null;
     }
+
+    /**
+     * Resolve public key from issuer URL using OID4VCI metadata and Authorization Server fallback.
+     */
+
 
     /**
      * Fetch JSON content from a URL.
@@ -1580,4 +1618,15 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     
 
 
+
+
+    /**
+     * Remove CRLF characters from a string to prevent log injection.
+     */
+    private String removeCRLF(String input) {
+        if (input == null) {
+            return null;
+        }
+        return input.replace('\n', '_').replace('\r', '_');
+    }
 }
