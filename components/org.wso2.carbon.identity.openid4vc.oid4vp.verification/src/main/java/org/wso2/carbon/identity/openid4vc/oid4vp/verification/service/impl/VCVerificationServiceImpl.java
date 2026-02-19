@@ -1350,58 +1350,60 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             }
 
             // 4. Verify Key Binding JWT (KB-JWT)
-            if (keyBindingJwtString == null) {
-                throw new CredentialVerificationException("Key Binding JWT missing.");
-            }
+            if (keyBindingJwtString != null) {
+                SignedJWT kbJwt = SignedJWT.parse(keyBindingJwtString);
+                
+                String kbNonce = (String) kbJwt.getJWTClaimsSet().getClaim("nonce");
+                Object kbAudObj = kbJwt.getJWTClaimsSet().getClaim("aud");
+                String kbAud = kbAudObj instanceof String ? (String) kbAudObj : 
+                              (kbAudObj instanceof List ? ((List<?>) kbAudObj).get(0).toString() : null);
 
-            SignedJWT kbJwt = SignedJWT.parse(keyBindingJwtString);
-            
-            String kbNonce = (String) kbJwt.getJWTClaimsSet().getClaim("nonce");
-            Object kbAudObj = kbJwt.getJWTClaimsSet().getClaim("aud");
-            String kbAud = kbAudObj instanceof String ? (String) kbAudObj : 
-                          (kbAudObj instanceof List ? ((List<?>) kbAudObj).get(0).toString() : null);
-
-            if (expectedNonce != null) {
-                byte[] expected = expectedNonce.getBytes(StandardCharsets.UTF_8);
-                byte[] actual = kbNonce != null ? kbNonce.getBytes(StandardCharsets.UTF_8) : new byte[0];
-                if (!MessageDigest.isEqual(expected, actual)) {
-                    throw new CredentialVerificationException("Key Binding nonce mismatch.");
+                if (expectedNonce != null) {
+                    byte[] expected = expectedNonce.getBytes(StandardCharsets.UTF_8);
+                    byte[] actual = kbNonce != null ? kbNonce.getBytes(StandardCharsets.UTF_8) : new byte[0];
+                    if (!MessageDigest.isEqual(expected, actual)) {
+                        throw new CredentialVerificationException("Key Binding nonce mismatch.");
+                    }
                 }
-            }
-            if (expectedAudience != null) {
-                byte[] expected = expectedAudience.getBytes(StandardCharsets.UTF_8);
-                byte[] actual = kbAud != null ? kbAud.getBytes(StandardCharsets.UTF_8) : new byte[0];
-                if (!MessageDigest.isEqual(expected, actual)) {
-                    throw new CredentialVerificationException("Key Binding audience mismatch.");
+                if (expectedAudience != null) {
+                    byte[] expected = expectedAudience.getBytes(StandardCharsets.UTF_8);
+                    byte[] actual = kbAud != null ? kbAud.getBytes(StandardCharsets.UTF_8) : new byte[0];
+                    if (!MessageDigest.isEqual(expected, actual)) {
+                        throw new CredentialVerificationException("Key Binding audience mismatch.");
+                    }
                 }
-            }
 
-            String sdHash = (String) kbJwt.getJWTClaimsSet().getClaim("sd_hash");
-            if (sdHash == null) {
-                throw new CredentialVerificationException("sd_hash missing in Key Binding JWT.");
-            }
-            
-            String calculatedSdHash = hashSd(issuerJwtString, disclosures);
-            byte[] calculatedSdHashBytes = calculatedSdHash.getBytes(StandardCharsets.UTF_8);
-            byte[] sdHashBytes = sdHash.getBytes(StandardCharsets.UTF_8);
-            if (!MessageDigest.isEqual(calculatedSdHashBytes, sdHashBytes)) {
-                 throw new CredentialVerificationException("sd_hash mismatch.");
-            }
+                String sdHash = (String) kbJwt.getJWTClaimsSet().getClaim("sd_hash");
+                if (sdHash == null) {
+                    throw new CredentialVerificationException("sd_hash missing in Key Binding JWT.");
+                }
+                
+                String calculatedSdHash = hashSd(issuerJwtString, disclosures);
+                byte[] calculatedSdHashBytes = calculatedSdHash.getBytes(StandardCharsets.UTF_8);
+                byte[] sdHashBytes = sdHash.getBytes(StandardCharsets.UTF_8);
+                if (!MessageDigest.isEqual(calculatedSdHashBytes, sdHashBytes)) {
+                     throw new CredentialVerificationException("sd_hash mismatch.");
+                }
 
-            // Verify KB-JWT Signature
-            Map<String, Object> cnf = (Map<String, Object>) issuerClaims.get("cnf");
-            if (cnf == null || !cnf.containsKey("jwk")) {
-                 throw new CredentialVerificationException("cnf.jwk missing in Issuer JWT.");
-            }
-            Map<String, Object> jwkMap = (Map<String, Object>) cnf.get("jwk");
-            com.nimbusds.jose.jwk.JWK holderKey = com.nimbusds.jose.jwk.JWK.parse(jwkMap);
+                // Verify KB-JWT Signature
+                Map<String, Object> cnf = (Map<String, Object>) issuerClaims.get("cnf");
+                if (cnf == null || !cnf.containsKey("jwk")) {
+                     throw new CredentialVerificationException("cnf.jwk missing in Issuer JWT.");
+                }
+                Map<String, Object> jwkMap = (Map<String, Object>) cnf.get("jwk");
+                com.nimbusds.jose.jwk.JWK holderKey = com.nimbusds.jose.jwk.JWK.parse(jwkMap);
 
-            com.nimbusds.jose.JWSVerifier verifier = 
-                new com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory()
-                    .createJWSVerifier(kbJwt.getHeader(), holderKey.toECKey().toPublicKey());
+                com.nimbusds.jose.JWSVerifier verifier = 
+                    new com.nimbusds.jose.crypto.factories.DefaultJWSVerifierFactory()
+                        .createJWSVerifier(kbJwt.getHeader(), holderKey.toECKey().toPublicKey());
 
-            if (!kbJwt.verify(verifier)) {
-                throw new CredentialVerificationException("Key Binding JWT signature invalid.");
+                if (!kbJwt.verify(verifier)) {
+                    throw new CredentialVerificationException("Key Binding JWT signature invalid.");
+                }
+            } else {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Key Binding JWT is missing. Skipping holder binding verification.");
+                }
             }
 
             // 5. Verify Claims against Presentation Definition

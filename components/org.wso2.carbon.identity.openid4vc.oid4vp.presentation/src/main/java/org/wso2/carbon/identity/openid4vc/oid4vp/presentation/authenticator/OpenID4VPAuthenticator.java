@@ -26,6 +26,8 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
@@ -90,6 +92,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         implements FederatedApplicationAuthenticator, VPStatusListenerCache.StatusCallback {
 
     private static final long serialVersionUID = 1L;
+
+    private static final Log log = LogFactory.getLog(OpenID4VPAuthenticator.class);
 
     // Authenticator configuration properties
     private static final String AUTHENTICATOR_NAME = "OpenID4VPAuthenticator";
@@ -255,6 +259,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         // Retrieve Session Info first to get requestId
         String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
 
+        if (StringUtils.isBlank(requestId)) {
+            requestId = request.getParameter(PARAM_VP_REQUEST_ID);
+        }
+
         // Try to get submission from instance variable (direct listener) or Cache (polling/redirect)
         VPSubmission submission = this.receivedSubmission;
         if (submission == null && StringUtils.isNotBlank(requestId)) {
@@ -296,9 +304,17 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : "unknown";
                 String pdJson = (presentationDefinition != null) ? presentationDefinition.getDefinitionJson() : "{}";
                 
+                if (log.isDebugEnabled()) {
+                    log.debug("Verifying SD-JWT for requestId: " + requestId);
+                }
+
                 // Call VC Verification Service
                 verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
                     .verifySdJwtToken(vpToken, expectedNonce, expectedAudience, pdJson);
+
+                if (log.isDebugEnabled()) {
+                    log.debug("Verification successful. Verified Claims: " + verifiedClaims.keySet());
+                }
 
                 if (verifiedClaims.containsKey("email")) {
                     username = (String) verifiedClaims.get("email");
@@ -306,6 +322,14 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     username = (String) verifiedClaims.get("username");
                 } else if (verifiedClaims.containsKey("sub")) {
                     username = (String) verifiedClaims.get("sub");
+                }
+
+                if (username == null) {
+                    log.error("No valid identifier (email/username/sub) found in claims for requestId: " + requestId);
+                } else {
+                    if (log.isDebugEnabled()) {
+                        log.debug("Authenticated User: " + username);
+                    }
                 }
             
             } else {
