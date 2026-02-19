@@ -354,7 +354,7 @@
     </div>
     
     <!-- Hidden form for authentication callback -->
-    <form id="authForm" class="hidden-form" method="POST" action="<%=request.getContextPath()%>/commonauth">
+    <form id="authForm" class="hidden-form" method="POST" action="../commonauth">
         <input type="hidden" name="sessionDataKey" value="${sessionDataKey}">
         <input type="hidden" name="vp_request_id" value="${requestId}">
         <input type="hidden" name="transaction_id" value="${transactionId}">
@@ -377,6 +377,7 @@
         let timeRemaining = CONFIG.timeout;
         let pollTimer = null;
         let countdownTimer = null;
+        let submitted = false;
         
         // Initialize QR code
         function initQRCode() {
@@ -452,11 +453,12 @@
             .then(data => {
                 console.log('Poll response:', data);
                 
-                if (data.status === 'verified' || data.status === 'submitted') {
+                const s = data.status ? data.status.toUpperCase() : '';
+                if (s === 'VP_SUBMITTED' || s === 'COMPLETED' || s === 'VERIFIED' || s === 'SUBMITTED') {
                     handleSuccess();
-                } else if (data.status === 'failed') {
-                    handleError(data.error || 'Verification failed');
-                } else if (data.status === 'expired') {
+                } else if (s === 'FAILED') {
+                    handleError(data.error || data.message || 'Verification failed');
+                } else if (s === 'EXPIRED') {
                     handleExpired();
                 } else {
                     // Still pending, continue polling
@@ -471,8 +473,12 @@
         
         // Handle successful verification
         function handleSuccess() {
+            if (submitted) return;
+            submitted = true;
             clearInterval(pollTimer);
             clearInterval(countdownTimer);
+            pollTimer = null;
+            countdownTimer = null;
             
             updateStatus('success', 'Credentials verified successfully!');
             

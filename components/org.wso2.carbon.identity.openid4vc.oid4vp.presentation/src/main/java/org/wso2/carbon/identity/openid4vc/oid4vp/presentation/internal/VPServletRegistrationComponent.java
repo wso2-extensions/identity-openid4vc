@@ -29,9 +29,12 @@ import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.http.HttpService;
 import org.osgi.service.http.NamespaceException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.RequestUriServlet;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.VCVerificationServlet;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.VPDefinitionServlet;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.VPRequestServlet;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.VPStatusPollingServlet;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.VPSubmissionServlet;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.WalletStatusServlet;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet.WellKnownDIDServlet;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -54,6 +57,9 @@ public class VPServletRegistrationComponent {
     private static final String REQUEST_URI_PATH = API_BASE_PATH + "/request-uri";
     private static final String VP_RESPONSE_PATH = API_BASE_PATH + "/response";
     private static final String PRESENTATION_DEFINITIONS_PATH = API_BASE_PATH + "/presentation-definitions";
+    private static final String VC_VERIFICATION_PATH = API_BASE_PATH + "/vc-verification";
+    private static final String VP_STATUS_PATH = API_BASE_PATH + "/vp-status";
+    private static final String WALLET_STATUS_PATH = API_BASE_PATH + "/wallet-status";
     private static final String WELL_KNOWN_DID_PATH = "/.well-known/did.json";
 
     private HttpService httpService;
@@ -95,6 +101,15 @@ public class VPServletRegistrationComponent {
         // Register Presentation Definition Servlet
         httpService.registerServlet(PRESENTATION_DEFINITIONS_PATH, new VPDefinitionServlet(), null, null);
 
+        // Register VC Verification Servlet
+        httpService.registerServlet(VC_VERIFICATION_PATH, new VCVerificationServlet(), null, null);
+
+        // Register VP Status Polling Servlet
+        httpService.registerServlet(VP_STATUS_PATH, new VPStatusPollingServlet(), null, null);
+
+        // Register Wallet Status Servlet (used by login page polling)
+        httpService.registerServlet(WALLET_STATUS_PATH, new WalletStatusServlet(), null, null);
+
         // Register Well-Known DID Servlet
         httpService.registerServlet(WELL_KNOWN_DID_PATH, new WellKnownDIDServlet(), null, null);
     }
@@ -125,6 +140,21 @@ public class VPServletRegistrationComponent {
 
         try {
             httpService.unregister(PRESENTATION_DEFINITIONS_PATH);
+        } catch (Exception e) {
+        }
+
+        try {
+            httpService.unregister(VC_VERIFICATION_PATH);
+        } catch (Exception e) {
+        }
+
+        try {
+            httpService.unregister(VP_STATUS_PATH);
+        } catch (Exception e) {
+        }
+
+        try {
+            httpService.unregister(WALLET_STATUS_PATH);
         } catch (Exception e) {
         }
 
