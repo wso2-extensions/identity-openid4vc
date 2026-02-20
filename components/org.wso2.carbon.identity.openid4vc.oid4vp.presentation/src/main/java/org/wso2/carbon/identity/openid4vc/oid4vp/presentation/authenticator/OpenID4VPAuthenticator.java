@@ -252,11 +252,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
             AuthenticationContext context) throws AuthenticationFailedException {
 
-        java.util.logging.Logger log = java.util.logging.Logger.getLogger("OpenID4VPAuthenticator");
-
         // Retrieve Session Info first to get requestId
         String requestId = (String) context.getProperty(SESSION_VP_REQUEST_ID);
-        log.info("[OID4VP-CLAIMS] processAuthenticationResponse called. requestId=" + requestId);
 
         // Try to get submission from instance variable (direct listener) or Cache (polling/redirect)
         VPSubmission submission = this.receivedSubmission;
@@ -266,11 +263,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
 
         if (submission == null) {
-            log.severe("[OID4VP-CLAIMS] No VP submission received!");
             throw new AuthenticationFailedException("No VP submission received");
         }
-        log.info("[OID4VP-CLAIMS] VP submission found. vpToken length=" + 
-                (submission.getVpToken() != null ? submission.getVpToken().length() : 0));
 
         try {
             int tenantId = getTenantId(context);
@@ -286,7 +280,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                                 .getPresentationDefinitionById(vpRequest.getPresentationDefinitionId(), tenantId);
                     }
                 } catch (VPException e) {
-                    log.warning("[OID4VP-CLAIMS] Error fetching VP request: " + e.getMessage());
+                    // Ignore for now or handle appropriately
                 }
             }
 
@@ -294,7 +288,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             String vpToken = submission.getVpToken();
             String username = null;
             Map<String, Object> verifiedClaims = new HashMap<>();
-            log.info("[OID4VP-CLAIMS] VP token format=" + format);
 
             if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
                 String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : "unknown";
@@ -304,11 +297,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 // Call VC Verification Service
                 verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
                     .verifySdJwtToken(vpToken, expectedNonce, expectedAudience, pdJson);
-
-                log.info("[OID4VP-CLAIMS] verifySdJwtToken returned " + verifiedClaims.size() + " claims:");
-                for (Map.Entry<String, Object> entry : verifiedClaims.entrySet()) {
-                    log.info("[OID4VP-CLAIMS]   " + entry.getKey() + " = " + entry.getValue());
-                }
 
                 if (verifiedClaims.containsKey("email")) {
                     username = (String) verifiedClaims.get("email");
@@ -344,8 +332,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 }
             }
 
-            log.info("[OID4VP-CLAIMS] Resolved username/subject=" + username);
-
             if (StringUtils.isBlank(username)) {
                 throw new AuthenticationFailedException("No user identifier found in verified credentials");
             }
@@ -362,17 +348,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             ClaimMapping[] idpClaimMappings = new ClaimMapping[0];
             if (context.getExternalIdP() != null) {
                 idpClaimMappings = context.getExternalIdP().getClaimMappings();
-                log.info("[OID4VP-CLAIMS] IDP claim mappings count=" + 
-                        (idpClaimMappings != null ? idpClaimMappings.length : 0));
-                if (idpClaimMappings != null) {
-                    for (ClaimMapping cm : idpClaimMappings) {
-                        log.info("[OID4VP-CLAIMS]   IDP mapping: remote='" + 
-                                cm.getRemoteClaim().getClaimUri() + "' -> local='" + 
-                                cm.getLocalClaim().getClaimUri() + "'");
-                    }
-                }
-            } else {
-                log.warning("[OID4VP-CLAIMS] context.getExternalIdP() is NULL — no IDP claim mappings available!");
             }
 
             Map<ClaimMapping, String> userAttributes;
@@ -382,20 +357,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 userAttributes = extractClaimsFromVP(vpToken, idpClaimMappings);
             }
 
-            log.info("[OID4VP-CLAIMS] Final user attributes count=" + userAttributes.size());
-            for (Map.Entry<ClaimMapping, String> attr : userAttributes.entrySet()) {
-                log.info("[OID4VP-CLAIMS]   Attribute: remote='" + 
-                        attr.getKey().getRemoteClaim().getClaimUri() + "' local='" + 
-                        attr.getKey().getLocalClaim().getClaimUri() + "' value='" + attr.getValue() + "'");
-            }
-
             authenticatedUser.setUserAttributes(userAttributes);
             context.setSubject(authenticatedUser);
-            log.info("[OID4VP-CLAIMS] Authentication completed. subject=" + username + 
-                    ", attributes=" + userAttributes.size());
 
         } catch (VPException | RuntimeException e) {
-            log.severe("[OID4VP-CLAIMS] Authentication failed: " + e.getMessage());
             throw new AuthenticationFailedException("Authentication failed: " + e.getMessage(), e);
         }
     }
