@@ -64,6 +64,12 @@ public class VPRequest implements Serializable {
         return requestId;
     }
 
+    /**
+     * Set request ID.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param requestId Request ID
+     */
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
@@ -72,6 +78,12 @@ public class VPRequest implements Serializable {
         return transactionId;
     }
 
+    /**
+     * Set transaction ID.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param transactionId Transaction ID
+     */
     public void setTransactionId(String transactionId) {
         this.transactionId = transactionId;
     }
@@ -80,6 +92,12 @@ public class VPRequest implements Serializable {
         return clientId;
     }
 
+    /**
+     * Set client ID.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param clientId Client ID
+     */
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
@@ -88,6 +106,12 @@ public class VPRequest implements Serializable {
         return nonce;
     }
 
+    /**
+     * Set nonce.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param nonce Nonce
+     */
     public void setNonce(String nonce) {
         this.nonce = nonce;
     }
@@ -96,6 +120,12 @@ public class VPRequest implements Serializable {
         return presentationDefinitionId;
     }
 
+    /**
+     * Set presentation definition ID.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param presentationDefinitionId Presentation definition ID
+     */
     public void setPresentationDefinitionId(String presentationDefinitionId) {
         this.presentationDefinitionId = presentationDefinitionId;
     }
@@ -104,6 +134,12 @@ public class VPRequest implements Serializable {
         return presentationDefinition;
     }
 
+    /**
+     * Set presentation definition.
+     * Note: This setter exists for lazy-loading PD. New instances should use Builder.
+     *
+     * @param presentationDefinition Presentation definition JSON
+     */
     public void setPresentationDefinition(String presentationDefinition) {
         this.presentationDefinition = presentationDefinition;
     }
@@ -112,6 +148,12 @@ public class VPRequest implements Serializable {
         return responseUri;
     }
 
+    /**
+     * Set response URI.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param responseUri Response URI
+     */
     public void setResponseUri(String responseUri) {
         this.responseUri = responseUri;
     }
@@ -120,6 +162,12 @@ public class VPRequest implements Serializable {
         return responseMode;
     }
 
+    /**
+     * Set response mode.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param responseMode Response mode
+     */
     public void setResponseMode(String responseMode) {
         this.responseMode = responseMode;
     }
@@ -128,6 +176,12 @@ public class VPRequest implements Serializable {
         return requestJwt;
     }
 
+    /**
+     * Set request JWT.
+     * Note: This setter is used to update the JWT after initial creation. New instances should use Builder.
+     *
+     * @param requestJwt Request JWT
+     */
     public void setRequestJwt(String requestJwt) {
         this.requestJwt = requestJwt;
     }
@@ -136,6 +190,12 @@ public class VPRequest implements Serializable {
         return status;
     }
 
+    /**
+     * Set status.
+     * Note: This setter is used for status updates (ACTIVE → SUBMITTED → COMPLETED). New instances should use Builder.
+     *
+     * @param status VP request status
+     */
     public void setStatus(VPRequestStatus status) {
         this.status = status;
     }
@@ -144,6 +204,12 @@ public class VPRequest implements Serializable {
         return expiresAt;
     }
 
+    /**
+     * Set expiration timestamp.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param expiresAt Expiration timestamp
+     */
     public void setExpiresAt(long expiresAt) {
         this.expiresAt = expiresAt;
     }
@@ -152,6 +218,12 @@ public class VPRequest implements Serializable {
         return tenantId;
     }
 
+    /**
+     * Set tenant ID.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param tenantId Tenant ID
+     */
     public void setTenantId(int tenantId) {
         this.tenantId = tenantId;
     }
@@ -160,6 +232,12 @@ public class VPRequest implements Serializable {
         return didMethod;
     }
 
+    /**
+     * Set DID method.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param didMethod DID method
+     */
     public void setDidMethod(String didMethod) {
         this.didMethod = didMethod;
     }
@@ -168,6 +246,12 @@ public class VPRequest implements Serializable {
         return signingAlgorithm;
     }
 
+    /**
+     * Set signing algorithm.
+     * Note: This setter exists for DAO/cache updates. New instances should use Builder.
+     *
+     * @param signingAlgorithm Signing algorithm
+     */
     public void setSigningAlgorithm(String signingAlgorithm) {
         this.signingAlgorithm = signingAlgorithm;
     }
