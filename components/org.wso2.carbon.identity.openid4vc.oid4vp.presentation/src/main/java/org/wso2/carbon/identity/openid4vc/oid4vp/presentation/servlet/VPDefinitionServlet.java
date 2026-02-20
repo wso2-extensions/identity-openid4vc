@@ -28,9 +28,9 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.CORSUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.PresentationDefinitionServiceImpl;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -21,9 +21,9 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet;
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDDocumentException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.DIDDocumentService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.DIDDocumentServiceImpl;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.CORSUtil;
+import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.CORSUtil;
+import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDDocumentService;
+import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.impl.DIDDocumentServiceImpl;
 
 import java.io.IOException;
 import java.io.PrintWriter;
