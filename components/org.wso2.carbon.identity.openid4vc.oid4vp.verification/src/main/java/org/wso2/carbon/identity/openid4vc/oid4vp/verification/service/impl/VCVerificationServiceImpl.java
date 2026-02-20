@@ -350,7 +350,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             }
 
             // For non-DID, non-URL issuers we cannot verify without additional configuration
-            return true;
+            throw new CredentialVerificationException("Cannot verify signature for issuer: " + issuer + 
+                ". Issuer must be either a DID or an HTTP(S) URL with discoverable JWKS endpoint.");
 
         } catch (DIDResolutionException e) {
             throw new CredentialVerificationException(
@@ -710,6 +711,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             } catch (Exception e) {
             }
         }
+        credential.setCredentialSubject(claims);
     }
 
     /**

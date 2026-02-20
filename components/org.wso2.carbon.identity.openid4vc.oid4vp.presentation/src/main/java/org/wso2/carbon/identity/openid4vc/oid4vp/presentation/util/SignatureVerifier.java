@@ -16,14 +16,13 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.verification.util;
+package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util;
 
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
@@ -66,21 +65,20 @@ public class SignatureVerifier {
      * @return true if signature is valid
      * @throws CredentialVerificationException if verification fails
      */
-    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public boolean verifyJwtSignature(String jwt, PublicKey publicKey, String algorithm)
             throws CredentialVerificationException {
 
         if (jwt == null || publicKey == null || algorithm == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("verifyJwtSignature called with missing params. jwt=" + (jwt != null) +
-                        ", key=" + (publicKey != null) + ", alg=" + removeCRLF(algorithm));
+                        ", key=" + (publicKey != null) + ", alg=" + algorithm);
             }
             throw new CredentialVerificationException("JWT, public key, and algorithm are required");
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("verifyJwtSignature called with algorithm: " + removeCRLF(algorithm));
-            LOG.debug("PublicKey: " + removeCRLF(String.valueOf(publicKey)));
+            LOG.debug("verifyJwtSignature called with algorithm: " + algorithm);
+            LOG.debug("PublicKey: " + publicKey);
         }
 
         String[] parts = jwt.split("\\.");
@@ -113,15 +111,15 @@ public class SignatureVerifier {
             } else {
                 // Fallback to JCA for EdDSA and other key types.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Falling back to JCA for key type: " + removeCRLF(publicKey.getAlgorithm()));
+                    LOG.debug("Falling back to JCA for key type: " + publicKey.getAlgorithm());
                 }
                 result = verifyJwtSignatureWithJca(parts, publicKey, algorithm);
             }
 
             if (!result) {
-                LOG.info("JWT signature verification failed: algorithm=" + removeCRLF(algorithm)
+                LOG.info("JWT signature verification failed: algorithm=" + algorithm
                         + ", keyType=" + publicKey.getAlgorithm()
-                        + ", jwtHeader=" + removeCRLF(Base64URL.from(parts[0]).decodeToString()));
+                        + ", jwtHeader=" + Base64URL.from(parts[0]).decodeToString());
             }
             return result;
 
@@ -140,7 +138,6 @@ public class SignatureVerifier {
      * Verify a JWT signature using the JCA Signature API.
      * Used as a fallback for key types not supported by Nimbus verifiers (e.g. EdDSA).
      */
-    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     private boolean verifyJwtSignatureWithJca(String[] parts, PublicKey publicKey, String algorithm)
             throws CredentialVerificationException {
 
@@ -150,7 +147,7 @@ public class SignatureVerifier {
             String jcaAlgorithm = getJcaAlgorithm(algorithm);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("JCA verification: jcaAlgorithm=" + removeCRLF(jcaAlgorithm)
+                LOG.debug("JCA verification: jcaAlgorithm=" + jcaAlgorithm
                         + ", signingInputLength=" + signingInput.length()
                         + ", signatureBytesLength=" + signatureBytes.length);
             }
@@ -561,15 +558,5 @@ public class SignatureVerifier {
         }
 
         return decoded;
-    }
-
-    /**
-     * Remove CRLF characters from a string to prevent log injection.
-     */
-    private String removeCRLF(String input) {
-        if (input == null) {
-            return null;
-        }
-        return input.replace('\n', '_').replace('\r', '_');
     }
 }
