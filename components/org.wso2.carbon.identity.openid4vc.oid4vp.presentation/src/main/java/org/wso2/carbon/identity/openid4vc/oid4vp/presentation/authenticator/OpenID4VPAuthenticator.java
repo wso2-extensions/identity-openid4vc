@@ -231,13 +231,15 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                 throw new VPException("format field is missing in descriptor_map");
             }
 
-            // Normalize format string to handle variations
-            // Replace spaces and underscores with plus signs, trim, and lowercase
-            // Examples: "vc sd-jwt" -> "vc+sd-jwt", "VC+SD-JWT" -> "vc+sd-jwt"
+            // Normalize format string to handle variations for sd-jwt
+            // Examples: "vc sd-jwt" -> "vc+sd-jwt", "vc_sd_jwt" -> "vc+sd-jwt"
             String normalizedFormat = format.trim()
-                    .toLowerCase(Locale.ENGLISH)
-                    .replace(" ", "+")
-                    .replace("_", "+");
+                    .toLowerCase(Locale.ENGLISH);
+                    
+            if ("vc sd-jwt".equals(normalizedFormat) || "vc_sd_jwt".equals(normalizedFormat) 
+                    || "vc_sd-jwt".equals(normalizedFormat)) {
+                normalizedFormat = "vc+sd-jwt";
+            }
 
             return normalizedFormat;
 
