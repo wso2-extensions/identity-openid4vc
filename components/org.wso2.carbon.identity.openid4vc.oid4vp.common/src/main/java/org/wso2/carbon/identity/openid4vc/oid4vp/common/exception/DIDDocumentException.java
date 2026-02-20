@@ -20,8 +20,9 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.common.exception;
 
 /**
  * Exception thrown when DID document operations fail.
+ * Extends VPException to maintain consistent exception hierarchy and support error codes.
  */
-public class DIDDocumentException extends Exception {
+public class DIDDocumentException extends VPException {
 
     private static final long serialVersionUID = 1L;
 
@@ -35,6 +36,16 @@ public class DIDDocumentException extends Exception {
     }
 
     /**
+     * Constructor with error code and message.
+     *
+     * @param code    Error code
+     * @param message Error message
+     */
+    public DIDDocumentException(final String code, final String message) {
+        super(code, message);
+    }
+
+    /**
      * Constructor with message and cause.
      *
      * @param message Error message
@@ -45,11 +56,22 @@ public class DIDDocumentException extends Exception {
     }
 
     /**
+     * Constructor with error code, message, and cause.
+     *
+     * @param code    Error code
+     * @param message Error message
+     * @param cause   Underlying cause
+     */
+    public DIDDocumentException(final String code, final String message, final Throwable cause) {
+        super(code, message, cause);
+    }
+
+    /**
      * Constructor with cause.
      *
      * @param cause Underlying cause
      */
     public DIDDocumentException(final Throwable cause) {
-        super(cause);
+        super(cause.getMessage(), cause);
     }
 }

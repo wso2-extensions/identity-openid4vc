@@ -18,6 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.common.model;
 
+import java.util.Arrays;
+
 /**
  * Model class for DID Keys.
  */
@@ -88,6 +90,21 @@ public class DIDKey {
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    /**
+     * Securely clear the private key from memory by zeroing the byte array.
+     * This should be called when the key is no longer needed to prevent
+     * exposure through heap dumps or memory analysis.
+     * <p>
+     * Note: The caller is responsible for ensuring the key is no longer
+     * referenced elsewhere before calling this method.
+     */
+    public void clearPrivateKey() {
+        if (privateKey != null) {
+            Arrays.fill(privateKey, (byte) 0);
+            privateKey = null;
+        }
     }
 
     @Override

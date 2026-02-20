@@ -7,8 +7,10 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestResponseDTO;
@@ -49,6 +51,7 @@ public class VPRequestServiceImplTest {
     private DIDProvider didProvider;
 
     private VPRequestServiceImpl vpRequestService;
+    private MockedStatic<IdentityUtil> identityUtilMockedStatic;
 
     private static final int TENANT_ID = -1234;
     private static final String REQUEST_ID = "req-123";
@@ -61,11 +64,19 @@ public class VPRequestServiceImplTest {
     @BeforeMethod
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+        identityUtilMockedStatic = Mockito.mockStatic(IdentityUtil.class);
+        identityUtilMockedStatic.when(() -> IdentityUtil.getProperty(any())).thenReturn("http://localhost:8080");
+
         vpRequestService = new VPRequestServiceImpl(vpRequestDAO, presentationDefinitionService, 
                 "http://localhost:8080");
 
         // Inject Mock PresentationDefinitionService into DataHolder
         VPServiceDataHolder.getInstance().setPresentationDefinitionService(presentationDefinitionService);
+    }
+
+    @AfterMethod
+    public void tearDown() {
+        identityUtilMockedStatic.close();
     }
 
     @Test
