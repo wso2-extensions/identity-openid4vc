@@ -87,6 +87,22 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
         }
     }
 
+    @Override
+    public CredentialIssuerMetadataResponse getJwtVcIssuerMetadata(String tenantDomain)
+            throws CredentialIssuerMetadataException {
+
+        String effectiveTenant = resolveTenant(tenantDomain);
+        try {
+            Map<String, Object> metadata = new LinkedHashMap<>();
+            metadata.put(Constants.JwtVcIssuerMetadata.ISSUER, buildCredentialIssuerUrl(effectiveTenant));
+            metadata.put(Constants.JwtVcIssuerMetadata.JWKS_URI, buildJwksUrl(effectiveTenant));
+            return new CredentialIssuerMetadataResponse(metadata);
+        } catch (URLBuilderException e) {
+            throw new CredentialIssuerMetadataException(
+                    "Error while constructing JWT VC Issuer metadata URLs", e);
+        }
+    }
+
     private String resolveTenant(String tenantDomain) {
 
         if (tenantDomain == null || tenantDomain.trim().isEmpty()) {
@@ -115,6 +131,12 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
     private String buildAuthorizationServerUrl(String tenantDomain) throws URLBuilderException {
 
         return CommonUtil.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_TOKEN)
+                .getAbsolutePublicURL();
+    }
+
+    private String buildJwksUrl(String tenantDomain) throws URLBuilderException {
+
+        return CommonUtil.buildServiceUrl(tenantDomain, Constants.SEGMENT_OAUTH2, Constants.SEGMENT_JWKS)
                 .getAbsolutePublicURL();
     }
 

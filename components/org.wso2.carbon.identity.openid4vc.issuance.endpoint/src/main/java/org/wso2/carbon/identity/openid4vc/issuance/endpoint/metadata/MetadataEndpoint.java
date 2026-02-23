@@ -58,4 +58,22 @@ public class MetadataEndpoint {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
         }
     }
+
+    @GET
+    @Path("/.well-known/jwt-vc-issuer")
+    public Response getJwtVcIssuerMetadata() {
+
+        String tenantDomain = CommonUtil.resolveTenantDomain();
+        try {
+            CredentialIssuerMetadataProcessor processor =
+                    CredentialIssuerMetadataServiceFactory.getMetadataProcessor();
+            CredentialIssuerMetadataResponse metadataResponse =
+                    processor.getJwtVcIssuerMetadata(tenantDomain);
+            String responsePayload = metadataResponse.toJson();
+            return Response.ok(responsePayload, MediaType.APPLICATION_JSON).build();
+        } catch (CredentialIssuerMetadataException e) {
+            LOG.error(String.format("Error while resolving JWT VC Issuer metadata for tenant: %s", tenantDomain), e);
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+    }
 }

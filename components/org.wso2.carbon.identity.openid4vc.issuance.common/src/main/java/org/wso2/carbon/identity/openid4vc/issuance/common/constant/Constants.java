@@ -33,6 +33,7 @@ public class Constants {
     public static final String SEGMENT_NONCE = "nonce";
     public static final String SEGMENT_OAUTH2 = "oauth2";
     public static final String SEGMENT_TOKEN = "token";
+    public static final String SEGMENT_JWKS = "jwks";
     public static final String VC_CLAIM = "vc";
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
     public static final String VC_SD_JWT_FORMAT = "dc+sd-jwt";
@@ -93,6 +94,15 @@ public class Constants {
         public static final String JWK = "jwk";
         public static final String SUBJECT_IDENTIFIER = "sub";
         public static final String VCT = "vct";
+    }
+
+    /**
+    * OpenID4VCI JWT VC Issuer Metadata related constants.
+    * These constants are specific to the JWT Verifiable Credential Issuer Metadata structure in OpenID4VCI.
+    */
+    public static class JwtVcIssuerMetadata {
+        public static final String ISSUER = "issuer";
+        public static final String JWKS_URI = "jwks_uri";
     }
 
     /**

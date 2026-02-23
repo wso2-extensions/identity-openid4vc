@@ -35,4 +35,16 @@ public interface CredentialIssuerMetadataProcessor {
      */
     CredentialIssuerMetadataResponse getMetadataResponse(String tenantDomain)
             throws CredentialIssuerMetadataException;
+
+    /**
+     * Build the JWT VC Issuer Metadata response for a given tenant.
+     * This metadata is used by verifiers to resolve the issuer's public key
+     * as per draft-ietf-oauth-sd-jwt-vc.
+     *
+     * @param tenantDomain Tenant domain resolving the credential issuer.
+     * @return Metadata response containing issuer and jwks_uri.
+     * @throws CredentialIssuerMetadataException On metadata retrieval failures.
+     */
+    CredentialIssuerMetadataResponse getJwtVcIssuerMetadata(String tenantDomain)
+            throws CredentialIssuerMetadataException;
 }
