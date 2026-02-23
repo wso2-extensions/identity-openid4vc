@@ -50,10 +50,10 @@
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.metadata</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.offer</module>
         <module>components/org.wso2.carbon.identity.openid4vc.issuance.endpoint</module>
-        <module>components/org.wso2.carbon.identity.openid4vc.oid4vp.common</module>
-        <module>components/org.wso2.carbon.identity.openid4vc.oid4vp.did</module>
-        <module>components/org.wso2.carbon.identity.openid4vc.oid4vp.verification</module>
-        <module>components/org.wso2.carbon.identity.openid4vc.oid4vp.presentation</module>
+        <module>components/org.wso2.carbon.identity.openid4vc.presentation.common</module>
+        <module>components/org.wso2.carbon.identity.openid4vc.presentation.did</module>
+        <module>components/org.wso2.carbon.identity.openid4vc.presentation.verification</module>
+        <module>components/org.wso2.carbon.identity.openid4vc.presentation.authenticator</module>
         <module>features/org.wso2.carbon.identity.openid4vc.template.management.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.common.server.feature</module>
         <module>features/org.wso2.carbon.identity.openid4vc.issuance.credential.server.feature</module>
