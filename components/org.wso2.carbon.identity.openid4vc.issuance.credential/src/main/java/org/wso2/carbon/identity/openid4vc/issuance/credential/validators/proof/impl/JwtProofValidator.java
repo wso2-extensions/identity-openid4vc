@@ -278,7 +278,8 @@ public class JwtProofValidator implements ProofValidator {
             if (issuer != null) {
                 String expectedClientId = proofDTO.getClientId();
                 if (!issuer.equals(expectedClientId)) {
-                    throw new CredentialIssuanceClientException(INVALID_PROOF, "Invalid iss claim. Must match client_id.");
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Invalid iss claim. Must match client_id.");
                 }
             }
 
