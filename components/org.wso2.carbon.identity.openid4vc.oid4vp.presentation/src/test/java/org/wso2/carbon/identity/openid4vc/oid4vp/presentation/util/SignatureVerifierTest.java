@@ -29,7 +29,6 @@ import java.security.PublicKey;
 import java.util.Base64;
 
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
 public class SignatureVerifierTest {
@@ -50,7 +49,8 @@ public class SignatureVerifierTest {
 
     @Test
     public void testVerifyJwtSignatureRS256() throws Exception {
-        String header = Base64.getUrlEncoder().withoutPadding().encodeToString("{\"alg\":\"RS256\",\"typ\":\"JWT\"}".getBytes());
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"RS256\",\"typ\":\"JWT\"}".getBytes());
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString("{\"sub\":\"test\"}".getBytes());
         
         java.security.Signature sig = java.security.Signature.getInstance("SHA256withRSA");
@@ -65,7 +65,8 @@ public class SignatureVerifierTest {
 
     @Test
     public void testVerifyJwtSignatureInvalid() throws Exception {
-        String header = Base64.getUrlEncoder().withoutPadding().encodeToString("{\"alg\":\"RS256\",\"typ\":\"JWT\"}".getBytes());
+        String header = Base64.getUrlEncoder().withoutPadding().encodeToString(
+                "{\"alg\":\"RS256\",\"typ\":\"JWT\"}".getBytes());
         String payload = Base64.getUrlEncoder().withoutPadding().encodeToString("{\"sub\":\"test\"}".getBytes());
         String jwt = header + "." + payload + ".invalid-signature";
         
@@ -85,7 +86,8 @@ public class SignatureVerifierTest {
         
         String proofValue = Base64.getEncoder().encodeToString(sig.sign());
         
-        assertTrue(signatureVerifier.verifyLinkedDataSignature(document, rsaKeyPair.getPublic(), "GenericSignature", proofValue));
+        assertTrue(signatureVerifier.verifyLinkedDataSignature(document, rsaKeyPair.getPublic(),
+                "GenericSignature", proofValue));
     }
 
     @Test

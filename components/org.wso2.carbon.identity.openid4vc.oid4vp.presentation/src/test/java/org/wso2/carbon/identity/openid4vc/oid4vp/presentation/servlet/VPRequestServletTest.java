@@ -26,10 +26,8 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestResponseDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
@@ -113,7 +111,8 @@ public class VPRequestServletTest {
     }
 
     private ServletInputStream createMockInputStream(String content) {
-        final ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
+        final ByteArrayInputStream byteArrayInputStream =
+                new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
         return new ServletInputStream() {
             @Override
             public int read() throws IOException {
