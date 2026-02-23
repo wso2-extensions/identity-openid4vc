@@ -143,8 +143,6 @@ public class JwtProofValidator implements ProofValidator {
 
         try {
             JWK jwk = signedJWT.getHeader().getJWK();
-            // Note: getKeyID() returns the top-level 'kid' JOSE header parameter, independent of
-            // any 'kid' field that may exist inside the embedded 'jwk' object.
             String kid = signedJWT.getHeader().getKeyID();
             List<Base64> x5c = signedJWT.getHeader().getX509CertChain();
             Object trustChain = signedJWT.getHeader().getCustomParam(TRUST_CHAIN_HEADER);
@@ -280,10 +278,6 @@ public class JwtProofValidator implements ProofValidator {
             if (issuer == null) {
                 throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Missing iss claim. Required when client_id is present.");
-            }
-            String expectedClientId = proofDTO.getClientId();
-            if (!issuer.equals(expectedClientId)) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF, "Invalid iss claim. Must match client_id.");
             }
 
             // Validate aud
