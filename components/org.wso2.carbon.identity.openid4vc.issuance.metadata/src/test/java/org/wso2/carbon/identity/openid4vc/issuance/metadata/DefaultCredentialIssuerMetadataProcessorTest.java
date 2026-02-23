@@ -53,6 +53,7 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
     private static final String TEST_ISSUER_URL = "https://localhost:9443/oid4vci";
     private static final String TEST_CREDENTIAL_ENDPOINT_URL = "https://localhost:9443/oid4vci/credential";
     private static final String TEST_TOKEN_URL = "https://localhost:9443/oauth2/token";
+    private static final String TEST_JWKS_URL = "https://localhost:9443/oauth2/jwks";
 
     private DefaultCredentialIssuerMetadataProcessor processor;
     private VCTemplateManager configManager;
@@ -167,7 +168,27 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         Assert.assertNotNull(response3, "Response should not be null for whitespace tenant");
     }
 
-    @Test(priority = 4, description = "Test error handling when config retrieval fails",
+    @Test(priority = 4, description = "Test JWT VC Issuer metadata response generation")
+    public void testGetJwtVcIssuerMetadata() throws Exception {
+
+        commonUtilMockedStatic = mockCommonUtil();
+
+        CredentialIssuerMetadataResponse response = processor.getJwtVcIssuerMetadata(TEST_TENANT_DOMAIN);
+
+        Assert.assertNotNull(response, "Response should not be null");
+        Map<String, Object> metadata = response.getMetadata();
+        Assert.assertNotNull(metadata, "Metadata should not be null");
+
+        Assert.assertTrue(metadata.containsKey("issuer"), "Should contain issuer");
+        Assert.assertTrue(metadata.containsKey("jwks_uri"), "Should contain jwks_uri");
+
+        Assert.assertEquals(metadata.get("issuer"), TEST_ISSUER_URL);
+        Assert.assertEquals(metadata.get("jwks_uri"), TEST_JWKS_URL);
+
+        Assert.assertEquals(metadata.size(), 2, "JWT VC Issuer metadata should only contain issuer and jwks_uri");
+    }
+
+    @Test(priority = 5, description = "Test error handling when config retrieval fails",
             expectedExceptions = CredentialIssuerMetadataException.class,
             expectedExceptionsMessageRegExp = ".*Error while retrieving VC templates.*")
     public void testGetMetadataResponseWithConfigRetrievalError() throws Exception {
@@ -197,6 +218,9 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         ServiceURL tokenUrl = mock(ServiceURL.class);
         when(tokenUrl.getAbsolutePublicURL()).thenReturn(TEST_TOKEN_URL);
 
+        ServiceURL jwksUrl = mock(ServiceURL.class);
+        when(jwksUrl.getAbsolutePublicURL()).thenReturn(TEST_JWKS_URL);
+
         mockedStatic.when(() -> CommonUtil.buildServiceUrl(anyString(), any()))
                 .thenReturn(issuerUrl);
         mockedStatic.when(() -> CommonUtil.buildServiceUrl(anyString(), any(), any()))
@@ -204,6 +228,10 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
                     String segment = invocation.getArgument(1);
                     if ("oid4vci".equals(segment)) {
                         return credentialUrl;
+                    }
+                    String segment2 = invocation.getArgument(2);
+                    if ("jwks".equals(segment2)) {
+                        return jwksUrl;
                     }
                     return tokenUrl;
                 });
