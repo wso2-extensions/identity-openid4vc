@@ -87,7 +87,7 @@ public class DefaultCredentialIssuerMetadataProcessor implements CredentialIssue
         }
     }
 
-@Override
+    @Override
     public CredentialIssuerMetadataResponse getJwtVcIssuerMetadata(String tenantDomain)
             throws CredentialIssuerMetadataException {
 
