@@ -26,6 +26,7 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.VPSubmissionValidator;
@@ -37,7 +38,6 @@ import java.util.Base64;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 import static org.testng.Assert.assertTrue;
@@ -106,7 +106,7 @@ public class VPSubmissionServletTest {
         
         // Let validator throw exception
         validatorMockedStatic.when(() -> VPSubmissionValidator.validateSubmission(any()))
-                .thenThrow(new org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPSubmissionValidationException("Invalid"));
+                .thenThrow(new VPSubmissionValidationException("Invalid"));
 
         vpSubmissionServlet.doPost(request, response);
 

@@ -66,7 +66,8 @@ public class TrustedVerifierServiceImplTest {
         
         trustedVerifierService.addTrustedVerifier(verifier, TENANT);
 
-        Optional<TrustedVerifier> retrieved = trustedVerifierService.getTrustedVerifierByClientId("test-client", TENANT);
+        Optional<TrustedVerifier> retrieved = trustedVerifierService.getTrustedVerifierByClientId(
+                "test-client", TENANT);
         assertTrue(retrieved.isPresent());
         assertEquals(retrieved.get().getName(), "Client Verifier");
     }
@@ -157,7 +158,8 @@ public class TrustedVerifierServiceImplTest {
 
     @Test
     public void testValidateRedirectUriStrict() throws VPException {
-        trustedVerifierService.setRedirectUriValidationMode(TENANT, TrustedVerifierService.RedirectUriValidationMode.STRICT);
+        trustedVerifierService.setRedirectUriValidationMode(TENANT,
+                TrustedVerifierService.RedirectUriValidationMode.STRICT);
         
         TrustedVerifier verifier = new TrustedVerifier();
         verifier.setDid("did:strict");
