@@ -17,13 +17,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# OID4VP Modules (using indexed arrays for compatibility)
 MODULES=(
     ""  # index 0 - unused
-    "org.wso2.carbon.identity.openid4vc.oid4vp.common"
-    "org.wso2.carbon.identity.openid4vc.oid4vp.did"
-    "org.wso2.carbon.identity.openid4vc.oid4vp.verification"
-    "org.wso2.carbon.identity.openid4vc.oid4vp.presentation"
+    "org.wso2.carbon.identity.openid4vc.presentation.common"
+    "org.wso2.carbon.identity.openid4vc.presentation.definition"
+    "org.wso2.carbon.identity.openid4vc.presentation.did"
+    "org.wso2.carbon.identity.openid4vc.presentation.verification"
+    "org.wso2.carbon.identity.openid4vc.presentation.authenticator"
 )
 
 # Function to print colored output
@@ -61,8 +61,9 @@ display_modules() {
     echo "  [2] ${MODULES[2]}"
     echo "  [3] ${MODULES[3]}"
     echo "  [4] ${MODULES[4]}"
-    echo "  [5] All components"
-    echo "  [6] Deploy existing JARs (without compiling)"
+    echo "  [5] ${MODULES[5]}"
+    echo "  [6] All components"
+    echo "  [7] Deploy existing JARs (without compiling)"
     echo "  [0] Exit"
     echo ""
 }
@@ -83,7 +84,7 @@ check_jar_exists() {
 list_available_jars() {
     local available_jars=()
     
-    for i in {1..4}; do
+    for i in {1..5}; do
         module_name="${MODULES[$i]}"
         if check_jar_exists "$module_name"; then
             available_jars+=("$module_name")
@@ -220,14 +221,14 @@ main_menu() {
     
     display_modules
     
-    read -p "Select component(s) to compile [0-5]: " choice
+    read -p "Select component(s) to compile [0-6]: " choice
     
     case $choice in
         0)
             print_info "Exiting..."
             exit 0
             ;;
-        1|2|3|4)
+        1|2|3|4|5)
             selected_module="${MODULES[$choice]}"
             print_header "Compiling: $selected_module"
             
@@ -239,13 +240,13 @@ main_menu() {
                 fi
             fi
             ;;
-        5)
+        6)
             print_header "Compiling All OID4VP Components"
             
             compiled_modules=()
             failed_modules=()
             
-            for key in {1..4}; do
+            for key in {1..5}; do
                 module_name="${MODULES[$key]}"
                 if compile_module "$module_name"; then
                     compiled_modules+=("$module_name")
@@ -306,7 +307,7 @@ main_menu() {
                 esac
             fi
             ;;
-        6)
+        7)
             deploy_existing_jars
             ;;
         *)

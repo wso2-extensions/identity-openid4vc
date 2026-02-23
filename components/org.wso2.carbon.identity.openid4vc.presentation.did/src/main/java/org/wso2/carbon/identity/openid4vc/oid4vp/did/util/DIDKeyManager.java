@@ -341,11 +341,12 @@ public class DIDKeyManager {
 
     /**
      * Base58 encode (Bitcoin alphabet).
+     * Public for testing.
      * 
      * @param input Byte array to encode
      * @return Base58 encoded string
      */
-    private static String base58Encode(byte[] input) {
+    public static String base58Encode(byte[] input) {
         String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
         if (input.length == 0) {
             return "";
