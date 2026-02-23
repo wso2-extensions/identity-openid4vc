@@ -24,6 +24,8 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.util.Base64;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +53,9 @@ public class JwtProofValidator implements ProofValidator {
 
     private static final Log LOG = LogFactory.getLog(JwtProofValidator.class);
     private static final int MAX_AUDIENCE_SIZE = 10;
+    private static final String DID_JWK_PREFIX = "did:jwk:";
+    private static final String DID_JWK_VALID_FRAGMENT = "0";
+    private static final String TRUST_CHAIN_HEADER = "trust_chain";
     private final NonceService nonceService = new NonceService();
 
     @Override
@@ -138,19 +143,94 @@ public class JwtProofValidator implements ProofValidator {
 
         try {
             JWK jwk = signedJWT.getHeader().getJWK();
-            if (jwk == null) {
+            // Note: getKeyID() returns the top-level 'kid' JOSE header parameter, independent of
+            // any 'kid' field that may exist inside the embedded 'jwk' object.
+            String kid = signedJWT.getHeader().getKeyID();
+            List<Base64> x5c = signedJWT.getHeader().getX509CertChain();
+            Object trustChain = signedJWT.getHeader().getCustomParam(TRUST_CHAIN_HEADER);
+
+            validateKeyBindingHeaderExclusivity(jwk, kid, x5c, trustChain);
+
+            if (jwk != null) {
+                return validateAndReturnPublicJwk(jwk);
+            } else if (kid != null) {
+                return resolvePublicKeyFromKid(kid);
+            } else if (x5c != null && !x5c.isEmpty()) {
                 throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "Public key (jwk) must be present in proof header");
+                        "Support for 'x5c' is not yet implemented");
+            } else {
+                throw new CredentialIssuanceClientException(INVALID_PROOF,
+                        "Support for 'trust_chain' is not yet implemented");
             }
-            // Security: Ensure JWK does not contain private key material
-            if (jwk.isPrivate()) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF, "JWK must not contain private key material");
-            }
-            return jwk;
         } catch (CredentialIssuanceClientException e) {
             throw e;
         } catch (Exception e) {
-            throw new CredentialIssuanceException("Failed to extract public key", e);
+            throw new CredentialIssuanceException("Failed to extract public key from proof header", e);
+        }
+    }
+
+    private void validateKeyBindingHeaderExclusivity(JWK jwk, String kid, List<Base64> x5c, Object trustChain)
+            throws CredentialIssuanceClientException {
+
+        int presentCount = 0;
+        if (jwk != null) {
+            presentCount++;
+        }
+        if (kid != null) {
+            presentCount++;
+        }
+        if (x5c != null && !x5c.isEmpty()) {
+            presentCount++;
+        }
+        if (trustChain != null) {
+            presentCount++;
+        }
+
+        if (presentCount > 1) {
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
+                    "Only one of 'jwk', 'kid', 'x5c', or 'trust_chain' can be present in the proof header");
+        }
+        if (presentCount == 0) {
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
+                    "One of 'jwk', 'kid', 'x5c', or 'trust_chain' must be present in the proof header");
+        }
+    }
+
+    private JWK validateAndReturnPublicJwk(JWK jwk) throws CredentialIssuanceClientException {
+
+        if (jwk.isPrivate()) {
+            throw new CredentialIssuanceClientException(INVALID_PROOF,
+                    "JWK must not contain private key material");
+        }
+        return jwk;
+    }
+
+    private JWK resolvePublicKeyFromKid(String kid) throws CredentialIssuanceException {
+
+        if (kid.startsWith(DID_JWK_PREFIX)) {
+            return resolveDidJwk(kid);
+        }
+        throw new CredentialIssuanceClientException(INVALID_PROOF,
+                "Unsupported 'kid' format. Only 'did:jwk:' is currently supported.");
+    }
+
+    private JWK resolveDidJwk(String did) throws CredentialIssuanceException {
+
+        try {
+            String methodSpecificId = did.substring(DID_JWK_PREFIX.length());
+            if (methodSpecificId.contains("#")) {
+                String[] parts = methodSpecificId.split("#", 2);
+                if (!DID_JWK_VALID_FRAGMENT.equals(parts[1])) {
+                    LOG.warn("Unexpected fragment '" + parts[1] + "' in did:jwk: DID URL. Expected '#0'.");
+                }
+                methodSpecificId = parts[0];
+            }
+            JWK jwk = JWK.parse(new Base64URL(methodSpecificId).decodeToString());
+            return validateAndReturnPublicJwk(jwk);
+        } catch (CredentialIssuanceClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new CredentialIssuanceException("Failed to parse JWK from did:jwk: identifier", e);
         }
     }
 
