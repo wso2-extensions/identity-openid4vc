@@ -219,7 +219,8 @@ public class JwtProofValidator implements ProofValidator {
             if (methodSpecificId.contains("#")) {
                 String[] parts = methodSpecificId.split("#", 2);
                 if (!DID_JWK_VALID_FRAGMENT.equals(parts[1])) {
-                    LOG.warn("Unexpected fragment '" + parts[1] + "' in did:jwk: DID URL. Expected '#0'.");
+                    throw new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Invalid fragment in did:jwk: DID URL. Only '#0' is allowed.");
                 }
                 methodSpecificId = parts[0];
             }
