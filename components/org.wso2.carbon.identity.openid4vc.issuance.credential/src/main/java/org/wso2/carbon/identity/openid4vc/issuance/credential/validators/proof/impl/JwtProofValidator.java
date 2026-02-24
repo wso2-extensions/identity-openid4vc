@@ -160,7 +160,7 @@ public class JwtProofValidator implements ProofValidator {
                 throw new CredentialIssuanceClientException(INVALID_PROOF,
                         "Support for 'trust_chain' is not yet implemented");
             }
-        } catch (CredentialIssuanceClientException e) {
+        } catch (CredentialIssuanceException e) {
             throw e;
         } catch (Exception e) {
             throw new CredentialIssuanceException("Failed to extract public key from proof header", e);
