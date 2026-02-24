@@ -22,12 +22,12 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.DescriptorMapDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.PresentationSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPSubmissionValidationException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.DescriptorMapDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.PresentationSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 
 import java.util.ArrayList;
 import java.util.HashSet;

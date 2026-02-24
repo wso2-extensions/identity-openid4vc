@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.util;
+package org.wso2.carbon.identity.openid4vc.presentation.common.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -26,8 +26,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 
 /**
  * Utility class for Presentation Definition JSON operations.

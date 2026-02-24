@@ -18,8 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 
 import java.util.List;
 

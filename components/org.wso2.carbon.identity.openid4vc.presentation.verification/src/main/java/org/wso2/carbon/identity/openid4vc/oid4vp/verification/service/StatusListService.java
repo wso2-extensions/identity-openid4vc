@@ -18,9 +18,9 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.verification.service;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.RevocationCheckException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.RevocationCheckResult;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiableCredential;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.RevocationCheckException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.RevocationCheckResult;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
 
 /**
  * Service interface for checking credential revocation status using various status list mechanisms.

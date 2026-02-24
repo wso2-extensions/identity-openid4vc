@@ -1,4 +1,4 @@
-package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.authenticator;
+package org.wso2.carbon.identity.openid4vc.oid4vp.presentation;
 
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -10,7 +10,6 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
@@ -26,7 +25,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestSta
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -162,11 +160,7 @@ public class OpenID4VPAuthenticatorTest {
         when(vpRequestService.createVPRequest(any(), anyInt())).thenReturn(mockResponseDTO);
         doNothing().when(response).sendRedirect(anyString());
 
-        Method initiateMethod = OpenID4VPAuthenticator.class.getDeclaredMethod(
-                "initiateAuthenticationRequest",
-                HttpServletRequest.class, HttpServletResponse.class, AuthenticationContext.class);
-        initiateMethod.setAccessible(true);
-        initiateMethod.invoke(authenticator, request, response, context);
+        authenticator.initiateAuthenticationRequest(request, response, context);
 
         verify(context).setProperty("openid4vp_request_id", "req-123");
         verify(context).setProperty("openid4vp_transaction_id", "dummy-txn-id");

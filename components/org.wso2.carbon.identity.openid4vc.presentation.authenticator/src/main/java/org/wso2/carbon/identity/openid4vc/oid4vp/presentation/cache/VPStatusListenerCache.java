@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 
 import java.util.ArrayList;
 import java.util.Iterator;

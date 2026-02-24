@@ -20,9 +20,9 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.AuthorizationDetailsDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;

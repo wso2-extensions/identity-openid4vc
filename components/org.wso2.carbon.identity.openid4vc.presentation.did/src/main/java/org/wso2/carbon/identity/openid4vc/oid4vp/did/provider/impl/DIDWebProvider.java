@@ -25,11 +25,11 @@ import com.nimbusds.jose.crypto.RSASSASigner;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import org.wso2.carbon.core.util.KeyStoreManager;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.BCEd25519Signer;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.DIDKeyManager;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.security.PrivateKey;
 import java.security.cert.Certificate;

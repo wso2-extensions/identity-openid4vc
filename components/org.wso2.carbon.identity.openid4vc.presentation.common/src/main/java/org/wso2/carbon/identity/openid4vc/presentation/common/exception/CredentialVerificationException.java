@@ -16,9 +16,9 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.exception;
+package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
 
 /**
  * Exception thrown when credential verification fails.

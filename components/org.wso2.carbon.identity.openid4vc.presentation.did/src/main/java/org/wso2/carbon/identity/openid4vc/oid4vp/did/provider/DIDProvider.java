@@ -20,8 +20,8 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.did.provider;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 /**
  * Interface for DID Providers supported by the system.

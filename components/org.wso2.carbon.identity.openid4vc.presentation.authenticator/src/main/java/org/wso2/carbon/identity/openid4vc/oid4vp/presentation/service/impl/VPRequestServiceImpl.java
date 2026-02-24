@@ -22,25 +22,25 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.AuthorizationDetailsDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestCreateDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestResponseDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestStatusDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPRequestExpiredException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPRequestNotFoundException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl.VPRequestDAOImpl;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestStatusDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestExpiredException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
 
 /**
  * Implementation of VPRequestService for managing VP authorization requests.

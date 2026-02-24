@@ -23,10 +23,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPStatusResponseDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.polling.LongPollingManager;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.polling.PollingResult;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPStatusResponseDTO;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -27,9 +27,9 @@ import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDResolutionException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;

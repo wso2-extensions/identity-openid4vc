@@ -113,7 +113,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <detectJavaApiLink>false</detectJavaApiLink>
-                    <source>11</source>
+                    <source>21</source>
                 </configuration>
             </plugin>
         </plugins>

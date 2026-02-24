@@ -21,12 +21,12 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.did.service.impl;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDDocumentException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.DIDKeyManager;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDDocumentException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +86,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     public String getDID(int tenantId) throws DIDDocumentException {
         try {
             // Default to did:web
-            String baseUrl = org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil.getBaseUrl();
+            String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(tenantId, baseUrl);
         } catch (Exception e) {

@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.exception;
+package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
 
 /**
  * Exception representing an error response from the wallet.

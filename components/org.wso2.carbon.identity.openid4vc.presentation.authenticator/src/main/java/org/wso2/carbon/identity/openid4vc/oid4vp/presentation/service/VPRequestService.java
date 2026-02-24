@@ -18,14 +18,14 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestCreateDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestResponseDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestStatusDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPRequestExpiredException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPRequestNotFoundException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestStatusDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestExpiredException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 
 /**
  * Service interface for managing VP (Verifiable Presentation) requests.

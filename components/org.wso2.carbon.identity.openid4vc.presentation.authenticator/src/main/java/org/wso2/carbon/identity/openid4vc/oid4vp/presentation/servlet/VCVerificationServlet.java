@@ -22,12 +22,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.impl.VCVerificationServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VCVerificationResultDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
