@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl;
+package org.wso2.carbon.identity.openid4vc.presentation.definition.service.impl;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
@@ -27,8 +27,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationD
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl.PresentationDefinitionDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService.ClaimDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService.InputDescriptorClaimsDTO;
 
 import java.util.List;
 
@@ -158,7 +156,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                         : existing.getDefinitionJson())
                 .resourceId(StringUtils.isNotBlank(presentationDefinition.getResourceId()) 
                         ? presentationDefinition.getResourceId() 
-                        : existing.getResourceId()) // Preserve existing resource ID
+                        : existing.getResourceId())
                 .tenantId(tenantId)
                 .build();
 
@@ -219,6 +217,8 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throw new VPException("Presentation definition JSON is required");
         }
     }
+
+    @Override
     public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException {
         
         if (StringUtils.isBlank(name)) {

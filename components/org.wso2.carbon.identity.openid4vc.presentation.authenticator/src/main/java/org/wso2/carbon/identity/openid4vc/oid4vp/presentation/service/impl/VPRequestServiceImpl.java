@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl.VPRequestDAOImpl;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
@@ -41,6 +40,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
 /**
  * Implementation of VPRequestService for managing VP authorization requests.

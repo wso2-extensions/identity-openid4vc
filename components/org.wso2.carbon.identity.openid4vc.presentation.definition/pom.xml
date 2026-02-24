@@ -50,6 +50,13 @@
             <version>${carbon.identity.framework.version}</version>
         </dependency>
 
+        <!-- Presentation Common -->
+        <dependency>
+            <groupId>org.wso2.carbon.identity.openid4vc</groupId>
+            <artifactId>org.wso2.carbon.identity.openid4vc.presentation.common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- WSO2 Carbon Core & Utils -->
         <dependency>
             <groupId>org.wso2.carbon</groupId>

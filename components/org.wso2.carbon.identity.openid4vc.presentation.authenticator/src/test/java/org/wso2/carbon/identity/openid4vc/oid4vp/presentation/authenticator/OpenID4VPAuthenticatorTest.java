@@ -14,7 +14,6 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.OpenID4VPAuthentic
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.QRCodeUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
@@ -25,6 +24,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;

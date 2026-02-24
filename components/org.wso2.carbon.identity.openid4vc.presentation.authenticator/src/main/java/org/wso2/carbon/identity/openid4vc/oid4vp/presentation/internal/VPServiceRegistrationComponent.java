@@ -30,10 +30,9 @@ import org.wso2.carbon.identity.application.authentication.framework.Application
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.listener.OpenID4VPIdentityProviderMgtListener;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.PresentationDefinitionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.VPRequestServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 import org.wso2.carbon.idp.mgt.listener.IdentityProviderMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -65,19 +64,15 @@ public class VPServiceRegistrationComponent {
 
             // Initialize services using default constructors (which create their own DAOs)
             VPRequestService vpRequestService = new VPRequestServiceImpl();
-            PresentationDefinitionService presentationDefinitionService = new PresentationDefinitionServiceImpl();
 
 
             // Register services with OSGi
             bundleContext.registerService(VPRequestService.class.getName(),
                     vpRequestService, new Hashtable<>());
-            bundleContext.registerService(PresentationDefinitionService.class.getName(),
-                    presentationDefinitionService, new Hashtable<>());
 
 
             // Set services in data holder
             VPServiceDataHolder.getInstance().setVPRequestService(vpRequestService);
-            VPServiceDataHolder.getInstance().setPresentationDefinitionService(presentationDefinitionService);
 
 
             // Register OpenID4VP Authenticator
@@ -99,10 +94,20 @@ public class VPServiceRegistrationComponent {
     protected void deactivate(ComponentContext context) {
         // Services are automatically unregistered by OSGi
         VPServiceDataHolder.getInstance().setVPRequestService(null);
-        VPServiceDataHolder.getInstance().setPresentationDefinitionService(null);
 
         authenticatorRegistered = false;
 
+    }
+
+    @Reference(name = "presentation.definition.service", service = PresentationDefinitionService.class,
+            cardinality = ReferenceCardinality.MANDATORY, policy = ReferencePolicy.DYNAMIC,
+            unbind = "unsetPresentationDefinitionService")
+    protected void setPresentationDefinitionService(PresentationDefinitionService service) {
+        VPServiceDataHolder.getInstance().setPresentationDefinitionService(service);
+    }
+
+    protected void unsetPresentationDefinitionService(PresentationDefinitionService service) {
+        VPServiceDataHolder.getInstance().setPresentationDefinitionService(null);
     }
 
     @Reference(name = "user.realm.service", service = RealmService.class, cardinality = 
