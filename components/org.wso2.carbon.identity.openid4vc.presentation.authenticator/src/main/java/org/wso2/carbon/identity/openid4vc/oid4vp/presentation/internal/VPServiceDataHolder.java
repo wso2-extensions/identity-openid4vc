@@ -22,10 +22,10 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.impl.DIDDocumentServiceImpl;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.impl.VCVerificationServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 import org.wso2.carbon.user.core.service.RealmService;
 
 /**

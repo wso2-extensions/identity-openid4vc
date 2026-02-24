@@ -15,7 +15,6 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
@@ -23,6 +22,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPExcept
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;

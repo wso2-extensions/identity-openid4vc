@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl;
+package org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl;
 
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;

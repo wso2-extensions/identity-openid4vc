@@ -23,14 +23,14 @@ import com.google.gson.GsonBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl.PresentationDefinitionServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.CORSUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.impl.PresentationDefinitionServiceImpl;
 
 import java.io.IOException;
 import java.io.PrintWriter;

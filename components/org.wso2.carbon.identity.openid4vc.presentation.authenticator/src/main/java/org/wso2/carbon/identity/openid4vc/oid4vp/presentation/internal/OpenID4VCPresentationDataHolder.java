@@ -20,8 +20,8 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
 /**
  * Data Holder for OpenID4VP presentation.
