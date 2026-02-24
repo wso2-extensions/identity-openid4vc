@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, WSO2 LLC. (http://www.wso2.com).
+ * Copyright (c) 2025-2026, WSO2 LLC. (http://www.wso2.com).
  *
  * WSO2 LLC. licenses this file to you under the Apache License,
  * Version 2.0 (the "License"); you may not use this file except
@@ -32,6 +32,7 @@ import org.wso2.carbon.identity.core.model.ExpressionNode;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants;
 import org.wso2.carbon.identity.openid4vc.template.management.dao.VCTemplateMgtDAO;
+import org.wso2.carbon.identity.openid4vc.template.management.dao.impl.CacheBackedVCTemplateMgtDAO;
 import org.wso2.carbon.identity.openid4vc.template.management.dao.impl.VCTemplateMgtDAOImpl;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
@@ -73,7 +74,7 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
 
     private static final Log LOG = LogFactory.getLog(VCTemplateManagerImpl.class);
     private static final VCTemplateManager INSTANCE = new VCTemplateManagerImpl();
-    private final VCTemplateMgtDAO dao = new VCTemplateMgtDAOImpl();
+    private final VCTemplateMgtDAO dao = new CacheBackedVCTemplateMgtDAO(new VCTemplateMgtDAOImpl());
 
     private VCTemplateManagerImpl() {
 
