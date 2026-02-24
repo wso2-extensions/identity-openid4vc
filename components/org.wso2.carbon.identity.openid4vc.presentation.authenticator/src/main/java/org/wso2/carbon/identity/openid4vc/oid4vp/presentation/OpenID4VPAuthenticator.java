@@ -38,21 +38,22 @@ import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.DescriptorMapDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.PresentationSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestCreateDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPRequestResponseDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util.QRCodeUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.DescriptorMapDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.PresentationSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -182,7 +183,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             String queryParams = buildQueryParams(vpRequestResponse, qrContent, context);
 
             String redirectUrl = loginPage + queryParams;
-            if (!org.wso2.carbon.identity.openid4vc.oid4vp.common.util.SecurityUtils.isSafeRedirectUri(redirectUrl)) {
+            if (!SecurityUtils.isSafeRedirectUri(redirectUrl)) {
                 throw new AuthenticationFailedException("Invalid redirect URL");
             }
             response.sendRedirect(redirectUrl);

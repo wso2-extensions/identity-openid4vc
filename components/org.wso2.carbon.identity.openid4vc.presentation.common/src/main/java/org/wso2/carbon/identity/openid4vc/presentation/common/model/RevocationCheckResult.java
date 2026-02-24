@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.model;
+package org.wso2.carbon.identity.openid4vc.presentation.common.model;
 
 /**
  * Model class representing the result of a revocation status check.

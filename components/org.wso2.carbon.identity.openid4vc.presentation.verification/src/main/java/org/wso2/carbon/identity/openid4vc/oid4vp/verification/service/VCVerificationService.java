@@ -18,10 +18,10 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.verification.service;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiableCredential;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiablePresentation;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VCVerificationResultDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiablePresentation;
 
 import java.util.List;
 

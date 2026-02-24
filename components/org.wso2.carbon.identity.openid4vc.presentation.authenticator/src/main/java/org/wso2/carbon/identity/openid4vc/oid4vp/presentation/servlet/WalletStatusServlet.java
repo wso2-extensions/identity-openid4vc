@@ -21,14 +21,14 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet;
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.polling.LongPollingManager;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.polling.PollingResult;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 
 import java.io.IOException;
 import java.io.PrintWriter;

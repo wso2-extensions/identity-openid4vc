@@ -18,8 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.TrustedVerifier;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.TrustedVerifier;
 
 import java.util.List;
 import java.util.Optional;

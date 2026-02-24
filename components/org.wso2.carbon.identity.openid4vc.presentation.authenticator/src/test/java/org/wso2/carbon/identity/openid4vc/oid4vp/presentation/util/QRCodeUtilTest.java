@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.util;
 
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.AuthorizationDetailsDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;

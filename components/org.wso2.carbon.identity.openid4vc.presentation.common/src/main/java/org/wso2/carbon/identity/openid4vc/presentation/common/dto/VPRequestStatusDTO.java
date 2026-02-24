@@ -16,10 +16,10 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.dto;
+package org.wso2.carbon.identity.openid4vc.presentation.common.dto;
 
 import com.google.gson.annotations.SerializedName;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 
 /**
  * Data Transfer Object for VP request status.

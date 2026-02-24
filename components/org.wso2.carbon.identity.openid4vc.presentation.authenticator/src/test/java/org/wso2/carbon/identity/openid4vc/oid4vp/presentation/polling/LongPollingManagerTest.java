@@ -22,10 +22,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequest;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 
 import java.lang.reflect.Field;
 

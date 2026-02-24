@@ -27,15 +27,6 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VPSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPSubmissionValidationException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPRequestStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VPSubmission;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.cache.WalletDataCache;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.VPRequestDAO;
@@ -44,6 +35,15 @@ import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPService
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.status.StatusNotificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.VPSubmissionValidator;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -466,7 +466,7 @@ public class VPSubmissionServlet extends HttpServlet {
 
                 } else {
                     throw new CredentialVerificationException(
-                            org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus.INVALID,
+                            org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus.INVALID,
                             "Invalid JWT VP format");
                 }
             } else {
@@ -508,7 +508,7 @@ public class VPSubmissionServlet extends HttpServlet {
                     if (!verified) {
 
                         throw new CredentialVerificationException(
-                                org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus.INVALID,
+                                VCVerificationStatus.INVALID,
                                 "Credential " + (i + 1) + " from untrusted issuer");
                     }
 
@@ -520,7 +520,7 @@ public class VPSubmissionServlet extends HttpServlet {
                     if (!verified) {
 
                         throw new CredentialVerificationException(
-                                org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus.INVALID,
+                                VCVerificationStatus.INVALID,
                                 "Credential " + (i + 1) + " from untrusted issuer");
                     }
 

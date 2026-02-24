@@ -19,16 +19,16 @@
 package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.PresentationDefinitionNotFoundException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.dao.impl.PresentationDefinitionDAOImpl;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService.ClaimDTO;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService.InputDescriptorClaimsDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
 
 import java.util.List;
 

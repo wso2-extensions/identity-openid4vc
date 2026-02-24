@@ -22,11 +22,11 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.BCEd25519Signer;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.DIDKeyManager;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.util.Collections;
 

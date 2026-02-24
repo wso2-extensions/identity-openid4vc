@@ -22,11 +22,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.dto.VCVerificationResultDTO;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VCVerificationStatus;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.StatusListService;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VCVerificationResultDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
 
 import java.util.Date;
 

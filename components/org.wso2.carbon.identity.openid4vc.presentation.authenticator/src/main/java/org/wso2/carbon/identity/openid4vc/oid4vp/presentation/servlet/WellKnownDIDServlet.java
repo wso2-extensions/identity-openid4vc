@@ -20,10 +20,10 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.presentation.servlet;
 
 import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDDocumentException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.util.CORSUtil;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDDocumentService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.impl.DIDDocumentServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDDocumentException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.CORSUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -117,7 +117,7 @@ public class WellKnownDIDServlet extends HttpServlet {
      * @return Domain string (e.g., "example.com" or "localhost:9443")
      */
     private String extractDomain(HttpServletRequest request) {
-        String baseUrl = org.wso2.carbon.identity.openid4vc.oid4vp.common.util.OpenID4VPUtil.getBaseUrl();
+        String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
         // Remove protocol
         return baseUrl.replace("https://", "").replace("http://", "");
     }

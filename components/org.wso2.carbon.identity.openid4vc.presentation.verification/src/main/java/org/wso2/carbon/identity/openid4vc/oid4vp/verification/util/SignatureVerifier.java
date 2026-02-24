@@ -26,8 +26,8 @@ import com.nimbusds.jwt.SignedJWT;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.service.DIDResolverService;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;

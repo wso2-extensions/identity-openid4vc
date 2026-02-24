@@ -25,11 +25,11 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.verification.util.VPSubmissionValidator;
+import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

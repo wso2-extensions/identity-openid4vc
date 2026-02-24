@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.oid4vp.common.constant;
+package org.wso2.carbon.identity.openid4vc.presentation.common.constant;
 
 /**
  * Constants for OpenID4VP (OpenID for Verifiable Presentations) implementation.

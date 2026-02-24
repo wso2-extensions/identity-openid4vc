@@ -18,8 +18,8 @@
 
 package org.wso2.carbon.identity.openid4vc.oid4vp.did.service;
 
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.exception.DIDResolutionException;
-import org.wso2.carbon.identity.openid4vc.oid4vp.common.model.DIDDocument;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.security.PublicKey;
 
