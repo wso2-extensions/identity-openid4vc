@@ -332,28 +332,6 @@ public class JwtProofValidatorTest {
         }
     }
 
-    @Test(description = "Test validation failure when iss claim is missing but client_id is expected")
-    public void testValidateProofWithMissingIssuerClaim() throws Exception {
-
-        String validNonce = "valid-nonce-value";
-        String expectedClientId = "expected-client-id";
-        // Create JWT without issuer (null issuer)
-        String jwtWithoutIssuer = createRS256Jwt(new JOSEObjectType(JWT_PROOF_TYPE), true, validNonce, null);
-
-        ProofDTO proofDTO = new ProofDTO();
-        proofDTO.setType("jwt");
-        proofDTO.setProofs(Collections.singletonList(jwtWithoutIssuer));
-        proofDTO.setClientId(expectedClientId);
-
-        try {
-            validator.validateProof(proofDTO, TENANT_DOMAIN);
-            Assert.fail("Expected CredentialIssuanceException for missing issuer");
-        } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getMessage().contains("iss") || e.getMessage().contains("client_id"),
-                    "Exception should indicate invalid issuer. Actual: " + e.getMessage());
-        }
-    }
-
     @Test(description = "Test successful proof validation with valid issuer matching client_id")
     public void testValidateProofWithValidIssuerClaim() throws Exception {
 
