@@ -28,7 +28,7 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
-import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.authenticator.OpenID4VPAuthenticator;
+import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.listener.OpenID4VPIdentityProviderMgtListener;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.oid4vp.presentation.service.VPRequestService;
