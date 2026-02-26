@@ -46,19 +46,7 @@ public interface DIDProvider {
      */
     String getDID(int tenantId, String baseUrl) throws VPException;
 
-    /**
-     * Get the full DID for the given tenant/context and algorithm.
-     *
-     * @param tenantId  Tenant ID
-     * @param baseUrl   Base URL (needed for did:web)
-     * @param algorithm Preferred signing algorithm (e.g., "EdDSA", "ES256",
-     *                  "RS256")
-     * @return DID string
-     * @throws VPException if generation fails
-     */
-    default String getDID(int tenantId, String baseUrl, String algorithm) throws VPException {
-        return getDID(tenantId, baseUrl);
-    }
+
 
     /**
      * Get the Key ID to be used in the JWT header.
@@ -70,17 +58,7 @@ public interface DIDProvider {
      */
     String getSigningKeyId(int tenantId, String baseUrl) throws VPException;
 
-    /**
-     * Get the Key ID to be used in the JWT header for a specific algorithm.
-     *
-     * @param tenantId Tenant ID
-     * @param baseUrl  Base URL
-     * @return Key ID
-     * @throws VPException if generation fails
-     */
-    default String getSigningKeyId(int tenantId, String baseUrl, String algorithm) throws VPException {
-        return getSigningKeyId(tenantId, baseUrl);
-    }
+
 
     /**
      * Get the signing algorithm used by this provider.
@@ -89,18 +67,7 @@ public interface DIDProvider {
      */
     JWSAlgorithm getSigningAlgorithm();
 
-    /**
-     * Get the signing algorithm used by this provider for the preference.
-     *
-     * @param algorithm Preferred algorithm
-     * @return JWSAlgorithm
-     */
-    default JWSAlgorithm getSigningAlgorithm(String algorithm) {
-        if (algorithm != null && !algorithm.isEmpty()) {
-            return JWSAlgorithm.parse(algorithm);
-        }
-        return getSigningAlgorithm();
-    }
+
 
     /**
      * Get the JWS Signer for the tenant's key.
@@ -111,17 +78,7 @@ public interface DIDProvider {
      */
     JWSSigner getSigner(int tenantId) throws VPException;
 
-    /**
-     * Get the JWS Signer for the tenant's key and algorithm.
-     *
-     * @param tenantId  Tenant ID
-     * @param algorithm Preferred algorithm
-     * @return JWSSigner
-     * @throws VPException if signer creation fails
-     */
-    default JWSSigner getSigner(int tenantId, String algorithm) throws VPException {
-        return getSigner(tenantId);
-    }
+
 
     /**
      * Generate the DID Document object.
@@ -133,16 +90,5 @@ public interface DIDProvider {
      */
     DIDDocument getDIDDocument(int tenantId, String baseUrl) throws VPException;
 
-    /**
-     * Generate the DID Document object for the specified algorithm.
-     *
-     * @param tenantId  Tenant ID
-     * @param baseUrl   Base URL
-     * @param algorithm Preferred algorithm
-     * @return DIDDocument model
-     * @throws VPException if generation fails
-     */
-    default DIDDocument getDIDDocument(int tenantId, String baseUrl, String algorithm) throws VPException {
-        return getDIDDocument(tenantId, baseUrl);
-    }
+
 }

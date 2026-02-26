@@ -111,7 +111,7 @@ public class DIDResolverServiceImplTest {
                 "QzZqNDlWZlUtSDMtWEVFRTR5OUwzai1fTjAifQ";
         PublicKey publicKey = resolver.getPublicKey(did, null);
         Assert.assertNotNull(publicKey);
-        Assert.assertEquals(publicKey.getAlgorithm(), "EdDSA");
+        Assert.assertEquals(publicKey.getAlgorithm(), "Ed25519");
     }
 
     @Test

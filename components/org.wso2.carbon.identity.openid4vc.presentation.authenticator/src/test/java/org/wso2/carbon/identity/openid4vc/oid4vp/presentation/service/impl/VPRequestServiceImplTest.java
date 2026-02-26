@@ -103,11 +103,11 @@ public class VPRequestServiceImplTest {
 
         try (MockedStatic<DIDProviderFactory> mockedFactory = Mockito.mockStatic(DIDProviderFactory.class)) {
             mockedFactory.when(() -> DIDProviderFactory.getProvider("web")).thenReturn(didProvider);
-            when(didProvider.getDID(Mockito.anyInt(), Mockito.any(), Mockito.any())).thenReturn("did:web:localhost");
-            when(didProvider.getSigningKeyId(Mockito.anyInt(), Mockito.any(), Mockito.any()))
+            when(didProvider.getDID(Mockito.anyInt(), Mockito.any())).thenReturn("did:web:localhost");
+            when(didProvider.getSigningKeyId(Mockito.anyInt(), Mockito.any()))
                     .thenReturn("did:web:localhost#owner");
-            when(didProvider.getSigningAlgorithm(Mockito.any())).thenReturn(JWSAlgorithm.RS256);
-            when(didProvider.getSigner(Mockito.anyInt(), Mockito.any())).thenReturn(mockSigner);
+            when(didProvider.getSigningAlgorithm()).thenReturn(JWSAlgorithm.RS256);
+            when(didProvider.getSigner(Mockito.anyInt())).thenReturn(mockSigner);
 
             VPRequestResponseDTO responseDTO = vpRequestService.createVPRequest(createDTO, TENANT_ID);
 
@@ -134,11 +134,11 @@ public class VPRequestServiceImplTest {
 
         try (MockedStatic<DIDProviderFactory> mockedFactory = Mockito.mockStatic(DIDProviderFactory.class)) {
             mockedFactory.when(() -> DIDProviderFactory.getProvider("web")).thenReturn(didProvider);
-            when(didProvider.getDID(Mockito.anyInt(), Mockito.any(), Mockito.any())).thenReturn("did:web:localhost");
-            when(didProvider.getSigningKeyId(Mockito.anyInt(), Mockito.any(), Mockito.any()))
+            when(didProvider.getDID(Mockito.anyInt(), Mockito.any())).thenReturn("did:web:localhost");
+            when(didProvider.getSigningKeyId(Mockito.anyInt(), Mockito.any()))
                     .thenReturn("did:web:localhost#owner");
-            when(didProvider.getSigningAlgorithm(Mockito.any())).thenReturn(JWSAlgorithm.RS256);
-            when(didProvider.getSigner(Mockito.anyInt(), Mockito.any())).thenReturn(mockSigner);
+            when(didProvider.getSigningAlgorithm()).thenReturn(JWSAlgorithm.RS256);
+            when(didProvider.getSigner(Mockito.anyInt())).thenReturn(mockSigner);
 
             VPRequestResponseDTO responseDTO = vpRequestService.createVPRequest(createDTO, TENANT_ID);
 

@@ -1,7 +1,6 @@
 package org.wso2.carbon.identity.openid4vc.oid4vp.did.util;
 
 import com.nimbusds.jose.jwk.Curve;
-import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
 import org.mockito.MockedStatic;
@@ -73,18 +72,6 @@ public class DIDKeyManagerTest {
         Assert.assertTrue(multibase.startsWith("z6Mk"), "Ed25519 multibase should start with z6Mk");
     }
 
-    @Test
-    public void testPublicKeyToMultibaseP256() {
-        // A valid point on P-256 curve
-        try {
-            ECKey ecKey = new com.nimbusds.jose.jwk.gen.ECKeyGenerator(Curve.P_256).generate();
-            String multibase = DIDKeyManager.publicKeyToMultibase(ecKey);
-            Assert.assertNotNull(multibase);
-            Assert.assertTrue(multibase.startsWith("zDna"), "P-256 multibase should start with zDna");
-        } catch (Exception e) {
-            Assert.fail("Failed to generate valid EC key: " + e.getMessage());
-        }
-    }
 
     @Test
     public void testGetOrGenerateKeyPairFromKeyStore() throws Exception {
@@ -112,17 +99,6 @@ public class DIDKeyManagerTest {
         }
     }
 
-    @Test
-    public void testGetOrGenerateECKeyPair() throws Exception {
-        int tenantId = -1234;
-        ECKey ecKey = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-        Assert.assertNotNull(ecKey);
-        Assert.assertEquals(ecKey.getCurve(), Curve.P_256);
-        
-        // Test caching
-        ECKey ecKey2 = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-        Assert.assertSame(ecKey2, ecKey);
-    }
 
     @Test
     public void testGenerateDIDKeyByTenantId() throws Exception {

@@ -20,8 +20,6 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.impl;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.util.BCEd25519Signer;
@@ -44,17 +42,7 @@ public class DIDKeyProvider implements DIDProvider {
 
     @Override
     public String getDID(int tenantId, String baseUrl) throws VPException {
-        // Default to Ed25519
-        return getDID(tenantId, baseUrl, null);
-    }
-
-    @Override
-    public String getDID(int tenantId, String baseUrl, String algorithm) throws VPException {
         try {
-            if ("ES256".equals(algorithm)) {
-                ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-                return DIDKeyManager.generateDIDKey(key);
-            }
             return DIDKeyManager.generateDIDKey(tenantId);
         } catch (Exception e) {
             throw new VPException("Error retrieving/generating did:key for tenant: " + tenantId, e);
@@ -63,12 +51,7 @@ public class DIDKeyProvider implements DIDProvider {
 
     @Override
     public String getSigningKeyId(int tenantId, String baseUrl) throws VPException {
-        return getSigningKeyId(tenantId, baseUrl, null);
-    }
-
-    @Override
-    public String getSigningKeyId(int tenantId, String baseUrl, String algorithm) throws VPException {
-        String did = getDID(tenantId, baseUrl, algorithm);
+        String did = getDID(tenantId, baseUrl);
         // Remove "did:key:" prefix to get the multibase part which is used as fragment
         String multibase = did.substring(8);
         return did + "#" + multibase;
@@ -80,42 +63,19 @@ public class DIDKeyProvider implements DIDProvider {
     }
 
     @Override
-    public JWSAlgorithm getSigningAlgorithm(String algorithm) {
-        if ("ES256".equals(algorithm)) {
-            return JWSAlgorithm.ES256;
-        }
-        return JWSAlgorithm.EdDSA;
-    }
-
-    @Override
     public JWSSigner getSigner(int tenantId) throws VPException {
-        return getSigner(tenantId, null);
-    }
-
-    @Override
-    public JWSSigner getSigner(int tenantId, String algorithm) throws VPException {
         try {
-            if ("ES256".equals(algorithm)) {
-                ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-                return new ECDSASigner(key);
-            }
-
             OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
             return new BCEd25519Signer(keyPair);
         } catch (Exception e) {
-            throw new VPException("Error creating signer for did:key with algo: " + algorithm, e);
+            throw new VPException("Error creating signer for did:key", e);
         }
     }
 
     @Override
     public DIDDocument getDIDDocument(int tenantId, String baseUrl) throws VPException {
-        return getDIDDocument(tenantId, baseUrl, null);
-    }
-
-    @Override
-    public DIDDocument getDIDDocument(int tenantId, String baseUrl, String algorithm) throws VPException {
-        String did = getDID(tenantId, baseUrl, algorithm);
-        String keyId = getSigningKeyId(tenantId, baseUrl, algorithm);
+        String did = getDID(tenantId, baseUrl);
+        String keyId = getSigningKeyId(tenantId, baseUrl);
         DIDDocument didDocument = new DIDDocument();
         didDocument.setId(did);
 
@@ -123,19 +83,9 @@ public class DIDKeyProvider implements DIDProvider {
         verifyMethod.setId(keyId);
         verifyMethod.setController(did);
 
-        if ("ES256".equals(algorithm)) {
-            try {
-                ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-                verifyMethod.setType("JsonWebKey2020");
-                verifyMethod.setPublicKeyJwkMap(key.toPublicJWK().toJSONObject());
-            } catch (Exception e) {
-                throw new VPException("Error retrieving EC key for DID Document", e);
-            }
-        } else {
-            // Ed25519
-            verifyMethod.setType("Ed25519VerificationKey2020");
-            verifyMethod.setPublicKeyMultibase(did.substring(8));
-        }
+        // Ed25519
+        verifyMethod.setType("Ed25519VerificationKey2020");
+        verifyMethod.setPublicKeyMultibase(did.substring(8));
 
         didDocument.setVerificationMethod(Collections.singletonList(verifyMethod));
         didDocument.setAuthentication(Collections.singletonList(keyId));
