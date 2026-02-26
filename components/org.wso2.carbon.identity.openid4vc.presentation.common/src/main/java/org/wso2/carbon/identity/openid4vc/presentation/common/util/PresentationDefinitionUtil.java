@@ -234,6 +234,101 @@ public class PresentationDefinitionUtil {
     }
 
     /**
+     * Build an input descriptor for a requested credential model.
+     *
+     * @param id             The descriptor ID
+     * @param credentialType The credential type to request
+     * @param purpose        Optional purpose
+     * @param issuer         Optional trusted issuer
+     * @param requestedClaims List of requested claims
+     * @return The input descriptor JSON string
+     */
+    public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
+                                                                     String purpose, String issuer,
+                                                                     java.util.List<String> requestedClaims) {
+        JsonObject descriptor = new JsonObject();
+        descriptor.addProperty(OpenID4VPConstants.PresentationDef.ID, id);
+        descriptor.addProperty(OpenID4VPConstants.PresentationDef.NAME, credentialType);
+        
+        if (StringUtils.isNotBlank(purpose)) {
+            descriptor.addProperty(OpenID4VPConstants.PresentationDef.PURPOSE, purpose);
+        }
+
+        // Add format constraints
+        JsonObject format = new JsonObject();
+        
+        // jwt_vp format
+        JsonObject jwtVp = new JsonObject();
+        JsonArray alg = new JsonArray();
+        alg.add("RS256");
+        alg.add("ES256");
+        alg.add("ES384");
+        jwtVp.add("alg", alg);
+        format.add(OpenID4VPConstants.VCFormats.JWT_VP_JSON, jwtVp);
+        
+        // vc+sd-jwt format
+        JsonObject sdJwt = new JsonObject();
+        JsonArray sdJwtAlg = new JsonArray();
+        sdJwtAlg.add("RS256");
+        sdJwtAlg.add("ES256");
+        sdJwt.add("sd-jwt_alg_values", sdJwtAlg);
+        sdJwt.add("kb-jwt_alg_values", sdJwtAlg);
+        format.add("vc+sd-jwt", sdJwt);
+        
+        descriptor.add(OpenID4VPConstants.PresentationDef.FORMAT, format);
+
+        // Add constraints for credential type
+        JsonObject constraints = new JsonObject();
+        JsonArray fields = new JsonArray();
+        
+        // Type constraint
+        JsonObject typeField = new JsonObject();
+        JsonArray path = new JsonArray();
+        path.add("$.vct");
+        path.add("$.vc.type");
+        path.add("$.type");
+        typeField.add(OpenID4VPConstants.PresentationDef.PATH, path);
+        JsonObject filter = new JsonObject();
+        filter.addProperty("type", "string");
+        filter.addProperty("pattern", "^" + credentialType + "$");
+        typeField.add(OpenID4VPConstants.PresentationDef.FILTER, filter);
+        fields.add(typeField);
+
+        // Issuer constraint
+        if (StringUtils.isNotBlank(issuer)) {
+            JsonObject issuerField = new JsonObject();
+            JsonArray issuerPath = new JsonArray();
+            issuerPath.add("$.iss");
+            issuerPath.add("$.issuer");
+            issuerField.add(OpenID4VPConstants.PresentationDef.PATH, issuerPath);
+            JsonObject issuerFilter = new JsonObject();
+            issuerFilter.addProperty("type", "string");
+            issuerFilter.addProperty("pattern", "^" + issuer + "$");
+            issuerField.add(OpenID4VPConstants.PresentationDef.FILTER, issuerFilter);
+            fields.add(issuerField);
+        }
+
+        // Requested claims
+        if (requestedClaims != null) {
+            for (String claim : requestedClaims) {
+                if (StringUtils.isNotBlank(claim)) {
+                    JsonObject claimField = new JsonObject();
+                    JsonArray claimPath = new JsonArray();
+                    claimPath.add("$." + claim);
+                    claimPath.add("$.credentialSubject." + claim);
+                    claimField.add(OpenID4VPConstants.PresentationDef.PATH, claimPath);
+                    fields.add(claimField);
+                }
+            }
+        }
+
+        constraints.add(OpenID4VPConstants.PresentationDef.FIELDS, fields);
+        descriptor.add(OpenID4VPConstants.PresentationDef.CONSTRAINTS, constraints);
+
+        return gson.toJson(descriptor);
+    }
+
+    /**
      * Extract the definition ID from a presentation definition JSON.
      *
      * @param definitionJson The presentation definition JSON string
