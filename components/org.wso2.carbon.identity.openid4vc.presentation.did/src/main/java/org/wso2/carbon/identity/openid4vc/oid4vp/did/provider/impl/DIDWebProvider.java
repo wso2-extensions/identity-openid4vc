@@ -20,9 +20,6 @@ package org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.impl;
 
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.identity.openid4vc.oid4vp.did.provider.DIDProvider;
@@ -32,8 +29,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPExcept
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 
 import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,78 +61,33 @@ public class DIDWebProvider implements DIDProvider {
 
     @Override
     public String getSigningKeyId(int tenantId, String baseUrl) throws VPException {
-        return getDID(tenantId, baseUrl) + "#owner";
-    }
-
-    @Override
-    public String getSigningKeyId(int tenantId, String baseUrl, String algorithm) throws VPException {
-        String did = getDID(tenantId, baseUrl);
-        if ("EdDSA".equals(algorithm)) {
-            return did + "#" + "ed25519";
-        } else if ("ES256".equals(algorithm)) {
-            return did + "#" + "p256";
-        }
-        // Default (RS256)
-        return did + "#owner";
+        return getDID(tenantId, baseUrl) + "#ed25519";
     }
 
     @Override
     public JWSAlgorithm getSigningAlgorithm() {
-        return JWSAlgorithm.RS256;
-    }
-
-    @Override
-    public JWSAlgorithm getSigningAlgorithm(String algorithm) {
-        if ("EdDSA".equals(algorithm)) {
-            return JWSAlgorithm.EdDSA;
-        }
-        if ("ES256".equals(algorithm)) {
-            return JWSAlgorithm.ES256;
-        }
-        return JWSAlgorithm.RS256;
+        return JWSAlgorithm.EdDSA;
     }
 
     @Override
     public JWSSigner getSigner(int tenantId) throws VPException {
         try {
+            // Use KeyStore for EdDSA keys
             KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-            PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey();
-            return new RSASSASigner(privateKey);
+            String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
+            PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey(edKeyAlias);
+            
+            // Convert PrivateKey to OctetKeyPair for BCEd25519Signer
+            OctetKeyPair keyPair = DIDKeyManager.convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
+            return new BCEd25519Signer(keyPair);
         } catch (Exception e) {
-            throw new VPException("Error retrieving RSA private key for did:web", e);
+            throw new VPException("Error creating signer for did:web", e);
         }
-    }
-
-    @Override
-    public JWSSigner getSigner(int tenantId, String algorithm) throws VPException {
-        try {
-            if ("EdDSA".equals(algorithm)) {
-                // Use KeyStore for EdDSA keys
-                KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
-                PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey(edKeyAlias);
-                
-                // Convert PrivateKey to OctetKeyPair for BCEd25519Signer
-                OctetKeyPair keyPair = DIDKeyManager.convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
-                return new BCEd25519Signer(keyPair);
-            } else if ("ES256".equals(algorithm)) {
-                ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-                return new ECDSASigner(key);
-            }
-            return getSigner(tenantId);
-        } catch (Exception e) {
-            throw new VPException("Error creating signer for did:web with algo: " + algorithm, e);
-        }
-    }
-
-    @Override
-    public DIDDocument getDIDDocument(int tenantId, String baseUrl) throws VPException {
-        return getDIDDocument(tenantId, baseUrl, null);
     }
 
     @Override
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("DE_MIGHT_IGNORE")
-    public DIDDocument getDIDDocument(int tenantId, String baseUrl, String algorithm) throws VPException {
+    public DIDDocument getDIDDocument(int tenantId, String baseUrl) throws VPException {
         try {
             String did = getDID(tenantId, baseUrl);
 
@@ -148,83 +98,32 @@ public class DIDWebProvider implements DIDProvider {
             List<String> contexts = new ArrayList<>();
             contexts.add("https://www.w3.org/ns/did/v1");
             contexts.add("https://w3id.org/security/suites/ed25519-2020/v1");
-            contexts.add("https://w3id.org/security/suites/ecdsa-secp256r1-2019/v1");
-            contexts.add("https://w3id.org/security/suites/rsa-2018/v1");
             didDocument.setContext(contexts);
 
             List<DIDDocument.VerificationMethod> verificationMethods = new ArrayList<>();
             List<String> relationships = new ArrayList<>();
 
-            boolean includeAll = (algorithm == null);
+            try {
+                String keyId = getSigningKeyId(tenantId, baseUrl);
+                
+                // Use KeyStore for EdDSA keys
+                KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
+                String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
+                java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(edKeyAlias);
 
-            // 1. Add RSA Key (RsaVerificationKey2018)
-            if (includeAll || "RS256".equals(algorithm)) {
-                try {
-                    String keyId = getSigningKeyId(tenantId, baseUrl, "RS256");
-                    KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                    Certificate certificate = keyStoreManager.getDefaultPrimaryCertificate();
-                    RSAPublicKey publicKey = (RSAPublicKey) certificate.getPublicKey();
+                DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
+                vm.setId(keyId);
+                vm.setController(did);
+                vm.setType("Ed25519VerificationKey2020");
 
-                    com.nimbusds.jose.jwk.RSAKey rsaKey = new com.nimbusds.jose.jwk.RSAKey.Builder(publicKey)
-                            .keyID(keyId)
-                            .build();
+                // Convert PublicKey to multibase format
+                String multibase = convertPublicKeyToMultibase(publicKey);
+                vm.setPublicKeyMultibase(multibase);
 
-                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                    vm.setId(keyId);
-                    vm.setController(did);
-                    vm.setType("RsaVerificationKey2018");
-                    vm.setPublicKeyJwkMap(rsaKey.toJSONObject());
+                verificationMethods.add(vm);
+                relationships.add(keyId);
 
-                    verificationMethods.add(vm);
-                    relationships.add(keyId);
-
-                } catch (Exception e) {
-                }
-            }
-
-            // 2. Add EdDSA Key (Ed25519VerificationKey2020)
-            if (includeAll || "EdDSA".equals(algorithm)) {
-                try {
-                    String keyId = getSigningKeyId(tenantId, baseUrl, "EdDSA");
-                    
-                    // Use KeyStore for EdDSA keys
-                    KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                    String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
-                    java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(edKeyAlias);
-
-                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                    vm.setId(keyId);
-                    vm.setController(did);
-                    vm.setType("Ed25519VerificationKey2020");
-
-                    // Convert PublicKey to multibase format
-                    String multibase = convertPublicKeyToMultibase(publicKey);
-                    vm.setPublicKeyMultibase(multibase);
-
-                    verificationMethods.add(vm);
-                    relationships.add(keyId);
-
-                } catch (Exception e) {
-                }
-            }
-
-            // 3. Add ES256 Key (EcdsaSecp256r1VerificationKey2019)
-            if (includeAll || "ES256".equals(algorithm)) {
-                try {
-                    String keyId = getSigningKeyId(tenantId, baseUrl, "ES256");
-                    ECKey key = DIDKeyManager.getOrGenerateECKeyPair(tenantId);
-
-                    DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
-                    vm.setId(keyId);
-                    vm.setController(did);
-                    vm.setType("EcdsaSecp256r1VerificationKey2019");
-                    vm.setPublicKeyJwkMap(key.toPublicJWK().toJSONObject());
-
-                    verificationMethods.add(vm);
-                    relationships.add(keyId);
-
-                } catch (Exception e) {
-                }
+            } catch (Exception e) {
             }
 
             didDocument.setVerificationMethod(verificationMethods);
@@ -234,7 +133,7 @@ public class DIDWebProvider implements DIDProvider {
             return didDocument;
 
         } catch (Exception e) {
-            throw new VPException("Error generating DID Document for did:web algo: " + algorithm, e);
+            throw new VPException("Error generating DID Document for did:web", e);
         }
     }
 

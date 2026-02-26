@@ -19,9 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.oid4vp.did.util;
 
 import com.nimbusds.jose.jwk.Curve;
-import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.OctetKeyPair;
-import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jose.util.Base64URL;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.core.util.KeyStoreManager;
@@ -39,7 +37,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DIDKeyManager {
 
     private static final ConcurrentHashMap<Integer, OctetKeyPair> keyCache = new ConcurrentHashMap<>();
-    private static final ConcurrentHashMap<Integer, ECKey> ecKeyCache = new ConcurrentHashMap<>();
 
     /**
      * Get Ed25519 key pair for the given tenant from KeyStore.
@@ -77,32 +74,7 @@ public class DIDKeyManager {
         throw new Exception("EdDSA key not found in KeyStore for tenant " + tenantId);
     }
 
-    /**
-     * Get or generate EC (P-256) key pair for the given tenant.
-     * Note: Currently ephemeral (in-memory) as DB support is removed.
-     * 
-     * @param tenantId The tenant ID
-     * @return ECKey for the tenant
-     * @throws Exception if key generation fails
-     */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    public static ECKey getOrGenerateECKeyPair(int tenantId) throws Exception {
-        // 1. Try Cache
-        if (ecKeyCache.containsKey(tenantId)) {
-            return ecKeyCache.get(tenantId);
-        }
 
-        // 2. Generate New (Ephemeral)
-        ECKey ecKey = generateECKeyPair();
-
-        // 3. Cache
-        ecKeyCache.put(tenantId, ecKey);
-        return ecKey;
-    }
-
-    private static ECKey generateECKeyPair() throws Exception {
-        return new ECKeyGenerator(Curve.P_256).generate();
-    }
 
     /**
      * Get the EdDSA key alias for the given tenant.
@@ -181,36 +153,7 @@ public class DIDKeyManager {
         }
     }
 
-    /**
-     * Convert P-256 public key to multibase format.
-     * Format: z + base58btc(0x1200 + compressed point)
-     * P-256 multicodec is 0x1200
-     */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    public static String publicKeyToMultibase(com.nimbusds.jose.jwk.ECKey keyPair) {
-        try {
-            // Needed: Compressed point (33 bytes: 0x02/0x03 + X)
-            byte[] xBytes = keyPair.getX().decode();
-            byte[] yBytes = keyPair.getY().decode();
 
-            byte[] compressed = new byte[33];
-            // 0x02 if Y is even, 0x03 if Y is odd
-            // BigInteger check for oddness usually checks lowest bit
-            java.math.BigInteger yBigInt = new java.math.BigInteger(1, yBytes);
-            compressed[0] = yBigInt.testBit(0) ? (byte) 0x03 : (byte) 0x02;
-            System.arraycopy(xBytes, 0, compressed, 1, 32);
-
-            // Multicodec Prefix for p256-pub is 0x1200 -> Varint [0x80, 0x24]
-            byte[] multicodecKey = new byte[35]; // 2 header + 33 data
-            multicodecKey[0] = (byte) 0x80;
-            multicodecKey[1] = (byte) 0x24; // 0x24 = 36
-            System.arraycopy(compressed, 0, multicodecKey, 2, 33);
-
-            return "z" + base58Encode(multicodecKey);
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     /**
      * Generate did:key for OctetKeyPair (Ed25519).
@@ -221,14 +164,7 @@ public class DIDKeyManager {
         return didKey;
     }
 
-    /**
-     * Generate did:key for ECKey (P-256).
-     */
-    public static String generateDIDKey(com.nimbusds.jose.jwk.ECKey keyPair) {
-        String multibase = publicKeyToMultibase(keyPair);
-        String didKey = "did:key:" + multibase;
-        return didKey;
-    }
+
 
     /**
      * Generate a did:key identifier for the given tenant (Default Ed25519 from KeyStore).
@@ -417,7 +353,7 @@ public class DIDKeyManager {
      * @return true if keys exist
      */
     public static boolean hasKeys(int tenantId) {
-        return keyCache.containsKey(tenantId) || ecKeyCache.containsKey(tenantId);
+        return keyCache.containsKey(tenantId);
     }
 
     /**
@@ -427,7 +363,6 @@ public class DIDKeyManager {
      */
     public static void removeKeys(int tenantId) {
         keyCache.remove(tenantId);
-        ecKeyCache.remove(tenantId);
     }
 
 }

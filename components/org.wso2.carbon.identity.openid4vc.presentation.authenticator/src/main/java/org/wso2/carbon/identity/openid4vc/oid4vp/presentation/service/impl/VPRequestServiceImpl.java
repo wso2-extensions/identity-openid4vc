@@ -414,8 +414,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             int tenantId = vpRequest.getTenantId();
             String baseUrl = getConfiguredBaseUrl();
 
-            String did = provider.getDID(tenantId, baseUrl, signingAlgorithm);
-            String keyId = provider.getSigningKeyId(tenantId, baseUrl, signingAlgorithm);
+            String did = provider.getDID(tenantId, baseUrl);
+            String keyId = provider.getSigningKeyId(tenantId, baseUrl);
 
             // Create claims set
             com.nimbusds.jwt.JWTClaimsSet.Builder claimsBuilder = new com.nimbusds.jwt.JWTClaimsSet.Builder()
@@ -466,7 +466,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
             // Create header
             com.nimbusds.jose.JWSHeader header = new com.nimbusds.jose.JWSHeader.Builder(
-                    provider.getSigningAlgorithm(signingAlgorithm))
+                    provider.getSigningAlgorithm())
                     .keyID(keyId)
                     .type(new com.nimbusds.jose.JOSEObjectType("oauth-authz-req+jwt"))
                     .build();
@@ -475,7 +475,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                     new com.nimbusds.jose.Payload(claimsSet.toJSONObject()));
 
             // Sign using provider logic
-            com.nimbusds.jose.JWSSigner signer = provider.getSigner(tenantId, signingAlgorithm);
+            com.nimbusds.jose.JWSSigner signer = provider.getSigner(tenantId);
             jwsObject.sign(signer);
 
             return jwsObject.serialize();

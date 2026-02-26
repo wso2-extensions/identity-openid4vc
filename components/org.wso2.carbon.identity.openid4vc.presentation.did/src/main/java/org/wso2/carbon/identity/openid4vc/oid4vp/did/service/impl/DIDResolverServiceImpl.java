@@ -653,9 +653,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         }
 
         try {
-            // Use Nimbus to handle Ed25519 keys (works on Java 8/11 with Bouncy Castle)
-            OctetKeyPair okp = new OctetKeyPair.Builder(Curve.Ed25519, new Base64URL(x)).build();
-            return okp.toPublicKey();
+            byte[] keyBytes = new Base64URL(x).decode();
+            return bytesToEd25519PublicKey(keyBytes);
         } catch (Exception e) {
             throw new DIDResolutionException("Ed25519 key support not available: " + e.getMessage());
         }
@@ -694,14 +693,29 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         if (keyType != null && keyType.contains("Ed25519")) {
             // Ed25519 key
             try {
-                // Use Nimbus to convert raw bytes to PublicKey
-                OctetKeyPair okp = new OctetKeyPair.Builder(Curve.Ed25519, Base64URL.encode(keyBytes)).build();
-                return okp.toPublicKey();
+                return bytesToEd25519PublicKey(keyBytes);
             } catch (Exception e) {
                 throw new DIDResolutionException("Ed25519 key conversion failed: " + e.getMessage());
             }
         }
         throw new DIDResolutionException("Unsupported key type for byte conversion: " + keyType);
+    }
+
+    private PublicKey bytesToEd25519PublicKey(byte[] keyBytes) throws Exception {
+        // Construct SubjectPublicKeyInfo for Ed25519 X.509
+        // Sequence of (AlgorithmIdentifier, BitString(keyBytes))
+        // 30 2A 30 05 06 03 2B 65 70 03 21 00 <32 bytes>
+        byte[] encoded = new byte[44];
+        encoded[0] = 0x30; encoded[1] = 0x2A;
+        encoded[2] = 0x30; encoded[3] = 0x05;
+        encoded[4] = 0x06; encoded[5] = 0x03;
+        encoded[6] = 0x2B; encoded[7] = 0x65; encoded[8] = 0x70;
+        encoded[9] = 0x03; encoded[10] = 0x21; encoded[11] = 0x00;
+        System.arraycopy(keyBytes, 0, encoded, 12, 32);
+
+        java.security.spec.X509EncodedKeySpec spec = new java.security.spec.X509EncodedKeySpec(encoded);
+        KeyFactory keyFactory = KeyFactory.getInstance("Ed25519", "BC");
+        return keyFactory.generatePublic(spec);
     }
 
     /**
