@@ -36,10 +36,10 @@ import org.wso2.carbon.identity.core.internal.component.IdentityCoreServiceDataH
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.internal.VCTemplateManagementServiceDataHolder;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +51,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 
 /**
@@ -125,7 +126,7 @@ public class VCTemplateManagerImplTest {
                 TEST_DISPLAY_NAME,
                 TEST_FORMAT,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email", "name", "employee_id")
+                createLocalClaims("email", "name", "employee_id")
         );
 
         sampleConfig = configManager.add(creatingConfig, TENANT_DOMAIN);
@@ -155,7 +156,7 @@ public class VCTemplateManagerImplTest {
                 TEST_DISPLAY_NAME,
                 TEST_FORMAT,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
         try {
             configManager.add(config, TENANT_DOMAIN);
@@ -179,7 +180,7 @@ public class VCTemplateManagerImplTest {
                 StringUtils.EMPTY,
                 TEST_FORMAT,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
         try {
             configManager.add(config, TENANT_DOMAIN);
@@ -203,7 +204,7 @@ public class VCTemplateManagerImplTest {
                 TEST_DISPLAY_NAME,
                 TEST_FORMAT,
                 59,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
         try {
             configManager.add(config, TENANT_DOMAIN);
@@ -226,7 +227,7 @@ public class VCTemplateManagerImplTest {
                 "Different Display Name",
                 TEST_FORMAT,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
         configManager.add(config, TENANT_DOMAIN);
     }
@@ -290,7 +291,7 @@ public class VCTemplateManagerImplTest {
 
 
         String updatedDisplayName = "Updated Employee Badge";
-        List<String> updatedClaims = Arrays.asList("email", "name", "employee_id", "department");
+        List<Claim> updatedClaims = createLocalClaims("email", "name", "employee_id", "department");
 
         sampleConfig.setIdentifier(null);
         sampleConfig.setDisplayName(updatedDisplayName);
@@ -363,7 +364,7 @@ public class VCTemplateManagerImplTest {
                 "Deletable Configuration",
                 TEST_FORMAT,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
         VCTemplate created = configManager.add(configToDelete, TENANT_DOMAIN);
         String idToDelete = created.getId();
@@ -385,7 +386,7 @@ public class VCTemplateManagerImplTest {
                 "Default Format Configuration",
                 null,
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
 
         VCTemplate created = configManager.add(config, TENANT_DOMAIN);
@@ -405,7 +406,7 @@ public class VCTemplateManagerImplTest {
                 "Unsupported Format Configuration",
                 "ldp_vc",
                 TEST_EXPIRES_IN,
-                Arrays.asList("email")
+                createLocalClaims("email")
         );
 
         configManager.add(config, TENANT_DOMAIN);
@@ -414,10 +415,10 @@ public class VCTemplateManagerImplTest {
     @Test(priority = 18, expectedExceptions = VCTemplateMgtClientException.class)
     public void testAddConfigurationWithInvalidClaims() throws VCTemplateMgtClientException {
 
-        List<String> invalidClaims = new ArrayList<>();
-        invalidClaims.add("valid_claim");
-        invalidClaims.add("");
-        invalidClaims.add("another_claim");
+        List<Claim> invalidClaims = new ArrayList<>();
+        invalidClaims.add(createLocalClaim("valid_claim"));
+        invalidClaims.add(new Claim("", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/validclaim"));
+        invalidClaims.add(createLocalClaim("another_claim"));
 
         VCTemplate config = createSampleConfiguration(
                 "InvalidClaimsConfig-" + System.currentTimeMillis(),
@@ -450,7 +451,7 @@ public class VCTemplateManagerImplTest {
      * @return VCCredentialConfiguration.
      */
     private VCTemplate createSampleConfiguration(String identifier, String displayName, String format,
-                                                 int expiresIn, List<String> claims) {
+                                                 int expiresIn, List<Claim> claims) {
 
         VCTemplate config = new VCTemplate();
         config.setIdentifier(identifier);
@@ -459,5 +460,34 @@ public class VCTemplateManagerImplTest {
         config.setExpiresIn(expiresIn);
         config.setClaims(claims);
         return config;
+    }
+
+    private List<Claim> createLocalClaims(String... claimNames) {
+
+        List<Claim> claims = new ArrayList<>();
+        for (String claimName : claimNames) {
+            claims.add(createLocalClaim(claimName));
+        }
+        return claims;
+    }
+
+    private Claim createLocalClaim(String claimName) {
+
+        switch (claimName) {
+            case "email":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            case "name":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            case "employee_id":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            case "department":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            case "valid_claim":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            case "another_claim":
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+            default:
+                return new Claim(claimName, CLAIM_TYPE_LOCAL, claimName);
+        }
     }
 }

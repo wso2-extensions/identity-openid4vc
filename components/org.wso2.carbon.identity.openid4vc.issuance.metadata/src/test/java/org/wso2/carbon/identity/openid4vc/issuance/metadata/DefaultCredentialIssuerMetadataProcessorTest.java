@@ -30,6 +30,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.metadata.internal.CredentialI
 import org.wso2.carbon.identity.openid4vc.issuance.metadata.response.CredentialIssuerMetadataResponse;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
@@ -42,6 +43,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * Test class for DefaultCredentialIssuerMetadataProcessor.
@@ -248,7 +250,10 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         config.setIdentifier("employee_badge");
         config.setFormat("jwt_vc_json");
         config.setSigningAlgorithm("RS256");
-        config.setClaims(Arrays.asList("email", "name", "employee_id"));
+        config.setClaims(Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname"),
+                new Claim("employee_id", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/employeeid")));
         config.setDisplayName("Employee Badge Credential");
 
         return config;
@@ -264,7 +269,10 @@ public class DefaultCredentialIssuerMetadataProcessorTest {
         config.setIdentifier("employee_badge_sd_jwt");
         config.setFormat("dc+sd-jwt");
         config.setSigningAlgorithm("RS256");
-        config.setClaims(Arrays.asList("email", "name", "employee_id"));
+        config.setClaims(Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname"),
+                new Claim("employee_id", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/employeeid")));
         config.setDisplayName("Employee Badge SD-JWT Credential");
         return config;
     }

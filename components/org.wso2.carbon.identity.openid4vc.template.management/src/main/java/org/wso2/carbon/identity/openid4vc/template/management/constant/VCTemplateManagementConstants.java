@@ -39,6 +39,7 @@ public class VCTemplateManagementConstants {
     public static final int MIN_EXPIRES_IN_SECONDS = 60;
     public static final String DEFAULT_SIGNING_ALGORITHM = "RS256";
     public static final String VC_DIALECT = "http://wso2.org/vc/claim";
+    public static final String CLAIM_TYPE_LOCAL = "LOCAL";
 
     /**
      * Set of supported VC formats.

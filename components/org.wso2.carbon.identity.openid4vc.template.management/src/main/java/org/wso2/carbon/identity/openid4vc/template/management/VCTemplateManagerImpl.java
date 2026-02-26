@@ -37,6 +37,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.dao.impl.VCTemplat
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
 import org.wso2.carbon.identity.openid4vc.template.management.internal.VCTemplateManagementServiceDataHolder;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplateSearchResult;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterUtil;
@@ -47,6 +48,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.wso2.carbon.identity.api.resource.mgt.constant.APIResourceManagementConstants.APIResourceTypes.VC;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.DEFAULT_SIGNING_ALGORITHM;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_CLAIM_VALIDATION_ERROR;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.ErrorMessages.ERROR_CODE_EMPTY_FIELD;
@@ -357,11 +359,11 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
     /**
      * Validate claims.
      *
-     * @param claims       List of claim URIs.
+     * @param claims       List of claims.
      * @param tenantDomain Tenant domain.
      * @throws VCTemplateMgtException on validation errors.
      */
-    private void validateClaims(List<String> claims, String tenantDomain) throws VCTemplateMgtException {
+    private void validateClaims(List<Claim> claims, String tenantDomain) throws VCTemplateMgtException {
 
         if (claims != null && !claims.isEmpty()) {
             Set<ExternalClaim> vcClaims;
@@ -378,10 +380,25 @@ public class VCTemplateManagerImpl implements VCTemplateManager {
                 vcClaimURIs.add(externalClaim.getClaimURI());
             }
 
-            for (String claim : claims) {
-                if (StringUtils.isBlank(claim) || !vcClaimURIs.contains(claim)) {
-                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_CLAIM, claim);
+            for (Claim claim : claims) {
+                if (claim == null || StringUtils.isBlank(claim.getName()) || StringUtils.isBlank(claim.getType())
+                        || StringUtils.isBlank(claim.getClaimUri())) {
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_CLAIM,
+                            "Invalid claim");
                 }
+
+                if (!StringUtils.equalsIgnoreCase(CLAIM_TYPE_LOCAL, claim.getType())) {
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_CLAIM,
+                            "Invalid claim");
+                }
+
+                if (!vcClaimURIs.contains(claim.getClaimUri())) {
+                    throw VCTemplateMgtExceptionHandler.handleClientException(ERROR_CODE_INVALID_CLAIM,
+                            "Invalid claim");
+                }
+
+                // Persist and process claim type in canonical form.
+                claim.setType(CLAIM_TYPE_LOCAL);
             }
         }
     }

@@ -37,13 +37,16 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIss
 import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -56,6 +59,7 @@ import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.C
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.USER_REALM_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.USER_STORE_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.VC_TEMPLATE_MANAGER_NOT_AVAILABLE;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * This class handles Verifiable Credential issuance service. This is responsible for issuing verifiable credentials
@@ -188,8 +192,41 @@ public class CredentialIssuanceService {
         try {
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
             AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
-            return userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
-                    template.getClaims().toArray(new String[0]), null);
+            List<Claim> configuredClaims = template.getClaims();
+            if (configuredClaims == null || configuredClaims.isEmpty()) {
+                return new HashMap<>();
+            }
+
+            List<String> localClaimUris = new ArrayList<>();
+            for (Claim claim : configuredClaims) {
+                if (claim != null && CLAIM_TYPE_LOCAL.equalsIgnoreCase(claim.getType())) {
+                    localClaimUris.add(claim.getClaimUri());
+                }
+            }
+
+            if (localClaimUris.isEmpty()) {
+                return new HashMap<>();
+            }
+
+            Map<String, String> userClaimsByUri = userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
+                    localClaimUris.toArray(new String[0]), null);
+
+            Map<String, String> resolvedClaims = new HashMap<>();
+            for (Claim claim : configuredClaims) {
+                if (claim == null || !CLAIM_TYPE_LOCAL.equalsIgnoreCase(claim.getType())) {
+                    continue;
+                }
+                String claimValue = userClaimsByUri.get(claim.getClaimUri());
+                if (claimValue == null) {
+                    // Keep backward compatibility with stores/tests returning claim-name keyed maps.
+                    claimValue = userClaimsByUri.get(claim.getName());
+                }
+                if (claimValue != null) {
+                    resolvedClaims.put(claim.getName(), claimValue);
+                }
+            }
+
+            return resolvedClaims;
         } catch (IdentityException e) {
             throw CredentialIssuanceExceptionHandler.handleServerException(USER_REALM_ERROR, e,
                     "tenant: %s", reqDTO.getTenantDomain());

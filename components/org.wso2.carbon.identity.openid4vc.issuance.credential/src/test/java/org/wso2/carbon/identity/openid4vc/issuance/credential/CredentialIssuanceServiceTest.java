@@ -40,6 +40,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialI
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
@@ -57,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * Test class for CredentialIssuanceService.
@@ -166,7 +168,7 @@ public class CredentialIssuanceServiceTest {
         when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(-1234);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userStoreManager.getUserClaimValuesWithID(TEST_USER_ID,
-                vcTemplate.getClaims().toArray(new String[0]), null))
+                extractClaimUris(vcTemplate), null))
                 .thenReturn(userClaims);
 
         // Mock IdentityTenantUtil
@@ -336,10 +338,10 @@ public class CredentialIssuanceServiceTest {
         template.setExpiresIn(3600);
         template.setSigningAlgorithm("RS256");
 
-        List<String> claims = Arrays.asList(
-                "http://wso2.org/claims/emailaddress",
-                "http://wso2.org/claims/fullname",
-                "http://wso2.org/claims/employeeid"
+        List<Claim> claims = Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname"),
+                new Claim("employee_id", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/employeeid")
         );
         template.setClaims(claims);
 
@@ -353,8 +355,13 @@ public class CredentialIssuanceServiceTest {
      */
     private Map<String, String> createTestUserClaims() {
         Map<String, String> claims = new HashMap<>();
-        claims.put("email", "testuser@example.com");
-        claims.put("given_name", "Test User");
+        claims.put("http://wso2.org/claims/emailaddress", "testuser@example.com");
+        claims.put("http://wso2.org/claims/fullname", "Test User");
         return claims;
+    }
+
+    private String[] extractClaimUris(VCTemplate template) {
+
+        return template.getClaims().stream().map(Claim::getClaimUri).toArray(String[]::new);
     }
 }
