@@ -19,6 +19,8 @@
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator.internal;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.osgi.service.component.ComponentContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
@@ -52,6 +54,8 @@ import javax.servlet.ServletException;
 @Component(name = "org.wso2.carbon.identity.openid4vc.presentation.servlet.component", immediate = true)
 public class VPServletRegistrationComponent {
 
+    private static final Log LOG = LogFactory.getLog(VPServletRegistrationComponent.class);
+
     private static final String API_BASE_PATH = "/openid4vp/v1";
     private static final String VP_REQUEST_PATH = API_BASE_PATH + "/vp-request";
     private static final String REQUEST_URI_PATH = API_BASE_PATH + "/request-uri";
@@ -69,7 +73,9 @@ public class VPServletRegistrationComponent {
     protected void activate(ComponentContext context) {
         try {
             registerServlets();
+            LOG.info("OpenID4VP servlets registered successfully.");
         } catch (Exception e) {
+            LOG.error("Error while registering OpenID4VP servlets.", e);
         }
     }
 
@@ -77,7 +83,9 @@ public class VPServletRegistrationComponent {
     protected void deactivate(ComponentContext context) {
         try {
             unregisterServlets();
+            LOG.info("OpenID4VP servlets unregistered successfully.");
         } catch (Exception e) {
+            LOG.error("Error while unregistering OpenID4VP servlets.", e);
         }
     }
 
