@@ -49,15 +49,16 @@ public class VPRequestServiceImpl implements VPRequestService {
 
     private final VPRequestDAO vpRequestDAO;
     private final PresentationDefinitionService presentationDefinitionService;
-    private final String baseUrl;
+    private volatile String baseUrl;
 
     /**
      * Default constructor.
+     * Note: baseUrl is lazily loaded on first use to avoid OSGi activation timing issues
+     * where IdentityUtil may not have loaded identity.xml yet.
      */
     public VPRequestServiceImpl() {
         this.vpRequestDAO = new VPRequestDAOImpl();
         this.presentationDefinitionService = new PresentationDefinitionServiceImpl();
-        this.baseUrl = getConfiguredBaseUrl();
     }
 
     /**
@@ -70,6 +71,16 @@ public class VPRequestServiceImpl implements VPRequestService {
         this.vpRequestDAO = vpRequestDAO;
         this.presentationDefinitionService = presentationDefinitionService;
         this.baseUrl = baseUrl;
+    }
+
+    /**
+     * Get the base URL, lazily loading from configuration on first access.
+     */
+    private String getBaseUrl() {
+        if (baseUrl == null) {
+            baseUrl = getConfiguredBaseUrl();
+        }
+        return baseUrl;
     }
 
     @Override
@@ -129,7 +140,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         long expiresAt = OpenID4VPUtil.calculateExpiryTime(createdAt);
 
         // Build response URI
-        String responseUri = OpenID4VPUtil.buildResponseUri(baseUrl);
+        String responseUri = OpenID4VPUtil.buildResponseUri(getBaseUrl());
 
         // Create VP request model
         VPRequest vpRequest = new VPRequest.Builder()
@@ -158,7 +169,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         // Generate request URI if enabled
         String requestUri = null;
         if (OpenID4VPUtil.isRequestUriEnabled()) {
-            requestUri = OpenID4VPUtil.buildRequestUri(baseUrl, requestId);
+            requestUri = OpenID4VPUtil.buildRequestUri(getBaseUrl(), requestId);
         }
 
         // Build authorization details for by-value mode
@@ -259,7 +270,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         // Validate request exists
         getVPRequestById(requestId, tenantId);
 
-        return OpenID4VPUtil.buildRequestUri(baseUrl, requestId);
+        return OpenID4VPUtil.buildRequestUri(getBaseUrl(), requestId);
     }
 
     @Override
@@ -412,7 +423,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         try {
             DIDProvider provider = DIDProviderFactory.getProvider(didMethod);
             int tenantId = vpRequest.getTenantId();
-            String baseUrl = getConfiguredBaseUrl();
+            String baseUrl = getBaseUrl();
 
             String did = provider.getDID(tenantId, baseUrl);
             String keyId = provider.getSigningKeyId(tenantId, baseUrl);

@@ -299,13 +299,13 @@ public class OpenID4VPUtil {
      * Get the configured base URL.
      *
      * @return The base URL
-     * @throws IllegalStateException if OpenID4VP.ServerUrl is not configured in identity.xml
+     * @throws IllegalStateException if OpenID4VP.BaseUrl is not configured in identity.xml
      */
     public static String getBaseUrl() {
         String baseUrl = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.BASE_URL);
         if (StringUtils.isBlank(baseUrl)) {
-            throw new IllegalStateException("OpenID4VP.ServerUrl must be configured in identity.xml. " +
-                    "Add <OpenID4VP><ServerUrl>https://your-server-url</ServerUrl></OpenID4VP> to the configuration.");
+            throw new IllegalStateException("OpenID4VP.BaseUrl must be configured in identity.xml. " +
+                    "Add <OpenID4VP><BaseUrl>https://your-server-url</BaseUrl></OpenID4VP> to the configuration.");
         }
         return baseUrl;
     }
