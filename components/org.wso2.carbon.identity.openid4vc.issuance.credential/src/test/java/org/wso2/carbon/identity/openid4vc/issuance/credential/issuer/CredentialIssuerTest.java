@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * Test class for CredentialIssuer.
@@ -224,7 +226,9 @@ public class CredentialIssuerTest {
         config.setIdentifier("test-identifier");
         config.setFormat(format);
         config.setExpiresIn(3600);
-        config.setClaims(Arrays.asList("email", "name"));
+        config.setClaims(Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname")));
         return config;
     }
 

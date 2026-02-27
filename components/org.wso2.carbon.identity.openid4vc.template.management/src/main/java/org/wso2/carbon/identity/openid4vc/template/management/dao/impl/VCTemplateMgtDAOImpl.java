@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.openid4vc.template.management.constant.SQLConsta
 import org.wso2.carbon.identity.openid4vc.template.management.dao.VCTemplateMgtDAO;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtClientException;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterQueryBuilder;
 import org.wso2.carbon.identity.openid4vc.template.management.util.VCTemplateFilterUtil;
@@ -425,18 +426,18 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
      *
      * @param conn     DB connection
      * @param configId Template primary key
-     * @return List of claim URIs
+     * @return List of claims
      * @throws SQLException on SQL errors
      */
-    private List<String> getClaimsByConfigId(Connection conn, String configId) throws SQLException {
+    private List<Claim> getClaimsByConfigId(Connection conn, String configId) throws SQLException {
 
         String sql = SQLConstants.LIST_CLAIMS_BY_TEMPLATE_ID;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, configId);
             try (ResultSet rs = ps.executeQuery()) {
-                List<String> list = new ArrayList<>();
+                List<Claim> list = new ArrayList<>();
                 while (rs.next()) {
-                    list.add(rs.getString("CLAIM_URI"));
+                    list.add(new Claim(rs.getString("NAME"), rs.getString("TYPE"), rs.getString("CLAIM_URI")));
                 }
                 return list;
             }
@@ -448,16 +449,18 @@ public class VCTemplateMgtDAOImpl implements VCTemplateMgtDAO {
      *
      * @param conn     DB connection
      * @param configId Template primary key
-     * @param claims   List of claim URIs
+     * @param claims   List of claims
      * @throws SQLException on SQL errors
      */
-    private void addClaims(Connection conn, String configId, List<String> claims) throws SQLException {
+    private void addClaims(Connection conn, String configId, List<Claim> claims) throws SQLException {
 
         String insert = SQLConstants.INSERT_CLAIM;
         try (PreparedStatement ps = conn.prepareStatement(insert)) {
-            for (String claim : claims) {
+            for (Claim claim : claims) {
                 ps.setString(1, configId);
-                ps.setString(2, claim);
+                ps.setString(2, claim.getName());
+                ps.setString(3, claim.getType());
+                ps.setString(4, claim.getClaimUri());
                 ps.addBatch();
             }
             ps.executeBatch();

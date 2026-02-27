@@ -38,7 +38,7 @@ public class VCTemplate {
 
     private String signingAlgorithm;
 
-    private List<String> claims = new ArrayList<>();
+    private List<Claim> claims = new ArrayList<>();
 
     private Integer expiresIn;
 
@@ -86,12 +86,12 @@ public class VCTemplate {
         this.signingAlgorithm = signingAlgorithm;
     }
 
-    public List<String> getClaims() {
+    public List<Claim> getClaims() {
 
         return claims;
     }
 
-    public void setClaims(List<String> claims) {
+    public void setClaims(List<Claim> claims) {
 
         this.claims = claims;
     }

@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.issuance.metadata.model;
 
 import org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,7 +45,7 @@ public class CredentialConfigurationMetadataBuilder {
     private List<String> types = new ArrayList<>();
     private String vct;
     private Object display = Collections.emptyList();
-    private List<String> claims;
+    private List<Claim> claims;
 
     /**
      * Set the template identifier.
@@ -177,10 +178,10 @@ public class CredentialConfigurationMetadataBuilder {
     /**
      * Set the claims list.
      *
-     * @param claims the list of claim names
+     * @param claims the list of claims
      * @return this builder
      */
-    public CredentialConfigurationMetadataBuilder claims(List<String> claims) {
+    public CredentialConfigurationMetadataBuilder claims(List<Claim> claims) {
 
         this.claims = claims;
         return this;
@@ -240,28 +241,30 @@ public class CredentialConfigurationMetadataBuilder {
      * For SD-JWT VC format, claims are at the top level of the JWT payload.
      * For JWT VC JSON format, claims are under credentialSubject.
      *
-     * @param claims the list of claim names
+     * @param claims the list of claims
      * @return the list of claim objects with path
      */
-    private List<Map<String, Object>> buildClaimsList(List<String> claims) {
+    private List<Map<String, Object>> buildClaimsList(List<Claim> claims) {
 
         if (claims == null) {
             return Collections.emptyList();
         }
-        return claims.stream().map(claim -> {
-            Map<String, Object> claimMap = new LinkedHashMap<>();
-            List<String> path = new ArrayList<>();
+        return claims.stream()
+                .filter(claim -> claim != null && claim.getName() != null && !claim.getName().isEmpty())
+                .map(claim -> {
+                    Map<String, Object> claimMap = new LinkedHashMap<>();
+                    List<String> path = new ArrayList<>();
 
-            // SD-JWT VC: claims are at top level (no credentialSubject prefix)
-            // JWT VC JSON: claims are under credentialSubject
-            if (!Constants.VC_SD_JWT_FORMAT.equals(format)) {
-                path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
-            }
-            path.add(claim);
+                    // SD-JWT VC: claims are at top level (no credentialSubject prefix)
+                    // JWT VC JSON: claims are under credentialSubject
+                    if (!Constants.VC_SD_JWT_FORMAT.equals(format)) {
+                        path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
+                    }
+                    path.add(claim.getName());
 
-            claimMap.put(Constants.CredentialIssuerMetadata.PATH, path);
-            return claimMap;
-        }).collect(Collectors.toList());
+                    claimMap.put(Constants.CredentialIssuerMetadata.PATH, path);
+                    return claimMap;
+                }).collect(Collectors.toList());
     }
 
 

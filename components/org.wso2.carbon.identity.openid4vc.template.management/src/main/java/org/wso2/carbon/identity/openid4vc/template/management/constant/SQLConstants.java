@@ -77,10 +77,10 @@ public final class SQLConstants {
 
     // IDN_VC_CLAIMS
     public static final String LIST_CLAIMS_BY_TEMPLATE_ID =
-            "SELECT CLAIM_URI FROM IDN_VC_CLAIMS WHERE TEMPLATE_ID = ?";
+            "SELECT NAME, TYPE, CLAIM_URI FROM IDN_VC_CLAIMS WHERE TEMPLATE_ID = ?";
 
     public static final String INSERT_CLAIM =
-            "INSERT INTO IDN_VC_CLAIMS (TEMPLATE_ID, CLAIM_URI) VALUES (?,?)";
+            "INSERT INTO IDN_VC_CLAIMS (TEMPLATE_ID, NAME, TYPE, CLAIM_URI) VALUES (?,?,?,?)";
 
     public static final String DELETE_CLAIMS_BY_TEMPLATE_ID =
             "DELETE FROM IDN_VC_CLAIMS WHERE TEMPLATE_ID = ?";

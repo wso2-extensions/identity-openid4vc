@@ -25,10 +25,13 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.common.testng.WithCarbonHome;
 import org.wso2.carbon.identity.common.testng.WithH2Database;
 import org.wso2.carbon.identity.openid4vc.template.management.dao.impl.VCTemplateMgtDAOImpl;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 @WithH2Database(files = {"dbscripts/h2.sql"})
 @WithCarbonHome
@@ -44,9 +47,9 @@ public class VCTemplateMgtDAOTest {
 
         vcConfigMgtDAOImpl = new VCTemplateMgtDAOImpl();
 
-        List<String> claims = new ArrayList<>();
-        claims.add("email");
-        claims.add("given_name");
+        List<Claim> claims = new ArrayList<>();
+        claims.add(createLocalClaim("email", "http://wso2.org/claims/emailaddress"));
+        claims.add(createLocalClaim("given_name", "http://wso2.org/claims/givenname"));
         addVCCredentialConfigurationToDB("EmployeeBadge", "jwt_vc_json", "employee_badge", claims, TENANT_ID);
         addVCCredentialConfigurationToDB("NIC", "jwt_vc_json", "vc_nic", claims, TENANT_ID);
     }
@@ -149,10 +152,10 @@ public class VCTemplateMgtDAOTest {
     public void testTenantIsolation(int ownerTenantId, int attackerTenantId)
             throws Exception {
 
-        List<String> claims = new ArrayList<>();
-        claims.add("email");
-        claims.add("ssn");
-        claims.add("salary");
+        List<Claim> claims = new ArrayList<>();
+        claims.add(createLocalClaim("email", "http://wso2.org/claims/emailaddress"));
+        claims.add(createLocalClaim("ssn", "http://wso2.org/claims/ssn"));
+        claims.add(createLocalClaim("salary", "http://wso2.org/claims/salary"));
 
         String uniqueIdentifier = "SensitiveConfig-" + ownerTenantId + "-" + System.currentTimeMillis();
         VCTemplate ownerConfig = createVCCredentialConfiguration(
@@ -182,7 +185,8 @@ public class VCTemplateMgtDAOTest {
                 "Owner tenant " + ownerTenantId + " should be able to access their own configuration.");
         Assert.assertEquals(ownerAccessedConfig.getId(), configUuid,
                 "Configuration UUID should match.");
-        Assert.assertTrue(ownerAccessedConfig.getClaims().contains("ssn"),
+        Assert.assertTrue(ownerAccessedConfig.getClaims().stream()
+                        .anyMatch(claim -> "ssn".equals(claim.getName())),
                 "Owner should have access to sensitive claims.");
     }
 
@@ -207,9 +211,9 @@ public class VCTemplateMgtDAOTest {
     public void testAddVCCredentialConfiguration(String postfix, int tenantId, boolean shouldSucceed)
             throws Exception {
 
-        List<String> claims = new ArrayList<>();
-        claims.add("email");
-        claims.add("name");
+        List<Claim> claims = new ArrayList<>();
+        claims.add(createLocalClaim("email", "http://wso2.org/claims/emailaddress"));
+        claims.add(createLocalClaim("name", "http://wso2.org/claims/fullname"));
         String uniqueIdentifier = "TestConfig-" + postfix + "-" + System.currentTimeMillis();
         VCTemplate config = createVCCredentialConfiguration(
                 uniqueIdentifier,
@@ -273,7 +277,7 @@ public class VCTemplateMgtDAOTest {
      * @throws Exception Error when adding to the database.
      */
     private void addVCCredentialConfigurationToDB(String identifier, String format, String scope,
-                                                   List<String> claims, int tenantId)
+                                                   List<Claim> claims, int tenantId)
             throws Exception {
 
         VCTemplate config = createVCCredentialConfiguration(identifier, format, scope, claims);
@@ -290,7 +294,7 @@ public class VCTemplateMgtDAOTest {
      * @return VCCredentialConfiguration.
      */
     private static VCTemplate createVCCredentialConfiguration(String identifier, String format,
-                                                              String scope, List<String> claims) {
+                                                              String scope, List<Claim> claims) {
 
         VCTemplate vcTemplate = new VCTemplate();
         vcTemplate.setIdentifier(identifier);
@@ -301,5 +305,10 @@ public class VCTemplateMgtDAOTest {
         vcTemplate.setExpiresIn(3600);
         vcTemplate.setClaims(claims);
         return vcTemplate;
+    }
+
+    private static Claim createLocalClaim(String name, String claimUri) {
+
+        return new Claim(name, CLAIM_TYPE_LOCAL, claimUri);
     }
 }
