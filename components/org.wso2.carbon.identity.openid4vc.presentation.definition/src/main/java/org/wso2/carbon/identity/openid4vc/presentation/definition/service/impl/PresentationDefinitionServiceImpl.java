@@ -60,10 +60,11 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         // Validate input
         validatePresentationDefinition(presentationDefinition);
 
-        // Validate the JSON structure
-        if (!PresentationDefinitionUtil.isValidPresentationDefinition(
-                presentationDefinition.getDefinitionJson())) {
-            throw new VPException("Invalid presentation definition JSON structure");
+        // Validate the JSON structure (now just checking it's valid JSON)
+        try {
+            com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson());
+        } catch (com.google.gson.JsonSyntaxException e) {
+            throw new VPException("Invalid presentation definition JSON structure", e);
         }
 
         // Generate ID if not provided
@@ -136,11 +137,12 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         // Verify exists
         PresentationDefinition existing = getPresentationDefinitionById(definitionId, tenantId);
 
-        // Validate JSON if provided
+        // Validate JSON if provided (now just checking it's valid JSON)
         if (StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-            if (!PresentationDefinitionUtil.isValidPresentationDefinition(
-                    presentationDefinition.getDefinitionJson())) {
-                throw new VPException("Invalid presentation definition JSON structure");
+            try {
+                com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson());
+            } catch (com.google.gson.JsonSyntaxException e) {
+                throw new VPException("Invalid presentation definition JSON structure", e);
             }
         }
 
@@ -189,7 +191,12 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
         if (StringUtils.isBlank(definitionJson)) {
             return false;
         }
-        return PresentationDefinitionUtil.isValidPresentationDefinition(definitionJson);
+        try {
+            com.google.gson.JsonParser.parseString(definitionJson);
+            return true;
+        } catch (com.google.gson.JsonSyntaxException e) {
+            return false;
+        }
     }
 
     @Override
@@ -241,59 +248,31 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                 return claimsList;
             }
             com.google.gson.JsonObject rootObj = root.getAsJsonObject();
-            if (!rootObj.has("input_descriptors")) {
+            if (!rootObj.has("requested_credentials")) {
                 return claimsList;
             }
 
-            com.google.gson.JsonArray descriptors = rootObj.getAsJsonArray("input_descriptors");
-            for (com.google.gson.JsonElement descElem : descriptors) {
-                if (!descElem.isJsonObject()) {
+            com.google.gson.JsonArray credentials = rootObj.getAsJsonArray("requested_credentials");
+            for (com.google.gson.JsonElement credElem : credentials) {
+                if (!credElem.isJsonObject()) {
                     continue;
                 }
-                com.google.gson.JsonObject desc = descElem.getAsJsonObject();
+                com.google.gson.JsonObject cred = credElem.getAsJsonObject();
 
                 InputDescriptorClaimsDTO dto = new InputDescriptorClaimsDTO();
-                dto.setInputDescriptorId(desc.has("id") ? desc.get("id").getAsString() : "unknown");
+                dto.setInputDescriptorId(cred.has("type") ? cred.get("type").getAsString() : "unknown");
 
                 List<ClaimDTO> fieldClaims = new java.util.ArrayList<>();
 
-                if (desc.has("constraints")) {
-                    com.google.gson.JsonObject constraints = desc.getAsJsonObject("constraints");
-                    if (constraints.has("fields")) {
-                        com.google.gson.JsonArray fields = constraints.getAsJsonArray("fields");
-                        for (com.google.gson.JsonElement fieldElem : fields) {
-                            if (!fieldElem.isJsonObject()) {
-                                continue;
-                            }
-                            com.google.gson.JsonObject field = fieldElem.getAsJsonObject();
-
-                            ClaimDTO claim = new ClaimDTO();
-                            // Path
-                            if (field.has("path")) {
-                                com.google.gson.JsonArray paths = field.getAsJsonArray("path");
-                                if (paths.size() > 0) {
-                                    claim.setPath(paths.get(0).getAsString());
-                                }
-                            }
-
-                            // Name
-                            if (field.has("name")) {
-                                claim.setName(field.get("name").getAsString());
-                            } else if (claim.getPath() != null) {
-                                // Fallback: Derive name from path (e.g. $.credentialSubject.email -> email)
-                                String p = claim.getPath();
-                                int lastDot = p.lastIndexOf('.');
-                                if (lastDot != -1 && lastDot < p.length() - 1) {
-                                    claim.setName(p.substring(lastDot + 1));
-                                } else {
-                                    claim.setName(p);
-                                }
-                            }
-
-                            if (claim.getPath() != null) {
-                                fieldClaims.add(claim);
-                            }
-                        }
+                if (cred.has("requested_claims")) {
+                    com.google.gson.JsonArray claims = cred.getAsJsonArray("requested_claims");
+                    for (com.google.gson.JsonElement claimElem : claims) {
+                        String claimName = claimElem.getAsString();
+                        ClaimDTO claim = new ClaimDTO();
+                        claim.setName(claimName);
+                        // Optional path if not default
+                        claim.setPath("$." + claimName);
+                        fieldClaims.add(claim);
                     }
                 }
                 dto.setClaims(fieldClaims);

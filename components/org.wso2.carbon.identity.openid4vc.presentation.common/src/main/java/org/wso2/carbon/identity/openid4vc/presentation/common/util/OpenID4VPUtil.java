@@ -297,16 +297,25 @@ public class OpenID4VPUtil {
 
     /**
      * Get the configured base URL.
+     * Falls back to the Identity Server's configured hostname from deployment.toml
+     * if OpenID4VP.BaseUrl is not explicitly configured in identity.xml.
      *
      * @return The base URL
-     * @throws IllegalStateException if OpenID4VP.BaseUrl is not configured in identity.xml
      */
     public static String getBaseUrl() {
+        // First try the explicit OpenID4VP configuration
         String baseUrl = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.BASE_URL);
-        if (StringUtils.isBlank(baseUrl)) {
-            throw new IllegalStateException("OpenID4VP.BaseUrl must be configured in identity.xml. " +
-                    "Add <OpenID4VP><BaseUrl>https://your-server-url</BaseUrl></OpenID4VP> to the configuration.");
+        if (StringUtils.isNotBlank(baseUrl)) {
+            return baseUrl;
         }
-        return baseUrl;
+
+        // Fall back to the server's configured hostname (from deployment.toml [server] section)
+        String serverUrl = IdentityUtil.getServerURL("", true, true);
+        if (StringUtils.isNotBlank(serverUrl)) {
+            return serverUrl;
+        }
+
+        throw new IllegalStateException("Unable to determine server base URL. " +
+                "Configure [server].hostname in deployment.toml or add OpenID4VP.BaseUrl to identity.xml.");
     }
 }
