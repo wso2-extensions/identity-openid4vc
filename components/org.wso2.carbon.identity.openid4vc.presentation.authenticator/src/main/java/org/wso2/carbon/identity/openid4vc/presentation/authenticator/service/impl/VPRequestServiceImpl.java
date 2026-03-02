@@ -460,7 +460,6 @@ public class VPRequestServiceImpl implements VPRequestService {
                         JsonObject credObj = credElem.getAsJsonObject();
                         String type = credObj.has("type") ? credObj.get("type").getAsString() : null;
                         String purpose = credObj.has("purpose") ? credObj.get("purpose").getAsString() : null;
-                        String issuer = credObj.has("issuer") ? credObj.get("issuer").getAsString() : null;
                         
                         java.util.List<String> claims = new java.util.ArrayList<>();
                         if (credObj.has("requested_claims")) {
@@ -474,7 +473,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                         descIndex : "descriptor_" + descIndex;
                         inputDescriptors.add(
                                 PresentationDefinitionUtil.buildInputDescriptorFromRequestedCredential(
-                                        descId, type, purpose, issuer, claims));
+                                        descId, type, purpose, claims));
                         descIndex++;
                     }
                 }
@@ -508,8 +507,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             vpFormats.put("ldp_vp", ldpVp);
 
             java.util.Map<String, Object> vcSdJwt = new java.util.HashMap<>();
-            vcSdJwt.put("sd-jwt_alg_values", java.util.Arrays.asList("RS256", "ES256", "ES256K", "EdDSA"));
-            vcSdJwt.put("kb-jwt_alg_values", java.util.Arrays.asList("RS256", "ES256", "ES256K", "EdDSA"));
+            vcSdJwt.put("sd-jwt_alg_values", java.util.Arrays.asList("RS256", "EdDSA"));
+            vcSdJwt.put("kb-jwt_alg_values", java.util.Arrays.asList("RS256", "EdDSA"));
             vpFormats.put("vc+sd-jwt", vcSdJwt);
 
             clientMetadata.put("vp_formats", vpFormats);

@@ -25,19 +25,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -73,6 +60,18 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestSta
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils;
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * OpenID4VP Wallet Authenticator for WSO2 Identity Server.
