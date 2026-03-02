@@ -1436,39 +1436,65 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             net.minidev.json.JSONObject pd = (net.minidev.json.JSONObject) pdObj;
             
             JSONArray inputDescriptors = (JSONArray) pd.get("input_descriptors");
-            if (inputDescriptors == null) {
+            JSONArray requestedCredentials = (JSONArray) pd.get("requested_credentials");
+            
+            if (inputDescriptors == null && requestedCredentials == null) {
                 return;
             }
 
             String claimsJson = new com.google.gson.Gson().toJson(claims);
             Object document = com.jayway.jsonpath.Configuration.defaultConfiguration().jsonProvider().parse(claimsJson);
 
-            for (Object desc : inputDescriptors) {
-                net.minidev.json.JSONObject descriptor = (net.minidev.json.JSONObject) desc;
-                net.minidev.json.JSONObject constraints = (net.minidev.json.JSONObject) descriptor.get("constraints");
-                if (constraints != null) {
-                    JSONArray fields = (JSONArray) constraints.get("fields");
-                    if (fields != null) {
-                        for (Object f : fields) {
-                            net.minidev.json.JSONObject field = (net.minidev.json.JSONObject) f;
-                            JSONArray paths = (JSONArray) field.get("path");
-                            if (paths != null) {
-                                boolean matchFound = false;
-                                for (Object p : paths) {
-                                    String jsonPath = (String) p;
-                                    try {
-                                        JsonPath.read(document, jsonPath);
-                                        matchFound = true;
-                                        break; 
-                                    } catch (com.jayway.jsonpath.PathNotFoundException e) {
+            // Handle standard Presentation Exchange format
+            if (inputDescriptors != null) {
+                for (Object desc : inputDescriptors) {
+                    net.minidev.json.JSONObject descriptor = (net.minidev.json.JSONObject) desc;
+                    net.minidev.json.JSONObject constraints = 
+                            (net.minidev.json.JSONObject) descriptor.get("constraints");
+                    if (constraints != null) {
+                        JSONArray fields = (JSONArray) constraints.get("fields");
+                        if (fields != null) {
+                            for (Object f : fields) {
+                                net.minidev.json.JSONObject field = (net.minidev.json.JSONObject) f;
+                                JSONArray paths = (JSONArray) field.get("path");
+                                if (paths != null) {
+                                    boolean matchFound = false;
+                                    for (Object p : paths) {
+                                        String jsonPath = (String) p;
+                                        try {
+                                            JsonPath.read(document, jsonPath);
+                                            matchFound = true;
+                                            break; 
+                                        } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                                        }
+                                    }
+                                    if (!matchFound) {
+                                        throw new 
+                                        CredentialVerificationException("Claim constraint not met for field path(s): " 
+                                                + paths);
                                     }
                                 }
-                                if (!matchFound) {
-                                    // Split long string to avoid line length error
-                                    throw new 
-                                    CredentialVerificationException("Claim constraint not met for field path(s): " 
-                                            + paths);
-                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Handle simplified requested_credentials format
+            if (requestedCredentials != null) {
+                for (Object cred : requestedCredentials) {
+                    net.minidev.json.JSONObject credentialReq = (net.minidev.json.JSONObject) cred;
+                    JSONArray requestedClaims = (JSONArray) credentialReq.get("requested_claims");
+                    
+                    if (requestedClaims != null) {
+                        for (Object c : requestedClaims) {
+                            String claimName = (String) c;
+                            String jsonPath = "$." + claimName;
+                            try {
+                                JsonPath.read(document, jsonPath);
+                            } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                                throw new CredentialVerificationException("Requested claim not found in presentation: " 
+                                        + claimName);
                             }
                         }
                     }
@@ -1573,7 +1599,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     }
 
     /**
-     * Resolve public key from issuer URL using OID4VCI metadata and Authorization Server fallback.
+     * Resolve public key from issuer URL using OID4VCI metadata and 
+     * Authorization Server fallback.
      */
 
 
@@ -1592,7 +1619,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         } catch (java.net.URISyntaxException e) {
             throw new java.io.IOException("Invalid URL: " + urlString, e);
         }
-        if (!"http".equalsIgnoreCase(uri.getScheme()) && !"https".equalsIgnoreCase(uri.getScheme())) {
+        if (!"http".equalsIgnoreCase(uri.getScheme()) && 
+                !"https".equalsIgnoreCase(uri.getScheme())) {
             throw new java.io.IOException("Unsupported protocol: " + uri.getScheme());
         }
 
@@ -1601,7 +1629,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
 
         java.net.URL url = uri.toURL();
-        java.net.HttpURLConnection con = (java.net.HttpURLConnection) url.openConnection();
+        java.net.HttpURLConnection con = 
+                (java.net.HttpURLConnection) url.openConnection();
         con.setRequestMethod("GET");
         con.setConnectTimeout(HTTP_CONNECT_TIMEOUT);
         con.setReadTimeout(HTTP_READ_TIMEOUT);
@@ -1612,7 +1641,8 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
 
         try (java.io.BufferedReader in = new java.io.BufferedReader(
-                new java.io.InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
+                new java.io.InputStreamReader(
+                        con.getInputStream(), StandardCharsets.UTF_8))) {
             String inputLine;
             StringBuilder content = new StringBuilder();
             while ((inputLine = in.readLine()) != null) {
@@ -1628,8 +1658,11 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
     /**
      * Remove CRLF characters from a string to prevent log injection.
+     *
+     * @param input The input string.
+     * @return The cleaned string.
      */
-    private String removeCRLF(String input) {
+    private String removeCRLF(final String input) {
         if (input == null) {
             return null;
         }

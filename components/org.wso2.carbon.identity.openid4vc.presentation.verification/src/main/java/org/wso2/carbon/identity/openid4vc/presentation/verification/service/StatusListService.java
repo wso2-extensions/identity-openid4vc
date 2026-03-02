@@ -49,8 +49,9 @@ public interface StatusListService {
      * @return RevocationCheckResult containing the revocation status
      * @throws RevocationCheckException If an error occurs during the check
      */
-    RevocationCheckResult checkStatusList2021(String statusListCredentialUrl, int statusListIndex,
-                                               String statusPurpose) throws RevocationCheckException;
+    RevocationCheckResult checkStatusList2021(String statusListCredentialUrl,
+            int statusListIndex,
+            String statusPurpose) throws RevocationCheckException;
 
     /**
      * Check if a credential is revoked using BitstringStatusList.
@@ -61,17 +62,20 @@ public interface StatusListService {
      * @return RevocationCheckResult containing the revocation status
      * @throws RevocationCheckException If an error occurs during the check
      */
-    RevocationCheckResult checkBitstringStatusList(String statusCredentialUrl, int statusIndex,
-                                                    String statusPurpose) throws RevocationCheckException;
+    RevocationCheckResult checkBitstringStatusList(String statusCredentialUrl,
+            int statusIndex,
+            String statusPurpose) throws RevocationCheckException;
 
     /**
      * Fetch and decode the status list from a status list credential URL.
      *
-     * @param statusListCredentialUrl URL to fetch the status list credential from
+     * @param statusListCredentialUrl URL to fetch the status list 
+     *                                credential from
      * @return Decoded bitstring as a byte array
      * @throws RevocationCheckException If fetching or decoding fails
      */
-    byte[] fetchAndDecodeStatusList(String statusListCredentialUrl) throws RevocationCheckException;
+    byte[] fetchAndDecodeStatusList(String statusListCredentialUrl)
+            throws RevocationCheckException;
 
     /**
      * Check if a specific bit is set in a bitstring.

@@ -446,12 +446,54 @@ public class VPRequestServiceImpl implements VPRequestService {
             claimsBuilder.expirationTime(exp);
 
             // Add presentation definition JSON object
-            JsonObject pdJson = com.google.gson.JsonParser.parseString(vpRequest.getPresentationDefinition())
+            JsonObject storedPdJson = com.google.gson.JsonParser.parseString(vpRequest.getPresentationDefinition())
                     .getAsJsonObject();
+            
+            JsonObject pdJsonToEmbed;
+            if (storedPdJson.has("requested_credentials")) {
+                // It's the simple format, generate the full PE format dynamically
+                java.util.List<String> inputDescriptors = new java.util.ArrayList<>();
+                int descIndex = 1;
+                com.google.gson.JsonArray reqCreds = storedPdJson.getAsJsonArray("requested_credentials");
+                for (com.google.gson.JsonElement credElem : reqCreds) {
+                    if (credElem.isJsonObject()) {
+                        JsonObject credObj = credElem.getAsJsonObject();
+                        String type = credObj.has("type") ? credObj.get("type").getAsString() : null;
+                        String purpose = credObj.has("purpose") ? credObj.get("purpose").getAsString() : null;
+                        String issuer = credObj.has("issuer") ? credObj.get("issuer").getAsString() : null;
+                        
+                        java.util.List<String> claims = new java.util.ArrayList<>();
+                        if (credObj.has("requested_claims")) {
+                            com.google.gson.JsonArray reqClaims = credObj.getAsJsonArray("requested_claims");
+                            for (com.google.gson.JsonElement claim : reqClaims) {
+                                claims.add(claim.getAsString());
+                            }
+                        }
+                        
+                        String descId = type != null ? type.toLowerCase() + "_descriptor" + 
+                        descIndex : "descriptor_" + descIndex;
+                        inputDescriptors.add(
+                                PresentationDefinitionUtil.buildInputDescriptorFromRequestedCredential(
+                                        descId, type, purpose, issuer, claims));
+                        descIndex++;
+                    }
+                }
+                
+                String fullPdString = PresentationDefinitionUtil.buildPresentationDefinition(
+                        java.util.UUID.randomUUID().toString(), 
+                        "Dynamic Presentation Definition", 
+                        "Dynamically generated from requested credentials", 
+                        inputDescriptors.toArray(new String[0]));
+                pdJsonToEmbed = com.google.gson.JsonParser.parseString(fullPdString).getAsJsonObject();
+            } else {
+                // Fallback if it's already a full PE definition
+                pdJsonToEmbed = storedPdJson;
+            }
+
             // Convert to Map for Nimbus
             @SuppressWarnings("unchecked")
             java.util.Map<String, Object> pdMap = new com.google.gson.Gson()
-                    .fromJson(pdJson, java.util.Map.class);
+                    .fromJson(pdJsonToEmbed, java.util.Map.class);
             claimsBuilder.claim("presentation_definition", pdMap);
 
             // Add client_metadata

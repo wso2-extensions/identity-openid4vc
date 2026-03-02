@@ -25,15 +25,33 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.StepConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.exception.LogoutFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
 import org.wso2.carbon.identity.application.common.model.ServiceProvider;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
@@ -54,19 +72,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
 /**
  * OpenID4VP Wallet Authenticator for WSO2 Identity Server.
@@ -96,6 +102,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private static final String AUTHENTICATOR_NAME = "OpenID4VPAuthenticator";
     private static final String AUTHENTICATOR_FRIENDLY_NAME = "Wallet (OpenID4VP)";
 
+    private static final Log log = LogFactory.getLog(OpenID4VPAuthenticator.class);
+
     // Request parameter names
     private static final String PARAM_VP_REQUEST_ID = "vp_request_id";
 
@@ -107,7 +115,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     private static final String SESSION_TRANSACTION_ID = "openid4vp_transaction_id";
 
     // Configuration property keys
-    private static final String PROP_PRESENTATION_DEFINITION_ID = "presentationDefinition";
+    private static final String PROP_PRESENTATION_DEFINITION_ID = "presentationDefinitionId";
     private static final String PROP_RESPONSE_MODE = "ResponseMode";
     private static final String PROP_TIMEOUT_SECONDS = "TimeoutSeconds";
     private static final String PROP_CLIENT_ID = "ClientId";
@@ -650,6 +658,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         // 3. Use inline default definition if neither exists
         String presentationDefId = resolvePresentationDefinitionId(context);
 
+        if (log.isInfoEnabled()) {
+            log.info("Resolved Presentation Definition ID: " + presentationDefId);
+        }
+
         if (StringUtils.isNotBlank(presentationDefId)) {
             createDTO.setPresentationDefinitionId(presentationDefId);
         } else {
@@ -693,27 +705,82 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
             String configId = authenticatorProperties.get(PROP_PRESENTATION_DEFINITION_ID);
 
-            if (StringUtils.isNotBlank(configId)) {
-                // If the value looks like a JSON object (starts with {), it means the listener hasn't
-                // processed it yet or failed to update it. We should handle this gracefully.
-                if (configId.trim().startsWith("{")) {
-                    // Fallback: try to resolve by resource ID as before, or log warning
-                    // Ideally the listener ensures this is a UUID.
-                    // For now, let's try to assume it might be a raw JSON and we can't use it as ID.
-                    // But wait — if it IS raw JSON, we can't use it as an ID for the request.
-                    // So we must rely on the listener having done its job.
-                    // However, for safety, let's try to fetch by Resource ID if the property is not a valid UUID.
-                    return resolveByResourceId(context);
+            if (StringUtils.isBlank(configId)) {
+                String idpName = null;
+                if (context.getExternalIdP() != null) {
+                    idpName = context.getExternalIdP().getIdPName();
                 }
-                return configId;
-            }
 
-        } catch (Exception e) {
-            // Ignored: Config might not be available
+                // If getExternalIdP() is null, try to find the IdP name from SequenceConfig
+                if (StringUtils.isBlank(idpName) && context.getSequenceConfig() != null) {
+                    Map<Integer, StepConfig> stepMap = context.getSequenceConfig().getStepMap();
+                    if (stepMap != null) {
+                        StepConfig stepConfig = stepMap.get(context.getCurrentStep());
+                        if (stepConfig != null) {
+                            for (org.wso2.carbon.identity.application.authentication.framework
+                                    .config.model.AuthenticatorConfig 
+                                    authConfig : stepConfig.getAuthenticatorList()) {
+                                if (getName().equals(authConfig.getName()) && 
+                                        authConfig.getIdpNames() != null && !authConfig.getIdpNames().isEmpty()) {
+                                    idpName = authConfig.getIdpNames().get(0);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                String tenantDomain = context.getTenantDomain();
+                if (StringUtils.isNotBlank(idpName)) {
+                    IdentityProvider idp = IdentityProviderManager.getInstance()
+                            .getIdPByName(idpName, tenantDomain);
+                    if (idp != null) {
+                    if (log.isInfoEnabled()) {
+                        log.info("Found IDP: " + idp.getIdentityProviderName());
+                    }
+                    for (FederatedAuthenticatorConfig fedAuthConfig : idp.getFederatedAuthenticatorConfigs()) {
+                        if (log.isInfoEnabled()) {
+                            log.info("Checking fedAuthConfig: " + fedAuthConfig.getName());
+                        }
+                        if (getName().equals(fedAuthConfig.getName())) {
+                            for (Property property : fedAuthConfig.getProperties()) {
+                                if (log.isInfoEnabled()) {
+                                    log.info("Checking property: " + property.getName() + " with value: " +
+                                            property.getValue());
+                                }
+                                if (PROP_PRESENTATION_DEFINITION_ID.equals(property.getName())) {
+                                    configId = property.getValue();
+                                    break;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    if (log.isInfoEnabled()) {
+                        log.info("IDP is null for idpName: " + idpName);
+                    }
+                }
+            }
         }
 
-        // Fallback or default
-        return null;
+        if (StringUtils.isNotBlank(configId)) {
+            if (log.isInfoEnabled()) {
+                log.info("Final resolved configId: " + configId);
+            }
+            return configId;
+        }
+
+    } catch (Exception e) {
+        // Ignored: Config might not be available
+        if (log.isInfoEnabled()) {
+            log.info("Exception occurred while resolving presentation definition ID: " +
+                    e.getMessage(), e);
+        }
+    }
+
+    // Fallback or default
+    return null;
     }
 
     /**
