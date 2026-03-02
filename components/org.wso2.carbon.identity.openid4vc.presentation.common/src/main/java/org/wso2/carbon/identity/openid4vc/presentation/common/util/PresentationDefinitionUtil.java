@@ -239,12 +239,11 @@ public class PresentationDefinitionUtil {
      * @param id             The descriptor ID
      * @param credentialType The credential type to request
      * @param purpose        Optional purpose
-     * @param issuer         Optional trusted issuer
      * @param requestedClaims List of requested claims
      * @return The input descriptor JSON string
      */
     public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
-                                                                     String purpose, String issuer,
+                                                                     String purpose,
                                                                      java.util.List<String> requestedClaims) {
         JsonObject descriptor = new JsonObject();
         descriptor.addProperty(OpenID4VPConstants.PresentationDef.ID, id);
@@ -274,6 +273,7 @@ public class PresentationDefinitionUtil {
         sdJwt.add("sd-jwt_alg_values", sdJwtAlg);
         sdJwt.add("kb-jwt_alg_values", sdJwtAlg);
         format.add("vc+sd-jwt", sdJwt);
+        format.add("dc+sd-jwt", sdJwt);
         
         descriptor.add(OpenID4VPConstants.PresentationDef.FORMAT, format);
 
@@ -290,23 +290,10 @@ public class PresentationDefinitionUtil {
         typeField.add(OpenID4VPConstants.PresentationDef.PATH, path);
         JsonObject filter = new JsonObject();
         filter.addProperty("type", "string");
-        filter.addProperty("pattern", "^" + credentialType + "$");
+        filter.addProperty("pattern", "^" + credentialType);
         typeField.add(OpenID4VPConstants.PresentationDef.FILTER, filter);
         fields.add(typeField);
 
-        // Issuer constraint
-        if (StringUtils.isNotBlank(issuer)) {
-            JsonObject issuerField = new JsonObject();
-            JsonArray issuerPath = new JsonArray();
-            issuerPath.add("$.iss");
-            issuerPath.add("$.issuer");
-            issuerField.add(OpenID4VPConstants.PresentationDef.PATH, issuerPath);
-            JsonObject issuerFilter = new JsonObject();
-            issuerFilter.addProperty("type", "string");
-            issuerFilter.addProperty("pattern", "^" + issuer + "$");
-            issuerField.add(OpenID4VPConstants.PresentationDef.FILTER, issuerFilter);
-            fields.add(issuerField);
-        }
 
         // Requested claims
         if (requestedClaims != null) {
