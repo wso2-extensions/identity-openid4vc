@@ -65,20 +65,23 @@ public class SignatureVerifier {
      * @return true if signature is valid
      * @throws CredentialVerificationException if verification fails
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
+            justification = "Logged values (algorithm, key type, JWT header) are sanitized via sanitizeForLog() "
+                    + "to strip CR/LF, but SpotBugs taint analysis does not track sanitization through custom helpers.")
     public boolean verifyJwtSignature(String jwt, PublicKey publicKey, String algorithm)
             throws CredentialVerificationException {
 
         if (jwt == null || publicKey == null || algorithm == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("verifyJwtSignature called with missing params. jwt=" + (jwt != null) +
-                        ", key=" + (publicKey != null) + ", alg=" + algorithm);
+                        ", key=" + (publicKey != null) + ", alg=" + sanitizeForLog(algorithm));
             }
             throw new CredentialVerificationException("JWT, public key, and algorithm are required");
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("verifyJwtSignature called with algorithm: " + algorithm);
-            LOG.debug("PublicKey: " + publicKey);
+            LOG.debug("verifyJwtSignature called with algorithm: " + sanitizeForLog(algorithm));
+            LOG.debug("PublicKey: " + sanitizeForLog(String.valueOf(publicKey)));
         }
 
         String[] parts = jwt.split("\\.");
@@ -111,15 +114,15 @@ public class SignatureVerifier {
             } else {
                 // Fallback to JCA for EdDSA and other key types.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Falling back to JCA for key type: " + publicKey.getAlgorithm());
+                    LOG.debug("Falling back to JCA for key type: " + sanitizeForLog(publicKey.getAlgorithm()));
                 }
                 result = verifyJwtSignatureWithJca(parts, publicKey, algorithm);
             }
 
             if (!result) {
-                LOG.info("JWT signature verification failed: algorithm=" + algorithm
-                        + ", keyType=" + publicKey.getAlgorithm()
-                        + ", jwtHeader=" + Base64URL.from(parts[0]).decodeToString());
+                LOG.info("JWT signature verification failed: algorithm=" + sanitizeForLog(algorithm)
+                        + ", keyType=" + sanitizeForLog(publicKey.getAlgorithm())
+                        + ", jwtHeader=" + sanitizeForLog(Base64URL.from(parts[0]).decodeToString()));
             }
             return result;
 
@@ -138,6 +141,9 @@ public class SignatureVerifier {
      * Verify a JWT signature using the JCA Signature API.
      * Used as a fallback for key types not supported by Nimbus verifiers (e.g. EdDSA).
      */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
+            justification = "Logged JCA algorithm name is derived from a controlled switch statement; "
+                    + "additionally sanitized via sanitizeForLog() before logging.")
     private boolean verifyJwtSignatureWithJca(String[] parts, PublicKey publicKey, String algorithm)
             throws CredentialVerificationException {
 
@@ -147,7 +153,7 @@ public class SignatureVerifier {
             String jcaAlgorithm = getJcaAlgorithm(algorithm);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("JCA verification: jcaAlgorithm=" + jcaAlgorithm
+                LOG.debug("JCA verification: jcaAlgorithm=" + sanitizeForLog(jcaAlgorithm)
                         + ", signingInputLength=" + signingInput.length()
                         + ", signatureBytesLength=" + signatureBytes.length);
             }
@@ -558,5 +564,18 @@ public class SignatureVerifier {
         }
 
         return decoded;
+    }
+
+    /**
+     * Sanitize a string for safe inclusion in log messages by removing CR and LF characters.
+     *
+     * @param input The string to sanitize
+     * @return Sanitized string, or empty string if input is null
+     */
+    private static String sanitizeForLog(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\r", "").replace("\n", "");
     }
 }
