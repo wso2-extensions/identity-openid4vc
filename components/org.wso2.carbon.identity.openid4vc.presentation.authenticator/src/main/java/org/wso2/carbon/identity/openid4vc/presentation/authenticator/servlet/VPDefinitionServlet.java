@@ -69,7 +69,7 @@ public class VPDefinitionServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234;
 
-    private transient PresentationDefinitionService presentationDefinitionService;
+    private PresentationDefinitionService presentationDefinitionService;
     @Override
     public void init() throws ServletException {
         super.init();
@@ -395,17 +395,15 @@ public class VPDefinitionServlet extends HttpServlet {
 
     /**
      * Response DTO for presentation definitions.
+     * Fields are accessed by Gson via reflection during JSON serialization;
+     * SpotBugs URF_UNREAD_FIELD / UWF_UNWRITTEN_FIELD warnings are suppressed accordingly.
      */
     @SuppressFBWarnings({"URF_UNREAD_FIELD", "UWF_UNWRITTEN_FIELD"})
     private static class PresentationDefinitionResponseDTO {
 
-        @SuppressWarnings("unused")
         private String definitionId;
-        @SuppressWarnings("unused")
         private String name;
-        @SuppressWarnings("unused")
         private String description;
-        @SuppressWarnings("unused")
         private Object definition;
 
         public void setDefinitionId(String definitionId) {
