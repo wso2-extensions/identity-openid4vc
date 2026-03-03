@@ -460,6 +460,7 @@ public class VPRequestServiceImpl implements VPRequestService {
                         JsonObject credObj = credElem.getAsJsonObject();
                         String type = credObj.has("type") ? credObj.get("type").getAsString() : null;
                         String purpose = credObj.has("purpose") ? credObj.get("purpose").getAsString() : null;
+                        String issuer = credObj.has("issuer") ? credObj.get("issuer").getAsString() : null;
                         
                         java.util.List<String> claims = new java.util.ArrayList<>();
                         if (credObj.has("requested_claims")) {
@@ -469,11 +470,11 @@ public class VPRequestServiceImpl implements VPRequestService {
                             }
                         }
                         
-                        String descId = type != null ? type.toLowerCase() + "_descriptor" + 
+                        String descId = type != null ? type.toLowerCase(java.util.Locale.ENGLISH) + "_descriptor" +
                         descIndex : "descriptor_" + descIndex;
                         inputDescriptors.add(
                                 PresentationDefinitionUtil.buildInputDescriptorFromRequestedCredential(
-                                        descId, type, purpose, claims));
+                                        descId, type, purpose, claims, issuer));
                         descIndex++;
                     }
                 }

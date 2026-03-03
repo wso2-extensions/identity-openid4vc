@@ -245,6 +245,24 @@ public class PresentationDefinitionUtil {
     public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
                                                                      String purpose,
                                                                      java.util.List<String> requestedClaims) {
+        return buildInputDescriptorFromRequestedCredential(id, credentialType, purpose, requestedClaims, null);
+    }
+
+    /**
+     * Build an input descriptor for a requested credential model, optionally constraining a trusted issuer.
+     *
+     * @param id             The descriptor ID
+     * @param credentialType The credential type to request
+     * @param purpose        Optional purpose
+     * @param requestedClaims List of requested claims
+     * @param trustedIssuer  Optional trusted issuer DID/URL; when non-blank an issuer constraint field
+     *                       is added to the descriptor so conformant wallets pre-filter by issuer.
+     * @return The input descriptor JSON string
+     */
+    public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
+                                                                     String purpose,
+                                                                     java.util.List<String> requestedClaims,
+                                                                     String trustedIssuer) {
         JsonObject descriptor = new JsonObject();
         descriptor.addProperty(OpenID4VPConstants.PresentationDef.ID, id);
         descriptor.addProperty(OpenID4VPConstants.PresentationDef.NAME, credentialType);
@@ -293,7 +311,6 @@ public class PresentationDefinitionUtil {
         filter.addProperty("pattern", "^" + credentialType);
         typeField.add(OpenID4VPConstants.PresentationDef.FILTER, filter);
         fields.add(typeField);
-
 
         // Requested claims
         if (requestedClaims != null) {

@@ -1484,6 +1484,32 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             if (requestedCredentials != null) {
                 for (Object cred : requestedCredentials) {
                     net.minidev.json.JSONObject credentialReq = (net.minidev.json.JSONObject) cred;
+
+                    // Server-side issuer enforcement: verify the VC issuer's host matches the trusted
+                    // issuer host configured in the presentation definition, if present.
+                    // Comparison is hostname-only so that a configured value like
+                    //   "masked-unprofitably-ardith.ngrok-free.dev"
+                    // matches a VC iss of
+                    //   "https://masked-unprofitably-ardith.ngrok-free.dev/oid4vci"
+                    String expectedIssuer = (String) credentialReq.get("issuer");
+                    if (expectedIssuer != null && !expectedIssuer.isEmpty()) {
+                        Object actualIssuerObj = claims.get("iss");
+                        if (actualIssuerObj == null) {
+                            actualIssuerObj = claims.get("issuer");
+                        }
+                        if (actualIssuerObj == null) {
+                            throw new CredentialVerificationException(
+                                    "VC issuer mismatch. Expected host: " + expectedIssuer
+                                            + ", but no iss/issuer claim found in VC.");
+                        }
+                        String actualIssuer = actualIssuerObj.toString();
+                        if (!issuerHostMatches(expectedIssuer, actualIssuer)) {
+                            throw new CredentialVerificationException(
+                                    "VC issuer mismatch. Expected host: " + expectedIssuer
+                                            + ", got: " + actualIssuer);
+                        }
+                    }
+
                     JSONArray requestedClaims = (JSONArray) credentialReq.get("requested_claims");
                     
                     if (requestedClaims != null) {
@@ -1508,6 +1534,57 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
     }
 
+
+    /**
+     * Compare issuer values by hostname only.
+     *
+     * <p>The expected issuer stored in the presentation definition may be a bare hostname
+     * (e.g. {@code masked-unprofitably-ardith.ngrok-free.dev}) while the {@code iss} claim
+     * in the VC is typically a full URL
+     * (e.g. {@code https://masked-unprofitably-ardith.ngrok-free.dev/oid4vci}).
+     * Both should be considered a match.</p>
+     *
+     * @param expected The issuer value from the presentation definition
+     * @param actual   The iss/issuer claim from the verified VC
+     * @return true if the hostnames are equal (case-insensitive)
+     */
+    private boolean issuerHostMatches(String expected, String actual) {
+        String expectedHost = extractHost(expected);
+        String actualHost = extractHost(actual);
+        return expectedHost != null && expectedHost.equalsIgnoreCase(actualHost);
+    }
+
+    /**
+     * Extract the hostname from a value that is either a bare hostname or a full URL.
+     * Returns the input trimmed as-is if it cannot be parsed as a URI.
+     */
+    private String extractHost(String value) {
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+        String trimmed = value.trim();
+        // If no scheme is present, treat it as a bare hostname/DID-like identifier
+        if (!trimmed.contains("://")) {
+            // Could be "example.com" or "did:web:example.com" — extract last segment after ":"
+            // For did:web, the host is the part after "did:web:"
+            if (trimmed.startsWith("did:web:")) {
+                // "did:web:example.com" → "example.com"
+                // "did:web:example.com:path" → "example.com" (only host part)
+                String didIdentifier = trimmed.substring("did:web:".length());
+                // The host is the first segment before any additional colons (path segments)
+                return didIdentifier.split(":")[0].toLowerCase(java.util.Locale.ENGLISH);
+            }
+            return trimmed.toLowerCase(java.util.Locale.ENGLISH);
+        }
+        try {
+            java.net.URI uri = new java.net.URI(trimmed);
+            String host = uri.getHost();
+            return host != null ? host.toLowerCase(java.util.Locale.ENGLISH) : 
+            trimmed.toLowerCase(java.util.Locale.ENGLISH);
+        } catch (java.net.URISyntaxException e) {
+            return trimmed.toLowerCase(java.util.Locale.ENGLISH);
+        }
+    }
 
     private String hashDisclosure(String disclosure) throws NoSuchAlgorithmException {
         return createHash(disclosure);

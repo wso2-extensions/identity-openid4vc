@@ -40,8 +40,6 @@ import org.wso2.carbon.identity.application.common.model.ClaimMapping;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
-import org.wso2.carbon.identity.application.common.model.ServiceProvider;
-import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache.WalletDataCache;
@@ -296,33 +294,30 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
             String format = extractVPTokenFormat(submission);
             String vpToken = submission.getVpToken();
-            String username = null;
             Map<String, Object> verifiedClaims = new HashMap<>();
+
+            // Fix 1: Always resolve IDP claim mappings, even when getExternalIdP() is null.
+            ClaimMapping[] idpClaimMappings = resolveIdpClaimMappings(context);
+
+            // Fix 3: Derive subject claim name from IDP's userIdClaim configuration.
+            String subjectRemoteClaim = resolveSubjectRemoteClaim(context, idpClaimMappings);
 
             if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
                 String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : "unknown";
                 String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : "unknown";
                 String pdJson = (presentationDefinition != null) ? presentationDefinition.getDefinitionJson() : "{}";
-                
+
                 // Call VC Verification Service
                 verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
                     .verifySdJwtToken(vpToken, expectedNonce, expectedAudience, pdJson);
 
-                if (verifiedClaims.containsKey("email")) {
-                    username = (String) verifiedClaims.get("email");
-                } else if (verifiedClaims.containsKey("username")) {
-                    username = (String) verifiedClaims.get("username");
-                } else if (verifiedClaims.containsKey("sub")) {
-                    username = (String) verifiedClaims.get("sub");
-                }
-            
             } else {
                 // Legacy / Other formats
                 try {
                     // Verify basic signature/expiry
                     VPServiceDataHolder.getInstance().getVCVerificationService().verifyVPToken(vpToken);
                 } catch (Exception e) {
-                     throw new AuthenticationFailedException("VP Token verification failed: " + e.getMessage(), e);
+                    throw new AuthenticationFailedException("VP Token verification failed: " + e.getMessage(), e);
                 }
 
                 JsonObject vpData = null;
@@ -336,11 +331,31 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                         vpData = JsonParser.parseString(payload).getAsJsonObject();
                     }
                 }
-                
+
                 if (vpData != null) {
-                    username = extractUsernameFromVpData(vpData);
+                    // Populate verifiedClaims from the VP data so the shared mapping path handles all formats.
+                    populateVerifiedClaimsFromVpData(vpData, verifiedClaims);
+
+                    // Gap 3: Enforce required claims from the Presentation Definition for non-SD-JWT formats.
+                    // SD-JWT does this inside verifySdJwtToken; we must do it here for JWT VP / JSON-LD VP.
+                    String pdJson = (presentationDefinition != null)
+                            ? presentationDefinition.getDefinitionJson() : null;
+                    if (pdJson != null && !pdJson.isEmpty()) {
+                        try {
+                            VPServiceDataHolder.getInstance().getVCVerificationService()
+                                    .verifyClaimsAgainstDefinition(verifiedClaims, pdJson);
+                        } catch (org.wso2.carbon.identity.openid4vc.presentation.common.exception
+                                .CredentialVerificationException e) {
+                            throw new AuthenticationFailedException(
+                                    "VC does not satisfy presentation definition requirements: "
+                                            + e.getMessage(), e);
+                        }
+                    }
                 }
             }
+
+            // Resolve username: prefer the IDP-configured subject claim, fall back to heuristics.
+            String username = extractUsername(verifiedClaims, subjectRemoteClaim);
 
             if (StringUtils.isBlank(username)) {
                 throw new AuthenticationFailedException("No user identifier found in verified credentials");
@@ -354,18 +369,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             }
             authenticatedUser.setTenantDomain(context.getTenantDomain());
 
-            // Map Attributes
-            ClaimMapping[] idpClaimMappings = new ClaimMapping[0];
-            if (context.getExternalIdP() != null) {
-                idpClaimMappings = context.getExternalIdP().getClaimMappings();
-            }
-
-            Map<ClaimMapping, String> userAttributes;
-            if (!verifiedClaims.isEmpty()) {
-                userAttributes = mapVerifiedClaimsToLocal(verifiedClaims, idpClaimMappings);
-            } else {
-                userAttributes = extractClaimsFromVP(vpToken, idpClaimMappings);
-            }
+            Map<ClaimMapping, String> userAttributes = mapVerifiedClaimsToLocal(verifiedClaims, idpClaimMappings);
 
             authenticatedUser.setUserAttributes(userAttributes);
             context.setSubject(authenticatedUser);
@@ -375,128 +379,109 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
     }
 
+
     /**
-     * Helper to extract username from generic VP Data (JSON-LD/JWT Payload).
+     * Populate a verifiedClaims map from a JSON-LD VP JsonObject.
+     * This flattens credentialSubject fields to the top level of the map.
      */
-    private String extractUsernameFromVpData(JsonObject vpData) {
-        // Wrapper for the existing logic to keep the main method clean
-        // ... (Logic from original method) ...
+    private void populateVerifiedClaimsFromVpData(JsonObject vpData, Map<String, Object> verifiedClaims) {
         try {
             JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
             if (!vp.has("verifiableCredential")) {
-                return null;
+                return;
             }
-
-            JsonElement vcElement = vp.get("verifiableCredential");
-            String vcToken = null;
-
-            if (vcElement.isJsonArray() && vcElement.getAsJsonArray().size() > 0) {
-               JsonElement first = vcElement.getAsJsonArray().get(0);
-               if (first.isJsonPrimitive()) {
-                   vcToken = first.getAsString();
-               } else if (first.isJsonObject()) {
-                   return extractSubjectFromJsonObject(first.getAsJsonObject());
-               }
-            } else if (vcElement.isJsonPrimitive()) {
-                vcToken = vcElement.getAsString();
-            } else if (vcElement.isJsonObject()) {
-                return extractSubjectFromJsonObject(vcElement.getAsJsonObject());
+            JsonElement vcElem = vp.get("verifiableCredential");
+            JsonObject vc = null;
+            if (vcElem.isJsonArray() && vcElem.getAsJsonArray().size() > 0) {
+                JsonElement first = vcElem.getAsJsonArray().get(0);
+                if (first.isJsonObject()) {
+                    vc = first.getAsJsonObject();
+                }
+            } else if (vcElem.isJsonObject()) {
+                vc = vcElem.getAsJsonObject();
             }
-
-            if (vcToken != null) {
-                 return extractSubjectFromJwt(vcToken);
+            if (vc != null && vc.has("credentialSubject")) {
+                JsonObject subject = vc.getAsJsonObject("credentialSubject");
+                for (Map.Entry<String, JsonElement> entry : subject.entrySet()) {
+                    if (entry.getValue().isJsonPrimitive()) {
+                        verifiedClaims.put(entry.getKey(), entry.getValue().getAsString());
+                    }
+                }
             }
         } catch (RuntimeException e) {
-            // Ignore extraction errors
-        }
-        return null;
-    }
-
-    private String extractSubjectFromJsonObject(JsonObject vcObj) {
-        if (vcObj.has("credentialSubject")) {
-            JsonObject cs = vcObj.getAsJsonObject("credentialSubject");
-            if (cs.has("email")) {
-                return cs.get("email").getAsString();
-            }
-            if (cs.has("username")) {
-                return cs.get("username").getAsString();
-            }
-            if (cs.has("id")) {
-                return cs.get("id").getAsString();
+            if (log.isDebugEnabled()) {
+                log.debug("Could not populate verified claims from VP data: " + sanitizeForLog(e.getMessage()));
             }
         }
-        return null;
     }
 
-    private String extractSubjectFromJwt(String jwt) {
-         try {
-             String part = jwt.contains("~") ? jwt.split("~")[0] : jwt;
-             String[] parts = part.split("\\.");
-             if (parts.length < 2) {
-                 return null;
-             }
-             String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-             JsonObject json = JsonParser.parseString(payload).getAsJsonObject();
-             // Handle standard JWT payload or nested vc
-             if (json.has("vc")) {
-                 return extractSubjectFromJsonObject(json.getAsJsonObject("vc"));
-             } else {
-                 return extractSubjectFromJsonObject(json);
-             }
-         } catch (RuntimeException e) { 
-             return null; 
-         }
-    }
-    
     /**
-     * Map Verified Claims map to WSO2 Claim Mappings.
+     * Extract the username from verified claims using only the IDP-configured subject claim.
+     *
+     * <p>The remote claim name to use as subject is resolved from the IDP's {@code userIdClaim}
+     * local URI. If that cannot be determined (IDP not configured, or no matching mapping), this
+     * method returns {@code null}, which causes authentication to fail with a clear error rather
+     * than silently picking the wrong field.</p>
+     *
+     * @param verifiedClaims     Claims extracted and verified from the VC
+     * @param subjectRemoteClaim The remote (VC-side) claim name that corresponds to the IDP subject
+     * @return Username string, or null if not determinable
      */
-    private Map<ClaimMapping, String> mapVerifiedClaimsToLocal(Map<String, Object> verifiedClaims, 
-                                                              ClaimMapping[] idpClaimMappings) {
+    private String extractUsername(Map<String, Object> verifiedClaims, String subjectRemoteClaim) {
+        if (StringUtils.isBlank(subjectRemoteClaim)) {
+            // No IDP subject claim configured — cannot safely determine the user identifier.
+            // Authentication will fail with an explicit message.
+            return null;
+        }
+        Object val = verifiedClaims.get(subjectRemoteClaim);
+        return (val != null && StringUtils.isNotBlank(val.toString())) ? val.toString() : null;
+    }
+
+    /**
+     * Map verified claims to WSO2 ClaimMappings using IDP-configured mappings.
+     * Fix 2: When no mappings, use raw VC claim names on both sides (honest) rather
+     * than fabricating local WSO2 URIs that don't match the IDP configuration.
+     */
+    private Map<ClaimMapping, String> mapVerifiedClaimsToLocal(Map<String, Object> verifiedClaims,
+                                                               ClaimMapping[] idpClaimMappings) {
         Map<ClaimMapping, String> mappedClaims = new HashMap<>();
         if (idpClaimMappings == null || idpClaimMappings.length == 0) {
-             // If no mappings, return all as local claims (backward compatibility)
-             for (Map.Entry<String, Object> entry : verifiedClaims.entrySet()) {
-                 mappedClaims.put(ClaimMapping.build(entry.getKey(), entry.getKey(), null, false), 
-                                  entry.getValue().toString());
-             }
-             return mappedClaims;
+            // No IDP mappings configured: emit raw VC claim names on both remote and local sides.
+            // DefaultClaimHandler will use the Name Identifier as subject in this case, which is expected.
+            for (Map.Entry<String, Object> entry : verifiedClaims.entrySet()) {
+                mappedClaims.put(ClaimMapping.build(entry.getKey(), entry.getKey(), null, false),
+                        entry.getValue().toString());
+            }
+            return mappedClaims;
         }
 
         for (ClaimMapping mapping : idpClaimMappings) {
             String remoteClaim = mapping.getRemoteClaim().getClaimUri();
-            // Try direct match first
+            // Direct top-level match
             if (verifiedClaims.containsKey(remoteClaim)) {
                 mappedClaims.put(mapping, verifiedClaims.get(remoteClaim).toString());
             } else {
-                // Try to find in credentialSubject if not found at top level
-                if (verifiedClaims.containsKey("credentialSubject")) {
-                    Object cs = verifiedClaims.get("credentialSubject");
-                    if (cs instanceof Map) {
-                        Map<?, ?> csMap = (Map<?, ?>) cs;
-                        if (csMap.containsKey(remoteClaim)) {
-                            mappedClaims.put(mapping, csMap.get(remoteClaim).toString());
-                            continue;
+                // Try credentialSubject nested map (for non-SD-JWT paths)
+                Object cs = verifiedClaims.get("credentialSubject");
+                if (cs instanceof Map) {
+                    Object val = ((Map<?, ?>) cs).get(remoteClaim);
+                    if (val != null) {
+                        mappedClaims.put(mapping, val.toString());
+                        continue;
+                    }
+                }
+                // Try vc.credentialSubject (nested JWT VC)
+                Object vcObj = verifiedClaims.get("vc");
+                if (vcObj instanceof Map) {
+                    Object csObj = ((Map<?, ?>) vcObj).get("credentialSubject");
+                    if (csObj instanceof Map) {
+                        Object val = ((Map<?, ?>) csObj).get(remoteClaim);
+                        if (val != null) {
+                            mappedClaims.put(mapping, val.toString());
                         }
                     }
                 }
-                
-                // Try to find in vc.credentialSubject (nested VC)
-                if (verifiedClaims.containsKey("vc")) {
-                    Object vc = verifiedClaims.get("vc");
-                    if (vc instanceof Map) {
-                        Map<?, ?> vcMap = (Map<?, ?>) vc;
-                        if (vcMap.containsKey("credentialSubject")) {
-                            Object cs = vcMap.get("credentialSubject");
-                            if (cs instanceof Map) {
-                                Map<?, ?> csMap = (Map<?, ?>) cs;
-                                if (csMap.containsKey(remoteClaim)) {
-                                    mappedClaims.put(mapping, csMap.get(remoteClaim).toString());
-                                }
-                            }
-                        }
-                    }
-                }
+                // Claim not present in VC — skip silently (Fix 4 applies here too via extractClaimsFromVP)
             }
         }
         return mappedClaims;
@@ -624,6 +609,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     /**
      * Create a VP request for the authentication session.
      */
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
+            justification = "Logged values are sanitized via sanitizeForLog() to strip CR/LF characters.")
     private VPRequestResponseDTO createVPRequest(AuthenticationContext context) throws VPException {
         Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
 
@@ -658,7 +645,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         String presentationDefId = resolvePresentationDefinitionId(context);
 
         if (log.isInfoEnabled()) {
-            log.info("Resolved Presentation Definition ID: " + presentationDefId);
+            log.info("Resolved Presentation Definition ID: " + sanitizeForLog(presentationDefId));
         }
 
         if (StringUtils.isNotBlank(presentationDefId)) {
@@ -689,6 +676,133 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
     /**
      * Resolve the presentation definition ID for the application.
+    /**
+     * Resolve the IDP's ClaimMappings reliably from the authentication context.
+     *
+     * <p>When the framework sets up a federated flow, {@code context.getExternalIdP()} may be null
+     * at the time {@code processAuthenticationResponse} runs (e.g. in redirect-back scenarios).
+     * This method falls back to resolving the IDP by name via {@link IdentityProviderManager} if
+     * the direct accessor returns null, ensuring IDP claim mappings are always available.</p>
+     *
+     * @param context Authentication context
+     * @return IDP claim mappings, never null (empty array if none configured)
+     */
+    @SuppressFBWarnings(value = "REC_CATCH_EXCEPTION",
+            justification = "Exception is intentionally swallowed; an empty mapping array is the safe fallback.")
+    private ClaimMapping[] resolveIdpClaimMappings(AuthenticationContext context) {
+
+        // Fast path: ExternalIdP is already populated.
+        if (context.getExternalIdP() != null) {
+            ClaimMapping[] mappings = context.getExternalIdP().getClaimMappings();
+            return mappings != null ? mappings : new ClaimMapping[0];
+        }
+
+        // Slow path: resolve the IDP name from SequenceConfig and look it up.
+        try {
+            String idpName = resolveIdpNameFromSequenceConfig(context);
+            if (StringUtils.isNotBlank(idpName)) {
+                String tenantDomain = context.getTenantDomain();
+                IdentityProvider idp = IdentityProviderManager.getInstance().getIdPByName(idpName, tenantDomain);
+                if (idp != null && idp.getClaimConfig() != null) {
+                    ClaimMapping[] mappings = idp.getClaimConfig().getClaimMappings();
+                    return mappings != null ? mappings : new ClaimMapping[0];
+                }
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Could not resolve IDP claim mappings from SequenceConfig: "
+                        + sanitizeForLog(e.getMessage()));
+            }
+        }
+        return new ClaimMapping[0];
+    }
+
+    /**
+     * Resolve the remote (VC-side) claim name that corresponds to the IDP's configured subject
+     * claim URI ({@code userIdClaim}).
+     *
+     * <p>The IDP's {@code userIdClaim} is a <em>local</em> WSO2 claim URI such as
+     * {@code http://wso2.org/claims/emailaddress}. This method finds the ClaimMapping whose
+     * local claim URI matches that value and returns its remote claim name (e.g. {@code email}),
+     * which is the field name we must look for inside the Verifiable Credential.</p>
+     *
+     * @param context          Authentication context
+     * @param idpClaimMappings Resolved IDP claim mappings
+     * @return Remote claim name for the subject, or null if not determinable
+     */
+    private String resolveSubjectRemoteClaim(AuthenticationContext context, ClaimMapping[] idpClaimMappings) {
+        try {
+            String userIdClaimUri = null;
+
+            // Try ExternalIdP directly first
+            if (context.getExternalIdP() != null && context.getExternalIdP().getIdentityProvider() != null
+                    && context.getExternalIdP().getIdentityProvider().getClaimConfig() != null) {
+                userIdClaimUri = context.getExternalIdP().getIdentityProvider()
+                        .getClaimConfig().getUserClaimURI();
+            }
+
+            // Fall back to IdentityProviderManager lookup
+            if (StringUtils.isBlank(userIdClaimUri)) {
+                String idpName = resolveIdpNameFromSequenceConfig(context);
+                if (StringUtils.isNotBlank(idpName)) {
+                    IdentityProvider idp = IdentityProviderManager.getInstance()
+                            .getIdPByName(idpName, context.getTenantDomain());
+                    if (idp != null && idp.getClaimConfig() != null) {
+                        userIdClaimUri = idp.getClaimConfig().getUserClaimURI();
+                    }
+                }
+            }
+
+            if (StringUtils.isBlank(userIdClaimUri) || idpClaimMappings == null) {
+                return null;
+            }
+
+            // Find the remote claim whose local URI matches the userIdClaim
+            for (ClaimMapping mapping : idpClaimMappings) {
+                if (mapping.getLocalClaim() != null
+                        && userIdClaimUri.equals(mapping.getLocalClaim().getClaimUri())) {
+                    return mapping.getRemoteClaim() != null
+                            ? mapping.getRemoteClaim().getClaimUri()
+                            : null;
+                }
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled()) {
+                log.debug("Could not resolve subject remote claim: " + sanitizeForLog(e.getMessage()));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Extract the IDP name from the SequenceConfig StepMap when {@code getExternalIdP()} is null.
+     * Shared by {@link #resolveIdpClaimMappings} and {@link #resolveSubjectRemoteClaim}.
+     */
+    private String resolveIdpNameFromSequenceConfig(AuthenticationContext context) {
+        if (context.getSequenceConfig() == null) {
+            return null;
+        }
+        Map<Integer, StepConfig> stepMap = context.getSequenceConfig().getStepMap();
+        if (stepMap == null) {
+            return null;
+        }
+        StepConfig stepConfig = stepMap.get(context.getCurrentStep());
+        if (stepConfig == null) {
+            return null;
+        }
+        for (org.wso2.carbon.identity.application.authentication.framework.config.model.AuthenticatorConfig
+                authConfig : stepConfig.getAuthenticatorList()) {
+            if (getName().equals(authConfig.getName())
+                    && authConfig.getIdpNames() != null
+                    && !authConfig.getIdpNames().isEmpty()) {
+                return authConfig.getIdpNames().get(0);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Resolve the presentation definition ID for the application.
      * 
      * The presentation definition ID is stored directly in the authenticator configuration.
      * The listener handles creating the definition and updating the configuration with the ID.
@@ -697,8 +811,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @return Presentation definition ID or null
      * @throws VPException If error occurs during resolution
      */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
+    @SuppressFBWarnings(value = { "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION", "CRLF_INJECTION_LOGS" },
+            justification = "CRLF_INJECTION_LOGS: logged values are sanitized via sanitizeForLog(). "
+                    + "DE_MIGHT_IGNORE/REC_CATCH_EXCEPTION: exception is" 
+                    + "intentionally swallowed as config may not be available.")
     private String resolvePresentationDefinitionId(AuthenticationContext context) throws VPException {
+
 
         try {
             Map<String, String> authenticatorProperties = context.getAuthenticatorProperties();
@@ -735,17 +853,17 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                             .getIdPByName(idpName, tenantDomain);
                     if (idp != null) {
                     if (log.isInfoEnabled()) {
-                        log.info("Found IDP: " + idp.getIdentityProviderName());
+                        log.info("Found IDP: " + sanitizeForLog(idp.getIdentityProviderName()));
                     }
                     for (FederatedAuthenticatorConfig fedAuthConfig : idp.getFederatedAuthenticatorConfigs()) {
                         if (log.isInfoEnabled()) {
-                            log.info("Checking fedAuthConfig: " + fedAuthConfig.getName());
+                            log.info("Checking fedAuthConfig: " + sanitizeForLog(fedAuthConfig.getName()));
                         }
                         if (getName().equals(fedAuthConfig.getName())) {
                             for (Property property : fedAuthConfig.getProperties()) {
                                 if (log.isInfoEnabled()) {
-                                    log.info("Checking property: " + property.getName() + " with value: " +
-                                            property.getValue());
+                                    log.info("Checking property: " + sanitizeForLog(property.getName()) +
+                                            " with value: " + sanitizeForLog(property.getValue()));
                                 }
                                 if (PROP_PRESENTATION_DEFINITION_ID.equals(property.getName())) {
                                     configId = property.getValue();
@@ -757,7 +875,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     }
                 } else {
                     if (log.isInfoEnabled()) {
-                        log.info("IDP is null for idpName: " + idpName);
+                        log.info("IDP is null for idpName: " + sanitizeForLog(idpName));
                     }
                 }
             }
@@ -765,7 +883,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
         if (StringUtils.isNotBlank(configId)) {
             if (log.isInfoEnabled()) {
-                log.info("Final resolved configId: " + configId);
+                log.info("Final resolved configId: " + sanitizeForLog(configId));
             }
             return configId;
         }
@@ -774,46 +892,13 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         // Ignored: Config might not be available
         if (log.isInfoEnabled()) {
             log.info("Exception occurred while resolving presentation definition ID: " +
-                    e.getMessage(), e);
+                    sanitizeForLog(e.getMessage()), e);
         }
     }
 
     // Fallback or default
     return null;
     }
-
-    /**
-     * Fallback resolution by Resource ID if simpler property lookup fails.
-     */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
-    private String resolveByResourceId(AuthenticationContext context) {
-        try {
-            String applicationId = context.getServiceProviderName();
-            int tenantId = getTenantId(context);
-            
-            ApplicationManagementService applicationMgtService = VPServiceDataHolder.getInstance()
-                    .getApplicationManagementService();
-            if (applicationMgtService != null) {
-                ServiceProvider serviceProvider = applicationMgtService.getServiceProvider(applicationId,
-                        context.getTenantDomain());
-                if (serviceProvider != null) {
-                    String appResourceId = serviceProvider.getApplicationResourceId();
-                    if (StringUtils.isNotBlank(appResourceId)) {
-                         PresentationDefinition pd = VPServiceDataHolder.getInstance()
-                                 .getPresentationDefinitionService()
-                                .getPresentationDefinitionByResourceId(appResourceId, tenantId);
-                        if (pd != null) {
-                            return pd.getDefinitionId();
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Ignore
-        }
-        return null;
-    }
-
 
 
     /**
@@ -1029,10 +1114,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                         }
                     }
 
-                    if (!missingClaims.isEmpty()) {
-                        throw new VPException(
-                                "VC missing required claims: "
-                                        + String.join(", ", missingClaims));
+                    // Fix 4: Missing IDP claim mappings are a soft warning — required-claim
+                    // enforcement is the Presentation Definition's responsibility, not the
+                    // claim-mapping layer's.
+                    if (!missingClaims.isEmpty() && log.isDebugEnabled()) {
+                        log.debug("VC is missing some configured IDP claim mappings (skipped): "
+                                + sanitizeForLog(String.join(", ", missingClaims)));
                     }
                 } else {
                     // No IDP claim mappings: extract all (backward compatible)
@@ -1047,8 +1134,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     }
                 }
             }
-        } catch (VPException vpEx) {
-            throw new RuntimeException(vpEx.getMessage(), vpEx);
         } catch (Exception e) {
             // ignore parsing errors for backward compatibility
         }
@@ -1218,5 +1303,18 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         configProperties.add(subjectClaim);
 
         return configProperties;
+    }
+
+    /**
+     * Sanitize a string for safe inclusion in log messages by removing CR and LF characters.
+     *
+     * @param input The string to sanitize
+     * @return Sanitized string, or empty string if input is null
+     */
+    private static String sanitizeForLog(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\r", "").replace("\n", "");
     }
 }
