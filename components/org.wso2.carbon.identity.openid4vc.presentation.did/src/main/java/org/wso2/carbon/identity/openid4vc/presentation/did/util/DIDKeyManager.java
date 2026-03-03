@@ -21,9 +21,10 @@ package org.wso2.carbon.identity.openid4vc.presentation.did.util;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import org.wso2.carbon.CarbonException;
 import org.wso2.carbon.core.util.KeyStoreManager;
 import org.wso2.carbon.core.util.KeyStoreUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDDocumentException;
 import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.security.PrivateKey;
@@ -40,13 +41,12 @@ public class DIDKeyManager {
 
     /**
      * Get Ed25519 key pair for the given tenant from KeyStore.
-     * 
+     *
      * @param tenantId The tenant ID
      * @return OctetKeyPair for the tenant
-     * @throws Exception if key retrieval fails
+     * @throws DIDDocumentException if key retrieval fails
      */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
-    public static OctetKeyPair getOrGenerateKeyPair(int tenantId) throws Exception {
+    public static OctetKeyPair getOrGenerateKeyPair(int tenantId) throws DIDDocumentException {
         // 1. Try Cache
         if (keyCache.containsKey(tenantId)) {
             return keyCache.get(tenantId);
@@ -66,12 +66,10 @@ public class DIDKeyManager {
                 return keyPair;
             }
         } catch (Exception e) {
-            // Log or handle? For now, we propagate or fallback. 
-            // If KeyStore fails, we arguably shouldn't generate specific random keys as they won't match checking.
-            throw new Exception("Error retrieving EdDSA key from KeyStore for tenant " + tenantId, e);
+            throw new DIDDocumentException("Error retrieving EdDSA key from KeyStore for tenant " + tenantId, e);
         }
 
-        throw new Exception("EdDSA key not found in KeyStore for tenant " + tenantId);
+        throw new DIDDocumentException("EdDSA key not found in KeyStore for tenant " + tenantId);
     }
 
 
@@ -81,17 +79,20 @@ public class DIDKeyManager {
      * 
      * @param tenantId The tenant ID
      * @return EdDSA key alias
-     * @throws Exception if alias generation fails
+     * @throws DIDDocumentException if alias generation fails
      */
-    public static String getEdDSAKeyAlias(int tenantId) throws Exception {
+    public static String getEdDSAKeyAlias(int tenantId) throws DIDDocumentException {
         if (tenantId == MultitenantConstants.SUPER_TENANT_ID) {
-            // For super tenant, use a fixed alias
             return "wso2carbon_ed";
         } else {
-            // For other tenants, use tenant domain + _ed suffix
             String tenantDomain = org.wso2.carbon.context.PrivilegedCarbonContext
                     .getThreadLocalCarbonContext().getTenantDomain();
-            return KeyStoreUtil.getTenantEdKeyAlias(tenantDomain);
+            try {
+                return KeyStoreUtil.getTenantEdKeyAlias(tenantDomain);
+            } catch (CarbonException e) {
+                throw new DIDDocumentException(
+                        "Failed to retrieve EdDSA key alias for tenant domain: " + tenantDomain, e);
+            }
         }
     }
 
@@ -137,20 +138,14 @@ public class DIDKeyManager {
      * Convert Ed25519 public key to multibase format.
      * Format: z + base58btc(0xed01 + public key bytes)
      */
-    @SuppressFBWarnings({ "DE_MIGHT_IGNORE", "REC_CATCH_EXCEPTION" })
     public static String publicKeyToMultibase(com.nimbusds.jose.jwk.OctetKeyPair keyPair) {
-        try {
-            byte[] publicKeyBytes = keyPair.getX().decode();
-            // Prepend multicodec prefix for Ed25519-pub (0xed01)
-            byte[] multicodecKey = new byte[34];
-            multicodecKey[0] = (byte) 0xed;
-            multicodecKey[1] = (byte) 0x01;
-            System.arraycopy(publicKeyBytes, 0, multicodecKey, 2, 32);
-
-            return "z" + base58Encode(multicodecKey);
-        } catch (Exception e) {
-            return null;
-        }
+        byte[] publicKeyBytes = keyPair.getX().decode();
+        // Prepend multicodec prefix for Ed25519-pub (0xed01)
+        byte[] multicodecKey = new byte[34];
+        multicodecKey[0] = (byte) 0xed;
+        multicodecKey[1] = (byte) 0x01;
+        System.arraycopy(publicKeyBytes, 0, multicodecKey, 2, 32);
+        return "z" + base58Encode(multicodecKey);
     }
 
 
@@ -171,9 +166,9 @@ public class DIDKeyManager {
      * 
      * @param tenantId The tenant ID
      * @return did:key identifier
-     * @throws Exception if key generation/retrieval fails
+     * @throws DIDDocumentException if key generation/retrieval fails
      */
-    public static String generateDIDKey(int tenantId) throws Exception {
+    public static String generateDIDKey(int tenantId) throws DIDDocumentException {
         com.nimbusds.jose.jwk.OctetKeyPair keyPair = getOrGenerateKeyPair(tenantId);
         return generateDIDKey(keyPair);
     }
@@ -336,12 +331,12 @@ public class DIDKeyManager {
      * Regenerate keys for a tenant.
      * Note: For EdDSA (KeyStore), this just clears cache and re-fetches.
      * For EC (Ephemeral), this generates new key.
-     * 
+     *
      * @param tenantId The tenant ID
      * @return New OctetKeyPair
-     * @throws Exception if generation fails
+     * @throws DIDDocumentException if generation fails
      */
-    public static com.nimbusds.jose.jwk.OctetKeyPair regenerateKeyPair(int tenantId) throws Exception {
+    public static com.nimbusds.jose.jwk.OctetKeyPair regenerateKeyPair(int tenantId) throws DIDDocumentException {
         keyCache.remove(tenantId);
         return getOrGenerateKeyPair(tenantId);
     }

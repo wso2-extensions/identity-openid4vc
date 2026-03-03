@@ -22,6 +22,7 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDDocumentException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
@@ -94,7 +95,7 @@ public class DIDJwkProvider implements DIDProvider {
             didDocument.setAssertionMethod(Collections.singletonList(keyId));
 
             return didDocument;
-        } catch (Exception e) {
+        } catch (DIDDocumentException e) {
             throw new VPException("Error generating DID Document for did:jwk", e);
         }
     }

@@ -20,8 +20,8 @@ package org.wso2.carbon.identity.openid4vc.presentation.did.service.impl;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDDocumentException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProviderFactory;
@@ -51,26 +51,24 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
     }
 
     @Override
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public DIDDocument getDIDDocumentObject(String domain, int tenantId) throws DIDDocumentException {
         try {
             // Since this method backs the .well-known/did.json endpoint, it implies did:web
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDIDDocument(tenantId, domain);
-        } catch (Exception e) {
+        } catch (VPException e) {
             String errorMsg = "Failed to generate DID document for tenant: " + tenantId;
             throw new DIDDocumentException(errorMsg, e);
         }
     }
 
     @Override
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String getDID(String domain) {
         try {
             // Default to did:web for domain-based lookup
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(-1234, domain);
-        } catch (Exception e) {
+        } catch (VPException e) {
             return "did:web:" + domain.replace(":", "%3A");
         }
     }
@@ -82,20 +80,18 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
      * @return DID identifier (defaults to did:web)
      * @throws DIDDocumentException if generation fails
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String getDID(int tenantId) throws DIDDocumentException {
         try {
             // Default to did:web
             String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(tenantId, baseUrl);
-        } catch (Exception e) {
+        } catch (VPException e) {
             throw new DIDDocumentException("Failed to generate DID for tenant: " + tenantId, e);
         }
     }
 
     @Override
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public String regenerateKeys(String domain, int tenantId) throws DIDDocumentException {
         // This is specific to internal key management (did:key/did:jwk)
         // did:web keys are managed via Keystore usually
@@ -104,7 +100,9 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
             // Return did:key representation of new keys
             DIDProvider provider = DIDProviderFactory.getProvider("key");
             return provider.getDID(tenantId, null);
-        } catch (Exception e) {
+        } catch (DIDDocumentException e) {
+            throw e;
+        } catch (VPException e) {
             String errorMsg = "Failed to regenerate keys for tenant: " + tenantId;
             throw new DIDDocumentException(errorMsg, e);
         }
