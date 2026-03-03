@@ -50,7 +50,7 @@ public class WellKnownDIDServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_TENANT_ID = -1234; // Super tenant
 
-    private transient DIDDocumentService didDocumentService;
+    private DIDDocumentService didDocumentService;
 
     @Override
     public void init() throws ServletException {
@@ -69,7 +69,7 @@ public class WellKnownDIDServlet extends HttpServlet {
 
         try {
             // Extract domain from request
-            String domain = extractDomain(request);
+            String domain = extractDomain();
 
             // Get tenant ID (default to super tenant for now)
             // In a multi-tenant setup, this should be extracted from the request
@@ -112,11 +112,10 @@ public class WellKnownDIDServlet extends HttpServlet {
     /**
      * Extract domain from the configuration.
      * Returns the host and port if present.
-     * 
-     * @param request HTTP request (unused now)
+     *
      * @return Domain string (e.g., "example.com" or "localhost:9443")
      */
-    private String extractDomain(HttpServletRequest request) {
+    private String extractDomain() {
         String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
         // Remove protocol
         return baseUrl.replace("https://", "").replace("http://", "");

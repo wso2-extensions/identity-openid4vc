@@ -61,7 +61,7 @@ public class VCVerificationServlet extends HttpServlet {
 
     private static final String CONTENT_TYPE_JSON = "application/json";
 
-    private transient VCVerificationService verificationService;
+    private VCVerificationService verificationService;
 
     @Override
     public void init() throws ServletException {

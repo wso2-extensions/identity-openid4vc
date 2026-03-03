@@ -130,12 +130,13 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     // StatusCallback interface implementation for direct processing
     @Override
     public void onStatusChange(String status) {
-        // Legacy callback - not used in direct processing
+        // No-op: this authenticator uses the direct submission model (onSubmissionReceived),
+        // not the polling-based status change model.
     }
 
     @Override
     public void onTimeout() {
-        // Timeout callback - not used in direct processing
+        // No-op: timeout handling is managed by the VP request expiry in VPRequestService.
     }
 
     @Override
@@ -1041,151 +1042,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
 
 
 
-    /**
-     * Extract claims from VP token for federated user attributes.
-     * When IDP claim mappings are configured, only extracts the mapped claims
-     * and validates that all required claims are present in the VC.
-     * When no mappings are configured, extracts all credentialSubject fields
-     * (backward compatible).
-     *
-     * @param vpToken Raw VP token (JWT or JSON-LD)
-     * @param idpClaimMappings Claim mappings configured on the IDP
-     * @return Map of claim mappings to values
-     */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
-    private Map<ClaimMapping, String> extractClaimsFromVP(
-            final String vpToken, final ClaimMapping[] idpClaimMappings) {
-        Map<ClaimMapping, String> claims = new HashMap<>();
 
-        try {
-            JsonObject vpData = null;
-            String trimmedToken = vpToken.trim();
-
-            // Minimal parsing logic to find credentialSubject
-            if (trimmedToken.startsWith("{") || trimmedToken.startsWith("[")) {
-                JsonElement parsed = JsonParser.parseString(trimmedToken);
-                if (parsed.isJsonObject()) {
-                    vpData = parsed.getAsJsonObject();
-                }
-            } else {
-                String[] parts = vpToken.split("\\.");
-                if (parts.length >= 2) {
-                    String payload = new String(Base64.getUrlDecoder()
-                            .decode(parts[1]), StandardCharsets.UTF_8);
-                    vpData = JsonParser.parseString(payload).getAsJsonObject();
-                }
-            }
-
-            if (vpData == null) {
-                return claims;
-            }
-
-            // Look for credentialSubject
-            JsonObject vc = null;
-            if (vpData.has("vc")) {
-                vc = vpData.getAsJsonObject("vc");
-            } else if (vpData.has("verifiableCredential")) {
-                JsonElement vcElem = vpData.get("verifiableCredential");
-                if (vcElem.isJsonArray()) {
-                    vc = vcElem.getAsJsonArray().get(0).getAsJsonObject();
-                } else if (vcElem.isJsonObject()) {
-                    vc = vcElem.getAsJsonObject();
-                }
-            } else {
-                vc = vpData;
-            }
-
-            if (vc != null && vc.has("credentialSubject")) {
-                JsonObject subject = vc.getAsJsonObject("credentialSubject");
-
-                if (idpClaimMappings != null && idpClaimMappings.length > 0) {
-                    // IDP claim mappings configured: validate and extract only mapped claims
-                    List<String> missingClaims = new ArrayList<>();
-
-                    for (ClaimMapping mapping : idpClaimMappings) {
-                        String remoteClaim = mapping.getRemoteClaim().getClaimUri();
-                        if (!hasNestedValue(subject, remoteClaim)) {
-                            missingClaims.add(remoteClaim);
-                        } else {
-                            String value = getNestedValue(subject, remoteClaim);
-                            if (value != null) {
-                                claims.put(mapping, value);
-                            }
-                        }
-                    }
-
-                    // Fix 4: Missing IDP claim mappings are a soft warning — required-claim
-                    // enforcement is the Presentation Definition's responsibility, not the
-                    // claim-mapping layer's.
-                    if (!missingClaims.isEmpty() && log.isDebugEnabled()) {
-                        log.debug("VC is missing some configured IDP claim mappings (skipped): "
-                                + sanitizeForLog(String.join(", ", missingClaims)));
-                    }
-                } else {
-                    // No IDP claim mappings: extract all (backward compatible)
-                    for (Map.Entry<String, JsonElement> entry : subject.entrySet()) {
-                        if (entry.getValue().isJsonPrimitive()) {
-                            String claimUri = "http://wso2.org/claims/"
-                                    + entry.getKey();
-                            claims.put(ClaimMapping.build(claimUri, entry.getKey(),
-                                    null, false),
-                                    entry.getValue().getAsString());
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // ignore parsing errors for backward compatibility
-        }
-
-        return claims;
-    }
-
-    /**
-     * Check if a nested value exists in a JsonObject using a dotted path.
-     * Supports paths like "email", "degree.type", "address.street.name".
-     *
-     * @param obj  The JsonObject to search
-     * @param path Dotted path (e.g. "degree.type")
-     * @return true if the value exists and is not null
-     */
-    private boolean hasNestedValue(final JsonObject obj, final String path) {
-        String[] parts = path.split("\\.");
-        JsonObject current = obj;
-        for (int i = 0; i < parts.length - 1; i++) {
-            if (!current.has(parts[i]) || !current.get(parts[i]).isJsonObject()) {
-                return false;
-            }
-            current = current.getAsJsonObject(parts[i]);
-        }
-        String lastKey = parts[parts.length - 1];
-        return current.has(lastKey) && !current.get(lastKey).isJsonNull();
-    }
-
-    /**
-     * Extract a value from a JsonObject using a dotted path.
-     * Returns the string value of the leaf element, or null if not found.
-     *
-     * @param obj  The JsonObject to search
-     * @param path Dotted path (e.g. "degree.type")
-     * @return The string value, or null
-     */
-    private String getNestedValue(final JsonObject obj, final String path) {
-        String[] parts = path.split("\\.");
-        JsonObject current = obj;
-        for (int i = 0; i < parts.length - 1; i++) {
-            if (!current.has(parts[i]) || !current.get(parts[i]).isJsonObject()) {
-                return null;
-            }
-            current = current.getAsJsonObject(parts[i]);
-        }
-        String lastKey = parts[parts.length - 1];
-        JsonElement val = current.get(lastKey);
-        if (val == null || val.isJsonNull()) {
-            return null;
-        }
-        return val.isJsonPrimitive() ? val.getAsString() : val.toString();
-    }
 
     /**
      * Check if retry authentication is enabled.

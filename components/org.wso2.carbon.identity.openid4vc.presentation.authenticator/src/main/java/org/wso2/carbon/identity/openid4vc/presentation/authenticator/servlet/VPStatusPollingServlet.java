@@ -25,6 +25,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.polling.LongPollingManager;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.polling.PollingResult;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPStatusResponseDTO;
 
@@ -81,7 +82,7 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Long polling manager instance.
      */
-    private transient LongPollingManager pollingManager;
+    private LongPollingManager pollingManager;
 
     @Override
     public void init() throws ServletException {
@@ -119,14 +120,14 @@ public class VPStatusPollingServlet extends HttpServlet {
             }
 
             // Check if long polling is enabled
-            boolean enableLongPoll = isLongPollingEnabled(request);
+            boolean enableLongPoll = ServletUtil.isLongPollingEnabled(request);
 
             // Get timeout parameter
-            long timeoutSeconds = getTimeoutSeconds(request);
+            long timeoutSeconds = ServletUtil.getTimeoutSeconds(request);
             long timeoutMs = timeoutSeconds * 1000L;
 
             // Get tenant ID
-            int tenantId = getTenantId(request);
+            int tenantId = ServletUtil.getTenantId(request);
 
             if (enableLongPoll) {
                 // Use async processing for long polling
@@ -266,67 +267,6 @@ public class VPStatusPollingServlet extends HttpServlet {
     }
 
     /**
-     * Check if long polling is enabled for this request.
-     */
-    @SuppressFBWarnings("SERVLET_PARAMETER")
-    private boolean isLongPollingEnabled(final HttpServletRequest request) {
-
-        @SuppressFBWarnings("SERVLET_PARAMETER")
-        String longPollParam = request.getParameter(PARAM_LONG_POLL);
-        if (longPollParam != null) {
-            return "true".equalsIgnoreCase(longPollParam)
-                    || "1".equals(longPollParam);
-        }
-
-        // If timeout parameter is provided, assume long polling
-        @SuppressFBWarnings("SERVLET_PARAMETER")
-        String timeoutParam = request.getParameter(PARAM_TIMEOUT);
-        return StringUtils.isNotBlank(timeoutParam);
-    }
-
-    /**
-     * Get timeout seconds from request.
-     */
-    @SuppressFBWarnings("SERVLET_PARAMETER")
-    private long getTimeoutSeconds(final HttpServletRequest request) {
-
-        @SuppressFBWarnings("SERVLET_PARAMETER")
-        String timeoutParam = request.getParameter(PARAM_TIMEOUT);
-        if (StringUtils.isNotBlank(timeoutParam)) {
-            try {
-                long timeout = Long.parseLong(timeoutParam);
-                if (timeout > 0 && timeout <= MAX_TIMEOUT_SECONDS) {
-                    return timeout;
-                }
-                if (timeout > MAX_TIMEOUT_SECONDS) {
-                    return MAX_TIMEOUT_SECONDS;
-                }
-            } catch (NumberFormatException e) {
-            }
-        }
-        return DEFAULT_TIMEOUT_SECONDS;
-    }
-
-    /**
-     * Get tenant ID from request.
-     */
-    /**
-     * Get tenant ID from request.
-     */
-    @SuppressFBWarnings("SERVLET_HEADER")
-    private int getTenantId(final HttpServletRequest request) {
-
-        String tenantHeader = request.getHeader("X-Tenant-Id");
-        if (StringUtils.isNotBlank(tenantHeader)) {
-            try {
-                return Integer.parseInt(tenantHeader);
-            } catch (NumberFormatException e) {
-            }
-        }
-        return DEFAULT_TENANT_ID;
-    }
-
-    /**
      * Send success response.
      */
     private void sendSuccessResponse(final HttpServletResponse response,
@@ -345,9 +285,6 @@ public class VPStatusPollingServlet extends HttpServlet {
         writer.write(content);
     }
 
-    /**
-     * Send error response.
-     */
     /**
      * Send error response.
      */
