@@ -21,22 +21,24 @@ package org.wso2.carbon.identity.openid4vc.presentation.did.service.impl;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -249,7 +251,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * did:web:example.com → https://example.com/.well-known/did.json
      * did:web:example.com:path:to:did → https://example.com/path/to/did/did.json
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidWeb(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -278,7 +279,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
         } catch (DIDResolutionException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw DIDResolutionException.networkError(did, e);
         }
     }
@@ -288,7 +289,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * The JWK is encoded in the DID itself.
      * did:jwk:<base64url-encoded-jwk>
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidJwk(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -328,7 +328,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
             return document;
 
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | JsonParseException e) {
             throw DIDResolutionException.invalidDocument(did, e.getMessage());
         }
     }
@@ -338,7 +338,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
      * The public key is encoded in the DID using multibase/multicodec.
      * did:key:<multibase-encoded-key>
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private DIDDocument resolveDidKey(String did) throws DIDResolutionException {
         try {
             String identifier = getIdentifier(did);
@@ -352,7 +351,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             }
 
             byte[] decoded = base58Decode(identifier.substring(1));
-            if (decoded == null || decoded.length < 2) {
+            if (decoded.length < 2) {
                 throw DIDResolutionException.invalidDocument(did, "Invalid multicodec encoding");
             }
 
@@ -393,7 +392,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
         } catch (DIDResolutionException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             throw DIDResolutionException.invalidDocument(did, e.getMessage());
         }
     }
@@ -401,7 +400,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Parse a DID document from JSON.
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     protected DIDDocument parseDIDDocument(String did, String jsonString) throws DIDResolutionException {
         try {
             JsonObject json = JsonParser.parseString(jsonString).getAsJsonObject();
@@ -466,7 +464,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
             return document;
 
-        } catch (Exception e) {
+        } catch (JsonParseException | ClassCastException e) {
             throw DIDResolutionException.invalidDocument(did, e.getMessage());
         }
     }
@@ -563,7 +561,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Extract a public key from a verification method.
      */
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     private PublicKey extractPublicKey(DIDDocument.VerificationMethod method) throws DIDResolutionException {
         try {
             // Try JWK first
@@ -585,7 +582,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
         } catch (DIDResolutionException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             throw new DIDResolutionException("Failed to extract public key: " + e.getMessage(), e);
         }
     }
@@ -593,7 +590,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert a JWK to a PublicKey.
      */
-    private PublicKey jwkToPublicKey(Map<String, Object> jwk) throws Exception {
+    private PublicKey jwkToPublicKey(Map<String, Object> jwk) throws GeneralSecurityException, DIDResolutionException {
         String kty = (String) jwk.get("kty");
 
         if ("RSA".equals(kty)) {
@@ -610,7 +607,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert RSA JWK to PublicKey.
      */
-    private PublicKey jwkToRsaPublicKey(Map<String, Object> jwk) throws Exception {
+    private PublicKey jwkToRsaPublicKey(Map<String, Object> jwk) throws GeneralSecurityException {
         String n = (String) jwk.get("n");
         String e = (String) jwk.get("e");
 
@@ -625,7 +622,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert EC JWK to PublicKey.
      */
-    private PublicKey jwkToEcPublicKey(Map<String, Object> jwk) throws Exception {
+    private PublicKey jwkToEcPublicKey(Map<String, Object> jwk) throws GeneralSecurityException, 
+    DIDResolutionException {
         String crv = (String) jwk.get("crv");
         String x = (String) jwk.get("x");
         String y = (String) jwk.get("y");
@@ -644,7 +642,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert OKP (Ed25519) JWK to PublicKey.
      */
-    private PublicKey jwkToOkpPublicKey(Map<String, Object> jwk) throws Exception {
+    private PublicKey jwkToOkpPublicKey(Map<String, Object> jwk) throws GeneralSecurityException, 
+    DIDResolutionException {
         String crv = (String) jwk.get("crv");
         String x = (String) jwk.get("x");
 
@@ -652,22 +651,19 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             throw new DIDResolutionException("Unsupported OKP curve: " + crv);
         }
 
-        try {
-            byte[] keyBytes = new Base64URL(x).decode();
-            return bytesToEd25519PublicKey(keyBytes);
-        } catch (Exception e) {
-            throw new DIDResolutionException("Ed25519 key support not available: " + e.getMessage());
-        }
+        byte[] keyBytes = new Base64URL(x).decode();
+        return bytesToEd25519PublicKey(keyBytes);
     }
 
     /**
      * Convert multibase encoded key to PublicKey.
      */
-    private PublicKey multibaseToPublicKey(String multibase, String keyType) throws Exception {
+    private PublicKey multibaseToPublicKey(String multibase, String keyType) throws GeneralSecurityException, 
+    DIDResolutionException {
         if (multibase.startsWith("z")) {
             // Base58btc
             byte[] decoded = base58Decode(multibase.substring(1));
-            if (decoded != null && decoded.length > 2) {
+            if (decoded.length > 2) {
                 byte[] keyBytes = Arrays.copyOfRange(decoded, 2, decoded.length);
                 return bytesToPublicKey(keyBytes, keyType);
             }
@@ -678,9 +674,10 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert base58 encoded key to PublicKey.
      */
-    private PublicKey base58ToPublicKey(String base58, String keyType) throws Exception {
+    private PublicKey base58ToPublicKey(String base58, String keyType) throws GeneralSecurityException, 
+    DIDResolutionException {
         byte[] keyBytes = base58Decode(base58);
-        if (keyBytes == null) {
+        if (keyBytes.length == 0) {
             throw new DIDResolutionException("Failed to decode base58 key");
         }
         return bytesToPublicKey(keyBytes, keyType);
@@ -689,19 +686,16 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Convert raw key bytes to PublicKey based on key type.
      */
-    private PublicKey bytesToPublicKey(byte[] keyBytes, String keyType) throws Exception {
+    private PublicKey bytesToPublicKey(byte[] keyBytes, String keyType) throws GeneralSecurityException, 
+    DIDResolutionException {
         if (keyType != null && keyType.contains("Ed25519")) {
             // Ed25519 key
-            try {
-                return bytesToEd25519PublicKey(keyBytes);
-            } catch (Exception e) {
-                throw new DIDResolutionException("Ed25519 key conversion failed: " + e.getMessage());
-            }
+            return bytesToEd25519PublicKey(keyBytes);
         }
         throw new DIDResolutionException("Unsupported key type for byte conversion: " + keyType);
     }
 
-    private PublicKey bytesToEd25519PublicKey(byte[] keyBytes) throws Exception {
+    private PublicKey bytesToEd25519PublicKey(byte[] keyBytes) throws GeneralSecurityException {
         // Construct SubjectPublicKeyInfo for Ed25519 X.509
         // Sequence of (AlgorithmIdentifier, BitString(keyBytes))
         // 30 2A 30 05 06 03 2B 65 70 03 21 00 <32 bytes>
@@ -721,7 +715,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Get EC parameter spec for a curve name.
      */
-    private ECParameterSpec getECParameterSpec(String curveName) throws Exception {
+    private ECParameterSpec getECParameterSpec(String curveName) throws GeneralSecurityException, 
+    DIDResolutionException {
         // Get the EC parameter spec for standard curves
         java.security.AlgorithmParameters parameters = java.security.AlgorithmParameters.getInstance("EC");
 
@@ -750,8 +745,13 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Fetch content from a URL.
      */
-    @SuppressFBWarnings("URLCONNECTION_SSRF_FD")
-    protected String fetchUrl(String urlString) throws Exception {
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "URLCONNECTION_SSRF_FD",
+            justification = "URL is validated to use the HTTPS scheme only and is constructed "
+                    + "from a parsed DID identifier, not from arbitrary user-supplied input.")
+    protected String fetchUrl(String urlString) throws IOException, DIDResolutionException {
+        if (urlString == null || !urlString.startsWith("https://")) {
+            throw new DIDResolutionException("Only HTTPS URLs are permitted for DID document fetching: " + urlString);
+        }
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -786,13 +786,12 @@ public class DIDResolverServiceImpl implements DIDResolverService {
     /**
      * Decode base58 string.
      */
-    @SuppressFBWarnings("PZLA_PREFER_ZERO_LENGTH_ARRAYS")
     private byte[] base58Decode(String base58) {
         // Base58 alphabet (Bitcoin)
         String alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
         if (base58 == null || base58.isEmpty()) {
-            return null;
+            return new byte[0];
         }
 
         // Count leading zeros
@@ -808,7 +807,7 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         for (int i = 0; i < base58.length(); i++) {
             int index = alphabet.indexOf(base58.charAt(i));
             if (index < 0) {
-                return null;
+                return new byte[0];
             }
             value = value.multiply(base).add(BigInteger.valueOf(index));
         }
