@@ -27,7 +27,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -45,17 +44,11 @@ import java.util.Base64;
  */
 public class SignatureVerifier {
 
-    /**
-     * Constructor with DID resolver service.
-     *
-     * @param didResolverService Service for resolving DIDs to get public keys
-     */
-    public SignatureVerifier(DIDResolverService didResolverService) {
-        // didResolverService is not currently used in this class but kept for API
-        // stability
-    }
-
     private static final Log LOG = LogFactory.getLog(SignatureVerifier.class);
+
+    public SignatureVerifier() {
+        // No dependencies required.
+    }
 
     /**
      * Verify a JWT signature.
@@ -218,24 +211,32 @@ public class SignatureVerifier {
     }
 
     /**
+     * Decode a proof value that may be multibase-encoded (base58btc prefix 'z') or base64.
+     */
+    private byte[] decodeProofValue(String proofValue) throws CredentialVerificationException {
+        byte[] signatureBytes;
+        if (proofValue.startsWith("z")) {
+            signatureBytes = base58Decode(proofValue.substring(1));
+        } else {
+            try {
+                signatureBytes = Base64.getUrlDecoder().decode(proofValue);
+            } catch (Exception e) {
+                signatureBytes = Base64.getDecoder().decode(proofValue);
+            }
+        }
+        if (signatureBytes == null || signatureBytes.length == 0) {
+            throw new CredentialVerificationException("Failed to decode proof value");
+        }
+        return signatureBytes;
+    }
+
+    /**
      * Verify an Ed25519 signature.
      */
     private boolean verifyEd25519Signature(String document, PublicKey publicKey, String proofValue)
             throws Exception {
 
-        // Decode the proof value (multibase encoded)
-        byte[] signatureBytes;
-        if (proofValue.startsWith("z")) {
-            // Base58btc multibase
-            signatureBytes = base58Decode(proofValue.substring(1));
-        } else {
-            // Assume base64
-            signatureBytes = Base64.getDecoder().decode(proofValue);
-        }
-
-        if (signatureBytes == null) {
-            throw new CredentialVerificationException("Failed to decode signature");
-        }
+        byte[] signatureBytes = decodeProofValue(proofValue);
 
         // Ed25519 performs its own internal SHA-512 hashing, so we pass the raw document bytes
         byte[] documentBytes = document.getBytes(StandardCharsets.UTF_8);
@@ -295,16 +296,7 @@ public class SignatureVerifier {
     private boolean verifyEcdsaSecp256k1Signature(String document, PublicKey publicKey, String proofValue)
             throws Exception {
 
-        byte[] signatureBytes;
-        if (proofValue.startsWith("z")) {
-            signatureBytes = base58Decode(proofValue.substring(1));
-        } else {
-            signatureBytes = Base64.getDecoder().decode(proofValue);
-        }
-
-        if (signatureBytes == null) {
-            throw new CredentialVerificationException("Failed to decode signature");
-        }
+        byte[] signatureBytes = decodeProofValue(proofValue);
 
         // Hash the document
         byte[] documentHash = hashDocument(document, "SHA-256");
@@ -329,20 +321,7 @@ public class SignatureVerifier {
             String proofValue, String proofType)
             throws Exception {
 
-        byte[] signatureBytes;
-        if (proofValue.startsWith("z")) {
-            signatureBytes = base58Decode(proofValue.substring(1));
-        } else {
-            try {
-                signatureBytes = Base64.getUrlDecoder().decode(proofValue);
-            } catch (Exception e) {
-                signatureBytes = Base64.getDecoder().decode(proofValue);
-            }
-        }
-
-        if (signatureBytes == null) {
-            throw new CredentialVerificationException("Failed to decode signature");
-        }
+        byte[] signatureBytes = decodeProofValue(proofValue);
 
         byte[] documentHash = hashDocument(document, "SHA-256");
 

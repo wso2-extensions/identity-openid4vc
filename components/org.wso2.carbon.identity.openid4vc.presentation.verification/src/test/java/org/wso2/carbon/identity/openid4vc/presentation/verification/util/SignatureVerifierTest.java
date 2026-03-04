@@ -18,12 +18,10 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.verification.util;
 
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -35,15 +33,13 @@ public class SignatureVerifierTest {
 
     private SignatureVerifier signatureVerifier;
 
-    @Mock
-    private DIDResolverService didResolverService;
 
     private PublicKey rsaPublicKey;
 
     @BeforeMethod
     public void setUp() throws Exception {
         MockitoAnnotations.openMocks(this);
-        signatureVerifier = new SignatureVerifier(didResolverService);
+        signatureVerifier = new SignatureVerifier();
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
         kpg.initialize(2048);
