@@ -29,7 +29,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPSubmissionDT
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -487,30 +486,4 @@ public final class VPSubmissionValidator {
         // all required input descriptors are satisfied
     }
 
-    /**
-     * Get validation errors as a list.
-     *
-     * @param dto The submission DTO to validate
-     * @return List of validation error messages
-     */
-    public static List<String> getValidationErrors(final VPSubmissionDTO dto) {
-
-        List<String> errors = new ArrayList<>();
-
-        if (dto == null) {
-            errors.add("Submission cannot be null");
-            return errors;
-        }
-
-        if (StringUtils.isBlank(dto.getState())) {
-            errors.add("state parameter is required");
-        }
-
-        if (StringUtils.isBlank(dto.getError())
-                && StringUtils.isBlank(dto.getVpToken())) {
-            errors.add("Either vp_token or error is required");
-        }
-
-        return errors;
-    }
 }

@@ -109,7 +109,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      */
     public VCVerificationServiceImpl() {
         this.didResolverService = new DIDResolverServiceImpl();
-        this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.signatureVerifier = new SignatureVerifier();
         this.statusListService = new StatusListServiceImpl();
         this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
@@ -122,7 +122,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
     public VCVerificationServiceImpl(DIDResolverService didResolverService) {
         this.didResolverService = didResolverService;
-        this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.signatureVerifier = new SignatureVerifier();
         this.statusListService = new StatusListServiceImpl();
         this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
@@ -137,7 +137,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     public VCVerificationServiceImpl(DIDResolverService didResolverService,
             StatusListService statusListService) {
         this.didResolverService = didResolverService;
-        this.signatureVerifier = new SignatureVerifier(didResolverService);
+        this.signatureVerifier = new SignatureVerifier();
         this.statusListService = statusListService;
         this.extendedJWKSValidator = new ExtendedJWKSValidator();
     }
@@ -474,23 +474,6 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
     }
 
-    /**
-     * Check revocation status using StatusList2021 with detailed result.
-     *
-     * @param status the credential status
-     * @return the revocation check result
-     * @throws CredentialVerificationException if check fails
-     */
-    public RevocationCheckResult checkRevocationStatus(VerifiableCredential.CredentialStatus status)
-            throws CredentialVerificationException {
-
-        try {
-            return statusListService.checkRevocationStatus(status);
-        } catch (RevocationCheckException e) {
-            throw new CredentialVerificationException(
-                    "Error checking revocation status: " + e.getMessage(), e);
-        }
-    }
 
     @Override
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
