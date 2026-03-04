@@ -82,17 +82,17 @@ public class VPSubmissionServlet extends HttpServlet {
     /**
      * Status listener cache for long polling notifications.
      */
-    private VPStatusListenerCache statusListenerCache;
+    private transient VPStatusListenerCache statusListenerCache;
 
     /**
      * Status notification service for coordinated notifications.
      */
-    private StatusNotificationService statusNotificationService;
+    private transient StatusNotificationService statusNotificationService;
 
     /**
      * Wallet data cache for storing submissions.
      */
-    private WalletDataCache walletDataCache;
+    private transient WalletDataCache walletDataCache;
 
     @Override
     public void init() throws ServletException {

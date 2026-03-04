@@ -378,6 +378,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * Populate a verifiedClaims map from a JSON-LD VP JsonObject.
      * This flattens credentialSubject fields to the top level of the map.
      */
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
+            justification = "Log message sanitized via sanitizeForLog() before being passed to logger.")
     private void populateVerifiedClaimsFromVpData(JsonObject vpData, Map<String, Object> verifiedClaims) {
         try {
             JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
@@ -681,8 +683,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param context Authentication context
      * @return IDP claim mappings, never null (empty array if none configured)
      */
-    @SuppressFBWarnings(value = "REC_CATCH_EXCEPTION",
-            justification = "Exception is intentionally swallowed; an empty mapping array is the safe fallback.")
+    @SuppressFBWarnings(value = {"REC_CATCH_EXCEPTION", "CRLF_INJECTION_LOGS"},
+            justification = "Exception is intentionally swallowed; an empty mapping array is the safe fallback. " +
+                    "Log message sanitized via sanitizeForLog() before being passed to logger.")
     private ClaimMapping[] resolveIdpClaimMappings(AuthenticationContext context) {
 
         // Fast path: ExternalIdP is already populated.
@@ -724,6 +727,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param idpClaimMappings Resolved IDP claim mappings
      * @return Remote claim name for the subject, or null if not determinable
      */
+    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
+            justification = "Log message sanitized via sanitizeForLog() before being passed to logger.")
     private String resolveSubjectRemoteClaim(AuthenticationContext context, ClaimMapping[] idpClaimMappings) {
         try {
             String userIdClaimUri = null;

@@ -82,7 +82,7 @@ public class VPStatusPollingServlet extends HttpServlet {
     /**
      * Long polling manager instance.
      */
-    private LongPollingManager pollingManager;
+    private transient LongPollingManager pollingManager;
 
     @Override
     public void init() throws ServletException {
