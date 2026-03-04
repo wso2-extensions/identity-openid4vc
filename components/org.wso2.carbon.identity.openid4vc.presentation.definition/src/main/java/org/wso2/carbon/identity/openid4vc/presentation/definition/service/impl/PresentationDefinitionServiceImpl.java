@@ -22,17 +22,17 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition.RequestedCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
-import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl.PresentationDefinitionDAOImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Implementation of PresentationDefinitionService for managing presentation
- * definitions.
+ * Implementation of PresentationDefinitionService for managing presentation definitions.
  */
 public class PresentationDefinitionServiceImpl implements PresentationDefinitionService {
 
@@ -61,15 +61,8 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     public PresentationDefinition createPresentationDefinition(
             PresentationDefinition presentationDefinition, int tenantId) throws VPException {
 
-        // Validate input
-        validatePresentationDefinition(presentationDefinition);
-
-        // Validate the JSON structure (now just checking it's valid JSON)
-        try {
-            com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson());
-        } catch (com.google.gson.JsonSyntaxException e) {
-            throw new VPException("Invalid presentation definition JSON structure", e);
-        }
+        // Validate required fields
+        validateForCreate(presentationDefinition);
 
         // Generate ID if not provided
         String definitionId = presentationDefinition.getDefinitionId();
@@ -77,7 +70,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             definitionId = OpenID4VPUtil.generateRequestId();
         }
 
-        // Check if ID already exists
+        // Check for duplicate ID
         if (presentationDefinitionDAO.presentationDefinitionExists(definitionId, tenantId)) {
             throw new VPException("Presentation definition with ID already exists: " + definitionId);
         }
@@ -86,13 +79,11 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
                 .definitionId(definitionId)
                 .name(presentationDefinition.getName())
                 .description(presentationDefinition.getDescription())
-                .definitionJson(presentationDefinition.getDefinitionJson())
+                .requestedCredentials(presentationDefinition.getRequestedCredentials())
                 .tenantId(tenantId)
                 .build();
 
-        // Persist
         presentationDefinitionDAO.createPresentationDefinition(toCreate);
-
         return toCreate;
     }
 
@@ -104,25 +95,14 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
             throw new VPException("Definition ID is required");
         }
 
-        PresentationDefinition definition = presentationDefinitionDAO.getPresentationDefinitionById(
-                definitionId, tenantId);
+        PresentationDefinition definition =
+                presentationDefinitionDAO.getPresentationDefinitionById(definitionId, tenantId);
 
         if (definition == null) {
             throw new PresentationDefinitionNotFoundException(definitionId);
         }
 
         return definition;
-    }
-
-    @Override
-    public PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId)
-            throws VPException {
-
-        if (StringUtils.isBlank(resourceId)) {
-            throw new VPException("Resource ID is required");
-        }
-
-        return presentationDefinitionDAO.getPresentationDefinitionByResourceId(resourceId, tenantId);
     }
 
     @Override
@@ -138,37 +118,24 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
         String definitionId = presentationDefinition.getDefinitionId();
 
-        // Verify exists
+        // Verify exists and load current state
         PresentationDefinition existing = getPresentationDefinitionById(definitionId, tenantId);
 
-        // Validate JSON if provided (now just checking it's valid JSON)
-        if (StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-            try {
-                com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson());
-            } catch (com.google.gson.JsonSyntaxException e) {
-                throw new VPException("Invalid presentation definition JSON structure", e);
-            }
-        }
-
-        // Build updated definition
         PresentationDefinition toUpdate = new PresentationDefinition.Builder()
                 .definitionId(definitionId)
-                .name(StringUtils.isNotBlank(presentationDefinition.getName()) ? presentationDefinition.getName()
+                .name(StringUtils.isNotBlank(presentationDefinition.getName())
+                        ? presentationDefinition.getName()
                         : existing.getName())
-                .description(presentationDefinition.getDescription() != null ? presentationDefinition.getDescription()
+                .description(presentationDefinition.getDescription() != null
+                        ? presentationDefinition.getDescription()
                         : existing.getDescription())
-                .definitionJson(StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())
-                        ? presentationDefinition.getDefinitionJson()
-                        : existing.getDefinitionJson())
-                .resourceId(StringUtils.isNotBlank(presentationDefinition.getResourceId()) 
-                        ? presentationDefinition.getResourceId() 
-                        : existing.getResourceId())
+                .requestedCredentials(presentationDefinition.getRequestedCredentials() != null
+                        ? presentationDefinition.getRequestedCredentials()
+                        : existing.getRequestedCredentials())
                 .tenantId(tenantId)
                 .build();
 
-        // Update
         presentationDefinitionDAO.updatePresentationDefinition(toUpdate);
-
         return toUpdate;
     }
 
@@ -178,10 +145,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
 
         // Verify exists
         getPresentationDefinitionById(definitionId, tenantId);
-
-        // Delete
         presentationDefinitionDAO.deletePresentationDefinition(definitionId, tenantId);
-
     }
 
     @Override
@@ -191,102 +155,62 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     }
 
     @Override
-    public boolean validatePresentationDefinition(String definitionJson) throws VPException {
-        if (StringUtils.isBlank(definitionJson)) {
-            return false;
-        }
-        try {
-            com.google.gson.JsonParser.parseString(definitionJson);
-            return true;
-        } catch (com.google.gson.JsonSyntaxException e) {
-            return false;
-        }
-    }
-
-    @Override
-    public String buildPresentationDefinitionJson(String id, String name, String purpose,
-            String[] inputDescriptors) throws VPException {
-        return PresentationDefinitionUtil.buildPresentationDefinition(
-                id, name, purpose, inputDescriptors);
-    }
-
-    /**
-     * Validate presentation definition before creation.
-     */
-    private void validatePresentationDefinition(PresentationDefinition definition)
+    public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId)
             throws VPException {
 
-        if (definition == null) {
-            throw new VPException("Presentation definition cannot be null");
-        }
-
-        if (StringUtils.isBlank(definition.getName())) {
-            throw new VPException("Presentation definition name is required");
-        }
-
-        if (StringUtils.isBlank(definition.getDefinitionJson())) {
-            throw new VPException("Presentation definition JSON is required");
-        }
-    }
-
-    @Override
-    public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException {
-        
         if (StringUtils.isBlank(name)) {
             throw new VPException("Presentation definition name is required");
         }
-
         return presentationDefinitionDAO.getPresentationDefinitionByName(name, tenantId);
     }
 
     @Override
-    public List<InputDescriptorClaimsDTO> getClaimsFromPresentationDefinition(String definitionId, int tenantId)
+    public List<InputDescriptorClaimsDTO> getClaimsFromPresentationDefinition(
+            String definitionId, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException {
 
         PresentationDefinition definition = getPresentationDefinitionById(definitionId, tenantId);
-        List<InputDescriptorClaimsDTO> claimsList = new java.util.ArrayList<>();
+        List<InputDescriptorClaimsDTO> result = new ArrayList<>();
 
-        try {
-            com.google.gson.JsonElement root = com.google.gson.JsonParser.parseString(definition.getDefinitionJson());
-            if (!root.isJsonObject()) {
-                return claimsList;
-            }
-            com.google.gson.JsonObject rootObj = root.getAsJsonObject();
-            if (!rootObj.has("requested_credentials")) {
-                return claimsList;
-            }
-
-            com.google.gson.JsonArray credentials = rootObj.getAsJsonArray("requested_credentials");
-            for (com.google.gson.JsonElement credElem : credentials) {
-                if (!credElem.isJsonObject()) {
-                    continue;
-                }
-                com.google.gson.JsonObject cred = credElem.getAsJsonObject();
-
-                InputDescriptorClaimsDTO dto = new InputDescriptorClaimsDTO();
-                dto.setInputDescriptorId(cred.has("type") ? cred.get("type").getAsString() : "unknown");
-
-                List<ClaimDTO> fieldClaims = new java.util.ArrayList<>();
-
-                if (cred.has("requested_claims")) {
-                    com.google.gson.JsonArray claims = cred.getAsJsonArray("requested_claims");
-                    for (com.google.gson.JsonElement claimElem : claims) {
-                        String claimName = claimElem.getAsString();
-                        ClaimDTO claim = new ClaimDTO();
-                        claim.setName(claimName);
-                        // Optional path if not default
-                        claim.setPath("$." + claimName);
-                        fieldClaims.add(claim);
-                    }
-                }
-                dto.setClaims(fieldClaims);
-                claimsList.add(dto);
-            }
-
-        } catch (RuntimeException e) {
-            throw new VPException("Error parsing presentation definition JSON", e);
+        List<RequestedCredential> credentials = definition.getRequestedCredentials();
+        if (credentials == null) {
+            return result;
         }
 
-        return claimsList;
+        for (RequestedCredential cred : credentials) {
+            InputDescriptorClaimsDTO dto = new InputDescriptorClaimsDTO();
+            dto.setInputDescriptorId(cred.getType() != null ? cred.getType() : "unknown");
+
+            List<ClaimDTO> claimDTOs = new ArrayList<>();
+            if (cred.getClaims() != null) {
+                for (String claimName : cred.getClaims()) {
+                    ClaimDTO claim = new ClaimDTO();
+                    claim.setName(claimName);
+                    claim.setPath("$." + claimName);
+                    claimDTOs.add(claim);
+                }
+            }
+            dto.setClaims(claimDTOs);
+            result.add(dto);
+        }
+
+        return result;
+    }
+
+    /**
+     * Validate that mandatory fields are present before creation.
+     */
+    private void validateForCreate(PresentationDefinition definition) throws VPException {
+
+        if (definition == null) {
+            throw new VPException("Presentation definition cannot be null");
+        }
+        if (StringUtils.isBlank(definition.getName())) {
+            throw new VPException("Presentation definition name is required");
+        }
+        List<RequestedCredential> creds = definition.getRequestedCredentials();
+        if (creds == null || creds.isEmpty()) {
+            throw new VPException("At least one requested credential is required");
+        }
     }
 }

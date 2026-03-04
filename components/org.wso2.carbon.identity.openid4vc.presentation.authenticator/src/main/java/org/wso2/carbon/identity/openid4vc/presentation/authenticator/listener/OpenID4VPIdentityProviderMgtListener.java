@@ -22,7 +22,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wso2.carbon.identity.application.common.IdentityApplicationManagementException;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.application.common.model.Property;
@@ -107,28 +106,10 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
                 return true;
             }
 
-            PresentationDefinition existingPd = null;
+            // Lookup by name (resource ID linkage removed — no RESOURCE_ID column in the new schema)
+            String pdName = idPName + " Definition";
+            PresentationDefinition existingPd = pdService.getPresentationDefinitionByName(pdName, tenantId);
 
-            // 1. Try to get IDP and lookup by Resource ID
-            try {
-                IdentityProvider identityProvider = VPServiceDataHolder.getInstance()
-                        .getApplicationManagementService().getIdentityProvider(idPName, tenantDomain);
-
-                if (identityProvider != null && StringUtils.isNotBlank(identityProvider.getResourceId())) {
-                    existingPd = pdService.getPresentationDefinitionByResourceId(
-                            identityProvider.getResourceId(), tenantId);
-                }
-            } catch (IdentityApplicationManagementException e) {
-                // Ignore and try by name
-            }
-
-            // 2. Fallback: Lookup by Name
-            if (existingPd == null) {
-                String pdName = idPName + " Definition";
-                existingPd = pdService.getPresentationDefinitionByName(pdName, tenantId);
-            }
-
-            // 3. Delete if found
             if (existingPd != null) {
                 pdService.deletePresentationDefinition(existingPd.getDefinitionId(), tenantId);
             }
@@ -204,9 +185,12 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
                 }
 
                 if (existingPd != null) {
-                    // Link to this IDP by updating resourceId
-                    existingPd.setResourceId(resourceId);
-                    pdService.updatePresentationDefinition(existingPd, tenantId);
+                    // The definition is linked to this IDP via the authenticator config property.
+                    // No resourceId update needed — RESOURCE_ID column was removed from the schema.
+                    if (log.isDebugEnabled()) {
+                        log.debug("Presentation Definition " + sanitize(presentationDefinitionId) +
+                                " already exists for IDP: " + sanitize(identityProvider.getIdentityProviderName()));
+                    }
                 } else {
                     log.warn("Presentation Definition not found for ID: " + sanitize(presentationDefinitionId) +
                             " during IDP creation: " + sanitize(identityProvider.getIdentityProviderName()));

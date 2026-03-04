@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.definition.service;
 
-import com.google.gson.annotations.SerializedName;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
@@ -52,18 +51,8 @@ public interface PresentationDefinitionService {
      * @throws PresentationDefinitionNotFoundException If the definition is not found
      * @throws VPException                             If an error occurs
      */
-    PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId) 
+    PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException;
-
-    /**
-     * Get a presentation definition by its Resource ID.
-     *
-     * @param resourceId The resource identifier (e.g., Connection ID)
-     * @param tenantId   The tenant ID
-     * @return The presentation definition, or null if not found
-     * @throws VPException If an error occurs
-     */
-    PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId) throws VPException;
 
     /**
      * Get all presentation definitions for a tenant.
@@ -84,7 +73,7 @@ public interface PresentationDefinitionService {
      * @throws VPException                             If an error occurs
      */
     PresentationDefinition updatePresentationDefinition(
-            PresentationDefinition presentationDefinition, int tenantId) 
+            PresentationDefinition presentationDefinition, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException;
 
     /**
@@ -95,7 +84,7 @@ public interface PresentationDefinitionService {
      * @throws PresentationDefinitionNotFoundException If the definition is not found
      * @throws VPException                             If an error occurs
      */
-    void deletePresentationDefinition(String definitionId, int tenantId) 
+    void deletePresentationDefinition(String definitionId, int tenantId)
             throws PresentationDefinitionNotFoundException, VPException;
 
     /**
@@ -109,28 +98,6 @@ public interface PresentationDefinitionService {
     boolean presentationDefinitionExists(String definitionId, int tenantId) throws VPException;
 
     /**
-     * Validate a presentation definition JSON structure.
-     *
-     * @param definitionJson The JSON string to validate
-     * @return true if the JSON is a valid presentation definition
-     * @throws VPException If an error occurs during validation
-     */
-    boolean validatePresentationDefinition(String definitionJson) throws VPException;
-
-    /**
-     * Build a presentation definition JSON from given parameters.
-     *
-     * @param id          The definition ID
-     * @param name        The definition name
-     * @param purpose     The purpose description
-     * @param inputDescriptors Array of input descriptor JSON objects
-     * @return The complete presentation definition JSON
-     * @throws VPException If an error occurs during building
-     */
-    String buildPresentationDefinitionJson(String id, String name, String purpose, 
-            String[] inputDescriptors) throws VPException;
-
-    /**
      * Get Presentation Definition by name.
      *
      * @param name     Name of the presentation definition.
@@ -141,11 +108,11 @@ public interface PresentationDefinitionService {
     PresentationDefinition getPresentationDefinitionByName(String name, int tenantId) throws VPException;
 
     /**
-     * Get claims from a presentation definition.
+     * Get claims from a presentation definition, grouped by credential type.
      *
      * @param definitionId The definition identifier
      * @param tenantId     The tenant ID
-     * @return List of input descriptor claims
+     * @return List of input descriptor claims DTOs
      * @throws PresentationDefinitionNotFoundException If the definition is not found
      * @throws VPException                             If an error occurs
      */
@@ -157,7 +124,6 @@ public interface PresentationDefinitionService {
      */
     class InputDescriptorClaimsDTO {
 
-        @SerializedName("input_descriptor_id")
         private String inputDescriptorId;
         private List<ClaimDTO> claims;
 
@@ -179,7 +145,7 @@ public interface PresentationDefinitionService {
     }
 
     /**
-     * DTO for Claim.
+     * DTO for a single Claim.
      */
     class ClaimDTO {
 

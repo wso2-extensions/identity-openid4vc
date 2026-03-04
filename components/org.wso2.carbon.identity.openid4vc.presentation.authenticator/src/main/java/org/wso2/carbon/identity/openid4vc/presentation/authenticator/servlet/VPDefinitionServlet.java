@@ -142,11 +142,11 @@ public class VPDefinitionServlet extends HttpServlet {
                 definitionJson = gson.toJson(createRequest.getDefinition());
             }
 
-            // Build definition
+            // Build definition (requestedCredentials are empty for this legacy path — callers
+            // should use the /api/server/v1/vp/template endpoint to set credentials properly)
             PresentationDefinition definition = new PresentationDefinition.Builder()
                     .name(createRequest.getName())
                     .description(createRequest.getDescription())
-                    .definitionJson(definitionJson)
                     .tenantId(tenantId)
                     .build();
 
@@ -199,7 +199,6 @@ public class VPDefinitionServlet extends HttpServlet {
                     .definitionId(definitionId)
                     .name(updateRequest.getName())
                     .description(updateRequest.getDescription())
-                    .definitionJson(updateRequest.getDefinitionJson())
                     .tenantId(tenantId)
                     .build();
 
@@ -291,12 +290,13 @@ public class VPDefinitionServlet extends HttpServlet {
         dto.setDefinitionId(definition.getDefinitionId());
         dto.setName(definition.getName());
         dto.setDescription(definition.getDescription());
-        if (StringUtils.isNotBlank(definition.getDefinitionJson())) {
+        String pdJson = org.wso2.carbon.identity.openid4vc.presentation.common.util
+                .PresentationDefinitionUtil.buildDefinitionJson(definition);
+        if (org.apache.commons.lang.StringUtils.isNotBlank(pdJson) && !"{}".equals(pdJson)) {
             try {
-                dto.setDefinition(gson.fromJson(definition.getDefinitionJson(), Object.class));
+                dto.setDefinition(gson.fromJson(pdJson, Object.class));
             } catch (Exception e) {
-                // Return as string if parsing fails, though unlikely given prior validation
-                dto.setDefinition(definition.getDefinitionJson());
+                dto.setDefinition(pdJson);
             }
         }
         return dto;

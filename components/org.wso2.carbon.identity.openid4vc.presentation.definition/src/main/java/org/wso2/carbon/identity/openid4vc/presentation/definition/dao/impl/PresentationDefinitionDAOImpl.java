@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl;
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition.RequestedCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
 
 import java.sql.Connection;
@@ -28,125 +29,128 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
  * Implementation of PresentationDefinitionDAO using JDBC.
+ * Stores presentation definition headers in IDN_PRESENTATION_DEFINITION and
+ * requested credentials in IDN_PD_CREDENTIAL.
  */
 public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO {
 
-    // SQL Queries
-    private static final String SQL_INSERT_PRESENTATION_DEFINITION = "INSERT INTO IDN_PRESENTATION_DEFINITION " +
-            "(DEFINITION_ID, RESOURCE_ID, NAME, DESCRIPTION, DEFINITION_JSON, TENANT_ID) " +
-            "VALUES (?, ?, ?, ?, ?, ?)";
+    // ---- IDN_PRESENTATION_DEFINITION queries ----
+    private static final String SQL_INSERT_DEFINITION =
+            "INSERT INTO IDN_PRESENTATION_DEFINITION (DEFINITION_ID, NAME, DESCRIPTION, TENANT_ID) " +
+            "VALUES (?, ?, ?, ?)";
 
-    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_ID = "SELECT * FROM " +
-            "IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_DEFINITION_BY_ID =
+            "SELECT DEFINITION_ID, NAME, DESCRIPTION, TENANT_ID " +
+            "FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_RESOURCE_ID = "SELECT * FROM " +
-            "IDN_PRESENTATION_DEFINITION WHERE RESOURCE_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_ALL_DEFINITIONS =
+            "SELECT DEFINITION_ID, NAME, DESCRIPTION, TENANT_ID " +
+            "FROM IDN_PRESENTATION_DEFINITION WHERE TENANT_ID = ?";
 
-    private static final String SQL_SELECT_ALL_PRESENTATION_DEFINITIONS = "SELECT * FROM IDN_PRESENTATION_DEFINITION " +
-            "WHERE TENANT_ID = ?";
-
-    private static final String SQL_UPDATE_PRESENTATION_DEFINITION = "UPDATE IDN_PRESENTATION_DEFINITION SET " +
-            "NAME = ?, DESCRIPTION = ?, DEFINITION_JSON = ?, RESOURCE_ID = ? " +
+    private static final String SQL_UPDATE_DEFINITION =
+            "UPDATE IDN_PRESENTATION_DEFINITION SET NAME = ?, DESCRIPTION = ? " +
             "WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_DELETE_PRESENTATION_DEFINITION = "DELETE FROM IDN_PRESENTATION_DEFINITION " +
-            "WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_DELETE_DEFINITION =
+            "DELETE FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_CHECK_PRESENTATION_DEFINITION_EXISTS = "SELECT 1 FROM " +
-            "IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
+    private static final String SQL_EXISTS_DEFINITION =
+            "SELECT 1 FROM IDN_PRESENTATION_DEFINITION WHERE DEFINITION_ID = ? AND TENANT_ID = ?";
 
-    private static final String SQL_SELECT_PRESENTATION_DEFINITION_BY_NAME = "SELECT * FROM " +
-            "IDN_PRESENTATION_DEFINITION WHERE NAME = ? AND TENANT_ID = ?";
+    private static final String SQL_SELECT_DEFINITION_BY_NAME =
+            "SELECT DEFINITION_ID, NAME, DESCRIPTION, TENANT_ID " +
+            "FROM IDN_PRESENTATION_DEFINITION WHERE NAME = ? AND TENANT_ID = ?";
+
+    // ---- IDN_PD_CREDENTIAL queries ----
+    private static final String SQL_INSERT_CREDENTIAL =
+            "INSERT INTO IDN_PD_CREDENTIAL (DEFINITION_ID, CREDENTIAL_TYPE, PURPOSE, ISSUER, CLAIMS) " +
+            "VALUES (?, ?, ?, ?, ?)";
+
+    private static final String SQL_SELECT_CREDENTIALS_BY_DEFINITION =
+            "SELECT CREDENTIAL_TYPE, PURPOSE, ISSUER, CLAIMS " +
+            "FROM IDN_PD_CREDENTIAL WHERE DEFINITION_ID = ?";
+
+    private static final String SQL_DELETE_CREDENTIALS_BY_DEFINITION =
+            "DELETE FROM IDN_PD_CREDENTIAL WHERE DEFINITION_ID = ?";
 
     @Override
     public void createPresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_INSERT_PRESENTATION_DEFINITION)) {
-                ps.setString(1, presentationDefinition.getDefinitionId());
-                ps.setString(2, presentationDefinition.getResourceId());
-                ps.setString(3, presentationDefinition.getName());
-                ps.setString(4, presentationDefinition.getDescription());
-                ps.setString(5, presentationDefinition.getDefinitionJson());
-                ps.setInt(6, presentationDefinition.getTenantId());
 
-                ps.executeUpdate();
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try {
+                // 1. Insert header row
+                try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_DEFINITION)) {
+                    ps.setString(1, presentationDefinition.getDefinitionId());
+                    ps.setString(2, presentationDefinition.getName());
+                    ps.setString(3, presentationDefinition.getDescription());
+                    ps.setInt(4, presentationDefinition.getTenantId());
+                    ps.executeUpdate();
+                }
+
+                // 2. Insert credential rows
+                insertCredentials(connection, presentationDefinition.getDefinitionId(),
+                        presentationDefinition.getRequestedCredentials());
+
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
-                throw e;
+                String msg = "Error creating presentation definition: " +
+                        presentationDefinition.getDefinitionId();
+                if (e.getMessage() != null && e.getMessage().contains("CONSTRAINT_INDEX")) {
+                    msg = "Presentation definition with name '" +
+                            presentationDefinition.getName() + "' already exists.";
+                }
+                throw new VPException(msg, e);
             }
         } catch (SQLException e) {
-            String validationMsg = "Error creating presentation definition: " +
-                    presentationDefinition.getDefinitionId();
-            if (e.getMessage() != null && e.getMessage().contains("CONSTRAINT_INDEX_6F6")) {
-                validationMsg = "Presentation definition with name '" +
-                        presentationDefinition.getName() + "' already exists.";
-            }
-            throw new VPException(validationMsg, e);
+            throw new VPException("Error obtaining DB connection for createPresentationDefinition", e);
         }
     }
 
     @Override
     public PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId)
             throws VPException {
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_PRESENTATION_DEFINITION_BY_ID)) {
+            PresentationDefinition definition = null;
+            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_DEFINITION_BY_ID)) {
                 ps.setString(1, definitionId);
                 ps.setInt(2, tenantId);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return mapResultSetToPresentationDefinition(rs);
+                        definition = mapHeaderRow(rs);
                     }
                 }
             }
+            if (definition != null) {
+                definition.setRequestedCredentials(queryCredentials(connection, definitionId));
+            }
+            return definition;
         } catch (SQLException e) {
             throw new VPException("Error retrieving presentation definition: " + definitionId, e);
         }
-        return null;
-    }
-
-    @Override
-    public PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId)
-            throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_PRESENTATION_DEFINITION_BY_RESOURCE_ID)) {
-                ps.setString(1, resourceId);
-                ps.setInt(2, tenantId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        return mapResultSetToPresentationDefinition(rs);
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new VPException("Error retrieving presentation definition for resource: " + resourceId, e);
-        }
-        return null;
     }
 
     @Override
     public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId)
             throws VPException {
+
         List<PresentationDefinition> definitions = new ArrayList<>();
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_ALL_PRESENTATION_DEFINITIONS)) {
+            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_ALL_DEFINITIONS)) {
                 ps.setInt(1, tenantId);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        definitions.add(mapResultSetToPresentationDefinition(rs));
+                        PresentationDefinition def = mapHeaderRow(rs);
+                        def.setRequestedCredentials(queryCredentials(connection, def.getDefinitionId()));
+                        definitions.add(def);
                     }
                 }
             }
@@ -159,22 +163,34 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     @Override
     public void updatePresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException {
-        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_UPDATE_PRESENTATION_DEFINITION)) {
-                ps.setString(1, presentationDefinition.getName());
-                ps.setString(2, presentationDefinition.getDescription());
-                ps.setString(3, presentationDefinition.getDefinitionJson());
-                ps.setString(4, presentationDefinition.getResourceId());
-                ps.setString(5, presentationDefinition.getDefinitionId());
-                ps.setInt(6, presentationDefinition.getTenantId());
 
-                int rowsAffected = ps.executeUpdate();
-                if (rowsAffected == 0) {
-                    IdentityDatabaseUtil.rollbackTransaction(connection);
-                    throw new VPException("No presentation definition found to update with ID: " + 
-                            presentationDefinition.getDefinitionId());
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
+            try {
+                // 1. Update header
+                try (PreparedStatement ps = connection.prepareStatement(SQL_UPDATE_DEFINITION)) {
+                    ps.setString(1, presentationDefinition.getName());
+                    ps.setString(2, presentationDefinition.getDescription());
+                    ps.setString(3, presentationDefinition.getDefinitionId());
+                    ps.setInt(4, presentationDefinition.getTenantId());
+                    int rowsAffected = ps.executeUpdate();
+                    if (rowsAffected == 0) {
+                        IdentityDatabaseUtil.rollbackTransaction(connection);
+                        throw new VPException("No presentation definition found to update with ID: " +
+                                presentationDefinition.getDefinitionId());
+                    }
                 }
+
+                // 2. Replace credentials: delete existing, insert updated list
+                if (presentationDefinition.getRequestedCredentials() != null) {
+                    try (PreparedStatement ps = connection.prepareStatement(
+                            SQL_DELETE_CREDENTIALS_BY_DEFINITION)) {
+                        ps.setString(1, presentationDefinition.getDefinitionId());
+                        ps.executeUpdate();
+                    }
+                    insertCredentials(connection, presentationDefinition.getDefinitionId(),
+                            presentationDefinition.getRequestedCredentials());
+                }
+
                 IdentityDatabaseUtil.commitTransaction(connection);
 
             } catch (SQLException e) {
@@ -189,14 +205,13 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
 
     @Override
     public void deletePresentationDefinition(String definitionId, int tenantId) throws VPException {
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(true)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_DELETE_PRESENTATION_DEFINITION)) {
+            try (PreparedStatement ps = connection.prepareStatement(SQL_DELETE_DEFINITION)) {
                 ps.setString(1, definitionId);
                 ps.setInt(2, tenantId);
-
+                ps.executeUpdate();
                 IdentityDatabaseUtil.commitTransaction(connection);
-
             } catch (SQLException e) {
                 IdentityDatabaseUtil.rollbackTransaction(connection);
                 throw e;
@@ -209,56 +224,128 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
     @Override
     public boolean presentationDefinitionExists(String definitionId, int tenantId)
             throws VPException {
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_CHECK_PRESENTATION_DEFINITION_EXISTS)) {
+            try (PreparedStatement ps = connection.prepareStatement(SQL_EXISTS_DEFINITION)) {
                 ps.setString(1, definitionId);
                 ps.setInt(2, tenantId);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     return rs.next();
                 }
             }
         } catch (SQLException e) {
-            throw new VPException("Error checking presentation definition existence: " +
-                    definitionId, e);
+            throw new VPException(
+                    "Error checking presentation definition existence: " + definitionId, e);
         }
-    }
-
-    /**
-     * Map ResultSet to PresentationDefinition object.
-     */
-    private PresentationDefinition mapResultSetToPresentationDefinition(ResultSet rs)
-            throws SQLException {
-
-        return new PresentationDefinition.Builder()
-                .definitionId(rs.getString("DEFINITION_ID"))
-                .resourceId(rs.getString("RESOURCE_ID"))
-                .name(rs.getString("NAME"))
-                .description(rs.getString("DESCRIPTION"))
-                .definitionJson(rs.getString("DEFINITION_JSON"))
-                .tenantId(rs.getInt("TENANT_ID"))
-                .build();
     }
 
     @Override
     public PresentationDefinition getPresentationDefinitionByName(String name, int tenantId)
             throws VPException {
+
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false)) {
-            try (PreparedStatement ps = connection.prepareStatement(
-                    SQL_SELECT_PRESENTATION_DEFINITION_BY_NAME)) {
+            PresentationDefinition definition = null;
+            try (PreparedStatement ps = connection.prepareStatement(SQL_SELECT_DEFINITION_BY_NAME)) {
                 ps.setString(1, name);
                 ps.setInt(2, tenantId);
-
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
-                        return mapResultSetToPresentationDefinition(rs);
+                        definition = mapHeaderRow(rs);
                     }
                 }
             }
+            if (definition != null) {
+                definition.setRequestedCredentials(
+                        queryCredentials(connection, definition.getDefinitionId()));
+            }
+            return definition;
         } catch (SQLException e) {
             throw new VPException("Error retrieving presentation definition by name: " + name, e);
         }
-        return null;
+    }
+
+    // ---- Private helpers ----
+
+    /**
+     * Insert a list of requested credentials for a definition within an existing connection/transaction.
+     */
+    private void insertCredentials(Connection connection, String definitionId,
+            List<RequestedCredential> credentials) throws SQLException {
+
+        if (credentials == null || credentials.isEmpty()) {
+            return;
+        }
+        try (PreparedStatement ps = connection.prepareStatement(SQL_INSERT_CREDENTIAL)) {
+            for (RequestedCredential cred : credentials) {
+                ps.setString(1, definitionId);
+                ps.setString(2, cred.getType());
+                ps.setString(3, cred.getPurpose());
+                ps.setString(4, cred.getIssuer());
+                ps.setString(5, serializeClaims(cred.getClaims()));
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    /**
+     * Query credential rows for a definition and return as list.
+     */
+    private List<RequestedCredential> queryCredentials(Connection connection, String definitionId)
+            throws SQLException {
+
+        List<RequestedCredential> credentials = new ArrayList<>();
+        try (PreparedStatement ps = connection.prepareStatement(
+                SQL_SELECT_CREDENTIALS_BY_DEFINITION)) {
+            ps.setString(1, definitionId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    RequestedCredential cred = new RequestedCredential();
+                    cred.setType(rs.getString("CREDENTIAL_TYPE"));
+                    cred.setPurpose(rs.getString("PURPOSE"));
+                    cred.setIssuer(rs.getString("ISSUER"));
+                    cred.setClaims(deserializeClaims(rs.getString("CLAIMS")));
+                    credentials.add(cred);
+                }
+            }
+        }
+        return credentials;
+    }
+
+
+
+    /**
+     * Map a ResultSet row from IDN_PRESENTATION_DEFINITION to a PresentationDefinition (no credentials).
+     */
+    private PresentationDefinition mapHeaderRow(ResultSet rs) throws SQLException {
+
+        return new PresentationDefinition.Builder()
+                .definitionId(rs.getString("DEFINITION_ID"))
+                .name(rs.getString("NAME"))
+                .description(rs.getString("DESCRIPTION"))
+                .tenantId(rs.getInt("TENANT_ID"))
+                .build();
+    }
+
+    /**
+     * Serialize a list of claim names to a comma-separated string.
+     * e.g. ["email", "firstName"] -> "email,firstName"
+     */
+    private String serializeClaims(List<String> claims) {
+        if (claims == null || claims.isEmpty()) {
+            return null;
+        }
+        return String.join(",", claims);
+    }
+
+    /**
+     * Deserialize a comma-separated claims string back to a list.
+     * e.g. "email,firstName" -> ["email", "firstName"]
+     */
+    private List<String> deserializeClaims(String claimsStr) {
+        if (claimsStr == null || claimsStr.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(Arrays.asList(claimsStr.split(",")));
     }
 }

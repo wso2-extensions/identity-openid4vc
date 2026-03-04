@@ -445,4 +445,55 @@ public class PresentationDefinitionUtil {
             return json;
         }
     }
+
+    /**
+     * Build a full Presentation Exchange JSON string from a {@link
+     * org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition}
+     * domain model.
+     *
+     * <p>Each entry in {@code requestedCredentials} becomes one input descriptor.
+     * Claims are mapped to individual path constraint fields.
+     *
+     * @param pd The domain model
+     * @return PE-compliant JSON string, or an empty definition JSON if {@code pd} is null
+     */
+    public static String buildDefinitionJson(
+            org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition pd) {
+
+        if (pd == null) {
+            return "{}";
+        }
+
+        java.util.List<org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition
+                .RequestedCredential> credentials = pd.getRequestedCredentials();
+
+        if (credentials == null || credentials.isEmpty()) {
+            return "{}";
+        }
+
+        try {
+            java.util.List<String> descriptors = new java.util.ArrayList<>();
+            int index = 1;
+            for (org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition
+                    .RequestedCredential cred : credentials) {
+                String descId = (cred.getType() != null
+                        ? cred.getType().toLowerCase(java.util.Locale.ENGLISH) + "_descriptor" + index
+                        : "descriptor_" + index);
+                descriptors.add(buildInputDescriptorFromRequestedCredential(
+                        descId,
+                        cred.getType(),
+                        cred.getPurpose(),
+                        cred.getClaims(),
+                        cred.getIssuer()));
+                index++;
+            }
+            return buildPresentationDefinition(
+                    pd.getDefinitionId() != null ? pd.getDefinitionId() : java.util.UUID.randomUUID().toString(),
+                    pd.getName(),
+                    pd.getDescription(),
+                    descriptors.toArray(new String[0]));
+        } catch (VPException e) {
+            return "{}";
+        }
+    }
 }

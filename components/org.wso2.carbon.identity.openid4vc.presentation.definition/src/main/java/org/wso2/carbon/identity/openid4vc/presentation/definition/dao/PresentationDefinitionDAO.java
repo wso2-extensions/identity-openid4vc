@@ -34,7 +34,7 @@ public interface PresentationDefinitionDAO {
      * @param presentationDefinition Presentation definition to create
      * @throws VPException if creation fails
      */
-    void createPresentationDefinition(PresentationDefinition presentationDefinition) 
+    void createPresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException;
 
     /**
@@ -45,18 +45,7 @@ public interface PresentationDefinitionDAO {
      * @return Presentation definition or null if not found
      * @throws VPException if retrieval fails
      */
-    PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId) 
-            throws VPException;
-
-    /**
-     * Get presentation definition by resource ID.
-     *
-     * @param resourceId Resource ID
-     * @param tenantId   Tenant ID
-     * @return Presentation definition or null if not found
-     * @throws VPException if retrieval fails
-     */
-    PresentationDefinition getPresentationDefinitionByResourceId(String resourceId, int tenantId)
+    PresentationDefinition getPresentationDefinitionById(String definitionId, int tenantId)
             throws VPException;
 
     /**
@@ -74,7 +63,7 @@ public interface PresentationDefinitionDAO {
      * @param presentationDefinition Presentation definition to update
      * @throws VPException if update fails
      */
-    void updatePresentationDefinition(PresentationDefinition presentationDefinition) 
+    void updatePresentationDefinition(PresentationDefinition presentationDefinition)
             throws VPException;
 
     /**

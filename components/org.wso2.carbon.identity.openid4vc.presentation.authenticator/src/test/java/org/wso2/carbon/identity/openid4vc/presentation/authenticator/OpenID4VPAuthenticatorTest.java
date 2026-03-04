@@ -193,7 +193,7 @@ public class OpenID4VPAuthenticatorTest {
 
         PresentationDefinition mockDef = new PresentationDefinition.Builder()
                 .definitionId("def-123")
-                .definitionJson("{}")
+                .requestedCredentials(java.util.Collections.emptyList())
                 .build();
         when(presentationDefinitionService.getPresentationDefinitionById(anyString(), anyInt())).thenReturn(mockDef);
 
@@ -233,7 +233,7 @@ public class OpenID4VPAuthenticatorTest {
 
         PresentationDefinition mockDef = new PresentationDefinition.Builder()
                 .definitionId("def-123")
-                .definitionJson("{}")
+                .requestedCredentials(java.util.Collections.emptyList())
                 .build();
         when(presentationDefinitionService.getPresentationDefinitionById(anyString(), anyInt())).thenReturn(mockDef);
 
