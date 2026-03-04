@@ -69,7 +69,7 @@ public class VPDefinitionServlet extends HttpServlet {
 
     private static final int DEFAULT_TENANT_ID = -1234;
 
-    private PresentationDefinitionService presentationDefinitionService;
+    private transient PresentationDefinitionService presentationDefinitionService;
     @Override
     public void init() throws ServletException {
         super.init();
@@ -136,11 +136,6 @@ public class VPDefinitionServlet extends HttpServlet {
 
             int tenantId = getTenantId(request);
 
-            // Handle 'definition' object vs 'definitionJson' string
-            String definitionJson = createRequest.getDefinitionJson();
-            if (StringUtils.isBlank(definitionJson) && createRequest.getDefinition() != null) {
-                definitionJson = gson.toJson(createRequest.getDefinition());
-            }
 
             // Build definition (requestedCredentials are empty for this legacy path — callers
             // should use the /api/server/v1/vp/template endpoint to set credentials properly)
