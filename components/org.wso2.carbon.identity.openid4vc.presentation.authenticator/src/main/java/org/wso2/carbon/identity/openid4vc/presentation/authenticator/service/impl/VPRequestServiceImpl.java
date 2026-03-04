@@ -204,7 +204,8 @@ public class VPRequestServiceImpl implements VPRequestService {
             PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
                     vpRequest.getPresentationDefinitionId(), tenantId);
             if (pd != null) {
-                vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+                vpRequest.setPresentationDefinition(
+                        PresentationDefinitionUtil.buildDefinitionJson(pd));
             }
         }
 
@@ -228,7 +229,8 @@ public class VPRequestServiceImpl implements VPRequestService {
            PresentationDefinition pd = presentationDefinitionService.getPresentationDefinitionById(
                    vpRequest.getPresentationDefinitionId(), tenantId);
            if (pd != null) {
-               vpRequest.setPresentationDefinition(pd.getDefinitionJson());
+               vpRequest.setPresentationDefinition(
+                       PresentationDefinitionUtil.buildDefinitionJson(pd));
            }
        }
 
@@ -378,7 +380,7 @@ public class VPRequestServiceImpl implements VPRequestService {
         if (StringUtils.isNotBlank(definitionId)) {
             PresentationDefinition definition = presentationDefinitionService.getPresentationDefinitionById(
                     definitionId, tenantId);
-            return definition.getDefinitionJson();
+            return PresentationDefinitionUtil.buildDefinitionJson(definition);
         }
 
         throw new VPException("No presentation definition available");

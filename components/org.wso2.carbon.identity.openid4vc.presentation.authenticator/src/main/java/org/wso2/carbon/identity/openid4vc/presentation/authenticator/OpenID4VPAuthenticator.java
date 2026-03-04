@@ -294,7 +294,10 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
                 String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : "unknown";
                 String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : "unknown";
-                String pdJson = (presentationDefinition != null) ? presentationDefinition.getDefinitionJson() : "{}";
+                String pdJson = (presentationDefinition != null)
+                        ? org.wso2.carbon.identity.openid4vc.presentation.common.util
+                                .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition)
+                        : "{}";
 
                 // Call VC Verification Service
                 verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
@@ -328,7 +331,9 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                     // Gap 3: Enforce required claims from the Presentation Definition for non-SD-JWT formats.
                     // SD-JWT does this inside verifySdJwtToken; we must do it here for JWT VP / JSON-LD VP.
                     String pdJson = (presentationDefinition != null)
-                            ? presentationDefinition.getDefinitionJson() : null;
+                            ? org.wso2.carbon.identity.openid4vc.presentation.common.util
+                                    .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition)
+                            : null;
                     if (pdJson != null && !pdJson.isEmpty()) {
                         try {
                             VPServiceDataHolder.getInstance().getVCVerificationService()

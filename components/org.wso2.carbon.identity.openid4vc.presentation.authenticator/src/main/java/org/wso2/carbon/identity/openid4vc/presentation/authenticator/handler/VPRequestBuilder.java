@@ -77,12 +77,14 @@ public class VPRequestBuilder {
         request.addProperty(OpenID4VPConstants.RequestParams.STATE, vpRequest.getRequestId());
 
         // Presentation definition
-        if (presentationDefinition != null &&
-                StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-            // Embed the presentation definition
-            JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
-                    .getAsJsonObject();
-            request.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
+        if (presentationDefinition != null) {
+            String pdJsonStr = org.wso2.carbon.identity.openid4vc.presentation.common.util
+                    .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(pdJsonStr) && !"{}".equals(pdJsonStr)) {
+                // Embed the presentation definition
+                JsonObject pdJson = com.google.gson.JsonParser.parseString(pdJsonStr).getAsJsonObject();
+                request.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
+            }
         }
 
         // Client metadata
@@ -141,11 +143,13 @@ public class VPRequestBuilder {
             payload.addProperty(OpenID4VPConstants.RequestParams.STATE, vpRequest.getRequestId());
 
             // Presentation definition
-            if (presentationDefinition != null &&
-                    StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-                JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
-                        .getAsJsonObject();
-                payload.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
+            if (presentationDefinition != null) {
+                String pdJsonStr = org.wso2.carbon.identity.openid4vc.presentation.common.util
+                        .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition);
+                if (org.apache.commons.lang.StringUtils.isNotBlank(pdJsonStr) && !"{}".equals(pdJsonStr)) {
+                    JsonObject pdJson = com.google.gson.JsonParser.parseString(pdJsonStr).getAsJsonObject();
+                    payload.add(OpenID4VPConstants.Protocol.PRESENTATION_DEFINITION, pdJson);
+                }
             }
 
             // Client metadata
@@ -184,11 +188,13 @@ public class VPRequestBuilder {
         dto.setResponseMode(vpRequest.getResponseMode());
         dto.setResponseUri(buildResponseUri(vpRequest));
 
-        if (presentationDefinition != null &&
-                StringUtils.isNotBlank(presentationDefinition.getDefinitionJson())) {
-            JsonObject pdJson = com.google.gson.JsonParser.parseString(presentationDefinition.getDefinitionJson())
-                    .getAsJsonObject();
-            dto.setPresentationDefinition(pdJson);
+        if (presentationDefinition != null) {
+            String pdJsonStr = org.wso2.carbon.identity.openid4vc.presentation.common.util
+                    .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition);
+            if (org.apache.commons.lang.StringUtils.isNotBlank(pdJsonStr) && !"{}".equals(pdJsonStr)) {
+                JsonObject pdJson = com.google.gson.JsonParser.parseString(pdJsonStr).getAsJsonObject();
+                dto.setPresentationDefinition(pdJson);
+            }
         }
 
         return dto;

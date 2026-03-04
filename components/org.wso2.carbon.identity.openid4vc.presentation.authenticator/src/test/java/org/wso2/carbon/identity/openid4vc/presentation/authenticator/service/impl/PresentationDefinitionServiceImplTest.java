@@ -7,9 +7,11 @@ import org.testng.annotations.Test;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -36,8 +38,16 @@ public class PresentationDefinitionServiceImplTest {
 
     private static final int TENANT_ID = -1234;
     private static final String DEFINITION_ID = "def-123";
-    private static final String DEFINITION_JSON = "{\"id\":\"def-123\",\"input_descriptors\":[{\"id\":\"desc-1\"," +
-            "\"constraints\":{\"fields\":[{\"path\":[\"$.credentialSubject.email\"],\"name\":\"email\"}]}}]}";
+
+    // Build a sample RequestedCredential for tests
+    private static PresentationDefinition.RequestedCredential sampleCredential() {
+        PresentationDefinition.RequestedCredential cred = new PresentationDefinition.RequestedCredential();
+        cred.setType("EmployeeBadge");
+        cred.setPurpose("Prove employment");
+        cred.setIssuer("did:web:example.com");
+        cred.setClaims(Arrays.asList("email", "firstName"));
+        return cred;
+    }
 
     @BeforeMethod
     public void setUp() {
@@ -50,7 +60,7 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -69,7 +79,7 @@ public class PresentationDefinitionServiceImplTest {
     public void testCreatePresentationDefinitionMissingName() {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -78,23 +88,10 @@ public class PresentationDefinitionServiceImplTest {
     }
 
     @Test
-    public void testCreatePresentationDefinitionMissingJson() {
+    public void testCreatePresentationDefinitionMissingCredentials() {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .tenantId(TENANT_ID)
-                .build();
-
-        assertThrows(VPException.class, () -> presentationDefinitionService
-                .createPresentationDefinition(definition, TENANT_ID));
-    }
-
-    @Test
-    public void testCreatePresentationDefinitionInvalidJson() {
-        PresentationDefinition definition = new PresentationDefinition.Builder()
-                .definitionId(DEFINITION_ID)
-                .name("Test Def")
-                .definitionJson("invalid json")
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -107,7 +104,7 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -122,7 +119,7 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -149,36 +146,11 @@ public class PresentationDefinitionServiceImplTest {
     }
 
     @Test
-    public void testGetPresentationDefinitionByResourceId() throws Exception {
-        PresentationDefinition definition = new PresentationDefinition.Builder()
-                .definitionId(DEFINITION_ID)
-                .name("Test Def")
-                .resourceId("res-123")
-                .definitionJson(DEFINITION_JSON)
-                .tenantId(TENANT_ID)
-                .build();
-
-        when(presentationDefinitionDAO.getPresentationDefinitionByResourceId("res-123", TENANT_ID))
-                .thenReturn(definition);
-
-        PresentationDefinition result = presentationDefinitionService
-                .getPresentationDefinitionByResourceId("res-123", TENANT_ID);
-        assertNotNull(result);
-        assertEquals(result.getResourceId(), "res-123");
-    }
-
-    @Test
-    public void testGetPresentationDefinitionByResourceIdEmpty() throws Exception {
-        assertThrows(VPException.class, () -> presentationDefinitionService
-                .getPresentationDefinitionByResourceId("", TENANT_ID));
-    }
-
-    @Test
     public void testGetAllPresentationDefinitions() throws Exception {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -197,14 +169,14 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition existingDefinition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Old Name")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
         PresentationDefinition updateRequest = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("New Name")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -220,33 +192,11 @@ public class PresentationDefinitionServiceImplTest {
     }
 
     @Test
-    public void testUpdatePresentationDefinitionInvalidJson() throws Exception {
-        PresentationDefinition existingDefinition = new PresentationDefinition.Builder()
-                .definitionId(DEFINITION_ID)
-                .name("Old Name")
-                .definitionJson(DEFINITION_JSON)
-                .tenantId(TENANT_ID)
-                .build();
-
-        PresentationDefinition updateRequest = new PresentationDefinition.Builder()
-                .definitionId(DEFINITION_ID)
-                .definitionJson("invalid json")
-                .tenantId(TENANT_ID)
-                .build();
-
-        when(presentationDefinitionDAO.getPresentationDefinitionById(DEFINITION_ID, TENANT_ID))
-                .thenReturn(existingDefinition);
-
-        assertThrows(VPException.class, () -> presentationDefinitionService
-                .updatePresentationDefinition(updateRequest, TENANT_ID));
-    }
-
-    @Test
     public void testDeletePresentationDefinition() throws Exception {
         PresentationDefinition existingDefinition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Old Name")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -265,17 +215,24 @@ public class PresentationDefinitionServiceImplTest {
     }
 
     @Test
-    public void testValidatePresentationDefinition() throws Exception {
-        assertTrue(presentationDefinitionService.validatePresentationDefinition(DEFINITION_JSON));
-        assertFalse(presentationDefinitionService.validatePresentationDefinition("invalid json"));
-        assertFalse(presentationDefinitionService.validatePresentationDefinition(null));
-        assertFalse(presentationDefinitionService.validatePresentationDefinition(""));
+    public void testValidatePresentationDefinitionViaUtil() {
+        // validatePresentationDefinition is now a static utility on PresentationDefinitionUtil
+        String validJson = "{\"id\":\"def-123\",\"input_descriptors\":[{\"id\":\"desc-1\"}]}";
+        assertTrue(PresentationDefinitionUtil.isValidPresentationDefinition(validJson));
+        assertFalse(PresentationDefinitionUtil.isValidPresentationDefinition("invalid json"));
+        assertFalse(PresentationDefinitionUtil.isValidPresentationDefinition(null));
+        assertFalse(PresentationDefinitionUtil.isValidPresentationDefinition(""));
     }
 
     @Test
-    public void testBuildPresentationDefinitionJson() throws Exception {
-        String json = presentationDefinitionService
-                .buildPresentationDefinitionJson("id-1", "Name", "Purpose", new String[]{"desc-1"});
+    public void testBuildDefinitionJsonViaUtil() {
+        PresentationDefinition pd = new PresentationDefinition.Builder()
+                .definitionId("id-1")
+                .name("Test")
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
+                .build();
+
+        String json = PresentationDefinitionUtil.buildDefinitionJson(pd);
         assertNotNull(json);
         assertTrue(json.contains("\"id-1\""));
     }
@@ -285,7 +242,7 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -308,7 +265,7 @@ public class PresentationDefinitionServiceImplTest {
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
                 .name("Test Def")
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(Collections.singletonList(sampleCredential()))
                 .tenantId(TENANT_ID)
                 .build();
 
@@ -318,9 +275,9 @@ public class PresentationDefinitionServiceImplTest {
                 .getClaimsFromPresentationDefinition(DEFINITION_ID, TENANT_ID);
         assertNotNull(claimsList);
         assertEquals(claimsList.size(), 1);
-        assertEquals(claimsList.get(0).getInputDescriptorId(), "desc-1");
-        assertEquals(claimsList.get(0).getClaims().size(), 1);
+        assertEquals(claimsList.get(0).getInputDescriptorId(), "EmployeeBadge");
+        assertEquals(claimsList.get(0).getClaims().size(), 2);
         assertEquals(claimsList.get(0).getClaims().get(0).getName(), "email");
-        assertEquals(claimsList.get(0).getClaims().get(0).getPath(), "$.credentialSubject.email");
+        assertEquals(claimsList.get(0).getClaims().get(0).getPath(), "$.email");
     }
 }

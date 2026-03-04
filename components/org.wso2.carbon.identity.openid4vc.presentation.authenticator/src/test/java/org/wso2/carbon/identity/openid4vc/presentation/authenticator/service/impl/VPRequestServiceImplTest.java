@@ -89,7 +89,7 @@ public class VPRequestServiceImplTest {
 
         PresentationDefinition definition = new PresentationDefinition.Builder()
                 .definitionId(DEFINITION_ID)
-                .definitionJson(DEFINITION_JSON)
+                .requestedCredentials(java.util.Collections.emptyList())
                 .build();
 
         when(presentationDefinitionService.getPresentationDefinitionById(DEFINITION_ID, TENANT_ID))

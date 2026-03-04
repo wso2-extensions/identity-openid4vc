@@ -19,6 +19,8 @@
 package org.wso2.carbon.identity.openid4vc.presentation.common.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Model class representing a Presentation Definition.
@@ -29,11 +31,10 @@ public class PresentationDefinition implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private String definitionId;
-    private String resourceId;
     private String name;
     private String description;
-    private String definitionJson;
     private int tenantId;
+    private List<RequestedCredential> requestedCredentials;
 
     /**
      * Default constructor.
@@ -46,11 +47,10 @@ public class PresentationDefinition implements Serializable {
      */
     private PresentationDefinition(Builder builder) {
         this.definitionId = builder.definitionId;
-        this.resourceId = builder.resourceId;
         this.name = builder.name;
         this.description = builder.description;
-        this.definitionJson = builder.definitionJson;
         this.tenantId = builder.tenantId;
+        this.requestedCredentials = builder.requestedCredentials;
     }
 
     // Getters and Setters
@@ -61,14 +61,6 @@ public class PresentationDefinition implements Serializable {
 
     public void setDefinitionId(String definitionId) {
         this.definitionId = definitionId;
-    }
-
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public void setResourceId(String resourceId) {
-        this.resourceId = resourceId;
     }
 
     public String getName() {
@@ -87,14 +79,6 @@ public class PresentationDefinition implements Serializable {
         this.description = description;
     }
 
-    public String getDefinitionJson() {
-        return definitionJson;
-    }
-
-    public void setDefinitionJson(String definitionJson) {
-        this.definitionJson = definitionJson;
-    }
-
     public int getTenantId() {
         return tenantId;
     }
@@ -103,24 +87,26 @@ public class PresentationDefinition implements Serializable {
         this.tenantId = tenantId;
     }
 
+    public List<RequestedCredential> getRequestedCredentials() {
+        return requestedCredentials != null ? new ArrayList<>(requestedCredentials) : null;
+    }
+
+    public void setRequestedCredentials(List<RequestedCredential> requestedCredentials) {
+        this.requestedCredentials = requestedCredentials != null ? new ArrayList<>(requestedCredentials) : null;
+    }
+
     /**
      * Builder class for PresentationDefinition.
      */
     public static class Builder {
         private String definitionId;
-        private String resourceId;
         private String name;
         private String description;
-        private String definitionJson;
         private int tenantId;
+        private List<RequestedCredential> requestedCredentials;
 
         public Builder definitionId(String definitionId) {
             this.definitionId = definitionId;
-            return this;
-        }
-
-        public Builder resourceId(String resourceId) {
-            this.resourceId = resourceId;
             return this;
         }
 
@@ -134,13 +120,13 @@ public class PresentationDefinition implements Serializable {
             return this;
         }
 
-        public Builder definitionJson(String definitionJson) {
-            this.definitionJson = definitionJson;
+        public Builder tenantId(int tenantId) {
+            this.tenantId = tenantId;
             return this;
         }
 
-        public Builder tenantId(int tenantId) {
-            this.tenantId = tenantId;
+        public Builder requestedCredentials(List<RequestedCredential> requestedCredentials) {
+            this.requestedCredentials = requestedCredentials;
             return this;
         }
 
@@ -149,11 +135,58 @@ public class PresentationDefinition implements Serializable {
         }
     }
 
+    /**
+     * Inner model class representing a single requested credential within a Presentation Definition.
+     */
+    public static class RequestedCredential implements Serializable {
+
+        private static final long serialVersionUID = 1L;
+
+        private String type;
+        private String purpose;
+        private String issuer;
+        private List<String> claims;
+
+        public RequestedCredential() {
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public String getPurpose() {
+            return purpose;
+        }
+
+        public void setPurpose(String purpose) {
+            this.purpose = purpose;
+        }
+
+        public String getIssuer() {
+            return issuer;
+        }
+
+        public void setIssuer(String issuer) {
+            this.issuer = issuer;
+        }
+
+        public List<String> getClaims() {
+            return claims != null ? new ArrayList<>(claims) : null;
+        }
+
+        public void setClaims(List<String> claims) {
+            this.claims = claims != null ? new ArrayList<>(claims) : null;
+        }
+    }
+
     @Override
     public String toString() {
         return "PresentationDefinition{" +
                 "definitionId='" + definitionId + '\'' +
-                ", resourceId='" + resourceId + '\'' +
                 ", name='" + name + '\'' +
                 ", tenantId=" + tenantId +
                 '}';

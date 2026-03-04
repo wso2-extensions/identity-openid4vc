@@ -60,9 +60,15 @@ public class VPRequestBuilderTest {
                 .expiresAt(System.currentTimeMillis() + 600000)
                 .build();
 
-        presentationDefinition = new PresentationDefinition();
-        presentationDefinition.setDefinitionId("test-pd-id");
-        presentationDefinition.setDefinitionJson("{\"id\":\"test-pd-id\", \"input_descriptors\":[]}");
+        PresentationDefinition.RequestedCredential cred = new PresentationDefinition.RequestedCredential();
+        cred.setType("TestCredential");
+        cred.setPurpose("Test purpose");
+        cred.setClaims(java.util.Collections.singletonList("email"));
+        presentationDefinition = new PresentationDefinition.Builder()
+                .definitionId("test-pd-id")
+                .name("Test PD")
+                .requestedCredentials(java.util.Collections.singletonList(cred))
+                .build();
     }
 
     @AfterMethod
