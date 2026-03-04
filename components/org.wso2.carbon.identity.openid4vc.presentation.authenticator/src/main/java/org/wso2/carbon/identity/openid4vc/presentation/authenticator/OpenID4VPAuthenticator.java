@@ -78,17 +78,6 @@ import javax.servlet.http.HttpServletResponse;
  * (OpenID4VP) protocol
  * to authenticate users by verifying their verifiable credentials from a
  * digital wallet.
- * 
- * Flow:
- * 1. User initiates login
- * 2. Authenticator generates VP request and displays QR code
- * 3. User scans QR with wallet app
- * 4. Wallet sends VP submission to direct_post endpoint
- * 5. Authenticator polls for result and completes authentication
- * 
- * Supported response modes:
- * - direct_post: Wallet posts VP directly to server
- * - direct_post.jwt: Wallet posts signed JWT response
  */
 public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         implements FederatedApplicationAuthenticator, VPStatusListenerCache.StatusCallback {
@@ -130,8 +119,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     // StatusCallback interface implementation for direct processing
     @Override
     public void onStatusChange(String status) {
-        // No-op: this authenticator uses the direct submission model (onSubmissionReceived),
-        // not the polling-based status change model.
+
     }
 
     @Override

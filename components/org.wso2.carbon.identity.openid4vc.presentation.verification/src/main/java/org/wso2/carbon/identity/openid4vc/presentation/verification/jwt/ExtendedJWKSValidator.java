@@ -35,7 +35,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.exception.Credenti
 
 
 /**
- * Custom JWKS Validator that supports arbitrary algorithms (including EdDSA, ES256).
  * This replaces the usage of identity-inbound-auth-oauth's JWKSBasedJWTValidator which is restricted to RSA.
  */
 public class ExtendedJWKSValidator {
