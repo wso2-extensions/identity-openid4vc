@@ -145,7 +145,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
-    @SuppressFBWarnings("UNVALIDATED_REDIRECT")
     protected void initiateAuthenticationRequest(HttpServletRequest request,
             HttpServletResponse response,
             AuthenticationContext context)
