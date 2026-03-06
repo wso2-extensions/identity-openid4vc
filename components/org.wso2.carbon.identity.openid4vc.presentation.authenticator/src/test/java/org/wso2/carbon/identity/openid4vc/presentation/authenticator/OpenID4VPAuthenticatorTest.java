@@ -8,7 +8,11 @@ import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
+import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.context.AuthenticationContext;
+import org.wso2.carbon.identity.application.common.model.ClaimConfig;
+import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache.VPStatusListenerCache;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache.WalletDataCache;
@@ -168,8 +172,33 @@ public class OpenID4VPAuthenticatorTest {
         verify(response).sendRedirect(anyString());
     }
 
+    private void mockIdpClaimConfig() {
+        ExternalIdPConfig externalIdPConfig = Mockito.mock(ExternalIdPConfig.class);
+        IdentityProvider idp = Mockito.mock(IdentityProvider.class);
+        ClaimConfig claimConfig = Mockito.mock(ClaimConfig.class);
+
+        when(context.getExternalIdP()).thenReturn(externalIdPConfig);
+        when(externalIdPConfig.getIdentityProvider()).thenReturn(idp);
+        when(idp.getClaimConfig()).thenReturn(claimConfig);
+        when(claimConfig.getUserClaimURI()).thenReturn("http://wso2.org/claims/emailaddress");
+
+        ClaimMapping claimMapping = Mockito.mock(ClaimMapping.class);
+        org.wso2.carbon.identity.application.common.model.Claim localClaim = 
+        Mockito.mock(org.wso2.carbon.identity.application.common.model.Claim.class);
+        org.wso2.carbon.identity.application.common.model.Claim remoteClaim = 
+        Mockito.mock(org.wso2.carbon.identity.application.common.model.Claim.class);
+        when(claimMapping.getLocalClaim()).thenReturn(localClaim);
+        when(claimMapping.getRemoteClaim()).thenReturn(remoteClaim);
+        when(localClaim.getClaimUri()).thenReturn("http://wso2.org/claims/emailaddress");
+        when(remoteClaim.getClaimUri()).thenReturn("email");
+
+        when(externalIdPConfig.getClaimMappings()).thenReturn(new ClaimMapping[]{claimMapping});
+        when(externalIdPConfig.getIdPName()).thenReturn("dummy-idp");
+    }
+
     @Test
     public void testProcessAuthenticationResponseSdJwt() throws Exception {
+        mockIdpClaimConfig();
         when(context.getProperty("openid4vp_request_id")).thenReturn("req-123");
         when(context.getTenantDomain()).thenReturn("carbon.super");
 
@@ -209,6 +238,7 @@ public class OpenID4VPAuthenticatorTest {
 
     @Test
     public void testProcessAuthenticationResponseLdpVp() throws Exception {
+        mockIdpClaimConfig();
         when(context.getProperty("openid4vp_request_id")).thenReturn("req-123");
         when(context.getTenantDomain()).thenReturn("carbon.super");
 
