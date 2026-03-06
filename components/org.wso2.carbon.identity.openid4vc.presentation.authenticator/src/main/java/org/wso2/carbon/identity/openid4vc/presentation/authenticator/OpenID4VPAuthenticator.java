@@ -128,10 +128,25 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
-    @SuppressFBWarnings("EI_EXPOSE_REP2")
     public void onSubmissionReceived(VPSubmission submission) {
-        // Direct processing: store submission for processAuthenticationResponse
-        this.receivedSubmission = submission;
+        // Use a defensive copy to prevent external mutation of the internal state (EI_EXPOSE_REP2 fix)
+        if (submission != null) {
+            this.receivedSubmission = new VPSubmission.Builder()
+                    .submissionId(submission.getSubmissionId())
+                    .requestId(submission.getRequestId())
+                    .transactionId(submission.getTransactionId())
+                    .vpToken(submission.getVpToken())
+                    .presentationSubmission(submission.getPresentationSubmission())
+                    .error(submission.getError())
+                    .errorDescription(submission.getErrorDescription())
+                    .verificationStatus(submission.getVerificationStatus())
+                    .verificationResult(submission.getVerificationResult())
+                    .submittedAt(submission.getSubmittedAt())
+                    .tenantId(submission.getTenantId())
+                    .build();
+        } else {
+            this.receivedSubmission = null;
+        }
     }
 
     @Override
@@ -148,9 +163,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     @SuppressFBWarnings(
             value = "UNVALIDATED_REDIRECT",
             justification = "The redirect target (loginPage) is sourced exclusively from server-side configuration " +
-                    "(IdentityUtil.getProperty or the hardcoded default). It is NOT user-supplied input. " +
-                    "SecurityUtils.isSafeRedirectUri() validates the full URL at runtime before the redirect is issued. " +
-                    "This is therefore a false positive: the redirect cannot be influenced by an attacker."
+                    "(IdentityUtil.getProperty or the hardcoded default). It is NOT user-supplied input. " 
     )
     protected void initiateAuthenticationRequest(HttpServletRequest request,
             HttpServletResponse response,
