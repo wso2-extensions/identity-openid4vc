@@ -21,11 +21,11 @@ package org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -247,7 +247,7 @@ public class VPStatusListenerCache {
 
         StatusListener listener = new StatusListener(listenerId, timeoutMs, callback);
 
-        listenersByRequestId.computeIfAbsent(requestId, k -> new ArrayList<>())
+        listenersByRequestId.computeIfAbsent(requestId, k -> new CopyOnWriteArrayList<>())
                 .add(listener);
 
         return listener;
@@ -264,12 +264,10 @@ public class VPStatusListenerCache {
         List<StatusListener> listeners = listenersByRequestId.get(requestId);
         if (listeners != null) {
 
-            synchronized (listeners) {
-                for (StatusListener listener : listeners) {
-                    if (!listener.isNotified()) {
-                        listener.notify(status);
+            for (StatusListener listener : listeners) {
+                if (!listener.isNotified()) {
+                    listener.notify(status);
 
-                    }
                 }
             }
 
@@ -287,14 +285,12 @@ public class VPStatusListenerCache {
         List<StatusListener> listeners = listenersByRequestId.get(requestId);
         if (listeners != null) {
 
-            synchronized (listeners) {
-                for (StatusListener listener : listeners) {
-                    if (!listener.isNotified()) {
-                        // Mark as notified and call callback with submission
-                        listener.notified = true;
-                        if (listener.callback != null) {
-                            listener.callback.onSubmissionReceived(submission);
-                        }
+            for (StatusListener listener : listeners) {
+                if (!listener.isNotified()) {
+                    // Mark as notified and call callback with submission
+                    listener.notified = true;
+                    if (listener.callback != null) {
+                        listener.callback.onSubmissionReceived(submission);
                     }
                 }
             }
@@ -312,9 +308,7 @@ public class VPStatusListenerCache {
 
         List<StatusListener> listeners = listenersByRequestId.get(requestId);
         if (listeners != null) {
-            synchronized (listeners) {
-                listeners.removeIf(l -> l.getListenerId().equals(listenerId));
-            }
+            listeners.removeIf(l -> l.getListenerId().equals(listenerId));
         }
     }
 
@@ -352,11 +346,9 @@ public class VPStatusListenerCache {
         if (listeners == null || listeners.isEmpty()) {
             return false;
         }
-        synchronized (listeners) {
-            for (StatusListener listener : listeners) {
-                if (!listener.isNotified() && !listener.isTimedOut()) {
-                    return true;
-                }
+        for (StatusListener listener : listeners) {
+            if (!listener.isNotified() && !listener.isTimedOut()) {
+                return true;
             }
         }
         return false;
@@ -373,21 +365,13 @@ public class VPStatusListenerCache {
             Map.Entry<String, List<StatusListener>> entry = entryIterator.next();
             List<StatusListener> listeners = entry.getValue();
 
-            synchronized (listeners) {
-                Iterator<StatusListener> listenerIterator = listeners.iterator();
-                while (listenerIterator.hasNext()) {
-                    StatusListener listener = listenerIterator.next();
-
-                    if (listener.isTimedOut() && !listener.isNotified()) {
-                        listener.notifyTimeout();
-                    }
-
-                    if (listener.isNotified() || listener.isTimedOut()) {
-                        listenerIterator.remove();
-
-                    }
+            for (StatusListener listener : listeners) {
+                if (listener.isTimedOut() && !listener.isNotified()) {
+                    listener.notifyTimeout();
                 }
             }
+
+            listeners.removeIf(l -> l.isNotified() || l.isTimedOut());
 
             // Remove entry if no listeners remain
             if (listeners.isEmpty()) {
