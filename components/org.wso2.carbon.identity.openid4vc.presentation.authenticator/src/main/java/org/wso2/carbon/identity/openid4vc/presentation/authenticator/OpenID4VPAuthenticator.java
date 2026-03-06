@@ -145,6 +145,13 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
     @Override
+    @SuppressFBWarnings(
+            value = "UNVALIDATED_REDIRECT",
+            justification = "The redirect target (loginPage) is sourced exclusively from server-side configuration " +
+                    "(IdentityUtil.getProperty or the hardcoded default). It is NOT user-supplied input. " +
+                    "SecurityUtils.isSafeRedirectUri() validates the full URL at runtime before the redirect is issued. " +
+                    "This is therefore a false positive: the redirect cannot be influenced by an attacker."
+    )
     protected void initiateAuthenticationRequest(HttpServletRequest request,
             HttpServletResponse response,
             AuthenticationContext context)
