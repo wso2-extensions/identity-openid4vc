@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator.dao.impl;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.cache.VPRequestCache;
@@ -49,21 +50,41 @@ public class VPRequestDAOImpl implements VPRequestDAO {
     }
 
     @Override
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public VPRequest getVPRequestById(String requestId, int tenantId) throws VPException {
         // Retrieve from cache
-        return vpRequestCache.getByRequestId(requestId);
+        VPRequest request = vpRequestCache.getByRequestId(requestId);
+        if (request != null && request.getTenantId() != tenantId) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Cross-tenant access detected. Requested tenant: %d, " +
+                                "Actual tenant: %d for request ID: %s",
+                        tenantId, request.getTenantId(), requestId));
+            }
+            return null;
+        }
+        return request;
     }
 
     @Override
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public VPRequest getVPRequestByTransactionId(String transactionId, int tenantId) throws VPException {
         // Retrieve from cache
-        return vpRequestCache.getByTransactionId(transactionId);
+        VPRequest request = vpRequestCache.getByTransactionId(transactionId);
+        if (request != null && request.getTenantId() != tenantId) {
+            if (log.isDebugEnabled()) {
+                log.debug(String.format("Cross-tenant access detected. Requested tenant: %d, " +
+                                "Actual tenant: %d for transaction ID: %s",
+                        tenantId, request.getTenantId(), transactionId));
+            }
+            return null;
+        }
+        return request;
     }
 
     @Override
     public List<String> getRequestIdsByTransactionId(String transactionId, int tenantId) throws VPException {
         List<String> requestIds = new ArrayList<>();
-        VPRequest request = vpRequestCache.getByTransactionId(transactionId);
+        VPRequest request = getVPRequestByTransactionId(transactionId, tenantId);
         if (request != null) {
             requestIds.add(request.getRequestId());
         }
@@ -72,7 +93,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
 
     @Override
     public void updateVPRequestStatus(String requestId, VPRequestStatus status, int tenantId) throws VPException {
-        VPRequest request = vpRequestCache.getByRequestId(requestId);
+        VPRequest request = getVPRequestById(requestId, tenantId);
         if (request != null) {
             request.setStatus(status);
             // Updating the object reference in cache is usually sufficient for local map,
@@ -83,7 +104,7 @@ public class VPRequestDAOImpl implements VPRequestDAO {
 
     @Override
     public void updateVPRequestJwt(String requestId, String requestJwt, int tenantId) throws VPException {
-        VPRequest request = vpRequestCache.getByRequestId(requestId);
+        VPRequest request = getVPRequestById(requestId, tenantId);
         if (request != null) {
             request.setRequestJwt(requestJwt);
             // Re-put to trigger replication if distributed
@@ -93,7 +114,10 @@ public class VPRequestDAOImpl implements VPRequestDAO {
 
     @Override
     public void deleteVPRequest(String requestId, int tenantId) throws VPException {
-        vpRequestCache.remove(requestId);
+        VPRequest request = getVPRequestById(requestId, tenantId);
+        if (request != null) {
+            vpRequestCache.remove(requestId);
+        }
     }
 
     @Override

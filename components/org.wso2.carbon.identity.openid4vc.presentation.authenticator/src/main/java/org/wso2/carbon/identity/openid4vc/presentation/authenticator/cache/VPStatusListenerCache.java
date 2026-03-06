@@ -178,6 +178,7 @@ public class VPStatusListenerCache {
     /**
      * Private constructor for singleton.
      */
+    @SuppressFBWarnings("MC_OVERRIDABLE_METHOD_CALL_IN_CONSTRUCTOR")
     private VPStatusListenerCache() {
 
         this.listenersByRequestId = new ConcurrentHashMap<>();
