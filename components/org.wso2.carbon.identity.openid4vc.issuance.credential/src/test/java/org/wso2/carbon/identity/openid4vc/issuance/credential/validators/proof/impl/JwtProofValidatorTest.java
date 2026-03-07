@@ -56,6 +56,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.JWT_PROOF_TYPE;
 
@@ -242,7 +243,7 @@ public class JwtProofValidatorTest {
         }
     }
 
-    @Test(description = "Test validation failure when nonce claim is missing")
+    @Test(description = "Test successful validation when nonce claim is missing")
     public void testValidateProofWithMissingNonce() throws Exception {
 
         String clientId = "test-client-id";
@@ -253,14 +254,11 @@ public class JwtProofValidatorTest {
         proofDTO.setProofs(Collections.singletonList(jwtWithoutNonce));
         proofDTO.setClientId(clientId);
 
-        try {
-            validator.validateProof(proofDTO, TENANT_DOMAIN);
-            Assert.fail("Expected CredentialIssuanceException for missing nonce");
-        } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getMessage().contains("Missing nonce claim") ||
-                            e.getMessage().contains("nonce"),
-                    "Exception should indicate missing nonce. Actual: " + e.getMessage());
-        }
+        validator.validateProof(proofDTO, TENANT_DOMAIN);
+
+        Assert.assertNotNull(proofDTO.getPublicKey(), "Public key should be extracted from proof");
+        Assert.assertNull(proofDTO.getNonce(), "Nonce should remain unset when the claim is absent");
+        verifyNoInteractions(mockNonceService);
     }
 
     @Test(description = "Test validation failure when nonce is invalid or expired")

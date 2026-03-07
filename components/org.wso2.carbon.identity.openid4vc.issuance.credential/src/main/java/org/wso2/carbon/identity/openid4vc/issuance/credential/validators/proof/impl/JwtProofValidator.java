@@ -312,13 +312,9 @@ public class JwtProofValidator implements ProofValidator {
                         "Proof is too old or from the future");
             }
 
-            // Validate nonce
+            // Validate nonce only when the wallet includes it in the proof JWT.
             Object nonceObj = signedJWT.getJWTClaimsSet().getClaim(NONCE);
-            if (nonceObj == null) {
-                throw new CredentialIssuanceClientException(INVALID_PROOF,
-                        "Missing nonce claim in proof JWT. A nonce from the Nonce Endpoint is required.");
-            }
-            if (!nonceService.validateAndConsumeNonce(nonceObj.toString(), tenantDomain)) {
+            if (nonceObj != null && !nonceService.validateAndConsumeNonce(nonceObj.toString(), tenantDomain)) {
                 throw new CredentialIssuanceClientException(INVALID_NONCE,
                         "Invalid or expired nonce");
             }
