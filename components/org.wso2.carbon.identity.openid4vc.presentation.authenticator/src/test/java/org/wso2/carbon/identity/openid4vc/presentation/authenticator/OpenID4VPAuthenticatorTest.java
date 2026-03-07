@@ -147,6 +147,7 @@ public class OpenID4VPAuthenticatorTest {
         Map<String, String> authProperties = new HashMap<>();
         authProperties.put("ClientId", "dummy-client");
         authProperties.put("DIDMethod", "web");
+        authProperties.put("presentationDefinitionId", "dummy-pd-id");
         
         when(context.getAuthenticatorProperties()).thenReturn(authProperties);
         when(context.getContextIdentifier()).thenReturn("dummy-txn-id");

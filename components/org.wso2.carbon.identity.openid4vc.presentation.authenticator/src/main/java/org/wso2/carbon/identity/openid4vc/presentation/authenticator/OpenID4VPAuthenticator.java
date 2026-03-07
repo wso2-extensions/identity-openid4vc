@@ -19,7 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -665,8 +664,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         if (StringUtils.isNotBlank(presentationDefId)) {
             createDTO.setPresentationDefinitionId(presentationDefId);
         } else {
-            // Create a default presentation definition requesting any verifiable credential
-            createDTO.setPresentationDefinition(createDefaultPresentationDefinition());
+            throw new VPException("No presentation definition found for the application.");
         }
 
         // Set response mode
@@ -919,46 +917,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
     }
 
 
-    /**
-     * Create a default presentation definition that accepts any verifiable
-     * credential.
-     * This is used when no specific presentation definition is configured.
-     */
-    private JsonObject createDefaultPresentationDefinition() {
-        JsonObject presentationDef = new JsonObject();
-        presentationDef.addProperty("id", "default-wallet-auth");
-        presentationDef.addProperty("name", "Wallet Authentication");
-        presentationDef.addProperty("purpose",
-                "Authenticate using your digital wallet");
 
-        // Create input descriptors - accepts any VC
-        JsonArray inputDescriptors = new JsonArray();
-        JsonObject descriptor = new JsonObject();
-        descriptor.addProperty("id", "any-credential");
-        descriptor.addProperty("name", "Any Verifiable Credential");
-        descriptor.addProperty("purpose",
-                "Present any verifiable credential from your wallet");
-
-        // Add constraints - accept any type of credential
-        JsonObject constraints = new JsonObject();
-        JsonArray fields = new JsonArray();
-
-        // Require credential type field
-        JsonObject typeField = new JsonObject();
-        JsonArray pathArray = new JsonArray();
-        pathArray.add("$.type");
-        pathArray.add("$.vc.type");
-        pathArray.add("$.vct");
-        typeField.add("path", pathArray);
-
-        fields.add(typeField);
-        constraints.add("fields", fields);
-        descriptor.add("constraints", constraints);
-
-        inputDescriptors.add(descriptor);
-        presentationDef.add("input_descriptors", inputDescriptors);
-        return presentationDef;
-    }
 
     /**
      * Build client ID for the request.
