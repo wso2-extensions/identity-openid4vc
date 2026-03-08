@@ -79,7 +79,7 @@ public class DIDWebProvider implements DIDProvider {
             
             // Convert PrivateKey to OctetKeyPair for BCEd25519Signer
             OctetKeyPair keyPair = DIDKeyManager.convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
-            return new BCEd25519Signer(keyPair);
+            return BCEd25519Signer.create(keyPair);
         } catch (Exception e) {
             throw new VPException("Error creating signer for did:web", e);
         }

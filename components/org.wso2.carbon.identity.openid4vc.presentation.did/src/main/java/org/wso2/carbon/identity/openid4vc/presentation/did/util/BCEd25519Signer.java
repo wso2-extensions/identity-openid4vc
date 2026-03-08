@@ -21,15 +21,25 @@ public class BCEd25519Signer implements JWSSigner {
 
     private final OctetKeyPair privateKey;
 
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("CT_CONSTRUCTOR_THROW")
-    public BCEd25519Signer(OctetKeyPair privateKey) throws JOSEException {
+    private BCEd25519Signer(OctetKeyPair privateKey) {
+        this.privateKey = privateKey;
+    }
+
+    /**
+     * Creates a new BCEd25519Signer.
+     *
+     * @param privateKey The Ed25519 private key.
+     * @return A new BCEd25519Signer instance.
+     * @throws JOSEException If the key is invalid.
+     */
+    public static BCEd25519Signer create(OctetKeyPair privateKey) throws JOSEException {
         if (!"Ed25519".equals(privateKey.getCurve().getName())) {
             throw new JOSEException("The key type must be Ed25519");
         }
         if (privateKey.getD() == null) {
             throw new JOSEException("The private key 'd' parameter is missing");
         }
-        this.privateKey = privateKey;
+        return new BCEd25519Signer(privateKey);
     }
 
     @Override
