@@ -64,10 +64,8 @@ public class DIDResolverServiceImpl implements DIDResolverService {
 
     // Supported DID methods
     private static final String METHOD_WEB = "web";
-    private static final String METHOD_JWK = "jwk";
-    private static final String METHOD_KEY = "key";
 
-    private static final String[] SUPPORTED_METHODS = { METHOD_WEB, METHOD_JWK, METHOD_KEY };
+    private static final String[] SUPPORTED_METHODS = { METHOD_WEB };
 
     // Cache for resolved DID documents
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -131,12 +129,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
         switch (method) {
             case METHOD_WEB:
                 document = resolveDidWeb(did);
-                break;
-            case METHOD_JWK:
-                document = resolveDidJwk(did);
-                break;
-            case METHOD_KEY:
-                document = resolveDidKey(did);
                 break;
             default:
                 throw DIDResolutionException.unsupportedMethod(did, method);
@@ -281,119 +273,6 @@ public class DIDResolverServiceImpl implements DIDResolverService {
             throw e;
         } catch (IOException e) {
             throw DIDResolutionException.networkError(did, e);
-        }
-    }
-
-    /**
-     * Resolve a did:jwk DID.
-     * The JWK is encoded in the DID itself.
-     * did:jwk:<base64url-encoded-jwk>
-     */
-    private DIDDocument resolveDidJwk(String did) throws DIDResolutionException {
-        try {
-            String identifier = getIdentifier(did);
-            if (identifier == null) {
-                throw DIDResolutionException.invalidFormat(did);
-            }
-
-            // Decode the JWK from base64url
-            String jwkJson = new String(Base64.getUrlDecoder().decode(identifier), StandardCharsets.UTF_8);
-            JsonObject jwk = JsonParser.parseString(jwkJson).getAsJsonObject();
-
-            // Create DID document
-            DIDDocument document = new DIDDocument();
-            document.setId(did);
-            document.setRawDocument(jwkJson);
-
-            // Create verification method from JWK
-            DIDDocument.VerificationMethod method = new DIDDocument.VerificationMethod();
-            method.setId(did + "#0");
-            method.setType("JsonWebKey2020");
-            method.setController(did);
-            method.setPublicKeyJwk(jwkJson);
-
-            // Parse JWK map
-            Map<String, Object> jwkMap = new HashMap<>();
-            for (String key : jwk.keySet()) {
-                JsonElement value = jwk.get(key);
-                if (value.isJsonPrimitive()) {
-                    jwkMap.put(key, value.getAsString());
-                }
-            }
-            method.setPublicKeyJwkMap(jwkMap);
-
-            document.addVerificationMethod(method);
-            document.setAssertionMethod(Arrays.asList(did + "#0"));
-            document.setAuthentication(Arrays.asList(did + "#0"));
-
-            return document;
-
-        } catch (IllegalArgumentException | JsonParseException e) {
-            throw DIDResolutionException.invalidDocument(did, e.getMessage());
-        }
-    }
-
-    /**
-     * Resolve a did:key DID.
-     * The public key is encoded in the DID using multibase/multicodec.
-     * did:key:<multibase-encoded-key>
-     */
-    private DIDDocument resolveDidKey(String did) throws DIDResolutionException {
-        try {
-            String identifier = getIdentifier(did);
-            if (identifier == null) {
-                throw DIDResolutionException.invalidFormat(did);
-            }
-
-            // Decode multibase (usually base58btc starting with 'z')
-            if (!identifier.startsWith("z")) {
-                throw DIDResolutionException.invalidFormat(did);
-            }
-
-            byte[] decoded = base58Decode(identifier.substring(1));
-            if (decoded.length < 2) {
-                throw DIDResolutionException.invalidDocument(did, "Invalid multicodec encoding");
-            }
-
-            // Get multicodec prefix to determine key type
-            int codecPrefix = (decoded[0] & 0xFF) | ((decoded[1] & 0xFF) << 8);
-
-            DIDDocument document = new DIDDocument();
-            document.setId(did);
-
-            DIDDocument.VerificationMethod method = new DIDDocument.VerificationMethod();
-            method.setId(did + "#" + identifier);
-            method.setController(did);
-
-            // Determine key type from multicodec prefix
-            switch (codecPrefix) {
-                case 0xed01: // Ed25519 public key
-                    method.setType("Ed25519VerificationKey2020");
-                    method.setPublicKeyMultibase(identifier);
-                    break;
-                case 0x1200: // secp256k1 public key
-                    method.setType("EcdsaSecp256k1VerificationKey2019");
-                    method.setPublicKeyMultibase(identifier);
-                    break;
-                case 0x1201: // P-256 public key
-                    method.setType("JsonWebKey2020");
-                    method.setPublicKeyMultibase(identifier);
-                    break;
-                default:
-                    method.setType("VerificationMethod");
-                    method.setPublicKeyMultibase(identifier);
-            }
-
-            document.addVerificationMethod(method);
-            document.setAssertionMethod(Arrays.asList(method.getId()));
-            document.setAuthentication(Arrays.asList(method.getId()));
-
-            return document;
-
-        } catch (DIDResolutionException e) {
-            throw e;
-        } catch (IllegalArgumentException e) {
-            throw DIDResolutionException.invalidDocument(did, e.getMessage());
         }
     }
 

@@ -19,8 +19,6 @@
 package org.wso2.carbon.identity.openid4vc.presentation.did.provider;
 
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.presentation.did.provider.impl.DIDJwkProvider;
-import org.wso2.carbon.identity.openid4vc.presentation.did.provider.impl.DIDKeyProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.impl.DIDWebProvider;
 
 import java.util.HashMap;
@@ -35,8 +33,6 @@ public class DIDProviderFactory {
 
     static {
         register(new DIDWebProvider());
-        register(new DIDKeyProvider());
-        register(new DIDJwkProvider());
     }
 
     private static void register(DIDProvider provider) {
@@ -52,14 +48,10 @@ public class DIDProviderFactory {
      * @throws IllegalArgumentException if method is unknown
      */
     public static DIDProvider getProvider(String method) {
-        if (StringUtils.isBlank(method)) {
+        if (StringUtils.isBlank(method) || "web".equals(method)) {
             return providers.get("web");
         }
-
-        DIDProvider provider = providers.get(method);
-        if (provider == null) {
-            throw new IllegalArgumentException("Unsupported DID method: " + method);
-        }
-        return provider;
+        
+        throw new IllegalArgumentException("Unsupported DID method: " + method);
     }
 }
