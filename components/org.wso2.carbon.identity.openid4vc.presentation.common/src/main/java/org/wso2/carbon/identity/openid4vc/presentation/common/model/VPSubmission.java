@@ -249,15 +249,16 @@ public class VPSubmission implements Serializable {
 
     @Override
     public String toString() {
-        return "VPSubmission{" +
-                "submissionId='" + submissionId + '\'' +
-                ", requestId='" + requestId + '\'' +
-                ", transactionId='" + transactionId + '\'' +
-                ", hasVpToken=" + hasVpToken() +
-                ", hasError=" + hasError() +
-                ", verificationStatus=" + verificationStatus +
-                ", submittedAt=" + submittedAt +
-                ", tenantId=" + tenantId +
-                '}';
+        StringBuilder sb = new StringBuilder("VPSubmission{");
+        sb.append("submissionId='").append(submissionId).append('\'');
+        sb.append(", requestId='").append(requestId).append('\'');
+        sb.append(", transactionId='").append(transactionId).append('\'');
+        sb.append(", hasVpToken=").append(hasVpToken());
+        sb.append(", hasError=").append(hasError());
+        sb.append(", verificationStatus=").append(verificationStatus);
+        sb.append(", submittedAt=").append(submittedAt);
+        sb.append(", tenantId=").append(tenantId);
+        sb.append('}');
+        return sb.toString();
     }
 }
