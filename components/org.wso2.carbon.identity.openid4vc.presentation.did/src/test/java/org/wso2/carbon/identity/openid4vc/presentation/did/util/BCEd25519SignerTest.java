@@ -40,7 +40,7 @@ public class BCEd25519SignerTest {
         Base64URL x = Base64URL.encode(publicKeyParams.getEncoded());
         
         keyPair = new OctetKeyPair.Builder(Curve.Ed25519, x).d(d).build();
-        signer = new BCEd25519Signer(keyPair);
+        signer = BCEd25519Signer.create(keyPair);
     }
 
     @Test
@@ -66,13 +66,13 @@ public class BCEd25519SignerTest {
         OctetKeyPair wrongKey = new OctetKeyPair.Builder(Curve.X25519, Base64URL.encode(new byte[32]))
                 .d(Base64URL.encode(new byte[32]))
                 .build();
-        new BCEd25519Signer(wrongKey);
+        BCEd25519Signer.create(wrongKey);
     }
 
     @Test(expectedExceptions = JOSEException.class)
     public void testConstructorWithMissingD() throws Exception {
         OctetKeyPair publicOnly = keyPair.toPublicJWK();
-        new BCEd25519Signer(publicOnly);
+        BCEd25519Signer.create(publicOnly);
     }
 
     @Test(expectedExceptions = JOSEException.class)

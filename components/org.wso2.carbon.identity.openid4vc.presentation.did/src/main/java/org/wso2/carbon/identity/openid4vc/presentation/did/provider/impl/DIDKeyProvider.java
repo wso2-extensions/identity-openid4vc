@@ -66,7 +66,7 @@ public class DIDKeyProvider implements DIDProvider {
     public JWSSigner getSigner(int tenantId) throws VPException {
         try {
             OctetKeyPair keyPair = DIDKeyManager.getOrGenerateKeyPair(tenantId);
-            return new BCEd25519Signer(keyPair);
+            return BCEd25519Signer.create(keyPair);
         } catch (Exception e) {
             throw new VPException("Error creating signer for did:key", e);
         }
