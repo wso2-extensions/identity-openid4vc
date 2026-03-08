@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProviderFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDDocumentService;
-import org.wso2.carbon.identity.openid4vc.presentation.did.util.DIDKeyManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -91,27 +90,7 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
         }
     }
 
-    @Override
-    public String regenerateKeys(String domain, int tenantId) throws DIDDocumentException {
-        // This is specific to internal key management (did:key/did:jwk)
-        // did:web keys are managed via Keystore usually
-        try {
-            DIDKeyManager.regenerateKeyPair(tenantId);
-            // Return did:key representation of new keys
-            DIDProvider provider = DIDProviderFactory.getProvider("key");
-            return provider.getDID(tenantId, null);
-        } catch (DIDDocumentException e) {
-            throw e;
-        } catch (VPException e) {
-            String errorMsg = "Failed to regenerate keys for tenant: " + tenantId;
-            throw new DIDDocumentException(errorMsg, e);
-        }
-    }
 
-    @Override
-    public boolean hasKeys(int tenantId) {
-        return DIDKeyManager.hasKeys(tenantId);
-    }
 
     /**
      * Convert DID Document to JSON string.

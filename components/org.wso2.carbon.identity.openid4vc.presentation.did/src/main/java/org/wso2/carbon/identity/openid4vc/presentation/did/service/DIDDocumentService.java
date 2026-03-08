@@ -57,22 +57,4 @@ public interface DIDDocumentService {
      */
     String getDID(String domain);
 
-    /**
-     * Regenerate keys for the DID document.
-     * Creates new keys and updates the DID document.
-     * 
-     * @param domain The domain name
-     * @param tenantId The tenant ID
-     * @return Updated DID Document as JSON string
-     * @throws DIDDocumentException if key generation fails
-     */
-    String regenerateKeys(String domain, int tenantId) throws DIDDocumentException;
-
-    /**
-     * Check if DID keys exist for the given tenant.
-     * 
-     * @param tenantId The tenant ID
-     * @return true if keys exist, false otherwise
-     */
-    boolean hasKeys(int tenantId);
 }

@@ -26,7 +26,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPExcept
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.util.BCEd25519Signer;
-import org.wso2.carbon.identity.openid4vc.presentation.did.util.DIDKeyManager;
 
 import java.security.PrivateKey;
 import java.util.ArrayList;
@@ -74,11 +73,11 @@ public class DIDWebProvider implements DIDProvider {
         try {
             // Use KeyStore for EdDSA keys
             KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-            String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
+            String edKeyAlias = getEdDSAKeyAlias(tenantId);
             PrivateKey privateKey = keyStoreManager.getDefaultPrivateKey(edKeyAlias);
             
             // Convert PrivateKey to OctetKeyPair for BCEd25519Signer
-            OctetKeyPair keyPair = DIDKeyManager.convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
+            OctetKeyPair keyPair = convertToOctetKeyPair(privateKey, keyStoreManager, edKeyAlias);
             return BCEd25519Signer.create(keyPair);
         } catch (Exception e) {
             throw new VPException("Error creating signer for did:web", e);
@@ -108,7 +107,7 @@ public class DIDWebProvider implements DIDProvider {
                 
                 // Use KeyStore for EdDSA keys
                 KeyStoreManager keyStoreManager = KeyStoreManager.getInstance(tenantId);
-                String edKeyAlias = DIDKeyManager.getEdDSAKeyAlias(tenantId);
+                String edKeyAlias = getEdDSAKeyAlias(tenantId);
                 java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(edKeyAlias);
 
                 DIDDocument.VerificationMethod vm = new DIDDocument.VerificationMethod();
@@ -214,5 +213,44 @@ public class DIDWebProvider implements DIDProvider {
             remainder = temp % divisor;
         }
         return (byte) remainder;
+    }
+
+    /**
+     * Get the EdDSA key alias for the given tenant.
+     */
+    private String getEdDSAKeyAlias(int tenantId) throws VPException {
+        if (tenantId == org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_ID) {
+            return "wso2carbon_ed";
+        } else {
+            String tenantDomain = org.wso2.carbon.context.PrivilegedCarbonContext
+                    .getThreadLocalCarbonContext().getTenantDomain();
+            try {
+                return org.wso2.carbon.core.util.KeyStoreUtil.getTenantEdKeyAlias(tenantDomain);
+            } catch (org.wso2.carbon.CarbonException e) {
+                throw new VPException(
+                        "Failed to retrieve EdDSA key alias for tenant domain: " + tenantDomain, e);
+            }
+        }
+    }
+
+    /**
+     * Convert PrivateKey to OctetKeyPair for EdDSA signing.
+     */
+    private OctetKeyPair convertToOctetKeyPair(PrivateKey privateKey, 
+                                                KeyStoreManager keyStoreManager, 
+                                                String alias) throws Exception {
+        java.security.PublicKey publicKey = keyStoreManager.getDefaultPublicKey(alias);
+        byte[] privateKeyBytes = privateKey.getEncoded();
+        byte[] publicKeyBytes = publicKey.getEncoded();
+        
+        byte[] rawPrivateKey = java.util.Arrays.copyOfRange(privateKeyBytes, 
+                privateKeyBytes.length - 32, privateKeyBytes.length);
+        byte[] rawPublicKey = java.util.Arrays.copyOfRange(publicKeyBytes, 
+                publicKeyBytes.length - 32, publicKeyBytes.length);
+        
+        com.nimbusds.jose.util.Base64URL x = com.nimbusds.jose.util.Base64URL.encode(rawPublicKey);
+        com.nimbusds.jose.util.Base64URL d = com.nimbusds.jose.util.Base64URL.encode(rawPrivateKey);
+        
+        return new OctetKeyPair.Builder(com.nimbusds.jose.jwk.Curve.Ed25519, x).d(d).build();
     }
 }

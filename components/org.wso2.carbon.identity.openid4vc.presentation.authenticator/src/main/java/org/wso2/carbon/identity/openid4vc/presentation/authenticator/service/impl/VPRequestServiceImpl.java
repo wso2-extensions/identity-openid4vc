@@ -101,19 +101,15 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Resolve presentation definition
         String presentationDefinition = resolvePresentationDefinition(requestCreateDTO, tenantId);
-        String didMethod = requestCreateDTO.getDidMethod();
+        String didMethod = "web"; // Force did:web
         String signingAlgorithm = requestCreateDTO.getSigningAlgorithm(); // Use explicit algo from DTO
 
         // Extract and clean internal configuration
-        if (StringUtils.isBlank(didMethod) && StringUtils.isNotBlank(presentationDefinition)) {
+        if (StringUtils.isNotBlank(presentationDefinition)) {
             try {
                 JsonObject pdJson = JsonParser.parseString(presentationDefinition).getAsJsonObject();
                 if (pdJson.has("_internal")) {
                     JsonObject internal = pdJson.getAsJsonObject("_internal");
-                    // Only override if not already set in DTO
-                    if (StringUtils.isBlank(didMethod) && internal.has("did_method")) {
-                        didMethod = internal.get("did_method").getAsString();
-                    }
                     if (StringUtils.isBlank(signingAlgorithm) && internal.has("signing_algorithm")) {
                         signingAlgorithm = internal.get("signing_algorithm").getAsString();
                     }
@@ -125,11 +121,6 @@ public class VPRequestServiceImpl implements VPRequestService {
             } catch (Exception e) {
                 // Ignore
             }
-        }
-        
-        // Default DID Method if still null
-        if (StringUtils.isBlank(didMethod)) {
-            didMethod = "web";
         }
         if (StringUtils.isBlank(signingAlgorithm)) {
             signingAlgorithm = "EdDSA"; // Default to EdDSA if not provided
@@ -298,7 +289,7 @@ public class VPRequestServiceImpl implements VPRequestService {
 
         // Regenerate JWT if missing (fallback)
         // Use stored metadata if available, otherwise default
-        String didMethod = StringUtils.isNotBlank(vpRequest.getDidMethod()) ? vpRequest.getDidMethod() : "web";
+        String didMethod = "web"; // Force did:web
         String signingAlgorithm = StringUtils.isNotBlank(vpRequest.getSigningAlgorithm()) ? 
         vpRequest.getSigningAlgorithm() : "RS256";
 
