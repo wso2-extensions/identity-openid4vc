@@ -126,7 +126,7 @@ public class PresentationDefinition implements Serializable {
         }
 
         public Builder requestedCredentials(List<RequestedCredential> requestedCredentials) {
-            this.requestedCredentials = requestedCredentials;
+            this.requestedCredentials = requestedCredentials != null ? new ArrayList<>(requestedCredentials) : null;
             return this;
         }
 
