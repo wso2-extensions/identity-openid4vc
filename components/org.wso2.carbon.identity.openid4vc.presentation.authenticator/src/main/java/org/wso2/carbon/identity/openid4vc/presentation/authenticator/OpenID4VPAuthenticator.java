@@ -936,6 +936,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
      * @param context Authentication context
      * @return Tenant ID
      */
+    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     private int getTenantId(final AuthenticationContext context) {
         // Default to super tenant
         int tenantId = SUPER_TENANT_ID_PLACEHOLDER;
@@ -943,13 +944,12 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         String tenantDomain = context.getTenantDomain();
         if (StringUtils.isNotBlank(tenantDomain)) {
             try {
-                // In production, use TenantManager to resolve tenant ID
-                // For now, use simple mapping
-                if ("carbon.super".equals(tenantDomain)) {
-                    tenantId = SUPER_TENANT_ID_PLACEHOLDER;
-                }
+                tenantId = org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId(tenantDomain);
             } catch (Exception e) {
                 // Ignored: Failed to resolve tenant ID, using default
+                if (log.isDebugEnabled()) {
+                    log.debug("Failed to resolve tenant ID for domain: " + sanitizeForLog(tenantDomain), e);
+                }
             }
         }
 

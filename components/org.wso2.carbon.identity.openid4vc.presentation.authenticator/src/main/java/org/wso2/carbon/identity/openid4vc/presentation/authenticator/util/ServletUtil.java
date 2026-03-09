@@ -94,13 +94,19 @@ public class ServletUtil {
     @SuppressFBWarnings("SERVLET_HEADER")
     public static int getTenantId(final HttpServletRequest request) {
 
-        String tenantHeader = request.getHeader("X-Tenant-Id");
-        if (StringUtils.isNotBlank(tenantHeader)) {
+        String tenantDomain = org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantDomainFromContext();
+        if (StringUtils.isBlank(tenantDomain)) {
+            tenantDomain = (String) request.getAttribute("tenantDomain");
+        }
+
+        if (StringUtils.isNotBlank(tenantDomain)) {
             try {
-                return Integer.parseInt(tenantHeader);
-            } catch (NumberFormatException e) {
+                return org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId(tenantDomain);
+            } catch (Exception e) {
+                // Ignore
             }
         }
+
         return DEFAULT_TENANT_ID;
     }
 }
