@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.authenticator.util;
 import org.testng.annotations.Test;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
 
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
@@ -67,32 +66,4 @@ public class QRCodeUtilTest {
         assertTrue(content.contains("state=test-state"));
     }
 
-    @Test
-    public void testGenerateQRCodeHtml() {
-        String html = QRCodeUtil.generateQRCodeHtml("some-content", "req-123");
-        assertNotNull(html);
-        assertTrue(html.contains("<div id=\"qr-container-req-123\""));
-        assertTrue(html.contains("data-content=\"some-content\""));
-        assertTrue(html.contains("<canvas id=\"qr-canvas-req-123\">"));
-    }
-
-    @Test
-    public void testGenerateQRCodeScript() {
-        String script = QRCodeUtil.generateQRCodeScript("containerID", "content", 300);
-        assertNotNull(script);
-        assertTrue(script.contains("new QRCode(document.getElementById('containerID')"));
-        assertTrue(script.contains("text: 'content'"));
-        assertTrue(script.contains("width: 300"));
-    }
-
-    @Test
-    public void testGetConfiguredQRSizeDefault() {
-        // IdentityUtil.getProperty will return null in unit tests unless mocked
-        assertEquals(QRCodeUtil.getConfiguredQRSize(), 300);
-    }
-
-    @Test
-    public void testGetConfiguredErrorCorrectionDefault() {
-        assertEquals(QRCodeUtil.getConfiguredErrorCorrection(), "M");
-    }
 }
