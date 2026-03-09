@@ -303,15 +303,6 @@ public class VPRequestServlet extends HttpServlet {
      */
     @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
-        // Simplified - in production, extract from authenticated context
-        String tenantHeader = request.getHeader("X-Tenant-Id");
-        if (StringUtils.isNotBlank(tenantHeader)) {
-            try {
-                return Integer.parseInt(tenantHeader);
-            } catch (NumberFormatException e) {
-                // Fall through to default
-            }
-        }
-        return DEFAULT_TENANT_ID;
+        return org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil.getTenantId(request);
     }
 }

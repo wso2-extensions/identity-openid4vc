@@ -156,12 +156,9 @@ public class RequestUriServlet extends HttpServlet {
 
     /**
      * Get tenant ID from request context.
-     * For now, returns default super tenant.
-     * In production, extract from request headers or path.
      */
     private int getTenantId(HttpServletRequest request) {
-        // TODO: Extract tenant ID from request context
-        return DEFAULT_TENANT_ID;
+        return org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil.getTenantId(request);
     }
 
     /**

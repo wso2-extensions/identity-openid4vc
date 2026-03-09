@@ -339,20 +339,7 @@ public class VPDefinitionServlet extends HttpServlet {
      */
     @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(HttpServletRequest request) {
-        String tenantHeader = request.getHeader("X-Tenant-Id");
-        if (StringUtils.isBlank(tenantHeader)) {
-            // Check legacy header
-            tenantHeader = request.getHeader("Tenant-Id");
-        }
-
-        if (StringUtils.isNotBlank(tenantHeader)) {
-            try {
-                return Integer.parseInt(tenantHeader);
-            } catch (NumberFormatException e) {
-                // Fall through to default
-            }
-        }
-        return DEFAULT_TENANT_ID;
+        return org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil.getTenantId(request);
     }
 
     /**

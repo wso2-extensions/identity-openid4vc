@@ -397,15 +397,7 @@ public class VPSubmissionServlet extends HttpServlet {
      */
     @SuppressFBWarnings("SERVLET_HEADER")
     private int getTenantId(final HttpServletRequest request) {
-
-        String tenantHeader = request.getHeader("X-Tenant-Id");
-        if (StringUtils.isNotBlank(tenantHeader)) {
-            try {
-                return Integer.parseInt(tenantHeader);
-            } catch (NumberFormatException e) {
-            }
-        }
-        return DEFAULT_TENANT_ID;
+        return org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil.getTenantId(request);
     }
 
     /**
