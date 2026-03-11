@@ -26,8 +26,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPR
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl.VPRequestServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestExpiredException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.exception.VPRequestExpiredException;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.exception.VPRequestNotFoundException;
 
 import java.io.IOException;
 import java.io.PrintWriter;
