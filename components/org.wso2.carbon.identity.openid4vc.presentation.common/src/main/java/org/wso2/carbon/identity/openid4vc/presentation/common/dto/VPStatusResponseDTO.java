@@ -260,6 +260,102 @@ public class VPStatusResponseDTO implements Serializable {
         private Long expiresIn;
 
         /**
+         * Set request ID.
+         *
+         * @param requestId Request ID
+         * @return Builder
+         */
+        public Builder requestId(final String requestId) {
+
+            this.requestId = requestId;
+            return this;
+        }
+
+        /**
+         * Set status.
+         *
+         * @param status Status string
+         * @return Builder
+         */
+        public Builder status(final String status) {
+
+            this.status = status;
+            return this;
+        }
+
+        /**
+         * Set token received flag.
+         *
+         * @param tokenReceived Whether VP token has been received
+         * @return Builder
+         */
+        public Builder tokenReceived(final boolean tokenReceived) {
+
+            this.tokenReceived = tokenReceived;
+            return this;
+        }
+
+        /**
+         * Set expired flag.
+         *
+         * @param expired Whether the request has expired
+         * @return Builder
+         */
+        public Builder expired(final boolean expired) {
+
+            this.expired = expired;
+            return this;
+        }
+
+        /**
+         * Set error code.
+         *
+         * @param error Error code
+         * @return Builder
+         */
+        public Builder error(final String error) {
+
+            this.error = error;
+            return this;
+        }
+
+        /**
+         * Set error description.
+         *
+         * @param errorDescription Error description
+         * @return Builder
+         */
+        public Builder errorDescription(final String errorDescription) {
+
+            this.errorDescription = errorDescription;
+            return this;
+        }
+
+        /**
+         * Set transaction ID.
+         *
+         * @param transactionId Transaction ID
+         * @return Builder
+         */
+        public Builder transactionId(final String transactionId) {
+
+            this.transactionId = transactionId;
+            return this;
+        }
+
+        /**
+         * Set expires-in value.
+         *
+         * @param expiresIn Time remaining until expiry in seconds
+         * @return Builder
+         */
+        public Builder expiresIn(final Long expiresIn) {
+
+            this.expiresIn = expiresIn;
+            return this;
+        }
+
+        /**
          * Build the DTO.
          *
          * @return VPStatusResponseDTO
