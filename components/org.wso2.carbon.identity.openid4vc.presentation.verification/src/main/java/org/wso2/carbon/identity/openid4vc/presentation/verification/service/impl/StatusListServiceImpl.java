@@ -28,15 +28,13 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.exception.Revocati
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.StatusListService;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.util.HttpClientUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.GZIPInputStream;
@@ -56,8 +54,6 @@ public class StatusListServiceImpl implements StatusListService {
     // Cache TTL in milliseconds (default: 5 minutes)
     private static final long CACHE_TTL_MS = 5 * 60 * 1000;
 
-    // HTTP timeout in milliseconds
-    private static final int HTTP_TIMEOUT_MS = 10000;
 
     private boolean revocationCheckEnabled = true;
 
@@ -294,40 +290,19 @@ public class StatusListServiceImpl implements StatusListService {
      */
     @SuppressFBWarnings("URLCONNECTION_SSRF_FD")
     private String fetchStatusListCredential(String url) throws RevocationCheckException {
-        HttpURLConnection connection = null;
         try {
-            URL credentialUrl = new URL(url);
-            connection = (HttpURLConnection) credentialUrl.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(HTTP_TIMEOUT_MS);
-            connection.setReadTimeout(HTTP_TIMEOUT_MS);
-            connection.setRequestProperty("Accept", "application/vc+ld+json, application/json");
-
-            int responseCode = connection.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                throw RevocationCheckException.networkError(url,
-                        new IOException("HTTP " + responseCode + " response"));
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Accept", "application/vc+ld+json, application/json");
+            String response = HttpClientUtil.fetchContent(url, headers);
+            if (response == null) {
+                 throw RevocationCheckException.networkError(url,
+                         new IOException("HTTP response not OK"));
             }
-
-            try (InputStream is = connection.getInputStream();
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = is.read(buffer)) != -1) {
-                    baos.write(buffer, 0, bytesRead);
-                }
-                return baos.toString(StandardCharsets.UTF_8.name());
-            }
-
+            return response;
         } catch (RevocationCheckException e) {
             throw e;
         } catch (Exception e) {
             throw RevocationCheckException.networkError(url, e);
-        } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
         }
     }
 

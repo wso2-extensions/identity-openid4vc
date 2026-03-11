@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.verification.service;
 
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VCVerificationResultDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiablePresentation;
@@ -221,5 +222,67 @@ public interface VCVerificationService {
      * @throws CredentialVerificationException If constraints are not satisfied
      */
     void verifyClaimsAgainstDefinition(java.util.Map<String, Object> claims, String presentationDefinitionJson)
+            throws CredentialVerificationException;
+
+    /**
+     * Unified verifiable presentation verification entry-point.
+     *
+     * <p>This method centralises all format-detection, routing, disclosure
+     * verification, and Presentation Definition constraint enforcement so that
+     * any caller (Authenticator, Custom Grant Handler, REST API, …) can verify
+     * a VP by supplying only the raw request parameters.
+     *
+     * <p><strong>Responsibilities of this method:</strong>
+     * <ol>
+     *   <li>Parse the {@code presentation_submission} JSON and extract the
+     *       format from {@code descriptor_map[0].format}.</li>
+     *   <li>Route to the appropriate format-specific verifier:
+     *       <ul>
+     *         <li>SD-JWT ({@code vc+sd-jwt}) → issuer JWT signature + disclosure
+     *             verification + holder key binding (sd_hash).</li>
+     *         <li>JWT VP ({@code jwt_vp}, {@code jwt_vp_json}) → JWT signature
+     *             verification + credential extraction.</li>
+     *         <li>JSON-LD VP ({@code ldp_vp}) → proof verification +
+     *             credential extraction.</li>
+     *       </ul>
+     *   </li>
+     *   <li>Resolve and enforce Presentation Definition constraints if
+     *       {@code presentationDefinitionId} is non-null and non-empty.</li>
+     *   <li>Extract the {@code nonce} and {@code audience} from the VP token
+     *       and include them in the response so the caller can perform
+     *       replay-attack validation.</li>
+     *   <li>Return a {@link VPVerificationResponseDTO} that bundles the
+     *       outcome, detected format, extracted claims, nonce, audience, and
+     *       any error message.</li>
+     * </ol>
+     *
+     * <p><strong>Caller responsibility:</strong> the caller (e.g. the
+     * Authenticator) must compare {@link VPVerificationResponseDTO#getNonce()}
+     * and {@link VPVerificationResponseDTO#getAudience()} against the
+     * session-bound expected values to prevent replay attacks.  The
+     * Verification Component does <em>not</em> perform this comparison; it only
+     * extracts and returns the values.
+     *
+     * @param vpToken                  The VP token string (SD-JWT, JWT-VP,
+     *                                 or JSON-LD VP)
+     * @param submissionJson           The {@code presentation_submission} JSON
+     *                                 string from the wallet response
+     * @param presentationDefinitionId The ID of the Presentation Definition
+     *                                 used to verify claim constraints; may be
+     *                                 {@code null} or empty to skip constraint
+     *                                 checking
+     * @param tenantId                 Tenant identifier used to resolve the
+     *                                 Presentation Definition by ID
+     * @return {@link VPVerificationResponseDTO} containing the verification
+     *         outcome, detected format, extracted claims, nonce, and audience
+     * @throws CredentialVerificationException If a fatal, unrecoverable
+     *                                         verification error occurs (e.g.
+     *                                         missing VP token, unparseable
+     *                                         submission JSON)
+     */
+    VPVerificationResponseDTO verifyPresentation(String vpToken,
+            String submissionJson,
+            String presentationDefinitionId,
+            int tenantId)
             throws CredentialVerificationException;
 }

@@ -21,6 +21,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPR
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.QRCodeUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.AuthorizationDetailsDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
@@ -229,8 +230,11 @@ public class OpenID4VPAuthenticatorTest {
 
         Map<String, Object> verifiedClaims = new HashMap<>();
         verifiedClaims.put("email", "testuser@example.com");
-        when(vcVerificationService.verifySdJwtToken(anyString(), anyString(), anyString(), anyString()))
-                .thenReturn(verifiedClaims);
+        VPVerificationResponseDTO verificationResult =
+                VPVerificationResponseDTO.success(verifiedClaims, "vc+sd-jwt", "dummy-nonce", "dummy-client");
+        when(vcVerificationService.verifyPresentation(
+                anyString(), anyString(), any(), anyInt()))
+                .thenReturn(verificationResult);
 
         authenticator.process(request, response, context);
 
@@ -268,7 +272,13 @@ public class OpenID4VPAuthenticatorTest {
                 .build();
         when(presentationDefinitionService.getPresentationDefinitionById(anyString(), anyInt())).thenReturn(mockDef);
 
-        when(vcVerificationService.verifyVPToken(anyString())).thenReturn(java.util.Collections.emptyList());
+        Map<String, Object> verifiedClaims = new HashMap<>();
+        verifiedClaims.put("email", "testuser@example.com");
+        VPVerificationResponseDTO verificationResult =
+                VPVerificationResponseDTO.success(verifiedClaims, "ldp_vp", "dummy-nonce", "dummy-client");
+        when(vcVerificationService.verifyPresentation(
+                anyString(), anyString(), any(), anyInt()))
+                .thenReturn(verificationResult);
 
         authenticator.process(request, response, context);
 
