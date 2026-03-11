@@ -68,12 +68,17 @@ public class WellKnownDIDServlet extends HttpServlet {
             throws ServletException, IOException {
 
         try {
-            // Extract domain from request
-            String domain = extractDomain();
+            // Get tenant domain and ID from context
+            String tenantDomain = org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantDomainFromContext();
+            int tenantId = org.wso2.carbon.identity.core.util.IdentityTenantUtil.getTenantId(tenantDomain);
 
-            // Get tenant ID (default to super tenant for now)
-            // In a multi-tenant setup, this should be extracted from the request
-            int tenantId = DEFAULT_TENANT_ID;
+            // Dynamically construct domain with path for this tenant
+            String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil
+                    .getTenantAwareBaseUrl(tenantDomain);
+            String domain = baseUrl.replace("https://", "").replace("http://", "");
+            if (domain.endsWith("/")) {
+                domain = domain.substring(0, domain.length() - 1);
+            }
 
             // Generate DID document
             String didDocument = didDocumentService.getDIDDocument(domain, tenantId);
@@ -114,7 +119,9 @@ public class WellKnownDIDServlet extends HttpServlet {
      * Returns the host and port if present.
      *
      * @return Domain string (e.g., "example.com" or "localhost:9443")
+     * @deprecated Use context-aware tenant domains.
      */
+    @Deprecated
     private String extractDomain() {
         String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
         // Remove protocol

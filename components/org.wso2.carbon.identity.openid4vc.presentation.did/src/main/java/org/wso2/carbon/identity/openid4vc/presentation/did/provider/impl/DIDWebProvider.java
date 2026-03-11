@@ -55,6 +55,10 @@ public class DIDWebProvider implements DIDProvider {
         if (domain.contains(":")) {
             domain = domain.replace(":", "%3A");
         }
+        // Encode path slashes to colons for did:web specification
+        if (domain.contains("/")) {
+            domain = domain.replace("/", ":");
+        }
         return "did:web:" + domain;
     }
 
