@@ -85,22 +85,6 @@ public final class SecurityUtils {
     }
 
     /**
-     * Validate a DID string.
-     *
-     * @param did the DID to validate
-     * @return true if valid
-     */
-    public static boolean isValidDID(String did) {
-        if (StringUtils.isBlank(did)) {
-            return false;
-        }
-        if (did.length() > MAX_DID_LENGTH) {
-            return false;
-        }
-        return DID_PATTERN.matcher(did).matches();
-    }
-
-    /**
      * Validate a URL.
      *
      * @param url the URL to validate
@@ -122,64 +106,6 @@ public final class SecurityUtils {
     }
 
     /**
-     * Validate a nonce value.
-     *
-     * @param nonce the nonce to validate
-     * @return true if valid
-     */
-    public static boolean isValidNonce(String nonce) {
-        if (StringUtils.isBlank(nonce)) {
-            return false;
-        }
-        if (nonce.length() > MAX_NONCE_LENGTH) {
-            return false;
-        }
-        return NONCE_PATTERN.matcher(nonce).matches();
-    }
-
-    /**
-     * Validate a state parameter.
-     *
-     * @param state the state to validate
-     * @return true if valid
-     */
-    public static boolean isValidState(String state) {
-        if (StringUtils.isBlank(state)) {
-            return false;
-        }
-        if (state.length() > MAX_STATE_LENGTH) {
-            return false;
-        }
-        return STATE_PATTERN.matcher(state).matches();
-    }
-
-    /**
-     * Validate a UUID string.
-     *
-     * @param uuid the UUID to validate
-     * @return true if valid
-     */
-    public static boolean isValidUUID(String uuid) {
-        if (StringUtils.isBlank(uuid)) {
-            return false;
-        }
-        return UUID_PATTERN.matcher(uuid).matches();
-    }
-
-    /**
-     * Validate VP token size.
-     *
-     * @param vpToken the VP token to validate
-     * @return true if valid size
-     */
-    public static boolean isValidVPTokenSize(String vpToken) {
-        if (StringUtils.isBlank(vpToken)) {
-            return false;
-        }
-        return vpToken.length() <= MAX_VP_TOKEN_LENGTH;
-    }
-
-    /**
      * Sanitize a string for logging (mask sensitive parts).
      *
      * @param value        the value to sanitize
@@ -195,26 +121,6 @@ public final class SecurityUtils {
         }
         return value.substring(0, visibleChars) + "..." +
                 value.substring(value.length() - visibleChars);
-    }
-
-    /**
-     * Sanitize a DID for logging.
-     *
-     * @param did the DID to sanitize
-     * @return sanitized DID
-     */
-    public static String sanitizeDIDForLogging(String did) {
-        if (StringUtils.isBlank(did)) {
-            return "[empty]";
-        }
-        // Show DID method and first/last few chars of specific-id
-        String[] parts = did.split(":");
-        if (parts.length < 3) {
-            return sanitizeForLogging(did, 10);
-        }
-        String method = parts[1];
-        String specificId = did.substring(("did:" + method + ":").length());
-        return "did:" + method + ":" + sanitizeForLogging(specificId, 4);
     }
 
     /**
@@ -253,75 +159,6 @@ public final class SecurityUtils {
     }
 
     /**
-     * Constant-time string comparison to prevent timing attacks.
-     *
-     * @param a first string
-     * @param b second string
-     * @return true if equal
-     */
-    public static boolean constantTimeEquals(String a, String b) {
-        if (a == null || b == null) {
-            return a == null && b == null;
-        }
-        if (a.length() != b.length()) {
-            return false;
-        }
-        int result = 0;
-        for (int i = 0; i < a.length(); i++) {
-            result |= a.charAt(i) ^ b.charAt(i);
-        }
-        return result == 0;
-    }
-
-    /**
-     * Extract the DID method from a DID string.
-     *
-     * @param did the DID
-     * @return the method (e.g., "web", "key", "jwk")
-     */
-    public static String extractDIDMethod(String did) {
-        if (StringUtils.isBlank(did) || !did.startsWith("did:")) {
-            return null;
-        }
-        String[] parts = did.split(":");
-        if (parts.length < 3) {
-            return null;
-        }
-        return parts[1];
-    }
-
-    /**
-     * Check if a JWT is well-formed (basic structure check).
-     *
-     * @param jwt the JWT string
-     * @return true if well-formed
-     */
-    public static boolean isWellFormedJWT(String jwt) {
-        if (StringUtils.isBlank(jwt)) {
-            return false;
-        }
-        String[] parts = jwt.split("\\.");
-        if (parts.length != 3) {
-            return false;
-        }
-        // Each part should be Base64URL encoded
-        try {
-            for (String part : parts) {
-                if (part.isEmpty()) {
-                    return false;
-                }
-                // Basic Base64URL character check
-                if (!part.matches("^[A-Za-z0-9_-]+$")) {
-                    return false;
-                }
-            }
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    /**
      * Calculate SHA-256 hash of a string.
      *
      * @param input the input string
@@ -339,15 +176,5 @@ public final class SecurityUtils {
         } catch (Exception e) {
             throw new RuntimeException("SHA-256 not available", e);
         }
-    }
-
-    /**
-     * Generate a challenge for PKCE-like flows.
-     *
-     * @return challenge string
-     */
-    public static String generateChallenge() {
-        String verifier = generateNonce(32);
-        return sha256(verifier).substring(0, 43); // S256 challenge
     }
 }

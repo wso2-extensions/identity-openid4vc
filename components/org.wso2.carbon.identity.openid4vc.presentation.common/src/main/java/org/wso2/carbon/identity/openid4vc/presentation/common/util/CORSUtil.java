@@ -42,10 +42,6 @@ public final class CORSUtil {
     private static final String DEFAULT_EXPOSED_HEADERS = "Content-Type, X-Request-Id, X-Transaction-Id";
     private static final String DEFAULT_MAX_AGE = "86400"; // 24 hours
 
-    private CORSUtil() {
-        // Private constructor to prevent instantiation
-    }
-
     /**
      * Add CORS headers to the response.
      *
@@ -76,20 +72,6 @@ public final class CORSUtil {
     }
 
     /**
-     * Add CORS headers with custom allowed methods.
-     *
-     * @param request        The HTTP request
-     * @param response       The HTTP response
-     * @param allowedMethods Comma-separated list of allowed HTTP methods
-     */
-    @SuppressFBWarnings("HTTP_RESPONSE_SPLITTING")
-    public static void addCORSHeaders(HttpServletRequest request, HttpServletResponse response,
-            String allowedMethods) {
-        addCORSHeaders(request, response);
-        response.setHeader(HEADER_ACCESS_CONTROL_ALLOW_METHODS, allowedMethods);
-    }
-
-    /**
      * Add CORS headers for preflight requests.
      *
      * @param request  The HTTP request
@@ -98,56 +80,6 @@ public final class CORSUtil {
     public static void handlePreflight(HttpServletRequest request, HttpServletResponse response) {
         addCORSHeaders(request, response);
         response.setStatus(HttpServletResponse.SC_NO_CONTENT);
-    }
-
-    /**
-     * Check if this is a CORS preflight request.
-     *
-     * @param request The HTTP request
-     * @return true if this is a preflight request
-     */
-    @SuppressFBWarnings("SERVLET_HEADER")
-    public static boolean isPreflightRequest(HttpServletRequest request) {
-        return "OPTIONS".equalsIgnoreCase(request.getMethod())
-                && request.getHeader("Access-Control-Request-Method") != null;
-    }
-
-    /**
-     * Check if this is a CORS request (has Origin header).
-     *
-     * @param request The HTTP request
-     * @return true if this is a CORS request
-     */
-    @SuppressFBWarnings("SERVLET_HEADER")
-    public static boolean isCORSRequest(HttpServletRequest request) {
-        return request.getHeader(HEADER_ORIGIN) != null;
-    }
-
-    /**
-     * Validate if the origin is allowed.
-     *
-     * @param request        The HTTP request
-     * @param allowedOrigins Array of allowed origins (null or empty allows all)
-     * @return true if the origin is allowed
-     */
-    @SuppressFBWarnings("SERVLET_HEADER")
-    public static boolean isOriginAllowed(HttpServletRequest request, String[] allowedOrigins) {
-        if (allowedOrigins == null || allowedOrigins.length == 0) {
-            return true; // Allow all
-        }
-
-        String origin = request.getHeader(HEADER_ORIGIN);
-        if (origin == null || origin.isEmpty()) {
-            return true; // Not a CORS request
-        }
-
-        for (String allowed : allowedOrigins) {
-            if ("*".equals(allowed) || origin.equals(allowed)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

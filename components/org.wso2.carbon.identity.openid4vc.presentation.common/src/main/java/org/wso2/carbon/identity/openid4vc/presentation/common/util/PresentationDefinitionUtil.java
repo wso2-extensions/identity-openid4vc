@@ -181,74 +181,6 @@ public class PresentationDefinitionUtil {
     }
 
     /**
-     * Build an input descriptor for requesting a specific credential type.
-     *
-     * @param id             The descriptor ID
-     * @param name           Optional name
-     * @param purpose        Optional purpose
-     * @param credentialType The credential type to request
-     * @return The input descriptor JSON string
-     */
-    public static String buildInputDescriptor(String id, String name, String purpose,
-                                               String credentialType) {
-        JsonObject descriptor = new JsonObject();
-        descriptor.addProperty(OpenID4VPConstants.PresentationDef.ID, id);
-        
-        if (StringUtils.isNotBlank(name)) {
-            descriptor.addProperty(OpenID4VPConstants.PresentationDef.NAME, name);
-        }
-        
-        if (StringUtils.isNotBlank(purpose)) {
-            descriptor.addProperty(OpenID4VPConstants.PresentationDef.PURPOSE, purpose);
-        }
-
-        // Add format constraints
-        JsonObject format = new JsonObject();
-        JsonObject jwtVp = new JsonObject();
-        JsonArray alg = new JsonArray();
-        alg.add("ES256");
-        alg.add("ES384");
-        jwtVp.add("alg", alg);
-        format.add(OpenID4VPConstants.VCFormats.JWT_VP_JSON, jwtVp);
-        descriptor.add(OpenID4VPConstants.PresentationDef.FORMAT, format);
-
-        // Add constraints for credential type
-        JsonObject constraints = new JsonObject();
-        JsonArray fields = new JsonArray();
-        
-        // Type constraint
-        JsonObject typeField = new JsonObject();
-        JsonArray path = new JsonArray();
-        path.add("$.type");
-        typeField.add(OpenID4VPConstants.PresentationDef.PATH, path);
-        JsonObject filter = new JsonObject();
-        filter.addProperty("type", "array");
-        filter.addProperty("contains", credentialType);
-        typeField.add(OpenID4VPConstants.PresentationDef.FILTER, filter);
-        fields.add(typeField);
-
-        constraints.add(OpenID4VPConstants.PresentationDef.FIELDS, fields);
-        descriptor.add(OpenID4VPConstants.PresentationDef.CONSTRAINTS, constraints);
-
-        return gson.toJson(descriptor);
-    }
-
-    /**
-     * Build an input descriptor for a requested credential model.
-     *
-     * @param id             The descriptor ID
-     * @param credentialType The credential type to request
-     * @param purpose        Optional purpose
-     * @param requestedClaims List of requested claims
-     * @return The input descriptor JSON string
-     */
-    public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
-                                                                     String purpose,
-                                                                     java.util.List<String> requestedClaims) {
-        return buildInputDescriptorFromRequestedCredential(id, credentialType, purpose, requestedClaims, null);
-    }
-
-    /**
      * Build an input descriptor for a requested credential model, optionally constraining a trusted issuer.
      *
      * @param id             The descriptor ID
@@ -333,22 +265,6 @@ public class PresentationDefinitionUtil {
     }
 
     /**
-     * Extract the definition ID from a presentation definition JSON.
-     *
-     * @param definitionJson The presentation definition JSON string
-     * @return The definition ID
-     * @throws VPException If extraction fails
-     */
-    public static String extractDefinitionId(String definitionJson) throws VPException {
-        JsonObject definition = parsePresentationDefinition(definitionJson);
-        JsonElement idElement = definition.get(OpenID4VPConstants.PresentationDef.ID);
-        if (idElement == null || !idElement.isJsonPrimitive()) {
-            throw new VPException("Presentation definition 'id' not found or invalid");
-        }
-        return idElement.getAsString();
-    }
-
-    /**
      * Parse a presentation submission JSON string.
      *
      * @param submissionJson The JSON string
@@ -368,60 +284,6 @@ public class PresentationDefinitionUtil {
     }
 
     /**
-     * Validate a presentation submission against a definition.
-     *
-     * @param definitionJson The presentation definition JSON
-     * @param submissionJson The presentation submission JSON
-     * @return true if the submission satisfies the definition
-     * @throws VPException If validation fails
-     */
-    public static boolean validateSubmissionAgainstDefinition(String definitionJson, 
-                                                               String submissionJson) 
-            throws VPException {
-        JsonObject definition = parsePresentationDefinition(definitionJson);
-        JsonObject submission = parsePresentationSubmission(submissionJson);
-
-        // Check that definition_id matches
-        String defId = definition.get(OpenID4VPConstants.PresentationDef.ID).getAsString();
-        String submissionDefId = submission.get(
-            OpenID4VPConstants.PresentationSubmission.DEFINITION_ID).getAsString();
-        
-        if (!defId.equals(submissionDefId)) {
-                        return false;
-        }
-
-        // Get input descriptors from definition
-        JsonArray inputDescriptors = definition.get(
-            OpenID4VPConstants.PresentationDef.INPUT_DESCRIPTORS).getAsJsonArray();
-        
-        // Get descriptor_map from submission
-        JsonArray descriptorMap = submission.get(
-            OpenID4VPConstants.PresentationSubmission.DESCRIPTOR_MAP).getAsJsonArray();
-
-        // Check that all required descriptors are present in submission
-        for (JsonElement descriptor : inputDescriptors) {
-            String descriptorId = descriptor.getAsJsonObject()
-                .get(OpenID4VPConstants.PresentationDef.ID).getAsString();
-            
-            boolean found = false;
-            for (JsonElement mapping : descriptorMap) {
-                String mappingId = mapping.getAsJsonObject()
-                    .get(OpenID4VPConstants.PresentationSubmission.INPUT_DESCRIPTOR_ID).getAsString();
-                if (descriptorId.equals(mappingId)) {
-                    found = true;
-                    break;
-                }
-            }
-            
-            if (!found) {
-                                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
      * Convert a presentation definition object to JSON string.
      *
      * @param definition The JsonObject
@@ -429,21 +291,6 @@ public class PresentationDefinitionUtil {
      */
     public static String toJson(JsonObject definition) {
         return gson.toJson(definition);
-    }
-
-    /**
-     * Pretty print a JSON string.
-     *
-     * @param json The JSON string
-     * @return The pretty printed JSON string
-     */
-    public static String prettyPrint(String json) {
-        try {
-            JsonElement element = JsonParser.parseString(json);
-            return gson.toJson(element);
-        } catch (JsonParseException e) {
-            return json;
-        }
     }
 
     /**
