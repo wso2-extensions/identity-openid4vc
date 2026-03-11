@@ -35,9 +35,9 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.internal.VP
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.status.StatusNotificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPSubmission;

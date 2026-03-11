@@ -24,7 +24,7 @@ import com.google.gson.JsonObject;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VCVerificationResultDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.impl.VCVerificationServiceImpl;

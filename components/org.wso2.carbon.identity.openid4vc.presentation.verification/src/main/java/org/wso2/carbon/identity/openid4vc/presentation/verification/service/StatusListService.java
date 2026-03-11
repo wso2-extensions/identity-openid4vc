@@ -18,7 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.verification.service;
 
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.RevocationCheckException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VerifiableCredential;
 

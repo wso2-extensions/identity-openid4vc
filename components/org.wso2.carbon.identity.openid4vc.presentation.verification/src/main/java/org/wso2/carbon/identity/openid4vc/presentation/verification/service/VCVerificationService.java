@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.verification.service;
 
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPVerificationResponseDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VerifiablePresentation;
 

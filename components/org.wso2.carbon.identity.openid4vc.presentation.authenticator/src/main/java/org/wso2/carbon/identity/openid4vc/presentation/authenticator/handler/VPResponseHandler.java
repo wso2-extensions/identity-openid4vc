@@ -27,7 +27,7 @@ import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPTokenExpiredException;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequest;

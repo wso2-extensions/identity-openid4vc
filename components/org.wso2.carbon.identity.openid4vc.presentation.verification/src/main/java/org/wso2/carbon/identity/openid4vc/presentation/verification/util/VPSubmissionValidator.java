@@ -26,7 +26,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VP
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.DescriptorMapDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.PresentationSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPSubmissionDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.VPSubmissionValidationException;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 
 import java.util.HashSet;
