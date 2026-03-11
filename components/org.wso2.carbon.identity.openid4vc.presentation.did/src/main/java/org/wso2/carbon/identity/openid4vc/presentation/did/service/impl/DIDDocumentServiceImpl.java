@@ -76,13 +76,15 @@ public class DIDDocumentServiceImpl implements DIDDocumentService {
      * Get DID for a specific tenant.
      * 
      * @param tenantId The tenant ID
+     * @param tenantDomain The tenant domain
      * @return DID identifier (defaults to did:web)
      * @throws DIDDocumentException if generation fails
      */
-    public String getDID(int tenantId) throws DIDDocumentException {
+    public String getDID(int tenantId, String tenantDomain) throws DIDDocumentException {
         try {
             // Default to did:web
-            String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil.getBaseUrl();
+            String baseUrl = org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil
+                    .getTenantAwareBaseUrl(tenantDomain);
             DIDProvider provider = DIDProviderFactory.getProvider("web");
             return provider.getDID(tenantId, baseUrl);
         } catch (VPException e) {

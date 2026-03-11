@@ -318,4 +318,25 @@ public class OpenID4VPUtil {
         throw new IllegalStateException("Unable to determine server base URL. " +
                 "Configure [server].hostname in deployment.toml or add OpenID4VP.BaseUrl to identity.xml.");
     }
+
+    /**
+     * Get the tenant-aware base URL.
+     * Appends /t/{tenantDomain} to the base URL if the tenant is not carbon.super.
+     *
+     * @param tenantDomain The tenant domain
+     * @return The tenant-aware base URL
+     */
+    public static String getTenantAwareBaseUrl(String tenantDomain) {
+        String baseUrl = getBaseUrl();
+        if (StringUtils.isNotBlank(tenantDomain) &&
+                !org.wso2.carbon.utils.multitenancy.MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(
+                        tenantDomain)) {
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl + "t/" + tenantDomain;
+            } else {
+                baseUrl = baseUrl + "/t/" + tenantDomain;
+            }
+        }
+        return baseUrl;
+    }
 }
