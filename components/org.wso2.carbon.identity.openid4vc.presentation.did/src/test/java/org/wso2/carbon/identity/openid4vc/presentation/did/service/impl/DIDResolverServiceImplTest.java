@@ -4,7 +4,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.did.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.did.model.DIDDocument;
 
 import java.security.PublicKey;

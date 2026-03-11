@@ -27,7 +27,7 @@ import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.OctetKeyPair;
 import com.nimbusds.jose.util.Base64URL;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.did.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.did.model.DIDDocument;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 

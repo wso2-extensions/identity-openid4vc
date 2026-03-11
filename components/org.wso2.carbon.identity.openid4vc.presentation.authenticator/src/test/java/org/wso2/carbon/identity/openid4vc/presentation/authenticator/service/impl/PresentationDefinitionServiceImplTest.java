@@ -4,7 +4,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;

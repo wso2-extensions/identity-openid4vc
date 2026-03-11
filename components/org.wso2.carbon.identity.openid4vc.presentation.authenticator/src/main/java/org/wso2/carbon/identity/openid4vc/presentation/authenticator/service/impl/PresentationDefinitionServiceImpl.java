@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;

@@ -33,7 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VCVerificationResultDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
+import org.wso2.carbon.identity.openid4vc.presentation.did.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.RevocationCheckException;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.RevocationCheckResult;
