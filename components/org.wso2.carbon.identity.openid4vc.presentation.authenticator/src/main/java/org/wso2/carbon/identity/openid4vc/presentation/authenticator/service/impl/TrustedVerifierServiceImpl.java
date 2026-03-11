@@ -21,7 +21,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.im
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.TrustedVerifierService;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.TrustedVerifier;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.TrustedVerifier;
 
 import java.net.URI;
 import java.time.Instant;

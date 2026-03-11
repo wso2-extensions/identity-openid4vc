@@ -34,13 +34,13 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dao.impl.VP
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.internal.VPServiceDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.status.StatusNotificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPSubmissionDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPSubmissionValidationException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPSubmission;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.VCVerificationService;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.util.VPSubmissionValidator;
@@ -458,7 +458,7 @@ public class VPSubmissionServlet extends HttpServlet {
 
                 } else {
                     throw new CredentialVerificationException(
-                            org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus.INVALID,
+                            org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus.INVALID,
                             "Invalid JWT VP format");
                 }
             } else {

@@ -27,7 +27,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.polling.Lon
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.polling.PollingResult;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.ServletUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPStatusResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.VPStatusResponseDTO;
 
 import java.io.IOException;
 import java.io.PrintWriter;

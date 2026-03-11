@@ -16,7 +16,9 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.common.model;
+package org.wso2.carbon.identity.openid4vc.presentation.authenticator.model;
+
+import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 
 import java.io.Serializable;
 

@@ -20,8 +20,8 @@ package org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl;
 
 import org.wso2.carbon.identity.core.util.IdentityDatabaseUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition.RequestedCredential;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition.RequestedCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
 
 import java.sql.Connection;

@@ -117,8 +117,11 @@
             </dependency>
             <dependency>
                 <groupId>org.wso2.carbon.identity.openid4vc</groupId>
-      <artifactId>org.wso2.carbon.identity.openid4vc.presentation.definition</artifactId>
-
+                <artifactId>org.wso2.carbon.identity.openid4vc.presentation.definition</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.wso2.carbon.identity.openid4vc</groupId>
                 <artifactId>org.wso2.carbon.identity.sdjwt</artifactId>
                 <version>${project.version}</version>
             </dependency>

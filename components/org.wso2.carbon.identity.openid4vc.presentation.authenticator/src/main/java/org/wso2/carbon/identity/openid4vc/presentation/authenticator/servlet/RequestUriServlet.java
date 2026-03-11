@@ -24,7 +24,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl.VPRequestServiceImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.ErrorDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.ErrorDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestExpiredException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestNotFoundException;

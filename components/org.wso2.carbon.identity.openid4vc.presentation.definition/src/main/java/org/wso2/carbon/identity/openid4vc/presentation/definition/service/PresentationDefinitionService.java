@@ -20,7 +20,7 @@ package org.wso2.carbon.identity.openid4vc.presentation.definition.service;
 
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.PresentationDefinitionNotFoundException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 
 import java.util.ArrayList;
 import java.util.List;

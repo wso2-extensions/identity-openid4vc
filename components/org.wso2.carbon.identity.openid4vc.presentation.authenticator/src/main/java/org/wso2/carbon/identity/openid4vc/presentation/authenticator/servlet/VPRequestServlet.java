@@ -28,14 +28,14 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.polling.Pol
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl.VPRequestServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.ErrorDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestStatusDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.ErrorDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.VPRequestCreateDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.VPRequestStatusDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestExpiredException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPRequestNotFoundException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequestStatus;
 
 import java.io.IOException;
 import java.io.PrintWriter;

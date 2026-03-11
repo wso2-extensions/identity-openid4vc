@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.common.dto;
+package org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto;
 
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
