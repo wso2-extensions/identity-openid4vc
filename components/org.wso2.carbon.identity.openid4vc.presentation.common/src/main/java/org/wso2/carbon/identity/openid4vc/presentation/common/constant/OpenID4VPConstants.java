@@ -203,42 +203,6 @@ public class OpenID4VPConstants {
         }
     }
 
-    /**
-     * DID (Decentralized Identifier) constants.
-     */
-    public static class DID {
-        // DID methods
-        public static final String METHOD_WEB = "web";
-        public static final String METHOD_JWK = "jwk";
-        public static final String METHOD_KEY = "key";
 
-        // DID document properties
-        public static final String DOC_CONTEXT = "@context";
-        public static final String DOC_ID = "id";
-        public static final String DOC_CONTROLLER = "controller";
-        public static final String DOC_VERIFICATION_METHOD = "verificationMethod";
-        public static final String DOC_AUTHENTICATION = "authentication";
-        public static final String DOC_ASSERTION_METHOD = "assertionMethod";
-        public static final String DOC_KEY_AGREEMENT = "keyAgreement";
-        public static final String DOC_SERVICE = "service";
-
-        // Verification method properties
-        public static final String VM_TYPE = "type";
-        public static final String VM_PUBLIC_KEY_JWK = "publicKeyJwk";
-        public static final String VM_PUBLIC_KEY_MULTIBASE = "publicKeyMultibase";
-        public static final String VM_PUBLIC_KEY_BASE58 = "publicKeyBase58";
-
-        // Verification method types
-        public static final String VM_TYPE_JSON_WEB_KEY_2020 = "JsonWebKey2020";
-        public static final String VM_TYPE_ED25519_2020 = "Ed25519VerificationKey2020";
-        public static final String VM_TYPE_ED25519_2018 = "Ed25519VerificationKey2018";
-        public static final String VM_TYPE_ECDSA_SECP256K1_2019 = "EcdsaSecp256k1VerificationKey2019";
-
-        // Default TTL for DID document cache (1 hour)
-        public static final long DID_CACHE_TTL_MS = 3600000;
-
-        private DID() {
-        }
-    }
 
 }

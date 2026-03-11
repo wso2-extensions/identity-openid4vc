@@ -33,10 +33,6 @@ public class OpenID4VPUtil {
 
     private static final SecureRandom secureRandom = new SecureRandom();
 
-    private OpenID4VPUtil() {
-        // Prevent instantiation
-    }
-
     /**
      * Generate a unique request ID.
      *
@@ -76,17 +72,6 @@ public class OpenID4VPUtil {
     }
 
     /**
-     * Generate a state parameter.
-     *
-     * @return A secure state string
-     */
-    public static String generateState() {
-        byte[] state = new byte[16];
-        secureRandom.nextBytes(state);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(state);
-    }
-
-    /**
      * Get the VP request expiry time in seconds.
      *
      * @return Expiry time in seconds
@@ -123,15 +108,6 @@ public class OpenID4VPUtil {
     }
 
     /**
-     * Get the default presentation definition ID from configuration.
-     *
-     * @return The default presentation definition ID or null
-     */
-    public static String getDefaultPresentationDefinitionId() {
-        return IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.DEFAULT_PRESENTATION_DEFINITION_ID);
-    }
-
-    /**
      * Check if the request_uri mode is enabled.
      *
      * @return true if request_uri mode is enabled
@@ -139,64 +115,6 @@ public class OpenID4VPUtil {
     public static boolean isRequestUriEnabled() {
         String configValue = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.ENABLE_REQUEST_URI);
         return StringUtils.isBlank(configValue) || Boolean.parseBoolean(configValue);
-    }
-
-    /**
-     * Check if request JWT signing is enabled.
-     *
-     * @return true if request JWT signing is enabled
-     */
-    public static boolean isRequestJwtEnabled() {
-        String configValue = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.ENABLE_REQUEST_JWT);
-        return Boolean.parseBoolean(configValue);
-    }
-
-    /**
-     * Get the configured signing algorithm.
-     *
-     * @return The signing algorithm
-     */
-    public static String getSigningAlgorithm() {
-        String configValue = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.SIGNING_ALGORITHM);
-        return StringUtils.isNotBlank(configValue) ? configValue : OpenID4VPConstants.Defaults.SIGNING_ALGORITHM;
-    }
-
-    /**
-     * Check if credential verification is enabled.
-     *
-     * @return true if verification is enabled
-     */
-    public static boolean isVerificationEnabled() {
-        String configValue = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.VERIFICATION_ENABLED);
-        return StringUtils.isBlank(configValue) || Boolean.parseBoolean(configValue);
-    }
-
-    /**
-     * Check if revocation checking is enabled.
-     *
-     * @return true if revocation checking is enabled
-     */
-    public static boolean isRevocationCheckEnabled() {
-        String configValue = IdentityUtil.getProperty(OpenID4VPConstants.ConfigKeys.REVOCATION_CHECK_ENABLED);
-        return Boolean.parseBoolean(configValue);
-    }
-
-    /**
-     * Build the authorization request URL for a VP request.
-     *
-     * @param baseUrl   The base URL of the authorization server
-     * @param requestId The request ID
-     * @return The full authorization request URL
-     */
-    public static String buildAuthorizationRequestUrl(String baseUrl, String requestId) {
-        StringBuilder url = new StringBuilder(baseUrl);
-        if (!baseUrl.endsWith("/")) {
-            url.append("/");
-        }
-        url.append("oauth2/authorize?");
-        url.append(OpenID4VPConstants.RequestParams.REQUEST_URI).append("=");
-        url.append(buildRequestUri(baseUrl, requestId));
-        return url.toString();
     }
 
     /**
@@ -234,17 +152,6 @@ public class OpenID4VPUtil {
     }
 
     /**
-     * Build an OpenID4VP deep link URL.
-     *
-     * @param requestUri The request URI to include
-     * @return The OpenID4VP deep link URL
-     */
-    public static String buildOpenID4VPDeepLink(String requestUri) {
-        return OpenID4VPConstants.Protocol.OPENID4VP_SCHEME +
-                "?" + OpenID4VPConstants.RequestParams.REQUEST_URI + "=" + requestUri;
-    }
-
-    /**
      * Validate a client ID.
      *
      * @param clientId The client ID to validate
@@ -262,37 +169,6 @@ public class OpenID4VPUtil {
      */
     public static boolean isValidNonce(String nonce) {
         return StringUtils.isNotBlank(nonce) && nonce.length() >= 16;
-    }
-
-    /**
-     * Sanitize a string for safe logging (remove potential injection attacks).
-     *
-     * @param input The input string
-     * @return The sanitized string
-     */
-    public static String sanitizeForLogging(String input) {
-        if (input == null) {
-            return "null";
-        }
-        // Remove newlines and carriage returns to prevent log injection
-        return input.replace("\n", "").replace("\r", "").replace("\t", "");
-    }
-
-    /**
-     * Mask sensitive data for logging purposes.
-     *
-     * @param data      The data to mask
-     * @param showChars Number of characters to show at the end
-     * @return Masked string
-     */
-    public static String maskSensitiveData(String data, int showChars) {
-        if (StringUtils.isBlank(data)) {
-            return "***";
-        }
-        if (data.length() <= showChars) {
-            return "***";
-        }
-        return "***" + data.substring(data.length() - showChars);
     }
 
     /**
