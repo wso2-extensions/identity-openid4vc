@@ -23,8 +23,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class VPRequestNotFoundException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Default error code.
      */
@@ -43,18 +41,6 @@ public class VPRequestNotFoundException extends VPException {
     public VPRequestNotFoundException(final String reqId) {
 
         super(DEFAULT_ERROR_CODE, "VP request not found: " + reqId);
-        this.requestId = reqId;
-    }
-
-    /**
-     * Constructor with request ID and custom message.
-     *
-     * @param reqId Request ID
-     * @param msg   Custom error message
-     */
-    public VPRequestNotFoundException(final String reqId, final String msg) {
-
-        super(DEFAULT_ERROR_CODE, msg);
         this.requestId = reqId;
     }
 

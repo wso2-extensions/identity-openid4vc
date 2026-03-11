@@ -23,8 +23,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class VPTokenExpiredException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Default error code.
      */
@@ -37,15 +35,5 @@ public class VPTokenExpiredException extends VPException {
      */
     public VPTokenExpiredException(final String msg) {
         super(DEFAULT_ERROR_CODE, msg);
-    }
-
-    /**
-     * Constructor with message and cause.
-     *
-     * @param msg   Error message
-     * @param cause Root cause
-     */
-    public VPTokenExpiredException(final String msg, final Throwable cause) {
-        super(DEFAULT_ERROR_CODE, msg, cause);
     }
 }

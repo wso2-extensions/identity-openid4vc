@@ -23,8 +23,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class VPRequestExpiredException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Default error code.
      */
@@ -71,14 +69,5 @@ public class VPRequestExpiredException extends VPException {
      */
     public String getRequestId() {
         return requestId;
-    }
-
-    /**
-     * Get the expiry timestamp.
-     *
-     * @return Expiry timestamp in milliseconds
-     */
-    public long getExpiredAt() {
-        return expiredAt;
     }
 }

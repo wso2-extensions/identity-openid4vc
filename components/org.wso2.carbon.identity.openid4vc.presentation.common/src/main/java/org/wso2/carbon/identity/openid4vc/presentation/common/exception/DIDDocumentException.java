@@ -24,29 +24,8 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class DIDDocumentException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
-     * Constructor with message.
-     *
-     * @param message Error message
-     */
-    public DIDDocumentException(final String message) {
-        super(message);
-    }
-
-    /**
-     * Constructor with error code and message.
-     *
-     * @param code    Error code
-     * @param message Error message
-     */
-    public DIDDocumentException(final String code, final String message) {
-        super(code, message);
-    }
-
-    /**
-     * Constructor with message and cause.
+     * Constructor with message and cause.s
      *
      * @param message Error message
      * @param cause   Underlying cause
@@ -55,23 +34,4 @@ public class DIDDocumentException extends VPException {
         super(message, cause);
     }
 
-    /**
-     * Constructor with error code, message, and cause.
-     *
-     * @param code    Error code
-     * @param message Error message
-     * @param cause   Underlying cause
-     */
-    public DIDDocumentException(final String code, final String message, final Throwable cause) {
-        super(code, message, cause);
-    }
-
-    /**
-     * Constructor with cause.
-     *
-     * @param cause Underlying cause
-     */
-    public DIDDocumentException(final Throwable cause) {
-        super(cause.getMessage(), cause);
-    }
 }
