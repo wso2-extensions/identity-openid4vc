@@ -26,33 +26,36 @@ import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import com.jayway.jsonpath.JsonPath;
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import net.minidev.json.JSONArray;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VCVerificationResultDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.DIDResolutionException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.RevocationCheckException;
+import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.RevocationCheckResult;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VerifiablePresentation;
+import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.impl.DIDResolverServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.jwt.ExtendedJWKSValidator;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.StatusListService;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.VCVerificationService;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.util.HttpClientUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.util.SignatureVerifier;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.util.VerificationUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -60,7 +63,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
+
 
 /**
  * Implementation of VCVerificationService for verifying Verifiable Credentials.
@@ -71,38 +74,25 @@ public class VCVerificationServiceImpl implements VCVerificationService {
     private static final Log LOG = LogFactory.getLog(VCVerificationServiceImpl.class);
     private static final Gson GSON = new Gson();
 
-    // Content type constants
-    private static final String CONTENT_TYPE_VC_LD_JSON = "application/vc+ld+json";
-    private static final String CONTENT_TYPE_JWT = "application/jwt";
-    private static final String CONTENT_TYPE_VC_JWT = "application/vc+jwt";
-    private static final String CONTENT_TYPE_SD_JWT = "application/vc+sd-jwt";
-    private static final String CONTENT_TYPE_JSON = "application/json";
-
     private static final String[] SUPPORTED_CONTENT_TYPES = {
-            CONTENT_TYPE_VC_LD_JSON,
-            CONTENT_TYPE_JWT,
-            CONTENT_TYPE_VC_JWT,
-            CONTENT_TYPE_SD_JWT,
-            CONTENT_TYPE_JSON
-    };
-
-    // HTTP constants
-    private static final int HTTP_CONNECT_TIMEOUT = 5000;
-    private static final int HTTP_READ_TIMEOUT = 5000;
-    private static final int HTTP_OK = 200;
-    // Date format for ISO 8601 dates
-    private static final String[] DATE_FORMATS = {
-            "yyyy-MM-dd'T'HH:mm:ss'Z'",
-            "yyyy-MM-dd'T'HH:mm:ssXXX",
-            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
-            "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
-            "yyyy-MM-dd"
+            VerificationUtil.CONTENT_TYPE_VC_LD_JSON,
+            VerificationUtil.CONTENT_TYPE_JWT,
+            VerificationUtil.CONTENT_TYPE_VC_JWT,
+            VerificationUtil.CONTENT_TYPE_SD_JWT,
+            VerificationUtil.CONTENT_TYPE_JSON
     };
 
     private final DIDResolverService didResolverService;
     private final SignatureVerifier signatureVerifier;
     private final StatusListService statusListService;
     private final ExtendedJWKSValidator extendedJWKSValidator;
+
+    /**
+     * Optional service for resolving Presentation Definitions by ID.
+     * When {@code null}, PD constraint checking is skipped in
+     * {@link #verifyPresentation(String, String, String, int)}.
+     */
+    private PresentationDefinitionService presentationDefinitionService;
 
     /**
      * Default constructor.
@@ -140,6 +130,24 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         this.signatureVerifier = new SignatureVerifier();
         this.statusListService = statusListService;
         this.extendedJWKSValidator = new ExtendedJWKSValidator();
+    }
+
+    /**
+     * Constructor with all dependencies including the Presentation Definition service.
+     *
+     * @param didResolverService           DID resolver service
+     * @param statusListService            Status list service
+     * @param presentationDefinitionService Service for resolving Presentation Definitions by ID
+     */
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("EI_EXPOSE_REP2")
+    public VCVerificationServiceImpl(DIDResolverService didResolverService,
+            StatusListService statusListService,
+            PresentationDefinitionService presentationDefinitionService) {
+        this.didResolverService = didResolverService;
+        this.signatureVerifier = new SignatureVerifier();
+        this.statusListService = statusListService;
+        this.extendedJWKSValidator = new ExtendedJWKSValidator();
+        this.presentationDefinitionService = presentationDefinitionService;
     }
 
     @Override
@@ -311,7 +319,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         try {
             // Parse header once and reuse
-            Map<String, Object> header = parseJwtPart(parts[0]);
+            Map<String, Object> header = VerificationUtil.parseJwtPart(parts[0]);
             String alg = header.containsKey("alg") ? header.get("alg").toString() : "RS256";
             String kid = header.containsKey("kid") ? header.get("kid").toString() : null;
 
@@ -485,31 +493,20 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
 
         // Fix: Remove extra quotes if present (e.g. from incorrect JSON serialization)
-        String trimmed = vcString.trim();
-        if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
-            try {
-                // Use GSON to correctly unquote/unescape the JSON string
-                vcString = GSON.fromJson(trimmed, String.class);
-            } catch (Exception e) {
-                // Return original string if unquoting fails, though unlikely for valid JSON strings
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Failed to unquote credential string, using original", e);
-                }
-            }
-        }
+        vcString = VerificationUtil.unquoteJsonString(vcString);
 
-        String normalizedContentType = normalizeContentType(contentType);
+        String normalizedContentType = VerificationUtil.normalizeContentType(contentType);
 
         try {
             // Auto-detect format if content type is generic JSON or null
-            if (normalizedContentType == null || CONTENT_TYPE_JSON.equals(normalizedContentType)) {
-                normalizedContentType = detectFormat(vcString);
+            if (normalizedContentType == null || VerificationUtil.CONTENT_TYPE_JSON.equals(normalizedContentType)) {
+                normalizedContentType = VerificationUtil.detectFormat(vcString);
             }
 
-            if (CONTENT_TYPE_JWT.equals(normalizedContentType) ||
-                    CONTENT_TYPE_VC_JWT.equals(normalizedContentType)) {
+            if (VerificationUtil.CONTENT_TYPE_JWT.equals(normalizedContentType) ||
+                    VerificationUtil.CONTENT_TYPE_VC_JWT.equals(normalizedContentType)) {
                 return parseJwtCredential(vcString);
-            } else if (CONTENT_TYPE_SD_JWT.equals(normalizedContentType)) {
+            } else if (VerificationUtil.CONTENT_TYPE_SD_JWT.equals(normalizedContentType)) {
                 return parseSdJwtCredential(vcString);
             } else {
                 return parseJsonLdCredential(vcString);
@@ -523,29 +520,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         }
     }
 
-    /**
-     * Detect the format of a credential string.
-     */
-    private String detectFormat(String vcString) {
-        vcString = vcString.trim();
 
-        // JWT format: xxx.xxx.xxx
-        if (vcString.split("\\.").length == 3 && !vcString.startsWith("{")) {
-            return CONTENT_TYPE_JWT;
-        }
-
-        // SD-JWT format: xxx.xxx.xxx~xxx~xxx
-        if (vcString.contains("~") && vcString.split("~")[0].split("\\.").length == 3) {
-            return CONTENT_TYPE_SD_JWT;
-        }
-
-        // JSON-LD format: starts with {
-        if (vcString.startsWith("{")) {
-            return CONTENT_TYPE_VC_LD_JSON;
-        }
-
-        return CONTENT_TYPE_VC_LD_JSON;
-    }
 
     /**
      * Parse a JWT credential.
@@ -568,7 +543,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             credential.setJwtSignature(parts[2]);
 
             // Decode payload
-            Map<String, Object> payload = parseJwtPart(parts[1]);
+            Map<String, Object> payload = VerificationUtil.parseJwtPart(parts[1]);
             credential.setJwtClaims(payload);
 
             // Extract standard claims
@@ -689,7 +664,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 if (arr.size() >= 3) {
                     String claimName = arr.get(1).getAsString();
                     JsonElement claimValue = arr.get(2);
-                    claims.put(claimName, parseJsonElement(claimValue));
+                    claims.put(claimName, VerificationUtil.parseJsonElement(claimValue));
                 }
             } catch (Exception e) {
             }
@@ -762,15 +737,15 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
             // Parse dates
             if (json.has("issuanceDate")) {
-                credential.setIssuanceDate(parseDate(json.get("issuanceDate").getAsString()));
+                credential.setIssuanceDate(VerificationUtil.parseDate(json.get("issuanceDate").getAsString()));
             } else if (json.has("validFrom")) {
-                credential.setIssuanceDate(parseDate(json.get("validFrom").getAsString()));
+                credential.setIssuanceDate(VerificationUtil.parseDate(json.get("validFrom").getAsString()));
             }
 
             if (json.has("expirationDate")) {
-                credential.setExpirationDate(parseDate(json.get("expirationDate").getAsString()));
+                credential.setExpirationDate(VerificationUtil.parseDate(json.get("expirationDate").getAsString()));
             } else if (json.has("validUntil")) {
-                credential.setExpirationDate(parseDate(json.get("validUntil").getAsString()));
+                credential.setExpirationDate(VerificationUtil.parseDate(json.get("validUntil").getAsString()));
             }
 
             // Parse credential subject
@@ -780,7 +755,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                     JsonObject subjectObj = subjectEl.getAsJsonObject();
                     Map<String, Object> subjectMap = new HashMap<>();
                     for (String key : subjectObj.keySet()) {
-                        subjectMap.put(key, parseJsonElement(subjectObj.get(key)));
+                        subjectMap.put(key, VerificationUtil.parseJsonElement(subjectObj.get(key)));
                     }
                     credential.setCredentialSubject(subjectMap);
                     if (subjectObj.has("id")) {
@@ -903,9 +878,10 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
         try {
             // Detect format
-            String format = detectFormat(vpToken);
+            String format = VerificationUtil.detectFormat(vpToken);
 
-            if (CONTENT_TYPE_JWT.equals(format) || CONTENT_TYPE_VC_JWT.equals(format)) {
+            if (VerificationUtil.CONTENT_TYPE_JWT.equals(format)
+                    || VerificationUtil.CONTENT_TYPE_VC_JWT.equals(format)) {
                 return parseJwtPresentation(vpToken);
             } else {
                 return parseJsonLdPresentation(vpToken);
@@ -939,7 +915,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             presentation.setJwtSignature(parts[2]);
 
             // Decode payload
-            Map<String, Object> payload = parseJwtPart(parts[1]);
+            Map<String, Object> payload = VerificationUtil.parseJwtPart(parts[1]);
             presentation.setJwtClaims(payload);
 
             // Extract standard claims
@@ -1003,18 +979,19 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                         VerifiableCredential vc;
                         if (el.isJsonPrimitive()) {
                             // JWT credential
-                            vc = parseCredential(el.getAsString(), CONTENT_TYPE_JWT);
+                            vc = parseCredential(el.getAsString(), VerificationUtil.CONTENT_TYPE_JWT);
                         } else {
                             // JSON-LD credential
-                            vc = parseCredential(el.toString(), CONTENT_TYPE_VC_LD_JSON);
+                            vc = parseCredential(el.toString(), VerificationUtil.CONTENT_TYPE_VC_LD_JSON);
                         }
                         presentation.addVerifiableCredential(vc);
                     }
                 } else if (vcEl.isJsonPrimitive()) {
-                    VerifiableCredential vc = parseCredential(vcEl.getAsString(), CONTENT_TYPE_JWT);
+                    VerifiableCredential vc = parseCredential(vcEl.getAsString(), VerificationUtil.CONTENT_TYPE_JWT);
                     presentation.addVerifiableCredential(vc);
                 } else if (vcEl.isJsonObject()) {
-                    VerifiableCredential vc = parseCredential(vcEl.toString(), CONTENT_TYPE_VC_LD_JSON);
+                    VerifiableCredential vc = parseCredential(vcEl.toString(),
+                            VerificationUtil.CONTENT_TYPE_VC_LD_JSON);
                     presentation.addVerifiableCredential(vc);
                 }
             }
@@ -1050,16 +1027,16 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                     if (vc instanceof String) {
                         // JWT credential
                         presentation.addVerifiableCredential(
-                                parseCredential(vc.toString(), CONTENT_TYPE_JWT));
+                                parseCredential(vc.toString(), VerificationUtil.CONTENT_TYPE_JWT));
                     } else if (vc instanceof Map) {
                         // JSON-LD credential embedded in JWT VP
                         presentation.addVerifiableCredential(
-                                parseCredential(GSON.toJson(vc), CONTENT_TYPE_VC_LD_JSON));
+                                parseCredential(GSON.toJson(vc), VerificationUtil.CONTENT_TYPE_VC_LD_JSON));
                     }
                 }
             } else if (vcClaim instanceof String) {
                 presentation.addVerifiableCredential(
-                        parseCredential(vcClaim.toString(), CONTENT_TYPE_JWT));
+                        parseCredential(vcClaim.toString(), VerificationUtil.CONTENT_TYPE_JWT));
             }
         }
     }
@@ -1083,7 +1060,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         if (contentType == null) {
             return true; // Will auto-detect
         }
-        String normalized = normalizeContentType(contentType);
+        String normalized = VerificationUtil.normalizeContentType(contentType);
         return Arrays.asList(SUPPORTED_CONTENT_TYPES).contains(normalized);
     }
 
@@ -1094,67 +1071,7 @@ public class VCVerificationServiceImpl implements VCVerificationService {
 
     // Utility methods
 
-    private String normalizeContentType(String contentType) {
-        if (contentType == null) {
-            return null;
-        }
-        // Remove charset and other parameters
-        int semicolonIndex = contentType.indexOf(';');
-        if (semicolonIndex > 0) {
-            contentType = contentType.substring(0, semicolonIndex);
-        }
-        return contentType.trim().toLowerCase(java.util.Locale.ENGLISH);
-    }
-
-    private Map<String, Object> parseJwtPart(String part) {
-        String decoded = Base64URL.from(part).decodeToString();
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = GSON.fromJson(decoded, Map.class);
-        return map;
-    }
-
-    private Object parseJsonElement(JsonElement element) {
-        if (element.isJsonPrimitive()) {
-            if (element.getAsJsonPrimitive().isNumber()) {
-                return element.getAsNumber();
-            } else if (element.getAsJsonPrimitive().isBoolean()) {
-                return element.getAsBoolean();
-            } else {
-                return element.getAsString();
-            }
-        } else if (element.isJsonArray()) {
-            List<Object> list = new ArrayList<>();
-            for (JsonElement el : element.getAsJsonArray()) {
-                list.add(parseJsonElement(el));
-            }
-            return list;
-        } else if (element.isJsonObject()) {
-            Map<String, Object> map = new HashMap<>();
-            for (String key : element.getAsJsonObject().keySet()) {
-                map.put(key, parseJsonElement(element.getAsJsonObject().get(key)));
-            }
-            return map;
-        }
-        return null;
-    }
-
-    private Date parseDate(String dateString) {
-        if (dateString == null || dateString.isEmpty()) {
-            return null;
-        }
-
-        for (String format : DATE_FORMATS) {
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat(format);
-                sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-                return sdf.parse(dateString);
-            } catch (ParseException e) {
-                // Try next format
-            }
-        }
-
-        return null;
-    }
+    // Utility methods extracted to VerificationUtil
 
     @Override
     public boolean verifyJWTVCIssuer(String vcJwt, String tenantDomain) throws CredentialVerificationException {
@@ -1373,10 +1290,12 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                 }
 
                 // Verify KB-JWT Signature
+                @SuppressWarnings("unchecked")
                 Map<String, Object> cnf = (Map<String, Object>) issuerClaims.get("cnf");
                 if (cnf == null || !cnf.containsKey("jwk")) {
                      throw new CredentialVerificationException("cnf.jwk missing in Issuer JWT.");
                 }
+                @SuppressWarnings("unchecked")
                 Map<String, Object> jwkMap = (Map<String, Object>) cnf.get("jwk");
                 com.nimbusds.jose.jwk.JWK holderKey = com.nimbusds.jose.jwk.JWK.parse(jwkMap);
 
@@ -1532,45 +1451,15 @@ public class VCVerificationServiceImpl implements VCVerificationService {
      * @return true if the hostnames are equal (case-insensitive)
      */
     private boolean issuerHostMatches(String expected, String actual) {
-        String expectedHost = extractHost(expected);
-        String actualHost = extractHost(actual);
+        String expectedHost = VerificationUtil.extractHost(expected);
+        String actualHost = VerificationUtil.extractHost(actual);
         return expectedHost != null && expectedHost.equalsIgnoreCase(actualHost);
     }
 
-    /**
-     * Extract the hostname from a value that is either a bare hostname or a full URL.
-     * Returns the input trimmed as-is if it cannot be parsed as a URI.
-     */
-    private String extractHost(String value) {
-        if (value == null || value.isEmpty()) {
-            return null;
-        }
-        String trimmed = value.trim();
-        // If no scheme is present, treat it as a bare hostname/DID-like identifier
-        if (!trimmed.contains("://")) {
-            // Could be "example.com" or "did:web:example.com" — extract last segment after ":"
-            // For did:web, the host is the part after "did:web:"
-            if (trimmed.startsWith("did:web:")) {
-                // "did:web:example.com" → "example.com"
-                // "did:web:example.com:path" → "example.com" (only host part)
-                String didIdentifier = trimmed.substring("did:web:".length());
-                // The host is the first segment before any additional colons (path segments)
-                return didIdentifier.split(":")[0].toLowerCase(java.util.Locale.ENGLISH);
-            }
-            return trimmed.toLowerCase(java.util.Locale.ENGLISH);
-        }
-        try {
-            java.net.URI uri = new java.net.URI(trimmed);
-            String host = uri.getHost();
-            return host != null ? host.toLowerCase(java.util.Locale.ENGLISH) : 
-            trimmed.toLowerCase(java.util.Locale.ENGLISH);
-        } catch (java.net.URISyntaxException e) {
-            return trimmed.toLowerCase(java.util.Locale.ENGLISH);
-        }
-    }
+
 
     private String hashDisclosure(String disclosure) throws NoSuchAlgorithmException {
-        return createHash(disclosure);
+        return VerificationUtil.createHash(disclosure);
     }
 
     private String hashSd(String issuerJwt, List<String> disclosures) throws NoSuchAlgorithmException {
@@ -1580,14 +1469,10 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             sb.append("~").append(d);
         }
         sb.append("~");
-        return createHash(sb.toString());
+        return VerificationUtil.createHash(sb.toString());
     }
 
-    private String createHash(String input) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] encodedhash = digest.digest(input.getBytes(StandardCharsets.US_ASCII));
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(encodedhash);
-    }
+
 
     @edu.umd.cs.findbugs.annotations.SuppressFBWarnings({"REC_CATCH_EXCEPTION", "CRLF_INJECTION_LOGS"})
     private String resolveJwksUri(String issuer) throws CredentialVerificationException {
@@ -1596,17 +1481,18 @@ public class VCVerificationServiceImpl implements VCVerificationService {
             String metadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-credential-issuer"
                     : issuer + "/.well-known/openid-credential-issuer";
 
-            JsonObject metadata = fetchJson(metadataUrl);
+            JsonObject metadata = HttpClientUtil.fetchJson(metadataUrl);
             if (metadata == null) {
                 // If standard metadata fails, optionally check openid-configuration (standard OIDC)
                 String oidcMetadataUrl = issuer.endsWith("/") ? issuer + ".well-known/openid-configuration"
                         : issuer + "/.well-known/openid-configuration";
                 try {
-                    metadata = fetchJson(oidcMetadataUrl);
+                    metadata = HttpClientUtil.fetchJson(oidcMetadataUrl);
                 } catch (Exception e) {
-                   if (LOG.isDebugEnabled()) {
-                       LOG.debug("Failed to fetch OIDC metadata from " + removeCRLF(oidcMetadataUrl), e);
-                   }
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Failed to fetch OIDC metadata from "
+                                + VerificationUtil.removeCRLF(oidcMetadataUrl), e);
+                    }
                 }
             }
 
@@ -1631,14 +1517,14 @@ public class VCVerificationServiceImpl implements VCVerificationService {
                             : authServer + "/.well-known/openid-configuration";
                     
                     try {
-                        JsonObject authServerMetadata = fetchJson(authServerMetadataUrl);
+                        JsonObject authServerMetadata = HttpClientUtil.fetchJson(authServerMetadataUrl);
                         if (authServerMetadata != null && authServerMetadata.has("jwks_uri")) {
                             return authServerMetadata.get("jwks_uri").getAsString();
                         }
                     } catch (Exception e) {
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("Failed to fetch OIDC metadata from auth server: " + 
-                            removeCRLF(authServerMetadataUrl), e);
+                            VerificationUtil.removeCRLF(authServerMetadataUrl), e);
                         }
                     }
                     
@@ -1658,74 +1544,136 @@ public class VCVerificationServiceImpl implements VCVerificationService {
         return null;
     }
 
-    /**
-     * Resolve public key from issuer URL using OID4VCI metadata and 
-     * Authorization Server fallback.
-     */
 
 
+    // -----------------------------------------------------------------------
+    // Unified VP verification entry-point
+    // -----------------------------------------------------------------------
+
     /**
-     * Fetch JSON content from a URL.
+     * {@inheritDoc}
      *
-     * @param urlString The URL to fetch from.
-     * @return The JSON object.
-     * @throws java.io.IOException If an I/O error occurs.
+     * <p>Implementation overview:
+     * <ol>
+     *   <li>Extract the VC format from {@code descriptor_map[0].format} inside
+     *       the supplied {@code submissionJson}.</li>
+     *   <li>Dispatch to the appropriate format-specific verifier.</li>
+     *   <li>Return a {@link VPVerificationResponseDTO} with the outcome.</li>
+     * </ol>
      */
-    @SuppressFBWarnings("URLCONNECTION_SSRF_FD")
-    private JsonObject fetchJson(final String urlString) throws java.io.IOException {
-        java.net.URI uri;
-        try {
-            uri = new java.net.URI(urlString);
-        } catch (java.net.URISyntaxException e) {
-            throw new java.io.IOException("Invalid URL: " + urlString, e);
-        }
-        if (!"http".equalsIgnoreCase(uri.getScheme()) && 
-                !"https".equalsIgnoreCase(uri.getScheme())) {
-            throw new java.io.IOException("Unsupported protocol: " + uri.getScheme());
-        }
+    @Override
+    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings("REC_CATCH_EXCEPTION")
+    public VPVerificationResponseDTO verifyPresentation(String vpToken,
+            String submissionJson,
+            String presentationDefinitionId,
+            int tenantId)
+            throws CredentialVerificationException {
 
-        if (uri.getHost() == null) {
-            throw new java.io.IOException("Invalid host in URL: " + urlString);
+        if (vpToken == null || vpToken.trim().isEmpty()) {
+            throw new CredentialVerificationException("vpToken must not be null or empty.");
         }
-
-        java.net.URL url = uri.toURL();
-        java.net.HttpURLConnection con = 
-                (java.net.HttpURLConnection) url.openConnection();
-        con.setRequestMethod("GET");
-        con.setConnectTimeout(HTTP_CONNECT_TIMEOUT);
-        con.setReadTimeout(HTTP_READ_TIMEOUT);
-
-        int status = con.getResponseCode();
-        if (status != HTTP_OK) {
-            return null;
+        if (submissionJson == null || submissionJson.trim().isEmpty()) {
+            throw new CredentialVerificationException(
+                    "submissionJson (presentation_submission) must not be null or empty.");
         }
 
-        try (java.io.BufferedReader in = new java.io.BufferedReader(
-                new java.io.InputStreamReader(
-                        con.getInputStream(), StandardCharsets.UTF_8))) {
-            String inputLine;
-            StringBuilder content = new StringBuilder();
-            while ((inputLine = in.readLine()) != null) {
-                content.append(inputLine);
+        // 1. Detect format from the presentation_submission descriptor_map.
+        String detectedFormat = VerificationUtil.extractFormatFromSubmission(submissionJson);
+
+        // 2. Resolve Presentation Definition JSON by ID (if provided and service is available).
+        String effectivePdJson = null;
+        if (presentationDefinitionId != null && !presentationDefinitionId.trim().isEmpty()
+                && presentationDefinitionService != null) {
+            try {
+                PresentationDefinition pd = presentationDefinitionService
+                        .getPresentationDefinitionById(presentationDefinitionId, tenantId);
+                if (pd != null) {
+                    effectivePdJson = PresentationDefinitionUtil.buildDefinitionJson(pd);
+                }
+            } catch (Exception e) {
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Could not resolve PresentationDefinition with ID: "
+                            + presentationDefinitionId + ". PD constraints will be skipped.", e);
+                }
             }
-            return JsonParser.parseString(content.toString()).getAsJsonObject();
+        }
+
+        // 3. Extract nonce and audience from the VP token so the caller (Authenticator)
+        //    can perform replay-attack validation.
+        String[] nonceAndAud = VerificationUtil.extractNonceAndAudienceFromVpToken(vpToken, detectedFormat);
+        String extractedNonce = nonceAndAud[0];
+        String extractedAudience = nonceAndAud[1];
+
+        try {
+            // 4. Route to format-specific verifier.
+            VPVerificationResponseDTO result;
+            if (VerificationUtil.NORMALIZED_VC_SD_JWT.equals(detectedFormat)) {
+                result = verifySdJwtPresentation(vpToken, effectivePdJson, detectedFormat);
+            } else {
+                result = verifyJwtOrJsonLdPresentation(vpToken, detectedFormat, effectivePdJson);
+            }
+
+            // 5. Re-wrap successful result to include extracted nonce / audience.
+            if (result.isValid()) {
+                return VPVerificationResponseDTO.success(
+                        result.getVerifiedClaims(), detectedFormat, extractedNonce, extractedAudience);
+            }
+            return result;
+        } catch (CredentialVerificationException e) {
+            return VPVerificationResponseDTO.failure(e.getMessage(), detectedFormat);
+        } catch (Exception e) {
+            return VPVerificationResponseDTO.failure(
+                    "Unexpected error during VP verification: " + e.getMessage(), detectedFormat);
         }
     }
-    
-
-
-
 
     /**
-     * Remove CRLF characters from a string to prevent log injection.
+     * Handle SD-JWT VP verification and wrap the result in a
+     * {@link VPVerificationResponseDTO}.
      *
-     * @param input The input string.
-     * @return The cleaned string.
+     * <p>Nonce and audience are <strong>not</strong> validated here; they are
+     * extracted by {@link #VerificationUtil.extractNonceAndAudienceFromVpToken} and returned in
+     * the DTO for the caller (Authenticator) to validate.
      */
-    private String removeCRLF(final String input) {
-        if (input == null) {
-            return null;
-        }
-        return input.replace('\n', '_').replace('\r', '_');
+    private VPVerificationResponseDTO verifySdJwtPresentation(String vpToken,
+            String pdJson,
+            String detectedFormat)
+            throws CredentialVerificationException {
+
+        // Pass null for nonce/audience — caller is responsible for those checks.
+        Map<String, Object> verifiedClaims = verifySdJwtToken(
+                vpToken, null, null, pdJson != null ? pdJson : "");
+        return VPVerificationResponseDTO.success(verifiedClaims, detectedFormat);
     }
+
+    /**
+     * Handle JWT-VP / JSON-LD VP verification and wrap the result in a
+     * {@link VPVerificationResponseDTO}.
+     *
+     * <p>Steps:
+     * <ol>
+     *   <li>Verify the VP token (signature + credential verification).</li>
+     *   <li>Extract {@code credentialSubject} claims from the VP payload.</li>
+     *   <li>Optionally enforce Presentation Definition constraints.</li>
+     * </ol>
+     */
+    private VPVerificationResponseDTO verifyJwtOrJsonLdPresentation(String vpToken,
+            String detectedFormat,
+            String pdJson)
+            throws CredentialVerificationException {
+
+        // Verify signature / credentials inside the VP.
+        verifyVPToken(vpToken);
+
+        // Extract claims from the VP payload.
+        Map<String, Object> verifiedClaims = VerificationUtil.extractClaimsFromVpToken(vpToken, detectedFormat);
+
+        // Enforce PD constraints if a definition was provided.
+        if (pdJson != null && !pdJson.isEmpty()) {
+            verifyClaimsAgainstDefinition(verifiedClaims, pdJson);
+        }
+
+        return VPVerificationResponseDTO.success(verifiedClaims, detectedFormat);
+    }
+
 }

@@ -165,21 +165,15 @@ public final class VPSubmissionValidator {
             return;
         }
 
-        // Check if it's a JSON object (JSON-LD VP)
-        if (trimmed.startsWith("{")) {
-            validateJsonLdVP(trimmed);
-            return;
-        }
-
-        // Check if it's SD-JWT (contains ~)
-        if (trimmed.contains("~")) {
+        String format = VerificationUtil.detectFormat(trimmed);
+        if (VerificationUtil.CONTENT_TYPE_SD_JWT.equals(format)) {
             validateSdJwtVP(trimmed);
             return;
-        }
-
-        // Check if it's JWT format
-        if (isJwtFormat(trimmed)) {
+        } else if (VerificationUtil.CONTENT_TYPE_JWT.equals(format)) {
             validateJwtVP(trimmed);
+            return;
+        } else if (VerificationUtil.CONTENT_TYPE_VC_LD_JSON.equals(format) && trimmed.startsWith("{")) {
+            validateJsonLdVP(trimmed);
             return;
         }
 
@@ -287,7 +281,7 @@ public final class VPSubmissionValidator {
         }
 
         // First part should be a valid JWT
-        if (!isJwtFormat(parts[0])) {
+        if (StringUtils.isBlank(parts[0]) || parts[0].split("\\.").length != 3) {
             throw new VPSubmissionValidationException(
                     "SD-JWT issuer-signed part is not valid JWT");
         }
@@ -317,20 +311,7 @@ public final class VPSubmissionValidator {
         }
     }
 
-    /**
-     * Check if string is valid JWT format.
-     *
-     * @param str String to check
-     * @return true if JWT format
-     */
-    private static boolean isJwtFormat(final String str) {
 
-        if (StringUtils.isBlank(str)) {
-            return false;
-        }
-        String[] parts = str.split("\\.");
-        return parts.length == 3;
-    }
 
     /**
      * Check if string is valid Base64URL.

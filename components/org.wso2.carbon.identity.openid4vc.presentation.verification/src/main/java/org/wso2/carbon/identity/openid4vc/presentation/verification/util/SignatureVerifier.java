@@ -29,7 +29,6 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.CredentialVerificationException;
 
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
@@ -66,14 +65,14 @@ public class SignatureVerifier {
         if (jwt == null || publicKey == null || algorithm == null) {
             if (LOG.isDebugEnabled()) {
                 LOG.debug("verifyJwtSignature called with missing params. jwt=" + (jwt != null) +
-                        ", key=" + (publicKey != null) + ", alg=" + removeCRLF(algorithm));
+                        ", key=" + (publicKey != null) + ", alg=" + VerificationUtil.removeCRLF(algorithm));
             }
             throw new CredentialVerificationException("JWT, public key, and algorithm are required");
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("verifyJwtSignature called with algorithm: " + removeCRLF(algorithm));
-            LOG.debug("PublicKey: " + removeCRLF(String.valueOf(publicKey)));
+            LOG.debug("verifyJwtSignature called with algorithm: " + VerificationUtil.removeCRLF(algorithm));
+            LOG.debug("PublicKey: " + VerificationUtil.removeCRLF(String.valueOf(publicKey)));
         }
 
         String[] parts = jwt.split("\\.");
@@ -106,15 +105,16 @@ public class SignatureVerifier {
             } else {
                 // Fallback to JCA for EdDSA and other key types.
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug("Falling back to JCA for key type: " + removeCRLF(publicKey.getAlgorithm()));
+                    LOG.debug("Falling back to JCA for key type: "
+                            + VerificationUtil.removeCRLF(publicKey.getAlgorithm()));
                 }
                 result = verifyJwtSignatureWithJca(parts, publicKey, algorithm);
             }
 
             if (!result) {
-                LOG.info("JWT signature verification failed: algorithm=" + removeCRLF(algorithm)
+                LOG.info("JWT signature verification failed: algorithm=" + VerificationUtil.removeCRLF(algorithm)
                         + ", keyType=" + publicKey.getAlgorithm()
-                        + ", jwtHeader=" + removeCRLF(Base64URL.from(parts[0]).decodeToString()));
+                        + ", jwtHeader=" + VerificationUtil.removeCRLF(Base64URL.from(parts[0]).decodeToString()));
             }
             return result;
 
@@ -143,7 +143,7 @@ public class SignatureVerifier {
             String jcaAlgorithm = getJcaAlgorithm(algorithm);
 
             if (LOG.isDebugEnabled()) {
-                LOG.debug("JCA verification: jcaAlgorithm=" + removeCRLF(jcaAlgorithm)
+                LOG.debug("JCA verification: jcaAlgorithm=" + VerificationUtil.removeCRLF(jcaAlgorithm)
                         + ", signingInputLength=" + signingInput.length()
                         + ", signatureBytesLength=" + signatureBytes.length);
             }
@@ -271,7 +271,7 @@ public class SignatureVerifier {
         String algorithm = extractAlgorithmFromHeader(headerJson);
 
         // For detached JWS, create the payload from the document
-        byte[] documentHash = hashDocument(document, "SHA-256");
+        byte[] documentHash = VerificationUtil.hashDocument(document, "SHA-256");
         String encodedPayload = Base64.getUrlEncoder().withoutPadding()
                 .encodeToString(documentHash);
 
@@ -299,7 +299,7 @@ public class SignatureVerifier {
         byte[] signatureBytes = decodeProofValue(proofValue);
 
         // Hash the document
-        byte[] documentHash = hashDocument(document, "SHA-256");
+        byte[] documentHash = VerificationUtil.hashDocument(document, "SHA-256");
 
         // Verify using ECDSA
         Signature sig = Signature.getInstance("SHA256withECDSA");
@@ -323,7 +323,7 @@ public class SignatureVerifier {
 
         byte[] signatureBytes = decodeProofValue(proofValue);
 
-        byte[] documentHash = hashDocument(document, "SHA-256");
+        byte[] documentHash = VerificationUtil.hashDocument(document, "SHA-256");
 
         // Try to determine algorithm from key type
         String algorithm;
@@ -340,14 +340,6 @@ public class SignatureVerifier {
         sig.update(documentHash);
 
         return sig.verify(signatureBytes);
-    }
-
-    /**
-     * Hash a document using the specified algorithm.
-     */
-    private byte[] hashDocument(String document, String algorithm) throws Exception {
-        MessageDigest digest = MessageDigest.getInstance(algorithm);
-        return digest.digest(document.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -542,13 +534,4 @@ public class SignatureVerifier {
         return decoded;
     }
 
-    /**
-     * Remove CRLF characters from a string to prevent log injection.
-     */
-    private String removeCRLF(String input) {
-        if (input == null) {
-            return null;
-        }
-        return input.replace('\n', '_').replace('\r', '_');
-    }
 }

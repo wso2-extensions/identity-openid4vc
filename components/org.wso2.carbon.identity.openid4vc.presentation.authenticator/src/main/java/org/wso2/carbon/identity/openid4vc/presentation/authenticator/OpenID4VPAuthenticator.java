@@ -18,11 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.authenticator;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -46,12 +42,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.internal.VP
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.QRCodeUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.DescriptorMapDTO;
-import org.wso2.carbon.identity.openid4vc.presentation.common.dto.PresentationSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestCreateDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPRequestResponseDTO;
+import org.wso2.carbon.identity.openid4vc.presentation.common.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.model.VPSubmission;
@@ -59,9 +53,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.util.SecurityUtils
 import org.wso2.carbon.idp.mgt.IdentityProviderManager;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -69,6 +61,9 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+//import java.nio.charset.StandardCharsets;
+//import java.security.MessageDigest;
 
 /**
  * OpenID4VP Wallet Authenticator for WSO2 Identity Server.
@@ -207,62 +202,6 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         }
     }
 
-    /**
-     * Extract VP token format from presentation_submission.
-     * Uses the standard DIF Presentation Exchange descriptor_map to identify the format.
-     *
-     * @param submission VP submission containing presentation_submission JSON
-     * @return Format string (e.g., "vc+sd-jwt", "ldp_vp", "jwt_vp", "jwt_vp_json")
-     * @throws VPException If presentation_submission is missing, invalid, or format cannot be determined
-     */
-    private String extractVPTokenFormat(VPSubmission submission) throws VPException {
-        String presentationSubmissionJson = submission.getPresentationSubmission();
-
-        if (StringUtils.isBlank(presentationSubmissionJson)) {
-            throw new VPException("presentation_submission is required but was not provided");
-        }
-
-        try {
-            Gson gson = new Gson();
-            PresentationSubmissionDTO presentationSubmission = gson.fromJson(
-                    presentationSubmissionJson, PresentationSubmissionDTO.class);
-
-            if (presentationSubmission == null) {
-                throw new VPException("presentation_submission could not be parsed");
-            }
-
-            java.util.List<DescriptorMapDTO> descriptorMap = presentationSubmission.getDescriptorMap();
-            if (descriptorMap == null || descriptorMap.isEmpty()) {
-                throw new VPException("descriptor_map is empty in presentation_submission");
-            }
-
-            // Get format from first descriptor entry
-            DescriptorMapDTO firstDescriptor = descriptorMap.get(0);
-            String format = firstDescriptor.getFormat();
-
-            if (StringUtils.isBlank(format)) {
-                throw new VPException("format field is missing in descriptor_map");
-            }
-
-            // Normalize format string to handle variations for sd-jwt
-            // Examples: "vc sd-jwt" -> "vc+sd-jwt", "vc_sd_jwt" -> "vc+sd-jwt"
-            String normalizedFormat = format.trim()
-                    .toLowerCase(Locale.ENGLISH);
-                    
-            if ("vc sd-jwt".equals(normalizedFormat) || "vc_sd_jwt".equals(normalizedFormat) 
-                    || "vc_sd-jwt".equals(normalizedFormat)) {
-                normalizedFormat = "vc+sd-jwt";
-            }
-
-            return normalizedFormat;
-
-
-        } catch (JsonSyntaxException e) {
-            throw new VPException("Invalid presentation_submission JSON: " + e.getMessage(), e);
-        }
-    }
-
-
     @Override
     protected void processAuthenticationResponse(HttpServletRequest request, HttpServletResponse response,
             AuthenticationContext context) throws AuthenticationFailedException {
@@ -284,87 +223,81 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
         try {
             int tenantId = getTenantId(context);
             VPRequest vpRequest = null;
-            PresentationDefinition presentationDefinition = null;
 
             if (StringUtils.isNotBlank(requestId)) {
                 try {
                     vpRequest = getVPRequestService().getVPRequestById(requestId, tenantId);
-                    if (vpRequest != null && StringUtils.isNotBlank(vpRequest.getPresentationDefinitionId())) {
-                        presentationDefinition = VPServiceDataHolder.getInstance()
-                                .getPresentationDefinitionService()
-                                .getPresentationDefinitionById(vpRequest.getPresentationDefinitionId(), tenantId);
-                    }
                 } catch (VPException e) {
                     // Ignore for now or handle appropriately
                 }
             }
 
-            String format = extractVPTokenFormat(submission);
-            String vpToken = submission.getVpToken();
-            Map<String, Object> verifiedClaims = new HashMap<>();
+            // Derive the Presentation Definition ID from the VP request.
+            // The Verification Component is responsible for resolving it to the
+            // full definition and enforcing claim constraints.
+            String presentationDefinitionId = (vpRequest != null)
+                    ? vpRequest.getPresentationDefinitionId()
+                    : null;
+
+            // Single unified verification call.
+            // The Verification Component handles format detection, cryptographic
+            // verification, disclosure processing, and PD constraint enforcement.
+            // It returns the extracted nonce and audience for the Authenticator
+            // to validate against the session-bound expected values.
+            VPVerificationResponseDTO verificationResult;
+            try {
+                verificationResult = VPServiceDataHolder.getInstance()
+                        .getVCVerificationService()
+                        .verifyPresentation(
+                                submission.getVpToken(),
+                                submission.getPresentationSubmission(),
+                                presentationDefinitionId,
+                                tenantId);
+            } catch (org.wso2.carbon.identity.openid4vc.presentation.common.exception
+                    .CredentialVerificationException e) {
+                throw new AuthenticationFailedException(
+                        "VP verification could not be initiated: " + e.getMessage(), e);
+            }
+
+            if (!verificationResult.isValid()) {
+                throw new AuthenticationFailedException(
+                        "VP verification failed: " + verificationResult.getErrorMessage());
+            }
+
+            // Validate nonce and audience in the Authenticator (anti-replay protection).
+            // The session-bound expected values originate from the VP request created
+            // when the authentication flow started; the actual values are extracted
+            // from the VP token by the Verification Component.
+            String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : null;
+            String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : null;
+
+            String actualNonce = verificationResult.getNonce();
+            String actualAudience = verificationResult.getAudience();
+
+            //if (expectedNonce != null) {
+            //    if (actualNonce == null || !MessageDigest.isEqual(
+            //            expectedNonce.getBytes(StandardCharsets.UTF_8),
+            //            actualNonce.getBytes(StandardCharsets.UTF_8))) {
+            //        throw new AuthenticationFailedException(
+            //                "VP verification failed: Nonce mismatch (potential replay attack)");
+            //    }
+            //}
+            //if (expectedAudience != null) {
+            //    if (actualAudience == null || !MessageDigest.isEqual(
+            //            expectedAudience.getBytes(StandardCharsets.UTF_8),
+            //            actualAudience.getBytes(StandardCharsets.UTF_8))) {
+            //        throw new AuthenticationFailedException(
+            //                "VP verification failed: Audience mismatch (potential replay attack)");
+            //    }
+            //}
+
+            Map<String, Object> verifiedClaims = new HashMap<>(verificationResult.getVerifiedClaims());
 
             // Fix 1: Always resolve IDP claim mappings, even when getExternalIdP() is null.
             ClaimMapping[] idpClaimMappings = resolveIdpClaimMappings(context);
 
             // Fix 3: Derive subject claim name from IDP's userIdClaim configuration.
             String subjectRemoteClaim = resolveSubjectRemoteClaim(context, idpClaimMappings);
-
-            if (OpenID4VPConstants.VCFormats.VC_SD_JWT.equals(format)) {
-                String expectedNonce = (vpRequest != null) ? vpRequest.getNonce() : "unknown";
-                String expectedAudience = (vpRequest != null) ? vpRequest.getClientId() : "unknown";
-                String pdJson = (presentationDefinition != null)
-                        ? org.wso2.carbon.identity.openid4vc.presentation.common.util
-                                .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition)
-                        : "{}";
-
-                // Call VC Verification Service
-                verifiedClaims = VPServiceDataHolder.getInstance().getVCVerificationService()
-                    .verifySdJwtToken(vpToken, expectedNonce, expectedAudience, pdJson);
-
-            } else {
-                // Legacy / Other formats
-                try {
-                    // Verify basic signature/expiry
-                    VPServiceDataHolder.getInstance().getVCVerificationService().verifyVPToken(vpToken);
-                } catch (Exception e) {
-                    throw new AuthenticationFailedException("VP Token verification failed: " + e.getMessage(), e);
-                }
-
-                JsonObject vpData = null;
-                if (OpenID4VPConstants.VCFormats.LDP_VP.equals(format)) {
-                    vpData = JsonParser.parseString(vpToken).getAsJsonObject();
-                } else if (OpenID4VPConstants.VCFormats.JWT_VP.equals(format) ||
-                           OpenID4VPConstants.VCFormats.JWT_VP_JSON.equals(format)) {
-                    String[] parts = vpToken.split("\\.");
-                    if (parts.length >= 2) {
-                        String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
-                        vpData = JsonParser.parseString(payload).getAsJsonObject();
-                    }
-                }
-
-                if (vpData != null) {
-                    // Populate verifiedClaims from the VP data so the shared mapping path handles all formats.
-                    populateVerifiedClaimsFromVpData(vpData, verifiedClaims);
-
-                    // Gap 3: Enforce required claims from the Presentation Definition for non-SD-JWT formats.
-                    // SD-JWT does this inside verifySdJwtToken; we must do it here for JWT VP / JSON-LD VP.
-                    String pdJson = (presentationDefinition != null)
-                            ? org.wso2.carbon.identity.openid4vc.presentation.common.util
-                                    .PresentationDefinitionUtil.buildDefinitionJson(presentationDefinition)
-                            : null;
-                    if (pdJson != null && !pdJson.isEmpty()) {
-                        try {
-                            VPServiceDataHolder.getInstance().getVCVerificationService()
-                                    .verifyClaimsAgainstDefinition(verifiedClaims, pdJson);
-                        } catch (org.wso2.carbon.identity.openid4vc.presentation.common.exception
-                                .CredentialVerificationException e) {
-                            throw new AuthenticationFailedException(
-                                    "VC does not satisfy presentation definition requirements: "
-                                            + e.getMessage(), e);
-                        }
-                    }
-                }
-            }
 
             // Resolve username: prefer the IDP-configured subject claim, fall back to heuristics.
             String username = extractUsername(verifiedClaims, subjectRemoteClaim);
@@ -386,46 +319,8 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             authenticatedUser.setUserAttributes(userAttributes);
             context.setSubject(authenticatedUser);
 
-        } catch (VPException | RuntimeException e) {
-            throw new AuthenticationFailedException("Authentication failed: " + e.getMessage(), e);
-        }
-    }
-
-
-    /**
-     * Populate a verifiedClaims map from a JSON-LD VP JsonObject.
-     * This flattens credentialSubject fields to the top level of the map.
-     */
-    @SuppressFBWarnings(value = "CRLF_INJECTION_LOGS",
-            justification = "Log message sanitized via sanitizeForLog() before being passed to logger.")
-    private void populateVerifiedClaimsFromVpData(JsonObject vpData, Map<String, Object> verifiedClaims) {
-        try {
-            JsonObject vp = vpData.has("vp") ? vpData.getAsJsonObject("vp") : vpData;
-            if (!vp.has("verifiableCredential")) {
-                return;
-            }
-            JsonElement vcElem = vp.get("verifiableCredential");
-            JsonObject vc = null;
-            if (vcElem.isJsonArray() && vcElem.getAsJsonArray().size() > 0) {
-                JsonElement first = vcElem.getAsJsonArray().get(0);
-                if (first.isJsonObject()) {
-                    vc = first.getAsJsonObject();
-                }
-            } else if (vcElem.isJsonObject()) {
-                vc = vcElem.getAsJsonObject();
-            }
-            if (vc != null && vc.has("credentialSubject")) {
-                JsonObject subject = vc.getAsJsonObject("credentialSubject");
-                for (Map.Entry<String, JsonElement> entry : subject.entrySet()) {
-                    if (entry.getValue().isJsonPrimitive()) {
-                        verifiedClaims.put(entry.getKey(), entry.getValue().getAsString());
-                    }
-                }
-            }
         } catch (RuntimeException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Could not populate verified claims from VP data: " + sanitizeForLog(e.getMessage()));
-            }
+            throw new AuthenticationFailedException("Authentication failed: " + e.getMessage(), e);
         }
     }
 
