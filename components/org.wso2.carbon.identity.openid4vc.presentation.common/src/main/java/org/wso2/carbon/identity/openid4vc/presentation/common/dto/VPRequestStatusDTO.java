@@ -38,26 +38,6 @@ public class VPRequestStatusDTO {
     public VPRequestStatusDTO() {
     }
 
-    /**
-     * Constructor with status.
-     *
-     * @param status The status value
-     */
-    public VPRequestStatusDTO(VPRequestStatus status) {
-        this.status = status != null ? status.getValue() : null;
-    }
-
-    /**
-     * Constructor with status and request ID.
-     *
-     * @param status    The status value
-     * @param requestId The request ID
-     */
-    public VPRequestStatusDTO(VPRequestStatus status, String requestId) {
-        this.status = status != null ? status.getValue() : null;
-        this.requestId = requestId;
-    }
-
     // Getters and Setters
 
     public String getStatus() {
@@ -78,15 +58,6 @@ public class VPRequestStatusDTO {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
-    }
-
-    /**
-     * Get the status as VPRequestStatus enum.
-     *
-     * @return VPRequestStatus enum or null
-     */
-    public VPRequestStatus getStatusEnum() {
-        return VPRequestStatus.fromValue(status);
     }
 
     @Override

@@ -50,30 +50,6 @@ public final class ErrorDTO {
     }
 
     /**
-     * Constructor with error code.
-     *
-     * @param code Error code enum
-     */
-    public ErrorDTO(final ErrorCode code) {
-
-        this.error = code.getError();
-        this.errorDescription = code.getDescription();
-        this.errorCode = code.name();
-    }
-
-    /**
-     * Constructor with custom error and description.
-     *
-     * @param err  Error type
-     * @param desc Error description
-     */
-    public ErrorDTO(final String err, final String desc) {
-
-        this.error = err;
-        this.errorDescription = desc;
-    }
-
-    /**
      * Constructor with error code and custom description.
      *
      * @param code          Error code enum

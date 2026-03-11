@@ -107,16 +107,8 @@ public class VPRequestCreateDTO {
         this.nonce = nonce;
     }
 
-    public String getResponseMode() {
-        return responseMode;
-    }
-
     public void setResponseMode(String responseMode) {
         this.responseMode = responseMode;
-    }
-
-    public String getDidMethod() {
-        return didMethod;
     }
 
     public void setDidMethod(String didMethod) {
@@ -144,15 +136,6 @@ public class VPRequestCreateDTO {
         boolean hasPdId = presentationDefinitionId != null && !presentationDefinitionId.trim().isEmpty();
         boolean hasPd = presentationDefinition != null;
         return hasPdId || hasPd;
-    }
-
-    /**
-     * Check if this request uses inline presentation definition.
-     *
-     * @return true if inline presentation definition is provided
-     */
-    public boolean hasInlinePresentationDefinition() {
-        return presentationDefinition != null;
     }
 
     @Override

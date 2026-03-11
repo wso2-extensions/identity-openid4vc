@@ -39,34 +39,6 @@ public class PathNestedDTO {
     private String path;
 
     /**
-     * Default constructor.
-     */
-    public PathNestedDTO() {
-    }
-
-    /**
-     * Constructor with all fields.
-     *
-     * @param credFormat Credential format
-     * @param jsonPath   Path to nested credential
-     */
-    public PathNestedDTO(final String credFormat, final String jsonPath) {
-
-        this.format = credFormat;
-        this.path = jsonPath;
-    }
-
-    /**
-     * Copy constructor.
-     *
-     * @param nested PathNestedDTO to copy
-     */
-    public PathNestedDTO(PathNestedDTO nested) {
-        this.format = nested.format;
-        this.path = nested.path;
-    }
-
-    /**
      * Get the format.
      *
      * @return Credential format

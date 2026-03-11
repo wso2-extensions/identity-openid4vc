@@ -47,32 +47,6 @@ public class VPSubmissionDTO {
     public VPSubmissionDTO() {
     }
 
-    /**
-     * Constructor for successful VP submission.
-     *
-     * @param vpToken                VP token from wallet
-     * @param presentationSubmission Presentation submission descriptor
-     * @param state                  State parameter (request ID)
-     */
-    public VPSubmissionDTO(String vpToken, JsonObject presentationSubmission, String state) {
-        this.vpToken = vpToken;
-        this.presentationSubmission = presentationSubmission != null ? presentationSubmission.deepCopy() : null;
-        this.state = state;
-    }
-
-    /**
-     * Constructor for error submission.
-     *
-     * @param state            State parameter (request ID)
-     * @param error            Error code
-     * @param errorDescription Error description
-     */
-    public VPSubmissionDTO(String state, String error, String errorDescription) {
-        this.state = state;
-        this.error = error;
-        this.errorDescription = errorDescription;
-    }
-
     // Getters and Setters
 
     public String getVpToken() {

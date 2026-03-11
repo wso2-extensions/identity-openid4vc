@@ -30,8 +30,6 @@ import java.util.Arrays;
  */
 public class VCVerificationResultDTO {
 
-    private static final long serialVersionUID = 1L;
-
     @SerializedName("vcIndex")
     private int vcIndex;
 
@@ -179,48 +177,24 @@ public class VCVerificationResultDTO {
         this.issuer = issuer;
     }
 
-    public String[] getCredentialTypes() {
-        return credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : new String[0];
-    }
-
     public void setCredentialTypes(String[] credentialTypes) {
         this.credentialTypes = credentialTypes != null ? Arrays.copyOf(credentialTypes, credentialTypes.length) : null;
-    }
-
-    public String getIssuerId() {
-        return issuerId;
     }
 
     public void setIssuerId(String issuerId) {
         this.issuerId = issuerId;
     }
 
-    public String getSubject() {
-        return subject;
-    }
-
     public void setSubject(String subject) {
         this.subject = subject;
-    }
-
-    public String getIssuanceDate() {
-        return issuanceDate;
     }
 
     public void setIssuanceDate(String issuanceDate) {
         this.issuanceDate = issuanceDate;
     }
 
-    public String getExpirationDate() {
-        return expirationDate;
-    }
-
     public void setExpirationDate(String expirationDate) {
         this.expirationDate = expirationDate;
-    }
-
-    public String getCredentialId() {
-        return credentialId;
     }
 
     public void setCredentialId(String credentialId) {
@@ -235,10 +209,6 @@ public class VCVerificationResultDTO {
         this.format = format;
     }
 
-    public Boolean getSignatureValid() {
-        return signatureValid;
-    }
-
     public void setSignatureValid(Boolean signatureValid) {
         this.signatureValid = signatureValid;
     }
@@ -251,10 +221,6 @@ public class VCVerificationResultDTO {
         this.expired = expired;
     }
 
-    public Boolean getRevoked() {
-        return revoked;
-    }
-
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
     }
@@ -265,10 +231,6 @@ public class VCVerificationResultDTO {
 
     public void setError(String error) {
         this.error = error;
-    }
-
-    public String getErrorDetails() {
-        return errorDetails;
     }
 
     public void setErrorDetails(String errorDetails) {
@@ -301,53 +263,8 @@ public class VCVerificationResultDTO {
 
         private final VCVerificationResultDTO dto = new VCVerificationResultDTO();
 
-        public Builder vcIndex(int vcIndex) {
-            dto.setVcIndex(vcIndex);
-            return this;
-        }
-
-        public Builder verificationStatus(VCVerificationStatus status) {
-            dto.setVerificationStatus(status);
-            return this;
-        }
-
-        public Builder credentialType(String credentialType) {
-            dto.setCredentialType(credentialType);
-            return this;
-        }
-
-        public Builder credentialTypes(String[] credentialTypes) {
-            dto.setCredentialTypes(credentialTypes);
-            return this;
-        }
-
         public Builder issuer(String issuer) {
             dto.setIssuer(issuer);
-            return this;
-        }
-
-        public Builder issuerId(String issuerId) {
-            dto.setIssuerId(issuerId);
-            return this;
-        }
-
-        public Builder subject(String subject) {
-            dto.setSubject(subject);
-            return this;
-        }
-
-        public Builder issuanceDate(String issuanceDate) {
-            dto.setIssuanceDate(issuanceDate);
-            return this;
-        }
-
-        public Builder expirationDate(String expirationDate) {
-            dto.setExpirationDate(expirationDate);
-            return this;
-        }
-
-        public Builder credentialId(String credentialId) {
-            dto.setCredentialId(credentialId);
             return this;
         }
 
@@ -356,28 +273,13 @@ public class VCVerificationResultDTO {
             return this;
         }
 
-        public Builder signatureValid(Boolean signatureValid) {
-            dto.setSignatureValid(signatureValid);
-            return this;
-        }
-
         public Builder expired(Boolean expired) {
             dto.setExpired(expired);
             return this;
         }
 
-        public Builder revoked(Boolean revoked) {
-            dto.setRevoked(revoked);
-            return this;
-        }
-
         public Builder error(String error) {
             dto.setError(error);
-            return this;
-        }
-
-        public Builder errorDetails(String errorDetails) {
-            dto.setErrorDetails(errorDetails);
             return this;
         }
 

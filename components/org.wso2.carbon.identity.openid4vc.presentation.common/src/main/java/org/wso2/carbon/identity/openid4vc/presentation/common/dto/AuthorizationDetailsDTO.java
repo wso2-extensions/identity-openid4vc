@@ -83,10 +83,6 @@ public class AuthorizationDetailsDTO {
         this.clientId = clientId;
     }
 
-    public String getResponseType() {
-        return responseType;
-    }
-
     public void setResponseType(String responseType) {
         this.responseType = responseType;
     }
