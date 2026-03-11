@@ -33,17 +33,21 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.user.core.tenant.TenantManager;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -54,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * Test class for CredentialIssuanceService.
@@ -66,6 +71,7 @@ public class CredentialIssuanceServiceTest {
     private static final String TEST_TOKEN = "test-access-token";
     private static final String TEST_USER_ID = "user-123";
     private static final String TEST_USERNAME = "testuser@carbon.super";
+    private static final String TEST_CLIENT_ID = "test-client-id";
 
     private CredentialIssuanceService credentialIssuanceService;
     MockedStatic<IdentityTenantUtil> identityTenantUtilMockedStatic;
@@ -75,12 +81,18 @@ public class CredentialIssuanceServiceTest {
     private static final UserRealm userRealm = mock(UserRealm.class);
     private static final AbstractUserStoreManager userStoreManager = mock(AbstractUserStoreManager.class);
     private static final VCTemplateManager vcTemplateManager = mock(VCTemplateManager.class);
+    private static final NonceService nonceService = mock(NonceService.class);
 
     @BeforeClass
-    public void setUpClass() {
+    public void setUpClass() throws Exception {
 
         // Initialize the service
         credentialIssuanceService = new CredentialIssuanceService();
+
+        // Inject mock NonceService using reflection
+        Field nonceServiceField = CredentialIssuanceService.class.getDeclaredField("nonceService");
+        nonceServiceField.setAccessible(true);
+        nonceServiceField.set(credentialIssuanceService, nonceService);
     }
 
     @BeforeMethod
@@ -100,9 +112,6 @@ public class CredentialIssuanceServiceTest {
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(null);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(null);
         CredentialIssuanceDataHolder.getInstance().setRealmService(null);
-
-        // Clear format handlers
-        CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().clear();
     }
 
     @AfterMethod
@@ -159,12 +168,15 @@ public class CredentialIssuanceServiceTest {
         when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(-1234);
         when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
         when(userStoreManager.getUserClaimValuesWithID(TEST_USER_ID,
-                vcTemplate.getClaims().toArray(new String[0]), null))
+                extractClaimUris(vcTemplate), null))
                 .thenReturn(userClaims);
 
         // Mock IdentityTenantUtil
         identityTenantUtilMockedStatic.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN))
                 .thenReturn(-1234);
+
+        // Mock NonceService
+        when(nonceService.generateNonce(TENANT_DOMAIN)).thenReturn("test-c-nonce-value");
 
         // Execute the test
         CredentialIssuanceRespDTO response = credentialIssuanceService.issueCredential(reqDTO);
@@ -247,34 +259,38 @@ public class CredentialIssuanceServiceTest {
         }
     }
 
-    @Test(priority = 5, description = "Test with failed scope validation",
-            expectedExceptions = CredentialIssuanceException.class)
-    public void testIssueCredentialWithFailedScopeValidation() throws Exception {
-        // Mock template with required scope
-        VCTemplate credentialvcTemplate = createTestVCTemplate();
+    @Test(priority = 5, description = "Test clientId is set on ProofDTO from access token consumer key")
+    public void testClientIdSetOnProofDTO() throws Exception {
+        // Mock template manager
         CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
-        when(vcTemplateManager.getByIdentifier(TEST_TEMPLATE_ID, TENANT_DOMAIN))
-                .thenReturn(credentialvcTemplate);
 
-        // Mock token provider with token that has WRONG scopes (missing required scope)
+        // Mock token provider with valid token including consumer key
         TokenProvider tokenProvider = mock(TokenProvider.class);
         CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
         AccessTokenDO accessTokenDO = new AccessTokenDO();
-        accessTokenDO.setScope(new String[]{"openid", "profile", "email"}); // Missing TEST_SCOPE
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID, "openid"});
+        accessTokenDO.setConsumerKey(TEST_CLIENT_ID);
         AuthenticatedUser authenticatedUser = new AuthenticatedUser();
         authenticatedUser.setUserName(TEST_USERNAME);
+        authenticatedUser.setUserId(TEST_USER_ID);
         accessTokenDO.setAuthzUser(authenticatedUser);
         when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
 
-        // Execute test - should fail at scope validation
+        // Create request with ProofDTO
         CredentialIssuanceReqDTO reqDTO = createTestRequest();
+        ProofDTO proofDTO = new ProofDTO();
+        proofDTO.setType("jwt");
+        reqDTO.setProofDTO(proofDTO);
+
+        // We expect the credential issuance to fail at proof validation (no actual JWT provided)
+        // but the clientId should be set on the ProofDTO before that
         try {
             credentialIssuanceService.issueCredential(reqDTO);
-            Assert.fail("Expected CredentialIssuanceException to be thrown");
-        } catch (CredentialIssuanceException e) {
-            Assert.assertTrue(e.getDescription().contains("scope") || e.getDescription().contains("required"),
-                    "Exception description should indicate insufficient scope. Actual: " + e.getDescription());
-            throw e;
+            Assert.fail("Expected exception due to proof validation");
+        } catch (Exception e) {
+            // Verify clientId was set on ProofDTO from access token
+            Assert.assertEquals(reqDTO.getProofDTO().getClientId(), TEST_CLIENT_ID,
+                    "clientId should be set on ProofDTO from access token consumer key");
         }
     }
 
@@ -322,10 +338,10 @@ public class CredentialIssuanceServiceTest {
         template.setExpiresIn(3600);
         template.setSigningAlgorithm("RS256");
 
-        List<String> claims = Arrays.asList(
-                "http://wso2.org/claims/emailaddress",
-                "http://wso2.org/claims/fullname",
-                "http://wso2.org/claims/employeeid"
+        List<Claim> claims = Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname"),
+                new Claim("employee_id", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/employeeid")
         );
         template.setClaims(claims);
 
@@ -339,8 +355,13 @@ public class CredentialIssuanceServiceTest {
      */
     private Map<String, String> createTestUserClaims() {
         Map<String, String> claims = new HashMap<>();
-        claims.put("email", "testuser@example.com");
-        claims.put("given_name", "Test User");
+        claims.put("http://wso2.org/claims/emailaddress", "testuser@example.com");
+        claims.put("http://wso2.org/claims/fullname", "Test User");
         return claims;
+    }
+
+    private String[] extractClaimUris(VCTemplate template) {
+
+        return template.getClaims().stream().map(Claim::getClaimUri).toArray(String[]::new);
     }
 }

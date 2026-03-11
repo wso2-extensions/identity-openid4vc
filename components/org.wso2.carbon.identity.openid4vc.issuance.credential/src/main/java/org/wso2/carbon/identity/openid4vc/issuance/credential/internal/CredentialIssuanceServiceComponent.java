@@ -30,6 +30,10 @@ import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.CredentialIssuanceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.JwtVcJsonFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.impl.SdJwtVcFormatHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.impl.JwtProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
@@ -44,18 +48,27 @@ public class CredentialIssuanceServiceComponent {
 
     private static final Log LOG = LogFactory.getLog(CredentialIssuanceServiceComponent.class);
 
-
     protected void activate(ComponentContext context) {
 
         try {
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(CredentialIssuanceService.class, new CredentialIssuanceService(), null);
             bundleContext.registerService(CredentialFormatHandler.class, new JwtVcJsonFormatHandler(), null);
+            bundleContext.registerService(CredentialFormatHandler.class, new SdJwtVcFormatHandler(), null);
+            bundleContext.registerService(ProofValidator.class, new JwtProofValidator(), null);
+            bundleContext.registerService(NonceService.class, new NonceService(), null);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("OID4VCI credential issuance component activated");
             }
         } catch (Throwable throwable) {
             LOG.error("Error while activating CredentialIssuanceServiceComponent", throwable);
+        }
+    }
+
+    protected void deactivate(ComponentContext context) {
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("OID4VCI credential issuance component deactivated");
         }
     }
 
@@ -97,6 +110,29 @@ public class CredentialIssuanceServiceComponent {
             LOG.debug("Removing the CredentialFormatHandler Service : " + credentialFormatHandler.getFormat());
         }
         CredentialIssuanceDataHolder.getInstance().removeCredentialFormatHandler(credentialFormatHandler);
+    }
+
+    @Reference(
+            name = "openid4vc.issuance.credential.proof.validator",
+            service = ProofValidator.class,
+            cardinality = ReferenceCardinality.MULTIPLE,
+            policy = ReferencePolicy.DYNAMIC,
+            unbind = "removeProofValidator"
+    )
+    protected void addProofValidator(ProofValidator proofValidator) {
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Adding the ProofValidator Service : " + proofValidator.getType());
+        }
+        CredentialIssuanceDataHolder.getInstance().addProofValidator(proofValidator);
+    }
+
+    protected void removeProofValidator(ProofValidator proofValidator) {
+
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Removing the ProofValidator Service : " + proofValidator.getType());
+        }
+        CredentialIssuanceDataHolder.getInstance().removeProofValidator(proofValidator);
     }
 
     @Reference(

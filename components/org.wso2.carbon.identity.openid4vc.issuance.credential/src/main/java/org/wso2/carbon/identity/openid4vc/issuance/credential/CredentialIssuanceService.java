@@ -32,27 +32,34 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuer;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.CredentialIssuerContext;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.nonce.NonceService;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.util.CredentialIssuanceExceptionHandler;
+import org.wso2.carbon.identity.openid4vc.issuance.credential.validators.proof.ProofValidator;
 import org.wso2.carbon.identity.openid4vc.template.management.VCTemplateManager;
 import org.wso2.carbon.identity.openid4vc.template.management.exception.VCTemplateMgtException;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.core.UserRealm;
 import org.wso2.carbon.user.core.common.AbstractUserStoreManager;
 import org.wso2.carbon.user.core.service.RealmService;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants.CredentialIssuerMetadata.SUBJECT_IDENTIFIER;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INSUFFICIENT_SCOPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INTERNAL_SERVER_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_CREDENTIAL_REQUEST;
+import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_PROOF;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_TOKEN;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.UNKNOWN_CREDENTIAL_CONFIGURATION;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.USER_REALM_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.USER_STORE_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.VC_TEMPLATE_MANAGER_NOT_AVAILABLE;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * This class handles Verifiable Credential issuance service. This is responsible for issuing verifiable credentials
@@ -61,6 +68,7 @@ public class CredentialIssuanceService {
 
     private static final Log LOG = LogFactory.getLog(CredentialIssuanceService.class);
     private final CredentialIssuer credentialIssuer;
+    private final NonceService nonceService = new NonceService();
 
     public CredentialIssuanceService() {
 
@@ -89,6 +97,20 @@ public class CredentialIssuanceService {
 
         validateAccessToken(reqDTO);
 
+        if (reqDTO.getProofDTO() != null) {
+            if (reqDTO.getProofDTO().getType() == null) {
+                throw new CredentialIssuanceClientException(INVALID_PROOF, "Proof type is required");
+            }
+            List<ProofValidator> proofValidators = CredentialIssuanceDataHolder.getInstance()
+                    .getProofValidators();
+            ProofValidator proofValidator = proofValidators.stream()
+                    .filter(v -> reqDTO.getProofDTO().getType().equals(v.getType()))
+                    .findFirst()
+                    .orElseThrow(() -> new CredentialIssuanceClientException(INVALID_PROOF,
+                            "Unsupported proof type: " + reqDTO.getProofDTO().getType()));
+            proofValidator.validateProof(reqDTO.getProofDTO(), reqDTO.getTenantDomain());
+        }
+
         try {
             VCTemplate template = templateManager
                     .getByIdentifier(reqDTO.getCredentialConfigurationId(), reqDTO.getTenantDomain());
@@ -104,10 +126,18 @@ public class CredentialIssuanceService {
             issuerContext.setVCTemplate(template);
             issuerContext.setTenantDomain(reqDTO.getTenantDomain());
             issuerContext.setClaims(getClaims(reqDTO, template));
+            issuerContext.setHolderPublicKey(reqDTO.getProofDTO() != null ? reqDTO.getProofDTO().getPublicKey() : null);
 
             String credential = credentialIssuer.issueCredential(issuerContext);
             CredentialIssuanceRespDTO respDTO = new CredentialIssuanceRespDTO();
             respDTO.setCredential(credential);
+            try {
+                String cNonce = nonceService.generateNonce(reqDTO.getTenantDomain());
+                respDTO.setCNonce(cNonce);
+            } catch (CredentialIssuanceException e) {
+                LOG.warn("Error while generating c_nonce for credential response for tenant: "
+                        + reqDTO.getTenantDomain(), e);
+            }
             return respDTO;
 
 
@@ -138,9 +168,13 @@ public class CredentialIssuanceService {
         }
 
         String[] scopes  = accessTokenDO.getScope();
-        validateScope(scopes, reqDTO.getCredentialConfigurationId());
+        reqDTO.setCredentialConfigurationId(scopes[0]);
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
         reqDTO.setAuthenticatedUser(authenticatedUser);
+
+        if (reqDTO.getProofDTO() != null) {
+            reqDTO.getProofDTO().setClientId(accessTokenDO.getConsumerKey());
+        }
     }
 
     /**
@@ -158,10 +192,41 @@ public class CredentialIssuanceService {
         try {
             UserRealm realm = getUserRealm(reqDTO.getTenantDomain());
             AbstractUserStoreManager userStore = getUserStoreManager(reqDTO.getTenantDomain(), realm);
-            Map<String, String> claims =  userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
-                    template.getClaims().toArray(new String[0]), null);
-            claims.put(SUBJECT_IDENTIFIER, authenticatedUser.getUserId());
-            return claims;
+            List<Claim> configuredClaims = template.getClaims();
+            if (configuredClaims == null || configuredClaims.isEmpty()) {
+                return new HashMap<>();
+            }
+
+            List<String> localClaimUris = new ArrayList<>();
+            for (Claim claim : configuredClaims) {
+                if (claim != null && CLAIM_TYPE_LOCAL.equalsIgnoreCase(claim.getType())) {
+                    localClaimUris.add(claim.getClaimUri());
+                }
+            }
+
+            if (localClaimUris.isEmpty()) {
+                return new HashMap<>();
+            }
+
+            Map<String, String> userClaimsByUri = userStore.getUserClaimValuesWithID(authenticatedUser.getUserId(),
+                    localClaimUris.toArray(new String[0]), null);
+
+            Map<String, String> resolvedClaims = new HashMap<>();
+            for (Claim claim : configuredClaims) {
+                if (claim == null || !CLAIM_TYPE_LOCAL.equalsIgnoreCase(claim.getType())) {
+                    continue;
+                }
+                String claimValue = userClaimsByUri.get(claim.getClaimUri());
+                if (claimValue == null) {
+                    // Keep backward compatibility with stores/tests returning claim-name keyed maps.
+                    claimValue = userClaimsByUri.get(claim.getName());
+                }
+                if (claimValue != null) {
+                    resolvedClaims.put(claim.getName(), claimValue);
+                }
+            }
+
+            return resolvedClaims;
         } catch (IdentityException e) {
             throw CredentialIssuanceExceptionHandler.handleServerException(USER_REALM_ERROR, e,
                     "tenant: %s", reqDTO.getTenantDomain());

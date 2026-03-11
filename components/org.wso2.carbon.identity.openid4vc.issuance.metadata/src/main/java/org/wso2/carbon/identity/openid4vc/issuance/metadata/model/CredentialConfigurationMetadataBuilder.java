@@ -19,6 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.issuance.metadata.model;
 
 import org.wso2.carbon.identity.openid4vc.issuance.common.constant.Constants;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,9 +40,12 @@ public class CredentialConfigurationMetadataBuilder {
     private String format;
     private String scope;
     private List<String> signingAlgorithms = new ArrayList<>();
+    private List<String> cryptographicBindingMethods = new ArrayList<>();
+    private Map<String, Object> proofTypesSupported = new LinkedHashMap<>();
     private List<String> types = new ArrayList<>();
+    private String vct;
     private Object display = Collections.emptyList();
-    private List<String> claims;
+    private List<Claim> claims;
 
     /**
      * Set the template identifier.
@@ -94,6 +98,39 @@ public class CredentialConfigurationMetadataBuilder {
     }
 
     /**
+     * Add a supported cryptographic binding method (e.g., "jwk").
+     *
+     * @param method cryptographic binding method
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder cryptographicBindingMethod(String method) {
+
+        if (method != null && !method.isEmpty()) {
+            this.cryptographicBindingMethods.add(method);
+        }
+        return this;
+    }
+
+    /**
+     * Set JWT proof metadata with supported proof signing algorithms.
+     *
+     * @param algorithms supported signing algorithms for JWT proofs
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder jwtProofSigningAlgorithms(List<String> algorithms) {
+
+        if (algorithms == null || algorithms.isEmpty()) {
+            return this;
+        }
+
+        Map<String, Object> jwtProofMetadata = new LinkedHashMap<>();
+        jwtProofMetadata.put(Constants.CredentialIssuerMetadata.PROOF_SIGNING_ALG_VALUES_SUPPORTED,
+                new ArrayList<>(algorithms));
+        this.proofTypesSupported.put(Constants.JWT_PROOF, jwtProofMetadata);
+        return this;
+    }
+
+    /**
      * Add a credential type to the type array.
      *
      * @param type the credential type (e.g., "VerifiableCredential", "EmployeeBadge")
@@ -104,6 +141,19 @@ public class CredentialConfigurationMetadataBuilder {
         if (type != null && !type.isEmpty()) {
             this.types.add(type);
         }
+        return this;
+    }
+
+    /**
+     * Set the VCT (Verifiable Credential Type) for SD-JWT VC format.
+     * This is used instead of types array for SD-JWT VCs.
+     *
+     * @param vct the verifiable credential type identifier
+     * @return this builder
+     */
+    public CredentialConfigurationMetadataBuilder vct(String vct) {
+
+        this.vct = vct;
         return this;
     }
 
@@ -128,10 +178,10 @@ public class CredentialConfigurationMetadataBuilder {
     /**
      * Set the claims list.
      *
-     * @param claims the list of claim names
+     * @param claims the list of claims
      * @return this builder
      */
-    public CredentialConfigurationMetadataBuilder claims(List<String> claims) {
+    public CredentialConfigurationMetadataBuilder claims(List<Claim> claims) {
 
         this.claims = claims;
         return this;
@@ -158,7 +208,20 @@ public class CredentialConfigurationMetadataBuilder {
 
         config.put(Constants.CredentialIssuerMetadata.CREDENTIAL_SIGNING_ALG_VALUES_SUPPORTED,
                 signingAlgorithms);
+        if (!cryptographicBindingMethods.isEmpty()) {
+            config.put(Constants.CredentialIssuerMetadata.CRYPTOGRAPHIC_BINDING_METHODS_SUPPORTED,
+                    cryptographicBindingMethods);
+        }
+        if (!proofTypesSupported.isEmpty()) {
+            config.put(Constants.CredentialIssuerMetadata.PROOF_TYPES_SUPPORTED, proofTypesSupported);
+        }
 
+        // Add vct at config level for SD-JWT VC format
+        if (vct != null) {
+            config.put(Constants.CredentialIssuerMetadata.VCT, vct);
+        }
+
+        // Add credential_definition with type array
         if (!types.isEmpty()) {
             Map<String, Object> credentialDefinition = new LinkedHashMap<>();
             credentialDefinition.put(Constants.W3CVCDataModel.TYPE, types);
@@ -175,25 +238,34 @@ public class CredentialConfigurationMetadataBuilder {
 
     /**
      * Convert a list of claim names to the OpenID4VCI claims structure.
+     * For SD-JWT VC format, claims are at the top level of the JWT payload.
+     * For JWT VC JSON format, claims are under credentialSubject.
      *
-     * @param claims the list of claim names
+     * @param claims the list of claims
      * @return the list of claim objects with path
      */
-    private List<Map<String, Object>> buildClaimsList(List<String> claims) {
+    private List<Map<String, Object>> buildClaimsList(List<Claim> claims) {
 
         if (claims == null) {
             return Collections.emptyList();
         }
-        return claims.stream().map(claim -> {
-            Map<String, Object> claimMap = new LinkedHashMap<>();
-            List<String> path = new ArrayList<>();
-            path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
-            path.add(claim);
-            claimMap.put(Constants.CredentialIssuerMetadata.PATH, path);
-            return claimMap;
-        }).collect(Collectors.toList());
+        return claims.stream()
+                .filter(claim -> claim != null && claim.getName() != null && !claim.getName().isEmpty())
+                .map(claim -> {
+                    Map<String, Object> claimMap = new LinkedHashMap<>();
+                    List<String> path = new ArrayList<>();
+
+                    // SD-JWT VC: claims are at top level (no credentialSubject prefix)
+                    // JWT VC JSON: claims are under credentialSubject
+                    if (!Constants.VC_SD_JWT_FORMAT.equals(format)) {
+                        path.add(Constants.W3CVCDataModel.CREDENTIAL_SUBJECT);
+                    }
+                    path.add(claim.getName());
+
+                    claimMap.put(Constants.CredentialIssuerMetadata.PATH, path);
+                    return claimMap;
+                }).collect(Collectors.toList());
     }
 
 
 }
-

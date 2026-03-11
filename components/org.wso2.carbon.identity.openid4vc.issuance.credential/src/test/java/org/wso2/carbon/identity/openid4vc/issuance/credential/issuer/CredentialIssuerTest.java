@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.Credenti
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceServerException;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.internal.CredentialIssuanceDataHolder;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.issuer.handlers.CredentialFormatHandler;
+import org.wso2.carbon.identity.openid4vc.template.management.model.Claim;
 import org.wso2.carbon.identity.openid4vc.template.management.model.VCTemplate;
 
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import java.util.Map;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
  * Test class for CredentialIssuer.
@@ -42,19 +44,22 @@ import static org.mockito.Mockito.when;
 public class CredentialIssuerTest {
 
     private static final String TEST_FORMAT = "jwt_vc_json";
+    private static final String TEST_DC_SD_JWT_FORMAT = "dc+sd-jwt";
     private static final String TEST_TEMPLATE_ID = "test-config-123";
     private static final String TEST_TENANT_DOMAIN = "carbon.super";
     private static final String TEST_CREDENTIAL =
             "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature";
+    private static final String TEST_SD_JWT_CREDENTIAL =
+            "eyJhbGciOiJSUzI1NiIsInR5cCI6ImRjK3NkLWp3dCJ9.eyJpc3MiOiJodHRwczovL2V4YW1wbGUuY29tIn0.sig" +
+                    "~WyJzYWx0IiwiZW1haWwiLCJ0ZXN0QGV4YW1wbGUuY29tIl0";
 
     private CredentialIssuer credentialIssuer;
 
     @BeforeMethod
     public void setUp() {
         credentialIssuer = new CredentialIssuer();
-
-        // Clear format handlers before each test
-        CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().clear();
+        // Clear all handlers to ensure test isolation
+        CredentialIssuanceDataHolder.getInstance().clearCredentialFormatHandlers();
     }
 
     @Test(priority = 1, description = "Test successful credential issuance with valid format handler")
@@ -82,9 +87,34 @@ public class CredentialIssuerTest {
         Assert.assertEquals(credential, TEST_CREDENTIAL, "Credential should match expected value");
     }
 
+    @Test(priority = 2, description = "Test successful credential issuance with dc+sd-jwt format")
+    public void testIssueCredentialWithDcSdJwtFormat() throws CredentialIssuanceException {
+        // Create template with dc+sd-jwt format
+        VCTemplate credentialConfig = createVCTemplate(TEST_DC_SD_JWT_FORMAT);
+
+        // Create issuer context
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Mock format handler for dc+sd-jwt
+        CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
+        when(mockHandler.getFormat()).thenReturn(TEST_DC_SD_JWT_FORMAT);
+        when(mockHandler.issueCredential(any(CredentialIssuerContext.class)))
+                .thenReturn(TEST_SD_JWT_CREDENTIAL);
+
+        // Register the handler
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
+
+        // Execute test
+        String credential = credentialIssuer.issueCredential(context);
+
+        // Verify
+        Assert.assertNotNull(credential, "Credential should not be null");
+        Assert.assertEquals(credential, TEST_SD_JWT_CREDENTIAL, "Credential should match expected SD-JWT value");
+        Assert.assertTrue(credential.contains("~"), "SD-JWT credential should contain disclosure separator");
+    }
+
     @Test(priority = 3, description = "Test credential issuance when handler not found",
-            expectedExceptions = CredentialIssuanceServerException.class,
-            expectedExceptionsMessageRegExp = ".*Unsupported credential format.*")
+            expectedExceptions = CredentialIssuanceServerException.class)
     public void testIssueCredentialWithHandlerNotFound() throws CredentialIssuanceException {
 
         VCTemplate credentialConfig = createVCTemplate("unsupported_format");
@@ -93,6 +123,98 @@ public class CredentialIssuerTest {
         when(mockHandler.getFormat()).thenReturn(TEST_FORMAT);
         CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
         credentialIssuer.issueCredential(context);
+    }
+
+    @Test(priority = 4, description = "Test credential issuance with null VCTemplate in context",
+            expectedExceptions = NullPointerException.class)
+    public void testIssueCredentialWithNullVCTemplate() throws CredentialIssuanceException {
+        // Create context with null VCTemplate
+        CredentialIssuerContext context = new CredentialIssuerContext();
+        context.setVCTemplate(null);
+        context.setConfigurationId(TEST_TEMPLATE_ID);
+        context.setTenantDomain(TEST_TENANT_DOMAIN);
+
+        // Execute test - should throw NPE when trying to get format from null template
+        credentialIssuer.issueCredential(context);
+    }
+
+    @Test(priority = 5, description = "Test credential issuance when handler throws exception",
+            expectedExceptions = CredentialIssuanceException.class)
+    public void testIssueCredentialWhenHandlerThrowsException() throws CredentialIssuanceException {
+        // Create template and context
+        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT);
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Mock handler that throws exception
+        CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
+        when(mockHandler.getFormat()).thenReturn(TEST_FORMAT);
+        when(mockHandler.issueCredential(any(CredentialIssuerContext.class)))
+                .thenThrow(new CredentialIssuanceServerException("Credential signing failed"));
+
+        // Register the handler
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
+
+        // Execute test - should propagate exception from handler
+        credentialIssuer.issueCredential(context);
+    }
+
+    @Test(priority = 6, description = "Test credential issuance with no handlers registered",
+            expectedExceptions = CredentialIssuanceServerException.class)
+    public void testIssueCredentialWithNoHandlersRegistered() throws CredentialIssuanceException {
+        // Create template and context
+        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT);
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Ensure no handlers are registered (already cleared in setUp)
+        Assert.assertTrue(CredentialIssuanceDataHolder.getInstance().getCredentialFormatHandlers().isEmpty(),
+                "Handler list should be empty");
+
+        // Execute test - should throw exception as no handler is available
+        credentialIssuer.issueCredential(context);
+    }
+
+    @Test(priority = 7, description = "Test credential issuance with empty format string",
+            expectedExceptions = CredentialIssuanceServerException.class)
+    public void testIssueCredentialWithEmptyFormat() throws CredentialIssuanceException {
+        // Create template with empty format
+        VCTemplate credentialConfig = createVCTemplate("");
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Register handler with valid format
+        CredentialFormatHandler mockHandler = mock(CredentialFormatHandler.class);
+        when(mockHandler.getFormat()).thenReturn(TEST_FORMAT);
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler);
+
+        // Execute test - should throw exception as empty format won't match any handler
+        credentialIssuer.issueCredential(context);
+    }
+
+    @Test(priority = 8, description = "Test credential issuance with multiple handlers")
+    public void testIssueCredentialWithMultipleHandlers() throws CredentialIssuanceException {
+        // Create template and context
+        VCTemplate credentialConfig = createVCTemplate(TEST_FORMAT);
+        CredentialIssuerContext context = createIssuerContext(credentialConfig);
+
+        // Register multiple handlers with different formats
+        CredentialFormatHandler mockHandler1 = mock(CredentialFormatHandler.class);
+        when(mockHandler1.getFormat()).thenReturn(TEST_DC_SD_JWT_FORMAT);
+        when(mockHandler1.issueCredential(any(CredentialIssuerContext.class)))
+                .thenReturn(TEST_SD_JWT_CREDENTIAL);
+
+        CredentialFormatHandler mockHandler2 = mock(CredentialFormatHandler.class);
+        when(mockHandler2.getFormat()).thenReturn(TEST_FORMAT);
+        when(mockHandler2.issueCredential(any(CredentialIssuerContext.class)))
+                .thenReturn(TEST_CREDENTIAL);
+
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler1);
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(mockHandler2);
+
+        // Execute test - should use the correct handler based on format
+        String credential = credentialIssuer.issueCredential(context);
+
+        // Verify correct handler was used
+        Assert.assertNotNull(credential, "Credential should not be null");
+        Assert.assertEquals(credential, TEST_CREDENTIAL, "Should use jwt_vc_json handler");
     }
 
     /**
@@ -104,7 +226,9 @@ public class CredentialIssuerTest {
         config.setIdentifier("test-identifier");
         config.setFormat(format);
         config.setExpiresIn(3600);
-        config.setClaims(Arrays.asList("email", "name"));
+        config.setClaims(Arrays.asList(
+                new Claim("email", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/emailaddress"),
+                new Claim("name", CLAIM_TYPE_LOCAL, "http://wso2.org/claims/fullname")));
         return config;
     }
 

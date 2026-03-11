@@ -24,6 +24,7 @@ package org.wso2.carbon.identity.openid4vc.issuance.credential.dto;
 public class CredentialIssuanceRespDTO {
 
     private String credential;
+    private String cNonce;
 
     public String getCredential() {
 
@@ -33,5 +34,15 @@ public class CredentialIssuanceRespDTO {
     public void setCredential(String credential) {
 
         this.credential = credential;
+    }
+
+    public String getCNonce() {
+
+        return cNonce;
+    }
+
+    public void setCNonce(String cNonce) {
+
+        this.cNonce = cNonce;
     }
 }

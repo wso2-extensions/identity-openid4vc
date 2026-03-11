@@ -55,11 +55,11 @@ import static org.wso2.carbon.identity.openid4vc.issuance.common.constant.Consta
 public class JwtVcJsonFormatHandler implements CredentialFormatHandler {
 
     private static final Log LOG = LogFactory.getLog(JwtVcJsonFormatHandler.class);
-    private static final String FORMAT = JWT_VC_JSON_FORMAT;
 
     @Override
     public String getFormat() {
-        return FORMAT;
+
+        return JWT_VC_JSON_FORMAT;
     }
 
     @Override
