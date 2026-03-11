@@ -73,22 +73,4 @@ public class VPException extends Exception {
         super(message, cause);
         this.errorCode = code;
     }
-
-    /**
-     * Get the error code.
-     *
-     * @return Error code or null
-     */
-    public String getErrorCode() {
-        return errorCode;
-    }
-
-    /**
-     * Set the error code.
-     *
-     * @param code Error code
-     */
-    public void setErrorCode(final String code) {
-        this.errorCode = code;
-    }
 }

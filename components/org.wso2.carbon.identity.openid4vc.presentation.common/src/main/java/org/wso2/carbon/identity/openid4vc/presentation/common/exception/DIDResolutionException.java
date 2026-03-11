@@ -23,8 +23,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class DIDResolutionException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Default error code.
      */
@@ -47,18 +45,6 @@ public class DIDResolutionException extends VPException {
      */
     public DIDResolutionException(final String message) {
         super(DEFAULT_ERROR_CODE, message);
-    }
-
-    /**
-     * Constructor with DID and message.
-     *
-     * @param didValue The DID that failed resolution
-     * @param message  Error message
-     */
-    public DIDResolutionException(final String didValue, final String message) {
-        super(DEFAULT_ERROR_CODE, message);
-        this.did = didValue;
-        extractMethod(didValue);
     }
 
     /**

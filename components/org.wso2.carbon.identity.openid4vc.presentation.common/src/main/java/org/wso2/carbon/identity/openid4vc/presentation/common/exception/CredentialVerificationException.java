@@ -25,8 +25,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificati
  */
 public class CredentialVerificationException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Default error code.
      */

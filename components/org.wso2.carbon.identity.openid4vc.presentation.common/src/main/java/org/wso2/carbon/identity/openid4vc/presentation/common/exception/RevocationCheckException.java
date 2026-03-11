@@ -23,8 +23,6 @@ package org.wso2.carbon.identity.openid4vc.presentation.common.exception;
  */
 public class RevocationCheckException extends VPException {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * URL of the status list.
      */
@@ -58,20 +56,6 @@ public class RevocationCheckException extends VPException {
     public RevocationCheckException(final String message,
             final Throwable cause) {
         super(message, cause);
-    }
-
-    /**
-     * Constructor with all details.
-     *
-     * @param message Error message
-     * @param listUrl The status list URL being checked
-     * @param index   The index being checked
-     */
-    public RevocationCheckException(final String message, final String listUrl,
-            final Integer index) {
-        super(message);
-        this.statusListUrl = listUrl;
-        this.statusIndex = index;
     }
 
     /**
@@ -122,36 +106,6 @@ public class RevocationCheckException extends VPException {
     }
 
     /**
-     * Create exception for unsupported status type.
-     *
-     * @param type The unsupported type
-     * @return RevocationCheckException
-     */
-    public static RevocationCheckException unsupportedStatusType(
-            final String type) {
-        RevocationCheckException ex = new RevocationCheckException(
-                "Unsupported credential status type: " + type);
-        ex.setStatusType(type);
-        return ex;
-    }
-
-    /**
-     * Create exception for invalid status index.
-     *
-     * @param index           The invalid index
-     * @param bitstringLength The length of the bitstring
-     * @return RevocationCheckException
-     */
-    public static RevocationCheckException invalidIndex(final int index,
-            final int bitstringLength) {
-        RevocationCheckException ex = new RevocationCheckException(
-                "Status index " + index + " is out of bounds "
-                        + "(bitstring length: " + bitstringLength + ")");
-        ex.setStatusIndex(index);
-        return ex;
-    }
-
-    /**
      * Create exception for decoding errors.
      *
      * @param cause The decoding error
@@ -166,15 +120,6 @@ public class RevocationCheckException extends VPException {
     // Getters and Setters
 
     /**
-     * Get the status list URL.
-     *
-     * @return Status list URL
-     */
-    public String getStatusListUrl() {
-        return statusListUrl;
-    }
-
-    /**
      * Set the status list URL.
      *
      * @param listUrl Status list URL
@@ -183,39 +128,4 @@ public class RevocationCheckException extends VPException {
         this.statusListUrl = listUrl;
     }
 
-    /**
-     * Get the status index.
-     *
-     * @return Status index
-     */
-    public Integer getStatusIndex() {
-        return statusIndex;
-    }
-
-    /**
-     * Set the status index.
-     *
-     * @param index Status index
-     */
-    public void setStatusIndex(final Integer index) {
-        this.statusIndex = index;
-    }
-
-    /**
-     * Get the status type.
-     *
-     * @return Status type
-     */
-    public String getStatusType() {
-        return statusType;
-    }
-
-    /**
-     * Set the status type.
-     *
-     * @param type Status type
-     */
-    public void setStatusType(final String type) {
-        this.statusType = type;
-    }
 }
