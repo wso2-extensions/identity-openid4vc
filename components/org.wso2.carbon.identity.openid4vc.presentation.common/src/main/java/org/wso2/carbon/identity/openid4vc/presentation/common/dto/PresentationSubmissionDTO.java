@@ -56,22 +56,6 @@ public class PresentationSubmissionDTO {
     }
 
     /**
-     * Constructor with all fields.
-     *
-     * @param submissionId Unique submission identifier
-     * @param defId        Definition ID
-     * @param descMap      Descriptor map list
-     */
-    public PresentationSubmissionDTO(final String submissionId,
-            final String defId,
-            final List<DescriptorMapDTO> descMap) {
-
-        this.id = submissionId;
-        this.definitionId = defId;
-        this.descriptorMap = descMap != null ? new ArrayList<>(descMap) : null;
-    }
-
-    /**
      * Get the submission ID.
      *
      * @return Submission ID
@@ -119,15 +103,6 @@ public class PresentationSubmissionDTO {
     public List<DescriptorMapDTO> getDescriptorMap() {
 
         return descriptorMap != null ? new ArrayList<>(descriptorMap) : null;
-    }
-
-    /**
-     * Set the descriptor map.
-     *
-     * @param descMap Descriptor map list
-     */
-    public void setDescriptorMap(final List<DescriptorMapDTO> descMap) {
-        this.descriptorMap = descMap != null ? new ArrayList<>(descMap) : null;
     }
 
     /**

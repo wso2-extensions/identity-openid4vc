@@ -47,39 +47,6 @@ public class VPRequestResponseDTO {
     public VPRequestResponseDTO() {
     }
 
-    /**
-     * Constructor for request-by-value response.
-     *
-     * @param transactionId        Transaction ID
-     * @param requestId            Request ID
-     * @param authorizationDetails Authorization details (for by-value)
-     * @param expiresAt            Expiry timestamp
-     */
-    public VPRequestResponseDTO(String transactionId, String requestId,
-            AuthorizationDetailsDTO authorizationDetails, Long expiresAt) {
-        this.transactionId = transactionId;
-        this.requestId = requestId;
-        this.authorizationDetails = authorizationDetails != null ? new AuthorizationDetailsDTO(authorizationDetails)
-                : null;
-        this.expiresAt = expiresAt;
-    }
-
-    /**
-     * Constructor for request-by-reference response.
-     *
-     * @param transactionId Transaction ID
-     * @param requestId     Request ID
-     * @param requestUri    Request URI for fetching the authorization request
-     * @param expiresAt     Expiry timestamp
-     */
-    public VPRequestResponseDTO(String transactionId, String requestId,
-            String requestUri, Long expiresAt) {
-        this.transactionId = transactionId;
-        this.requestId = requestId;
-        this.requestUri = requestUri;
-        this.expiresAt = expiresAt;
-    }
-
     // Getters and Setters
 
     public String getTransactionId() {
@@ -113,10 +80,6 @@ public class VPRequestResponseDTO {
 
     public void setRequestUri(String requestUri) {
         this.requestUri = requestUri;
-    }
-
-    public Long getExpiresAt() {
-        return expiresAt;
     }
 
     public void setExpiresAt(Long expiresAt) {

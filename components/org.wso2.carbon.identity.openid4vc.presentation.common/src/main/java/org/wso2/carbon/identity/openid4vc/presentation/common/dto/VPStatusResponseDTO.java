@@ -28,8 +28,6 @@ import java.io.Serializable;
  */
 public class VPStatusResponseDTO implements Serializable {
 
-    private static final long serialVersionUID = 1L;
-
     /**
      * Request ID.
      */
@@ -77,13 +75,6 @@ public class VPStatusResponseDTO implements Serializable {
      */
     @SerializedName("expires_in")
     private Long expiresIn;
-
-    /**
-     * Default constructor.
-     */
-    public VPStatusResponseDTO() {
-
-    }
 
     /**
      * Builder pattern constructor.
@@ -140,26 +131,6 @@ public class VPStatusResponseDTO implements Serializable {
     public void setStatus(final String status) {
 
         this.status = status;
-    }
-
-    /**
-     * Check if token received.
-     *
-     * @return true if token received
-     */
-    public boolean isTokenReceived() {
-
-        return tokenReceived;
-    }
-
-    /**
-     * Set token received flag.
-     *
-     * @param tokenReceived Token received flag
-     */
-    public void setTokenReceived(final boolean tokenReceived) {
-
-        this.tokenReceived = tokenReceived;
     }
 
     /**
@@ -243,26 +214,6 @@ public class VPStatusResponseDTO implements Serializable {
     }
 
     /**
-     * Get expires in seconds.
-     *
-     * @return Expires in seconds
-     */
-    public Long getExpiresIn() {
-
-        return expiresIn;
-    }
-
-    /**
-     * Set expires in seconds.
-     *
-     * @param expiresIn Expires in seconds
-     */
-    public void setExpiresIn(final Long expiresIn) {
-
-        this.expiresIn = expiresIn;
-    }
-
-    /**
      * Convert to JSON object.
      *
      * @return JsonObject representation
@@ -307,102 +258,6 @@ public class VPStatusResponseDTO implements Serializable {
         private String errorDescription;
         private String transactionId;
         private Long expiresIn;
-
-        /**
-         * Set request ID.
-         *
-         * @param requestId Request ID
-         * @return Builder
-         */
-        public Builder requestId(final String requestId) {
-
-            this.requestId = requestId;
-            return this;
-        }
-
-        /**
-         * Set status.
-         *
-         * @param status Status
-         * @return Builder
-         */
-        public Builder status(final String status) {
-
-            this.status = status;
-            return this;
-        }
-
-        /**
-         * Set token received flag.
-         *
-         * @param tokenReceived Token received flag
-         * @return Builder
-         */
-        public Builder tokenReceived(final boolean tokenReceived) {
-
-            this.tokenReceived = tokenReceived;
-            return this;
-        }
-
-        /**
-         * Set expired flag.
-         *
-         * @param expired Expired flag
-         * @return Builder
-         */
-        public Builder expired(final boolean expired) {
-
-            this.expired = expired;
-            return this;
-        }
-
-        /**
-         * Set error code.
-         *
-         * @param error Error code
-         * @return Builder
-         */
-        public Builder error(final String error) {
-
-            this.error = error;
-            return this;
-        }
-
-        /**
-         * Set error description.
-         *
-         * @param errorDescription Error description
-         * @return Builder
-         */
-        public Builder errorDescription(final String errorDescription) {
-
-            this.errorDescription = errorDescription;
-            return this;
-        }
-
-        /**
-         * Set transaction ID.
-         *
-         * @param transactionId Transaction ID
-         * @return Builder
-         */
-        public Builder transactionId(final String transactionId) {
-
-            this.transactionId = transactionId;
-            return this;
-        }
-
-        /**
-         * Set expires in seconds.
-         *
-         * @param expiresIn Expires in seconds
-         * @return Builder
-         */
-        public Builder expiresIn(final Long expiresIn) {
-
-            this.expiresIn = expiresIn;
-            return this;
-        }
 
         /**
          * Build the DTO.

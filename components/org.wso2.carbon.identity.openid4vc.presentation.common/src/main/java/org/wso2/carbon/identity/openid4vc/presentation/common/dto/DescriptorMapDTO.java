@@ -52,47 +52,6 @@ public class DescriptorMapDTO {
     private PathNestedDTO pathNested;
 
     /**
-     * Default constructor.
-     */
-    public DescriptorMapDTO() {
-    }
-
-    /**
-     * Constructor with required fields.
-     *
-     * @param descId     Input descriptor ID
-     * @param credFormat Credential format
-     * @param jsonPath   Path to credential
-     */
-    public DescriptorMapDTO(final String descId,
-            final String credFormat,
-            final String jsonPath) {
-
-        this.id = descId;
-        this.format = credFormat;
-        this.path = jsonPath;
-    }
-
-    /**
-     * Constructor with all fields.
-     *
-     * @param descId     Input descriptor ID
-     * @param credFormat Credential format
-     * @param jsonPath   Path to credential
-     * @param nested     Nested path info
-     */
-    public DescriptorMapDTO(final String descId,
-            final String credFormat,
-            final String jsonPath,
-            final PathNestedDTO nested) {
-
-        this.id = descId;
-        this.format = credFormat;
-        this.path = jsonPath;
-        this.pathNested = nested != null ? new PathNestedDTO(nested) : null;
-    }
-
-    /**
      * Get the input descriptor ID.
      *
      * @return Input descriptor ID
@@ -150,26 +109,6 @@ public class DescriptorMapDTO {
     public void setPath(final String jsonPath) {
 
         this.path = jsonPath;
-    }
-
-    /**
-     * Get the nested path.
-     *
-     * @return Nested path DTO
-     */
-    public PathNestedDTO getPathNested() {
-
-        return pathNested != null ? new PathNestedDTO(pathNested) : null;
-    }
-
-    /**
-     * Set the nested path.
-     *
-     * @param nested Nested path DTO
-     */
-    public void setPathNested(final PathNestedDTO nested) {
-
-        this.pathNested = nested != null ? new PathNestedDTO(nested) : null;
     }
 
     /**
