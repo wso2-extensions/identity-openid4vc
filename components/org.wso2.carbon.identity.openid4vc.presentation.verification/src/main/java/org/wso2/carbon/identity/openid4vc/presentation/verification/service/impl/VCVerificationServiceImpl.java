@@ -40,7 +40,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.verification.model.Revoca
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VerifiableCredential;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VerifiablePresentation;
-import org.wso2.carbon.identity.openid4vc.presentation.common.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.DIDResolverService;
 import org.wso2.carbon.identity.openid4vc.presentation.did.service.impl.DIDResolverServiceImpl;

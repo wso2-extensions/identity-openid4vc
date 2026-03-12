@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.common.util;
+package org.wso2.carbon.identity.openid4vc.presentation.definition.util;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -28,6 +28,13 @@ import com.google.gson.JsonParser;
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition.RequestedCredential;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.UUID;
 
 /**
  * Utility class for Presentation Definition JSON operations.
@@ -58,22 +65,22 @@ public class PresentationDefinitionUtil {
             
             // Check required fields
             if (!definition.has(OpenID4VPConstants.PresentationDef.ID)) {
-                                return false;
+                return false;
             }
             
             if (!definition.has(OpenID4VPConstants.PresentationDef.INPUT_DESCRIPTORS)) {
-                                return false;
+                return false;
             }
 
             JsonElement inputDescriptors = definition.get(
                 OpenID4VPConstants.PresentationDef.INPUT_DESCRIPTORS);
             if (!inputDescriptors.isJsonArray()) {
-                                return false;
+                return false;
             }
 
             JsonArray descriptorsArray = inputDescriptors.getAsJsonArray();
             if (descriptorsArray.size() == 0) {
-                                return false;
+                return false;
             }
 
             // Validate each input descriptor
@@ -85,7 +92,7 @@ public class PresentationDefinitionUtil {
 
             return true;
         } catch (JsonParseException e) {
-                        return false;
+            return false;
         }
     }
 
@@ -97,20 +104,20 @@ public class PresentationDefinitionUtil {
      */
     private static boolean isValidInputDescriptor(JsonElement element) {
         if (!element.isJsonObject()) {
-                        return false;
+            return false;
         }
 
         JsonObject descriptor = element.getAsJsonObject();
         
         if (!descriptor.has(OpenID4VPConstants.PresentationDef.ID)) {
-                        return false;
+            return false;
         }
 
         // Constraints are optional but if present, must be valid
         if (descriptor.has(OpenID4VPConstants.PresentationDef.CONSTRAINTS)) {
             JsonElement constraints = descriptor.get(OpenID4VPConstants.PresentationDef.CONSTRAINTS);
             if (!constraints.isJsonObject()) {
-                                return false;
+                return false;
             }
         }
 
@@ -193,7 +200,7 @@ public class PresentationDefinitionUtil {
      */
     public static String buildInputDescriptorFromRequestedCredential(String id, String credentialType,
                                                                      String purpose,
-                                                                     java.util.List<String> requestedClaims,
+                                                                     List<String> requestedClaims,
                                                                      String trustedIssuer) {
         JsonObject descriptor = new JsonObject();
         descriptor.addProperty(OpenID4VPConstants.PresentationDef.ID, id);
@@ -294,8 +301,7 @@ public class PresentationDefinitionUtil {
     }
 
     /**
-     * Build a full Presentation Exchange JSON string from a {@link
-     * org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition}
+     * Build a full Presentation Exchange JSON string from a {@link PresentationDefinition}
      * domain model.
      *
      * <p>Each entry in {@code requestedCredentials} becomes one input descriptor.
@@ -304,27 +310,24 @@ public class PresentationDefinitionUtil {
      * @param pd The domain model
      * @return PE-compliant JSON string, or an empty definition JSON if {@code pd} is null
      */
-    public static String buildDefinitionJson(
-            org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition pd) {
+    public static String buildDefinitionJson(PresentationDefinition pd) {
 
         if (pd == null) {
             return "{}";
         }
 
-        java.util.List<org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition
-                .RequestedCredential> credentials = pd.getRequestedCredentials();
+        List<RequestedCredential> credentials = pd.getRequestedCredentials();
 
         if (credentials == null || credentials.isEmpty()) {
             return "{}";
         }
 
         try {
-            java.util.List<String> descriptors = new java.util.ArrayList<>();
+            List<String> descriptors = new ArrayList<>();
             int index = 1;
-            for (org.wso2.carbon.identity.openid4vc.presentation.common.model.PresentationDefinition
-                    .RequestedCredential cred : credentials) {
+            for (RequestedCredential cred : credentials) {
                 String descId = (cred.getType() != null
-                        ? cred.getType().toLowerCase(java.util.Locale.ENGLISH) + "_descriptor" + index
+                        ? cred.getType().toLowerCase(Locale.ENGLISH) + "_descriptor" + index
                         : "descriptor_" + index);
                 descriptors.add(buildInputDescriptorFromRequestedCredential(
                         descId,
@@ -335,7 +338,7 @@ public class PresentationDefinitionUtil {
                 index++;
             }
             return buildPresentationDefinition(
-                    pd.getDefinitionId() != null ? pd.getDefinitionId() : java.util.UUID.randomUUID().toString(),
+                    pd.getDefinitionId() != null ? pd.getDefinitionId() : UUID.randomUUID().toString(),
                     pd.getName(),
                     pd.getDescription(),
                     descriptors.toArray(new String[0]));

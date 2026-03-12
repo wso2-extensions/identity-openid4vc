@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.common.util;
+package org.wso2.carbon.identity.openid4vc.presentation.authenticator.util;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
