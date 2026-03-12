@@ -253,7 +253,7 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
                                 submission.getPresentationSubmission(),
                                 presentationDefinitionId,
                                 tenantId);
-            } catch (org.wso2.carbon.identity.openid4vc.presentation.common.exception
+            } catch (org.wso2.carbon.identity.openid4vc.presentation.verification.exception
                     .CredentialVerificationException e) {
                 throw new AuthenticationFailedException(
                         "VP verification could not be initiated: " + e.getMessage(), e);

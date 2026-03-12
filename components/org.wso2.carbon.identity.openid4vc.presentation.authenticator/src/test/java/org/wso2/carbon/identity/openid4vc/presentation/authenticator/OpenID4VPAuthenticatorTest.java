@@ -316,7 +316,7 @@ public class OpenID4VPAuthenticatorTest {
 
         when(vpRequestService.getVPRequestById(anyString(), anyInt()))
                 .thenThrow(
-                        new org.wso2.carbon.identity.openid4vc.presentation.common
+                        new org.wso2.carbon.identity.openid4vc.presentation.authenticator
                                 .exception.VPRequestExpiredException("Error", 1600000000000L));
 
         authenticator.process(request, response, context);

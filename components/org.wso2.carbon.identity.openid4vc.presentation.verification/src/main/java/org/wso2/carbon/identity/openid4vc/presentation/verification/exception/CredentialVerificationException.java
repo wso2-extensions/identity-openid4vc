@@ -19,7 +19,7 @@
 package org.wso2.carbon.identity.openid4vc.presentation.verification.exception;
 
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.common.model.VCVerificationStatus;
+import org.wso2.carbon.identity.openid4vc.presentation.verification.model.VCVerificationStatus;
 
 /**
  * Exception thrown when credential verification fails.

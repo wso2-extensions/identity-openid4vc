@@ -19,9 +19,9 @@
 package org.wso2.carbon.identity.openid4vc.presentation.verification.util;
 
 import org.testng.annotations.Test;
+import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPSubmissionDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.exception.VPSubmissionValidationException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
 
 import static org.testng.Assert.assertThrows;
 
