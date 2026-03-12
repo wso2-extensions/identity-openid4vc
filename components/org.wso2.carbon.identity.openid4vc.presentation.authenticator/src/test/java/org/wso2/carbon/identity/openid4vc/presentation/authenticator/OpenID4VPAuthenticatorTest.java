@@ -25,8 +25,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPSub
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPRequestService;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.QRCodeUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.SecurityUtils;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.dto.VPVerificationResponseDTO;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.VCVerificationService;
 

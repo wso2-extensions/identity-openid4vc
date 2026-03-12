@@ -16,7 +16,7 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.definition.model;
+package org.wso2.carbon.identity.openid4vc.presentation.management.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;

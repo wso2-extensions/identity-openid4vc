@@ -16,18 +16,18 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.definition.internal;
+package org.wso2.carbon.identity.openid4vc.presentation.management.internal;
 
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.impl.PresentationDefinitionServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.impl.PresentationDefinitionServiceImpl;
 
 /**
  * OSGi service registration component for Presentation Definition services.
  */
 @Component(
-        name = "org.wso2.carbon.identity.openid4vc.presentation.definition",
+        name = "org.wso2.carbon.identity.openid4vc.presentation.management",
         immediate = true,
         service = PresentationDefinitionService.class
 )

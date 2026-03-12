@@ -19,10 +19,10 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPReq
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequestStatus;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProviderFactory;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;

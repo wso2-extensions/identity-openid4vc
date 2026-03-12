@@ -26,8 +26,8 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.Authori
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPRequest;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.util.PresentationDefinitionUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;

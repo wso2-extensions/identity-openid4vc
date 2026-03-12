@@ -28,10 +28,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>org.wso2.carbon.identity.openid4vc.presentation.definition</artifactId>
+    <artifactId>org.wso2.carbon.identity.openid4vc.presentation.management</artifactId>
     <packaging>bundle</packaging>
-    <name>WSO2 Carbon - OpenID4VP Presentation Definition</name>
-    <description>Presentation Definition Management for OpenID4VP</description>
+    <name>WSO2 Carbon - OpenID4VP Presentation Management</name>
+    <description>Presentation Management for OpenID4VP</description>
 
     <dependencies>
 
@@ -157,11 +157,11 @@
                         <Bundle-Name>${project.artifactId}</Bundle-Name>
                         <Bundle-RequiredExecutionEnvironment>JavaSE-11</Bundle-RequiredExecutionEnvironment>
                         <Export-Package>
-                            !org.wso2.carbon.identity.openid4vc.presentation.definition.internal,
-                            org.wso2.carbon.identity.openid4vc.presentation.definition.*;version="${identity.oid4vc.pkg.version}"
+                            !org.wso2.carbon.identity.openid4vc.presentation.management.internal,
+                            org.wso2.carbon.identity.openid4vc.presentation.management.*;version="${identity.oid4vc.pkg.version}"
                         </Export-Package>
                         <Private-Package>
-                            org.wso2.carbon.identity.openid4vc.presentation.definition.internal
+                            org.wso2.carbon.identity.openid4vc.presentation.management.internal
                         </Private-Package>
                         <Import-Package>
                             org.osgi.service.component; version="[1.2.0, 2.0.0)",

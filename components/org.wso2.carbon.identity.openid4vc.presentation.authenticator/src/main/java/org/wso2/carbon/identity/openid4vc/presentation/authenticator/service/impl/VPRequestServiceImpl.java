@@ -36,11 +36,11 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.VPR
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.util.PresentationDefinitionUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProvider;
 import org.wso2.carbon.identity.openid4vc.presentation.did.provider.DIDProviderFactory;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.management.util.PresentationDefinitionUtil;
 
 /**
  * Implementation of VPRequestService for managing VP authorization requests.

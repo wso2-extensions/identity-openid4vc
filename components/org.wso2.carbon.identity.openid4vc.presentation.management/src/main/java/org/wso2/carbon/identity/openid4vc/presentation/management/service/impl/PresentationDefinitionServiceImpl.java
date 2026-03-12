@@ -16,17 +16,17 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.definition.service.impl;
+package org.wso2.carbon.identity.openid4vc.presentation.management.service.impl;
 
 import org.apache.commons.lang.StringUtils;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
 import org.wso2.carbon.identity.openid4vc.presentation.common.util.OpenID4VPUtil;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.PresentationDefinitionDAO;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.dao.impl.PresentationDefinitionDAOImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.exception.PresentationDefinitionNotFoundException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition.RequestedCredential;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.management.dao.PresentationDefinitionDAO;
+import org.wso2.carbon.identity.openid4vc.presentation.management.dao.impl.PresentationDefinitionDAOImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.management.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition.RequestedCredential;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 
 import java.util.ArrayList;
 import java.util.List;

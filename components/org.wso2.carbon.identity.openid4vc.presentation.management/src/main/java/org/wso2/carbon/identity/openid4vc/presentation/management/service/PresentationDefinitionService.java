@@ -16,11 +16,11 @@
  * under the License.
  */
 
-package org.wso2.carbon.identity.openid4vc.presentation.definition.service;
+package org.wso2.carbon.identity.openid4vc.presentation.management.service;
 
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.exception.PresentationDefinitionNotFoundException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
 
 import java.util.ArrayList;
 import java.util.List;

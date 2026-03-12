@@ -27,11 +27,11 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.dto.ErrorDT
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.CORSUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.common.constant.OpenID4VPConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.common.exception.VPException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.exception.PresentationDefinitionNotFoundException;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.model.PresentationDefinition;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.PresentationDefinitionService;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.service.impl.PresentationDefinitionServiceImpl;
-import org.wso2.carbon.identity.openid4vc.presentation.definition.util.PresentationDefinitionUtil;
+import org.wso2.carbon.identity.openid4vc.presentation.management.exception.PresentationDefinitionNotFoundException;
+import org.wso2.carbon.identity.openid4vc.presentation.management.model.PresentationDefinition;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
+import org.wso2.carbon.identity.openid4vc.presentation.management.service.impl.PresentationDefinitionServiceImpl;
+import org.wso2.carbon.identity.openid4vc.presentation.management.util.PresentationDefinitionUtil;
 
 import java.io.IOException;
 import java.io.PrintWriter;
