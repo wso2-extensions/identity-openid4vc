@@ -36,6 +36,7 @@ public class Constants {
     public static final String SEGMENT_JWKS = "jwks";
     public static final String VC_CLAIM = "vc";
     public static final String JWT_VC_JSON_FORMAT = "jwt_vc_json";
+    public static final String JWT_VC_FORMAT = "jwt_vc";
     public static final String VC_SD_JWT_FORMAT = "dc+sd-jwt";
     public static final String CREDENTIAL_CONFIGURATION_ID = "credential_configuration_id";
     public static final String PROOF = "proof";
@@ -43,6 +44,10 @@ public class Constants {
     public static final String PROOF_TYPE = "proof_type";
     public static final String JWT_PROOF = "jwt";
     public static final String JWT_PROOF_TYPE = "openid4vci-proof+jwt";
+    public static final String CLAIM_ISS = "iss";
+    public static final String CLAIM_SUB = "sub";
+    public static final String CLAIM_IAT = "iat";
+    public static final String CLAIM_EXP = "exp";
     public static final int MAX_CLOCK_SKEW_SECONDS = 60;
     public static final int DEFAULT_NONCE_TTL_SECONDS = 300;
     public static final String NONCE = "nonce";
