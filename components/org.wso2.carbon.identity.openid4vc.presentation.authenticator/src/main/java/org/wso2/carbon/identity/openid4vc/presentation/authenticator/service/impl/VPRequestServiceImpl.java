@@ -50,7 +50,6 @@ import org.wso2.carbon.identity.openid4vc.presentation.management.model.Presenta
 import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.management.util.PresentationDefinitionUtil;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -190,14 +189,6 @@ public class VPRequestServiceImpl extends VPRequestService {
                             .claim(OpenID4VPConstants.RequestParams.STATE,
                                     vpRequest.getRequestId())
 
-                            // --- LISSI & EUDI WALLET COMPATIBILITY ---
-                            // Lissi strictly requires 'client_id_scheme'. Since WSO2 is signing
-                            // this request with a DID, we must explicitly declare the scheme as "did"
-                            // and use the DID itself as the client_id.
-                            .claim("client_id_scheme", "did")
-                            .claim(OpenID4VPConstants.RequestParams.CLIENT_ID, did)
-                            // ------------------------------------------
-
                             .issueTime(new Date())
                             .jwtID(UUID.randomUUID().toString());
 
@@ -219,15 +210,6 @@ public class VPRequestServiceImpl extends VPRequestService {
 
             Map<String, Object> vpFormats = new HashMap<>();
             Map<String, Object> vcSdJwt = new HashMap<>();
-
-            // --- LISSI & EUDI WALLET COMPATIBILITY ---
-            // European wallets heavily rely on Elliptic Curve (ES256) alongside EdDSA.
-            // We must declare support for both algorithms for SD-JWT presentations.
-            vcSdJwt.put(Constraints.METADATA_SD_JWT_ALG_VALUES,
-                    Arrays.asList(Constraints.ALG_RS256, Constraints.ALG_EDDSA, "ES256"));
-            vcSdJwt.put(Constraints.METADATA_KB_JWT_ALG_VALUES,
-                    Arrays.asList(Constraints.ALG_RS256, Constraints.ALG_EDDSA, "ES256"));
-            // ------------------------------------------
 
             vpFormats.put(Constraints.FORMAT_VC_SD_JWT, vcSdJwt);
 

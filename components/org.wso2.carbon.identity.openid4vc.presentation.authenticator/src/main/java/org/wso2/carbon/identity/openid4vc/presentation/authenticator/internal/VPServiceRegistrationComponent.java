@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl.VPRequestServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
@@ -53,6 +54,8 @@ public class VPServiceRegistrationComponent {
      */
     private static final Logger LOG = LoggerFactory.getLogger(VPServiceRegistrationComponent.class);
 
+    private static final String OID4VP_ENABLED_CONFIG = "OpenID4VP.Enabled";
+
     /**
      * Flag to indicate if the authenticator is already registered.
      */
@@ -67,6 +70,13 @@ public class VPServiceRegistrationComponent {
     protected void activate(ComponentContext context) {
 
         try {
+            // Check deployment.toml feature toggle via identity.xml property
+            boolean isOid4vpEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(OID4VP_ENABLED_CONFIG));
+            if (!isOid4vpEnabled) {
+                LOG.info("OpenID4VP feature is disabled in deployment.toml. Authenticator will not be registered.");
+                return;
+            }
+
             // Only register once to avoid duplicates.
             if (authenticatorRegistered) {
                 return;
@@ -90,6 +100,7 @@ public class VPServiceRegistrationComponent {
                     authenticator, new Hashtable<>());
 
             authenticatorRegistered = true;
+            LOG.info("OpenID4VP Authenticator bundle is activated.");
         } catch (Throwable e) {
             LOG.error("Error while activating OpenID4VP service registration component.", e);
         }

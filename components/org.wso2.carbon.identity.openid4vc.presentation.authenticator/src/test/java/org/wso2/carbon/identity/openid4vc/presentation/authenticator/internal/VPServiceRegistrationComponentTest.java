@@ -35,6 +35,7 @@ public class VPServiceRegistrationComponentTest {
     private PresentationDefinitionService presentationDefinitionService;
 
     private MockedStatic<VPServiceDataHolder> mockedDataHolder;
+    private MockedStatic<org.wso2.carbon.identity.core.util.IdentityUtil> mockedIdentityUtil;
 
 
     @BeforeMethod
@@ -45,12 +46,18 @@ public class VPServiceRegistrationComponentTest {
         component = new VPServiceRegistrationComponent();
         when(componentContext.getBundleContext()).thenReturn(bundleContext);
         mockedDataHolder = Mockito.mockStatic(VPServiceDataHolder.class);
+        mockedIdentityUtil = Mockito.mockStatic(org.wso2.carbon.identity.core.util.IdentityUtil.class);
+        mockedIdentityUtil.when(() -> org.wso2.carbon.identity.core.util.IdentityUtil.getProperty("OpenID4VP.Enabled"))
+                .thenReturn("true");
     }
 
     @AfterMethod
     public void tearDown() {
         if (mockedDataHolder != null) {
             mockedDataHolder.close();
+        }
+        if (mockedIdentityUtil != null) {
+            mockedIdentityUtil.close();
         }
     }
 

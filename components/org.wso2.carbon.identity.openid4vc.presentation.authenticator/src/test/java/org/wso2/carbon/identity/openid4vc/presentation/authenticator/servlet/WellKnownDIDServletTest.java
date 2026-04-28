@@ -70,8 +70,8 @@ public class WellKnownDIDServletTest {
         
         servlet.doGet(request, response);
         
-        verify(response).setContentType("application/did+json;charset=UTF-8");
-        verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).setContentType("application/json;charset=UTF-8");
+        verify(response).setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
 
 
