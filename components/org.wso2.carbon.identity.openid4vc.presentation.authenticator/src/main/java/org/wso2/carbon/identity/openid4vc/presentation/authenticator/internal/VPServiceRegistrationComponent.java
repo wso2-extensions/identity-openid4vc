@@ -34,6 +34,7 @@ import org.wso2.carbon.identity.openid4vc.presentation.authenticator.OpenID4VPAu
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.service.impl.VPRequestServiceImpl;
 import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.verification.service.VerificationService;
+import org.wso2.carbon.idp.mgt.listener.IdentityProviderMgtListener;
 import org.wso2.carbon.user.core.service.RealmService;
 
 import java.util.Hashtable;
@@ -98,6 +99,11 @@ public class VPServiceRegistrationComponent {
             OpenID4VPAuthenticator authenticator = new OpenID4VPAuthenticator();
             bundleContext.registerService(ApplicationAuthenticator.class.getName(),
                     authenticator, new Hashtable<>());
+
+            // Register IdP management listener to auto-provision EdDSA keypairs on IdP creation.
+            OpenID4VPIdPManagementListener idpListener = new OpenID4VPIdPManagementListener();
+            bundleContext.registerService(IdentityProviderMgtListener.class.getName(),
+                    idpListener, new Hashtable<>());
 
             authenticatorRegistered = true;
             LOG.info("OpenID4VP Authenticator bundle is activated.");
