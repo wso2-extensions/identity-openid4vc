@@ -332,6 +332,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
      * e.g. ["email", "firstName"] -> "email,firstName"
      */
     private String serializeClaims(List<String> claims) {
+
         if (claims == null || claims.isEmpty()) {
             return null;
         }
@@ -343,6 +344,7 @@ public class PresentationDefinitionDAOImpl implements PresentationDefinitionDAO 
      * e.g. "email,firstName" -> ["email", "firstName"]
      */
     private List<String> deserializeClaims(String claimsStr) {
+
         if (claimsStr == null || claimsStr.trim().isEmpty()) {
             return new ArrayList<>();
         }

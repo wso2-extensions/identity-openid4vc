@@ -40,12 +40,14 @@ public class PresentationDefinition implements Serializable {
      * Default constructor.
      */
     public PresentationDefinition() {
+
     }
 
     /**
      * Builder pattern constructor.
      */
     private PresentationDefinition(Builder builder) {
+
         this.definitionId = builder.definitionId;
         this.name = builder.name;
         this.description = builder.description;
@@ -88,10 +90,12 @@ public class PresentationDefinition implements Serializable {
     }
 
     public List<RequestedCredential> getRequestedCredentials() {
+
         return requestedCredentials != null ? new ArrayList<>(requestedCredentials) : null;
     }
 
     public void setRequestedCredentials(List<RequestedCredential> requestedCredentials) {
+
         this.requestedCredentials = requestedCredentials != null ? new ArrayList<>(requestedCredentials) : null;
     }
 
@@ -99,6 +103,7 @@ public class PresentationDefinition implements Serializable {
      * Builder class for PresentationDefinition.
      */
     public static class Builder {
+
         private String definitionId;
         private String name;
         private String description;
@@ -185,6 +190,7 @@ public class PresentationDefinition implements Serializable {
 
     @Override
     public String toString() {
+
         return "PresentationDefinition{" +
                 "definitionId='" + definitionId + '\'' +
                 ", name='" + name + '\'' +

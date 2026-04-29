@@ -56,6 +56,7 @@ public class PresentationDefinitionUtil {
      * @return true if valid, false otherwise
      */
     public static boolean isValidPresentationDefinition(String definitionJson) {
+
         if (StringUtils.isBlank(definitionJson)) {
             return false;
         }
@@ -103,6 +104,7 @@ public class PresentationDefinitionUtil {
      * @return true if valid
      */
     private static boolean isValidInputDescriptor(JsonElement element) {
+
         if (!element.isJsonObject()) {
             return false;
         }

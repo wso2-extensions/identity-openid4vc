@@ -50,10 +50,8 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
      *
      * @param presentationDefinitionDAO The DAO to inject.
      */
-    @edu.umd.cs.findbugs.annotations.SuppressFBWarnings(value = "EI_EXPOSE_REP2",
-            justification = "Intentional injection of a DAO interface reference for testing/overriding. "
-                    + "The interface carries no mutable internal state that the caller could alter.")
     public PresentationDefinitionServiceImpl(PresentationDefinitionDAO presentationDefinitionDAO) {
+
         this.presentationDefinitionDAO = presentationDefinitionDAO;
     }
 
@@ -108,6 +106,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     @Override
     public List<PresentationDefinition> getAllPresentationDefinitions(int tenantId)
             throws VPException {
+
         return presentationDefinitionDAO.getAllPresentationDefinitions(tenantId);
     }
 
@@ -151,6 +150,7 @@ public class PresentationDefinitionServiceImpl implements PresentationDefinition
     @Override
     public boolean presentationDefinitionExists(String definitionId, int tenantId)
             throws VPException {
+
         return presentationDefinitionDAO.presentationDefinitionExists(definitionId, tenantId);
     }
 

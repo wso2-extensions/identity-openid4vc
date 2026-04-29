@@ -90,7 +90,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     }
 
     @Override
-    @SuppressFBWarnings("REC_CATCH_EXCEPTION")
     public boolean doPreAddIdP(IdentityProvider identityProvider, String tenantDomain)
             throws IdentityProviderManagementException {
 
@@ -139,7 +138,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     }
 
     @Override
-    @SuppressFBWarnings("CRLF_INJECTION_LOGS")
     public boolean doPreDeleteIdP(String idPName, String tenantDomain) {
 
         try {
@@ -167,7 +165,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     /**
      * Handle pre-persistence logic (pre add and pre update).
      */
-    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION"})
     private void handlePrePersistence(IdentityProvider identityProvider,
                                       String tenantDomain,
                                       String operationType)
@@ -206,7 +203,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     /**
      * Handle post-persistence logic (post add and post update).
      */
-    @SuppressFBWarnings({"CRLF_INJECTION_LOGS", "REC_CATCH_EXCEPTION", "DE_MIGHT_IGNORE"})
     private void handlePostPersistence(IdentityProvider identityProvider, String tenantDomain) {
 
         if (identityProvider == null) {
@@ -252,9 +248,6 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
     /**
      * Resolve the presentation definition associated with the given identity provider.
      */
-    @SuppressFBWarnings(value = {"REC_CATCH_EXCEPTION", "CRLF_INJECTION_LOGS"},
-            justification = "Exception is intentionally swallowed for fallback lookup. "
-                    + "All logged values are sanitized via sanitize().")
     private PresentationDefinition resolvePresentationDefinition(IdentityProvider identityProvider,
                                                                  PresentationDefinitionService pdService,
                                                                  int tenantId) {
@@ -402,6 +395,7 @@ public class OpenID4VPIdentityProviderMgtListener extends AbstractIdentityProvid
      * Sanitize a string to prevent CRLF injection in log messages.
      */
     private String sanitize(String input) {
+
         if (input == null) {
             return null;
         }
