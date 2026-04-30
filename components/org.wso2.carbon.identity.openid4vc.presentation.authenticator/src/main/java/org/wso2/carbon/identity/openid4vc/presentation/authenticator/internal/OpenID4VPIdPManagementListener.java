@@ -28,11 +28,13 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.wso2.carbon.core.util.KeyStoreManager;
+import org.wso2.carbon.core.util.KeyStoreUtil;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.listener.AbstractIdentityProviderMgtListener;
+import org.wso2.carbon.utils.multitenancy.MultitenantConstants;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -200,13 +202,20 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
         KeyPair keyPair = generateEd25519KeyPair();
         X509Certificate selfSignedCert = buildSelfSignedCertificate(keyPair);
 
-        keyStore.setKeyEntry(
-                alias,
-                keyPair.getPrivate(),
-                null,
-                new Certificate[]{selfSignedCert});
+        char[] keyPassword = keyStoreManager.getPrivateKeyPassword(keyStoreName);
+        try {
+            keyStore.setKeyEntry(
+                    alias,
+                    keyPair.getPrivate(),
+                    keyPassword,
+                    new Certificate[]{selfSignedCert});
 
-        keyStoreManager.updateKeyStore(keyStoreName, keyStore);
+            keyStoreManager.updateKeyStore(keyStoreName, keyStore);
+        } finally {
+            if (keyPassword != null) {
+                Arrays.fill(keyPassword, '\0');
+            }
+        }
 
         LOG.info("Ed25519 keypair successfully provisioned for tenant [" + tenantDomain
                 + "] under alias '" + alias + "'.");
@@ -277,6 +286,9 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
      */
     private String resolveKeyStoreName(String tenantDomain) {
 
+        if (MultitenantConstants.SUPER_TENANT_DOMAIN_NAME.equals(tenantDomain)) {
+            return KeyStoreUtil.getKeyStoreFileName(null);
+        }
         return tenantDomain + ".jks";
     }
 }
