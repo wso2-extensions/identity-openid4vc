@@ -62,9 +62,10 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
     private static final Log LOG = LogFactory.getLog(OpenID4VPIdPManagementListener.class);
 
     /**
-     * Keystore alias reserved for the OpenID4VP EdDSA signing key.
+     * Suffix for the EdDSA signing key alias to distinguish it from the primary RSA key.
+     * Aligned with org.wso2.carbon.core.util.KeyStoreUtil.TENANT_EDDSA_KEY_SUFFIX.
      */
-    private static final String OID4VP_EDDSA_ALIAS = "oid4vp-eddsa";
+    private static final String TENANT_EDDSA_KEY_SUFFIX = "_ed";
 
     /**
      * Name of the OpenID4VP federated authenticator as registered with the framework.
@@ -123,15 +124,17 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
             return true;
         }
 
+        String alias = tenantDomain + TENANT_EDDSA_KEY_SUFFIX;
         LOG.info("OpenID4VP IdP detected for tenant [" + tenantDomain
-                + "]. Checking for EdDSA keypair under alias '" + OID4VP_EDDSA_ALIAS + "'.");
+                + "]. Checking for EdDSA keypair under alias '" + alias + "'.");
 
         try {
-            provisionEdDsaKeyPairIfAbsent(tenantDomain);
+            provisionEdDsaKeyPairIfAbsent(tenantDomain, alias);
         } catch (Exception e) {
             // Log and swallow to avoid rolling back IdP creation for a key-provisioning failure.
             LOG.error("Failed to provision EdDSA keypair for tenant [" + tenantDomain
-                    + "]. The IdP was created but DID document signing may be unavailable.", e);
+                    + "] with alias [" + alias + "]. The IdP was created but DID document signing may be unavailable.",
+                    e);
         }
 
         return true;
@@ -174,9 +177,10 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
      * </p>
      *
      * @param tenantDomain The tenant domain whose keystore should be updated.
+     * @param alias        The alias to use for the EdDSA keypair.
      * @throws Exception If any cryptographic or keystore operation fails.
      */
-    private void provisionEdDsaKeyPairIfAbsent(String tenantDomain) throws Exception {
+    private void provisionEdDsaKeyPairIfAbsent(String tenantDomain, String alias) throws Exception {
 
         int tenantId = IdentityTenantUtil.getTenantId(tenantDomain);
 
@@ -184,20 +188,20 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
         String keyStoreName = resolveKeyStoreName(tenantDomain);
         KeyStore keyStore = keyStoreManager.getKeyStore(keyStoreName);
 
-        if (keyStore.containsAlias(OID4VP_EDDSA_ALIAS)) {
-            LOG.info("EdDSA alias '" + OID4VP_EDDSA_ALIAS + "' already exists in the keystore for tenant ["
+        if (keyStore.containsAlias(alias)) {
+            LOG.info("EdDSA alias '" + alias + "' already exists in the keystore for tenant ["
                     + tenantDomain + "]. Skipping key generation.");
             return;
         }
 
         LOG.info("Generating Ed25519 keypair for tenant [" + tenantDomain + "] under alias '"
-                + OID4VP_EDDSA_ALIAS + "'.");
+                + alias + "'.");
 
         KeyPair keyPair = generateEd25519KeyPair();
         X509Certificate selfSignedCert = buildSelfSignedCertificate(keyPair);
 
         keyStore.setKeyEntry(
-                OID4VP_EDDSA_ALIAS,
+                alias,
                 keyPair.getPrivate(),
                 null,
                 new Certificate[]{selfSignedCert});
@@ -205,7 +209,7 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
         keyStoreManager.updateKeyStore(keyStoreName, keyStore);
 
         LOG.info("Ed25519 keypair successfully provisioned for tenant [" + tenantDomain
-                + "] under alias '" + OID4VP_EDDSA_ALIAS + "'.");
+                + "] under alias '" + alias + "'.");
     }
 
     /**
