@@ -135,6 +135,13 @@
             <version>${carbon.identity.framework.version}</version>
         </dependency>
 
+        <!-- Tenant EC keypair provisioning (TenantKeyPairUtil, TenantKeyPairConstants) -->
+        <dependency>
+            <groupId>org.wso2.carbon.multitenancy</groupId>
+            <artifactId>org.wso2.carbon.tenant.keystore.mgt</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- Organization Management (sub-org tenant domain resolution) -->
         <dependency>
             <groupId>org.wso2.carbon.identity.organization.management.core</groupId>
