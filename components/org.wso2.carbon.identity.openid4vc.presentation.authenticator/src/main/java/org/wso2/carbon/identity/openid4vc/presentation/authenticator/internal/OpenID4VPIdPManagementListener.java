@@ -25,6 +25,7 @@ import org.wso2.carbon.core.util.KeyStoreUtil;
 import org.wso2.carbon.identity.application.common.model.FederatedAuthenticatorConfig;
 import org.wso2.carbon.identity.application.common.model.IdentityProvider;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
 import org.wso2.carbon.idp.mgt.listener.AbstractIdentityProviderMgtListener;
 import org.wso2.carbon.utils.security.KeystoreUtils;
@@ -55,6 +56,10 @@ public class OpenID4VPIdPManagementListener extends AbstractIdentityProviderMgtL
     @Override
     public boolean doPostAddIdP(IdentityProvider identityProvider, String tenantDomain)
             throws IdentityProviderManagementException {
+
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty("OpenID4VP.Enabled"))) {
+            return true;
+        }
 
         if (!isOid4vpIdP(identityProvider)) {
             return true;

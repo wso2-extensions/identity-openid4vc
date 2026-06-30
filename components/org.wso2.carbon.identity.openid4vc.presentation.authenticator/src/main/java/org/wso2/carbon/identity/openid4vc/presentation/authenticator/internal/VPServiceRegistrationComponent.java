@@ -29,7 +29,6 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.authentication.framework.ApplicationAuthenticator;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
-import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.OpenID4VPAuthenticator;
 import org.wso2.carbon.identity.organization.management.service.OrganizationManager;
 import org.wso2.carbon.idp.mgt.listener.IdentityProviderMgtListener;
@@ -45,18 +44,10 @@ public class VPServiceRegistrationComponent {
 
     private static final Log LOG = LogFactory.getLog(VPServiceRegistrationComponent.class);
 
-    private static final String OID4VP_ENABLED_CONFIG = "OpenID4VP.Enabled";
-
     @Activate
     protected void activate(ComponentContext context) {
 
         try {
-            boolean isOid4vpEnabled = Boolean.parseBoolean(IdentityUtil.getProperty(OID4VP_ENABLED_CONFIG));
-            if (!isOid4vpEnabled) {
-                LOG.info("OpenID4VP feature is disabled in deployment.toml. Authenticator will not be registered.");
-                return;
-            }
-
             context.getBundleContext().registerService(
                     ApplicationAuthenticator.class.getName(),
                     new OpenID4VPAuthenticator(),

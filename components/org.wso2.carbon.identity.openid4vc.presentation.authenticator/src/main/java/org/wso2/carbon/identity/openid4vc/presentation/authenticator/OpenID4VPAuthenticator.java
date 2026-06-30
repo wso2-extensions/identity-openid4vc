@@ -26,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import org.owasp.encoder.Encode;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.AbstractApplicationAuthenticator;
+import org.wso2.carbon.identity.core.util.IdentityUtil;
 import org.wso2.carbon.identity.application.authentication.framework.config.model.ExternalIdPConfig;
 import org.wso2.carbon.identity.application.authentication.framework.AuthenticatorFlowStatus;
 import org.wso2.carbon.identity.application.authentication.framework.FederatedApplicationAuthenticator;
@@ -115,6 +116,11 @@ public class OpenID4VPAuthenticator extends AbstractApplicationAuthenticator
             HttpServletResponse response,
             AuthenticationContext context)
             throws AuthenticationFailedException {
+
+        if (!Boolean.parseBoolean(IdentityUtil.getProperty("OpenID4VP.Enabled"))) {
+            throw new AuthenticationFailedException(
+                    "OpenID4VP feature is disabled. Enable it via [openid4vp] enabled=true in deployment.toml.");
+        }
 
         try {
             // Generate a random UUID as the public Request ID.

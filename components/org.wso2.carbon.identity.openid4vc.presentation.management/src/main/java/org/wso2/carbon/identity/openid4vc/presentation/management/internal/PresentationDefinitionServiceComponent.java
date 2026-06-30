@@ -18,7 +18,6 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.management.internal;
 
-import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.wso2.carbon.identity.openid4vc.presentation.management.service.PresentationDefinitionService;
 import org.wso2.carbon.identity.openid4vc.presentation.management.service.impl.PresentationDefinitionServiceImpl;
@@ -33,8 +32,4 @@ import org.wso2.carbon.identity.openid4vc.presentation.management.service.impl.P
 )
 public class PresentationDefinitionServiceComponent extends PresentationDefinitionServiceImpl {
 
-    @Activate
-    protected void activate(org.osgi.service.component.ComponentContext context) {
-        // Component activated — PresentationDefinitionService is registered via @Component(service=...)
-    }
 }
