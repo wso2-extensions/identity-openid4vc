@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
+ *
+ * WSO2 LLC. licenses this file to you under the Apache License,
+ * Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.wso2.carbon.identity.openid4vc.presentation.authenticator.service;
+
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.exception.VPAuthenticatorException;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.exception.VPAuthenticatorServerException;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPFlowInitiationResult;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.VPFlowSession;
+import org.wso2.carbon.identity.openid4vc.presentation.authenticator.model.WalletSubmission;
+
+/**
+ * OSGi service for VP flow session management (standalone verification and self-registration flows).
+ */
+public interface VPFlowService {
+
+    /**
+     * Initiates a new VP flow session. A random request ID is generated internally
+     * and returned via the initiation result.
+     *
+     * @param presentationDefinitionId the ID of the presentation definition to request
+     * @param tenantDomain             the tenant domain for the request
+     * @param timeoutMs                the session TTL in milliseconds
+     * @return initiation result containing the request ID, wallet URL, request URI, and expiry timestamp
+     * @throws VPAuthenticatorException if the configuration or presentation definition lookup fails
+     */
+    VPFlowInitiationResult initiate(String presentationDefinitionId, String tenantDomain,
+            long timeoutMs) throws VPAuthenticatorException;
+
+    /**
+     * Generates the signed request JWT for a VP flow session, served to the wallet via {@code request_uri}.
+     *
+     * @param requestId the transaction ID of the VP session
+     * @return the signed request JWT string
+     * @throws VPAuthenticatorException if the session is not found or the JWT cannot be built
+     */
+    String createAuthorizationRequestJwt(String requestId) throws VPAuthenticatorException;
+
+    /**
+     * Looks up a VP flow session by its transaction ID.
+     *
+     * @param requestId the transaction ID of the VP session
+     * @return the session for the given request ID, or {@code null} if not found or expired
+     * @throws VPAuthenticatorServerException If the database read or secret decryption fails
+     */
+    VPFlowSession getSession(String requestId) throws VPAuthenticatorServerException;
+
+    /**
+     * Processes an inbound wallet VP response submission.
+     *
+     * <p>Handles wallet-side errors (marks the session FAILED and returns normally so
+     * the server still responds 200 OK to the wallet), validates the submission,
+     * enforces response-mode compliance, invokes credential verification, and updates
+     * the session to the terminal state ({@code VERIFIED} or {@code FAILED}).
+     *
+     * @param submission the parsed wallet submission
+     * @throws VPAuthenticatorException on validation failure, expired/inactive session,
+     *                                  response-mode mismatch, or verification error
+     */
+    void processWalletResponse(WalletSubmission submission) throws VPAuthenticatorException;
+
+    /**
+     * Marks a VP flow session as FAILED if it exists and has not already reached a terminal state.
+     * Call this from error paths so the browser polling loop sees an immediate FAILED state
+     * instead of waiting for session expiry.
+     *
+     * @param requestId the VP session identifier; does nothing when blank or null
+     * @param reason    human-readable failure reason surfaced via the status endpoint
+     */
+    void failSession(String requestId, String reason);
+
+    /**
+     * Removes a VP flow session from the cache, releasing any stored PII.
+     * Called after a terminal state (VERIFIED or FAILED) has been consumed by the caller.
+     *
+     * @param requestId the transaction ID of the VP session to remove
+     */
+    void removeSession(String requestId);
+}
