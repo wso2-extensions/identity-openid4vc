@@ -105,9 +105,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <properties>
-        <mavan.spotbugsplugin.exclude.file>../../spotbugs-exclude-filter.xml</mavan.spotbugsplugin.exclude.file>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
 </project>
