@@ -30,7 +30,10 @@ import org.wso2.carbon.identity.core.ServiceURLBuilder;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.oauth.tokenprocessor.TokenProvider;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.ProofDTO;
@@ -55,9 +58,11 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
+import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_TOKEN;
 import static org.wso2.carbon.identity.openid4vc.template.management.constant.VCTemplateManagementConstants.CLAIM_TYPE_LOCAL;
 
 /**
@@ -72,6 +77,8 @@ public class CredentialIssuanceServiceTest {
     private static final String TEST_USER_ID = "user-123";
     private static final String TEST_USERNAME = "testuser@carbon.super";
     private static final String TEST_CLIENT_ID = "test-client-id";
+    private static final String DPOP_BINDING_TYPE = "DPoP";
+    private static final String SSO_SESSION_BINDING_TYPE = "sso-session";
 
     private CredentialIssuanceService credentialIssuanceService;
     MockedStatic<IdentityTenantUtil> identityTenantUtilMockedStatic;
@@ -291,6 +298,128 @@ public class CredentialIssuanceServiceTest {
             // Verify clientId was set on ProofDTO from access token
             Assert.assertEquals(reqDTO.getProofDTO().getClientId(), TEST_CLIENT_ID,
                     "clientId should be set on ProofDTO from access token consumer key");
+        }
+    }
+
+    @Test(priority = 6, description = "Test DPoP bound token with a valid binding")
+    public void testIssueCredentialWithValidTokenBinding() throws Exception {
+
+        Object request = new Object();
+        TokenBinder binder = mock(TokenBinder.class);
+        when(binder.isValidTokenBinding(eq(request), any(TokenBinding.class))).thenReturn(true);
+
+        CredentialIssuanceRespDTO response = issueWithBinding(
+                new TokenBinding(DPOP_BINDING_TYPE, "binding-ref", "key-thumbprint"),
+                request, binder);
+
+        Assert.assertNotNull(response, "Credential should be issued when the binding is valid");
+    }
+
+    @Test(priority = 7, description = "Test DPoP bound token with an invalid binding")
+    public void testIssueCredentialWithInvalidTokenBinding() throws Exception {
+
+        Object request = new Object();
+        TokenBinder binder = mock(TokenBinder.class);
+        when(binder.isValidTokenBinding(eq(request), any(TokenBinding.class))).thenReturn(false);
+
+        try {
+            issueWithBinding(new TokenBinding(DPOP_BINDING_TYPE, "binding-ref", "key-thumbprint"),
+                    request, binder);
+            Assert.fail("Expected the bound token to be rejected");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertEquals(e.getErrorCode(), INVALID_TOKEN,
+                    "A token whose binding cannot be verified must be reported as an invalid token");
+        }
+    }
+
+    @Test(priority = 8, description = "Test DPoP bound token when the binder is unavailable")
+    public void testIssueCredentialWithMissingTokenBinder() throws Exception {
+
+        try {
+            issueWithBinding(new TokenBinding(DPOP_BINDING_TYPE, "binding-ref", "key-thumbprint"),
+                    new Object(), null);
+            Assert.fail("Expected the bound token to be rejected when its binder is unavailable");
+        } catch (CredentialIssuanceException e) {
+            Assert.assertEquals(e.getErrorCode(), INVALID_TOKEN,
+                    "Without a binder the binding cannot be verified, so the token must not be accepted");
+        }
+    }
+
+    @Test(priority = 9, description = "Test that a non-DPoP binding is not validated here")
+    public void testIssueCredentialSkipsNonDPoPBinding() throws Exception {
+
+        TokenBinder binder = mock(TokenBinder.class);
+        when(binder.isValidTokenBinding(any(), any(TokenBinding.class))).thenReturn(false);
+
+        CredentialIssuanceRespDTO response = issueWithBinding(
+                new TokenBinding(SSO_SESSION_BINDING_TYPE, "binding-ref", "session-id"),
+                new Object(), binder);
+
+        Assert.assertNotNull(response,
+                "Only DPoP bindings are validated here; other types are handled before this endpoint");
+    }
+
+    /**
+     * Run a full issuance with the given binding in place.
+     *
+     * @param tokenBinding Binding recorded against the access token, may be null.
+     * @param request      Originating request handed to the binder.
+     * @param binder       Binder to register, or null to register none.
+     * @return The issuance response.
+     */
+    private CredentialIssuanceRespDTO issueWithBinding(TokenBinding tokenBinding, Object request,
+                                                       TokenBinder binder)
+            throws Exception {
+
+        serviceUrlBuilderMockedStatic = mockServiceUrlBuilder();
+        identityTenantUtilMockedStatic = mockStatic(IdentityTenantUtil.class);
+
+        CredentialIssuanceReqDTO reqDTO = createTestRequest();
+        reqDTO.setRequest(request);
+        VCTemplate vcTemplate = createTestVCTemplate();
+
+        CredentialIssuanceDataHolder.getInstance().setVCTemplateManager(vcTemplateManager);
+        when(vcTemplateManager.getByIdentifier(TEST_TEMPLATE_ID, TENANT_DOMAIN)).thenReturn(vcTemplate);
+
+        CredentialFormatHandler formatHandler = mock(CredentialFormatHandler.class);
+        when(formatHandler.getFormat()).thenReturn("jwt_vc_json");
+        when(formatHandler.issueCredential(any(CredentialIssuerContext.class)))
+                .thenReturn("eyJhbGciOiJSUzI1NiJ9.e30.sig");
+        CredentialIssuanceDataHolder.getInstance().addCredentialFormatHandler(formatHandler);
+
+        TokenProvider tokenProvider = mock(TokenProvider.class);
+        CredentialIssuanceDataHolder.getInstance().setTokenProvider(tokenProvider);
+        AccessTokenDO accessTokenDO = new AccessTokenDO();
+        accessTokenDO.setScope(new String[]{TEST_TEMPLATE_ID});
+        accessTokenDO.setConsumerKey(TEST_CLIENT_ID);
+        accessTokenDO.setTokenBinding(tokenBinding);
+        AuthenticatedUser user = new AuthenticatedUser();
+        user.setUserName(TEST_USERNAME);
+        user.setUserId(TEST_USER_ID);
+        accessTokenDO.setAuthzUser(user);
+        when(tokenProvider.getVerifiedAccessToken(TEST_TOKEN, false)).thenReturn(accessTokenDO);
+
+        CredentialIssuanceDataHolder.getInstance().setRealmService(realmService);
+        when(realmService.getTenantManager()).thenReturn(tenantManager);
+        when(realmService.getTenantUserRealm(-1234)).thenReturn(userRealm);
+        when(tenantManager.getTenantId(TENANT_DOMAIN)).thenReturn(-1234);
+        when(userRealm.getUserStoreManager()).thenReturn(userStoreManager);
+        when(userStoreManager.getUserClaimValuesWithID(TEST_USER_ID, extractClaimUris(vcTemplate), null))
+                .thenReturn(createTestUserClaims());
+        identityTenantUtilMockedStatic.when(() -> IdentityTenantUtil.getTenantId(TENANT_DOMAIN)).thenReturn(-1234);
+        when(nonceService.generateNonce(TENANT_DOMAIN)).thenReturn("test-c-nonce-value");
+
+        // Registered on the real holder; OAuth2ServiceComponentHolder cannot be static-mocked here.
+        if (binder != null) {
+            when(binder.getBindingType()).thenReturn(DPOP_BINDING_TYPE);
+            OAuth2ServiceComponentHolder.getInstance().addTokenBinder(binder);
+        }
+        try {
+            return credentialIssuanceService.issueCredential(reqDTO);
+        } finally {
+            if (binder != null) {
+                OAuth2ServiceComponentHolder.getInstance().removeTokenBinder(binder);
+            }
         }
     }
 

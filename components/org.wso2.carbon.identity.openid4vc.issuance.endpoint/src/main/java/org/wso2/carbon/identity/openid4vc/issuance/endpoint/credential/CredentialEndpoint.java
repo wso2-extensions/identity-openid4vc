@@ -49,6 +49,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -67,6 +68,10 @@ public class CredentialEndpoint {
 
     private static final Log LOG = LogFactory.getLog(CredentialEndpoint.class);
 
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String BEARER_SCHEME = "Bearer";
+    private static final String DPOP_SCHEME = "DPoP";
+
     @POST
     @Path("/credential")
     @Consumes("application/json")
@@ -77,14 +82,16 @@ public class CredentialEndpoint {
         String tenantDomain = CommonUtil.resolveTenantDomain();
         try {
 
-            String authHeader = request.getHeader("Authorization");
-            if (StringUtils.isEmpty(authHeader) || !authHeader.startsWith("Bearer ")) {
+            String authHeader = request.getHeader(AUTHORIZATION_HEADER);
+            String accessToken = extractAccessToken(authHeader);
+            if (accessToken == null) {
                 String errorResponse = CredentialErrorResponse.builder()
                         .error(CredentialErrorResponse.INVALID_TOKEN)
                         .errorDescription("Missing or invalid Authorization header")
                         .build()
                         .toJson();
                 return Response.status(Response.Status.UNAUTHORIZED)
+                        .header(HttpHeaders.WWW_AUTHENTICATE, buildWwwAuthenticateHeader(authHeader))
                         .entity(errorResponse)
                         .build();
             }
@@ -104,8 +111,8 @@ public class CredentialEndpoint {
 
             ProofDTO proofDTO = parseProofs(jsonObject);
 
-            CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(authHeader,
-                    proofDTO, tenantDomain);
+            CredentialIssuanceRespDTO credentialIssuanceRespDTO = getCredentialIssuanceRespDTO(accessToken,
+                    proofDTO, tenantDomain, request);
             return buildResponse(credentialIssuanceRespDTO);
 
         } catch (CredentialIssuanceClientException e) {
@@ -309,21 +316,59 @@ public class CredentialEndpoint {
         return proofDTO;
     }
 
-    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String authHeader,
+    private static CredentialIssuanceRespDTO getCredentialIssuanceRespDTO(String accessToken,
                                                                           ProofDTO proofDTO,
-                                                                          String tenantDomain)
+                                                                          String tenantDomain,
+                                                                          HttpServletRequest request)
             throws CredentialIssuanceException {
-
-        String token = authHeader.substring(7);
 
         CredentialIssuanceReqDTO credentialIssuanceReqDTO = new CredentialIssuanceReqDTO();
         credentialIssuanceReqDTO.setTenantDomain(tenantDomain);
-        credentialIssuanceReqDTO.setToken(token);
+        credentialIssuanceReqDTO.setToken(accessToken);
         credentialIssuanceReqDTO.setProofDTO(proofDTO);
+        credentialIssuanceReqDTO.setRequest(request);
 
         CredentialIssuanceService credentialIssuanceService = CredentialIssuanceServiceFactory
                 .getCredentialIssuanceService();
         return credentialIssuanceService.issueCredential(credentialIssuanceReqDTO);
+    }
+
+    /**
+     * Extract the access token from the Authorization header, accepting Bearer (RFC 6750) and
+     * DPoP (RFC 9449). Scheme names are matched case-insensitively per RFC 7235.
+     *
+     * @param authHeader Value of the Authorization header, may be null.
+     * @return The access token, or null if the header is missing or not a supported scheme.
+     */
+    private static String extractAccessToken(String authHeader) {
+
+        if (StringUtils.isBlank(authHeader)) {
+            return null;
+        }
+        String[] parts = authHeader.trim().split("\\s+");
+        if (parts.length != 2 || StringUtils.isBlank(parts[1])) {
+            return null;
+        }
+        if (!BEARER_SCHEME.equalsIgnoreCase(parts[0]) && !DPOP_SCHEME.equalsIgnoreCase(parts[0])) {
+            return null;
+        }
+        return parts[1];
+    }
+
+    /**
+     * Build the WWW-Authenticate challenge for a rejected request, echoing the attempted scheme.
+     *
+     * @param authHeader Value of the Authorization header, may be null.
+     * @return The challenge to send back.
+     */
+    private static String buildWwwAuthenticateHeader(String authHeader) {
+
+        String scheme = BEARER_SCHEME;
+        if (StringUtils.startsWithIgnoreCase(StringUtils.trimToEmpty(authHeader), DPOP_SCHEME)) {
+            scheme = DPOP_SCHEME;
+        }
+        return String.format("%s error=\"%s\", error_description=\"%s\"", scheme,
+                CredentialErrorResponse.INVALID_TOKEN, "Missing or invalid Authorization header");
     }
 
     /**
