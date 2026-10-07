@@ -230,7 +230,7 @@ paths:
                   Compact JWS (three base64url parts separated by `.`) carrying the
                   OpenID4VP authorization request claims as defined in OpenID4VP Section 5.
                 example: >-
-                  eyJhbGciOiJFZERTQSIsImtpZCI6InNpZ25pbmcta2V5In0.eyJyZXNwb25zZV90eXBlIjoidnBfdG9rZW4ifQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+                  <base64url-header>.<base64url-payload>.<base64url-signature>
         '404':
           $ref: '#/components/responses/WalletNotFound'
         '500':
