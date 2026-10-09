@@ -200,7 +200,7 @@ public class VPIdPMgtListener extends AbstractIdentityProviderMgtListener {
     private X509Certificate buildSelfSignedCert(KeyPair keyPair, String tenantDomain)
             throws GeneralSecurityException, CertIOException, OperatorCreationException {
 
-        String subjectDnString = "CN=" + tenantDomain + ", OU=None, O=None, L=None, C=None";
+        String subjectDnString = "CN=" + tenantDomain + ", OU=None, O=None, L=None";
         X500Name subjectDn = new X500Name(subjectDnString);
 
         Date notBefore = new Date(System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30);
