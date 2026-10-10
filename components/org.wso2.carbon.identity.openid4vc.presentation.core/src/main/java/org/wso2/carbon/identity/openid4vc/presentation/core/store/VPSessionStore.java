@@ -37,6 +37,7 @@ import java.sql.SQLException;
 
 /**
  * This class provides JDBC-backed persistence for VP sessions.
+ * Sessions are stored in the identity database, where IDN_VP_SESSION_STORE is defined.
  */
 public class VPSessionStore {
 
@@ -72,7 +73,7 @@ public class VPSessionStore {
 
         Connection connection = null;
         try {
-            connection = IdentityDatabaseUtil.getSessionDBConnection(true);
+            connection = IdentityDatabaseUtil.getDBConnection(true);
             if (!update(connection, requestId, storedBytes, session.getExpiresAt())) {
                 insert(connection, requestId, session.getTenantId(), storedBytes, session.getExpiresAt());
 
@@ -100,7 +101,7 @@ public class VPSessionStore {
         PreparedStatement statement = null;
         ResultSet resultSet = null;
         try {
-            connection = IdentityDatabaseUtil.getSessionDBConnection(false);
+            connection = IdentityDatabaseUtil.getDBConnection(false);
             statement = connection.prepareStatement(SQLConstants.SELECT);
             statement.setString(1, requestId);
             resultSet = statement.executeQuery();
@@ -131,7 +132,7 @@ public class VPSessionStore {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
-            connection = IdentityDatabaseUtil.getSessionDBConnection(true);
+            connection = IdentityDatabaseUtil.getDBConnection(true);
             statement = connection.prepareStatement(SQLConstants.DELETE);
             statement.setString(1, requestId);
             statement.executeUpdate();
@@ -152,7 +153,7 @@ public class VPSessionStore {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
-            connection = IdentityDatabaseUtil.getSessionDBConnection(true);
+            connection = IdentityDatabaseUtil.getDBConnection(true);
             statement = connection.prepareStatement(SQLConstants.DELETE_EXPIRED);
             statement.setLong(1, System.currentTimeMillis());
             int deleted = statement.executeUpdate();
@@ -178,7 +179,7 @@ public class VPSessionStore {
         Connection connection = null;
         PreparedStatement statement = null;
         try {
-            connection = IdentityDatabaseUtil.getSessionDBConnection(true);
+            connection = IdentityDatabaseUtil.getDBConnection(true);
             statement = connection.prepareStatement(SQLConstants.DELETE_BY_TENANT);
             statement.setInt(1, tenantId);
             int deleted = statement.executeUpdate();

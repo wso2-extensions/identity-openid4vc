@@ -26,6 +26,7 @@
             <class name="org.wso2.carbon.identity.openid4vc.presentation.core.service.DcqlQueryUtilTest"/>
             <class name="org.wso2.carbon.identity.openid4vc.presentation.core.service.PresentationCoreServiceImplTest"/>
             <class name="org.wso2.carbon.identity.openid4vc.presentation.core.service.PresentationConfigMgtServiceImplTest"/>
+            <class name="org.wso2.carbon.identity.openid4vc.presentation.core.store.VPSessionStoreTest"/>
         </classes>
     </test>
 </suite>
