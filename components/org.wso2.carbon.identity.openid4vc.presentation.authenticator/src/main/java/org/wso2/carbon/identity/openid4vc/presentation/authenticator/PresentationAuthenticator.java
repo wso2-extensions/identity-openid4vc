@@ -29,6 +29,8 @@ import org.wso2.carbon.identity.application.authentication.framework.context.Aut
 import org.wso2.carbon.identity.application.authentication.framework.exception.AuthenticationFailedException;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.application.common.model.ClaimMapping;
+import org.wso2.carbon.identity.core.ServiceURLBuilder;
+import org.wso2.carbon.identity.core.URLBuilderException;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.exception.PresentationAuthenticatorErrorCode;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.internal.PresentationAuthenticatorDataHolder;
 import org.wso2.carbon.identity.openid4vc.presentation.authenticator.util.PresentationAuthenticatorDiagnosticLogger;
@@ -138,7 +140,7 @@ public class PresentationAuthenticator extends AbstractApplicationAuthenticator
             throw new AuthenticationFailedException(
                     PresentationAuthenticatorErrorCode.VP_FLOW_INITIATION_ERROR.getCode(),
                     PresentationAuthenticatorErrorCode.VP_FLOW_INITIATION_ERROR.getMessage(), e);
-        } catch (IOException e) {
+        } catch (IOException | URLBuilderException e) {
             DIAGNOSTIC_LOG.logVPFlowInitiationFailed(
                     PresentationAuthenticatorErrorCode.INTERNAL_SERVER_ERROR.getErrorType(),
                     PresentationAuthenticatorErrorCode.INTERNAL_SERVER_ERROR.getDescription());
@@ -292,15 +294,21 @@ public class PresentationAuthenticator extends AbstractApplicationAuthenticator
      * @param sessionDataKey              IS authentication context identifier.
      * @param tenantDomain                Resolved tenant domain for the current authentication.
      * @return Fully constructed redirect URL.
+     * @throws URLBuilderException If the wallet login page URL cannot be built.
      */
     private String createRedirectUrl(PresentationRequestResponseDTO presentationRequestResponse, String sessionDataKey,
-                                     String tenantDomain) {
+                                     String tenantDomain) throws URLBuilderException {
 
         String rootTenantDomain = StringUtils.defaultIfBlank(
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().getTenantDomain(), tenantDomain);
         long sessionTtlMs = Math.max(0, presentationRequestResponse.getExpiresAt() - System.currentTimeMillis());
 
-        return WALLET_LOGIN_PAGE +
+        // Resolve the tenant or organization qualified page URL from the request context, so the page is
+        // served under the same /t/{tenant} or /o/{orgId} path as the rest of the login flow.
+        String walletLoginPage = ServiceURLBuilder.create().addPath(WALLET_LOGIN_PAGE).build()
+                .getAbsolutePublicURL();
+
+        return walletLoginPage +
                 '?' + PARAM_SESSION_DATA_KEY + '=' +
                 URLEncoder.encode(sessionDataKey, StandardCharsets.UTF_8) +
                 '&' + PARAM_REQUEST_ID + '=' +
