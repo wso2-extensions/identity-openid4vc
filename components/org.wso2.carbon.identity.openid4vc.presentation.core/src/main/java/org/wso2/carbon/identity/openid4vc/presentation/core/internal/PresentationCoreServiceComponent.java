@@ -28,6 +28,8 @@ import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.wso2.carbon.identity.application.mgt.ApplicationManagementService;
 import org.wso2.carbon.identity.configuration.mgt.core.ConfigurationManager;
+import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationManagementException;
+import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceTypeAdd;
 import org.wso2.carbon.identity.openid4vc.presentation.core.listener.VPIdPMgtListener;
 import org.wso2.carbon.identity.openid4vc.presentation.core.service.PresentationConfigMgtService;
 import org.wso2.carbon.identity.openid4vc.presentation.core.service.PresentationCoreService;
@@ -54,6 +56,8 @@ public class PresentationCoreServiceComponent {
             BundleContext bundleContext = context.getBundleContext();
             bundleContext.registerService(IdentityProviderMgtListener.class, new VPIdPMgtListener(), null);
 
+            ensureVpConfigResourceTypeExists();
+
             PresentationConfigMgtServiceImpl configService = new PresentationConfigMgtServiceImpl();
             PresentationCoreDataHolder.getInstance().setVpConfigService(configService);
             bundleContext.registerService(PresentationConfigMgtService.class, configService, null);
@@ -67,6 +71,29 @@ public class PresentationCoreServiceComponent {
             }
         } catch (Throwable throwable) {
             LOG.error("Error while activating PresentationCoreServiceComponent", throwable);
+        }
+    }
+
+    private void ensureVpConfigResourceTypeExists() {
+
+        try {
+            ConfigurationManager configurationManager =
+                    PresentationCoreDataHolder.getInstance().getConfigurationManager();
+            try {
+                configurationManager.getResourceType(PresentationConfigMgtServiceImpl.VP_CONFIG_RESOURCE_TYPE_NAME);
+            } catch (ConfigurationManagementException e) {
+                if ("CONFIGM_00008".equals(e.getErrorCode())) {
+                    ResourceTypeAdd resourceTypeAdd = new ResourceTypeAdd();
+                    resourceTypeAdd.setName(PresentationConfigMgtServiceImpl.VP_CONFIG_RESOURCE_TYPE_NAME);
+                    resourceTypeAdd.setDescription("OpenID4VP tenant configuration resource type.");
+                    configurationManager.addResourceType(resourceTypeAdd);
+                    LOG.info("Registered OpenID4VP config resource type.");
+                } else {
+                    throw e;
+                }
+            }
+        } catch (ConfigurationManagementException e) {
+            LOG.warn("Could not ensure VP config resource type exists: " + e.getMessage(), e);
         }
     }
 
