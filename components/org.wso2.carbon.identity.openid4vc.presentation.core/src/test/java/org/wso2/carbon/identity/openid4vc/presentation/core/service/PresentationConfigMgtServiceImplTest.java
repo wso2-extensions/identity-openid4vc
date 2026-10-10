@@ -18,6 +18,7 @@
 
 package org.wso2.carbon.identity.openid4vc.presentation.core.service;
 
+import org.mockito.ArgumentCaptor;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -27,6 +28,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.Attribute;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceAdd;
+import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceTypeAdd;
 import org.wso2.carbon.identity.openid4vc.presentation.core.exception.PresentationCoreErrorCode;
 import org.wso2.carbon.identity.openid4vc.presentation.core.exception.PresentationCoreException;
 import org.wso2.carbon.identity.openid4vc.presentation.core.exception.PresentationCoreServerException;
@@ -39,10 +41,15 @@ import java.util.Arrays;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_DOES_NOT_EXISTS;
+import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS;
 
 /**
  * Unit tests for {@link PresentationConfigMgtServiceImpl}.
@@ -51,6 +58,7 @@ import static org.wso2.carbon.identity.configuration.mgt.core.constant.Configura
 public class PresentationConfigMgtServiceImplTest {
 
     private static final String TENANT_DOMAIN = "carbon.super";
+    private static final String VP_CONFIG_RESOURCE_TYPE_NAME = "OPENID4VP_CONFIG";
 
     private PresentationConfigMgtServiceImpl service;
     private ConfigurationManager mockConfigManager;
@@ -180,5 +188,101 @@ public class PresentationConfigMgtServiceImplTest {
 
         // No exception thrown means replaceResource was called cleanly.
         verify(mockConfigManager).replaceResource(anyString(), any(ResourceAdd.class));
+    }
+
+    @Test(priority = 8, description = "Test getVPConfig returns defaults when the resource type does not exist")
+    public void testGetVPConfigResourceTypeNotFound() throws Exception {
+
+        when(mockConfigManager.getResource(anyString(), anyString(), anyBoolean()))
+                .thenThrow(resourceTypeNotFoundException());
+
+        VPTenantConfig result = service.getVPConfig(TENANT_DOMAIN);
+
+        Assert.assertNotNull(result, "Should return a config with defaults, not null");
+        Assert.assertEquals(result.getClientIdScheme(), "x509_san_dns",
+                "clientIdScheme should fall back to the server default");
+        Assert.assertEquals(result.getResponseMode(), "direct_post.jwt",
+                "responseMode should fall back to the server default");
+    }
+
+    @Test(priority = 9, description = "Test setVPConfig creates the resource type and retries when it is missing")
+    public void testSetVPConfigCreatesMissingResourceType() throws Exception {
+
+        when(mockConfigManager.replaceResource(anyString(), any(ResourceAdd.class)))
+                .thenThrow(resourceTypeNotFoundException())
+                .thenReturn(new Resource());
+
+        VPTenantConfig config = new VPTenantConfig();
+        config.setClientIdScheme("x509_san_dns");
+        config.setResponseMode("direct_post");
+
+        service.setVPConfig(config, TENANT_DOMAIN);
+
+        ArgumentCaptor<ResourceTypeAdd> captor = ArgumentCaptor.forClass(ResourceTypeAdd.class);
+        verify(mockConfigManager).addResourceType(captor.capture());
+        Assert.assertEquals(captor.getValue().getName(), VP_CONFIG_RESOURCE_TYPE_NAME,
+                "Should create the VP config resource type");
+        verify(mockConfigManager, times(2)).replaceResource(
+                eq(VP_CONFIG_RESOURCE_TYPE_NAME), any(ResourceAdd.class));
+    }
+
+    @Test(priority = 10,
+            description = "Test setVPConfig tolerates the resource type being created concurrently")
+    public void testSetVPConfigResourceTypeAlreadyExists() throws Exception {
+
+        when(mockConfigManager.replaceResource(anyString(), any(ResourceAdd.class)))
+                .thenThrow(resourceTypeNotFoundException())
+                .thenReturn(new Resource());
+        when(mockConfigManager.addResourceType(any(ResourceTypeAdd.class)))
+                .thenThrow(new ConfigurationManagementException(
+                        ERROR_CODE_RESOURCE_TYPE_ALREADY_EXISTS.getMessage(),
+                        ERROR_CODE_RESOURCE_TYPE_ALREADY_EXISTS.getCode()));
+
+        VPTenantConfig config = new VPTenantConfig();
+        config.setClientIdScheme("x509_san_dns");
+
+        service.setVPConfig(config, TENANT_DOMAIN);
+
+        verify(mockConfigManager, times(2)).replaceResource(anyString(), any(ResourceAdd.class));
+    }
+
+    @Test(priority = 11,
+            description = "Test setVPConfig wraps resource type creation failures as server error")
+    public void testSetVPConfigResourceTypeCreationFailure() throws Exception {
+
+        when(mockConfigManager.replaceResource(anyString(), any(ResourceAdd.class)))
+                .thenThrow(resourceTypeNotFoundException());
+        when(mockConfigManager.addResourceType(any(ResourceTypeAdd.class)))
+                .thenThrow(new ConfigurationManagementException("DB error", "CONFIGM_99999"));
+
+        VPTenantConfig config = new VPTenantConfig();
+        config.setClientIdScheme("x509_san_dns");
+
+        try {
+            service.setVPConfig(config, TENANT_DOMAIN);
+            Assert.fail("Expected PresentationCoreServerException");
+        } catch (PresentationCoreServerException e) {
+            Assert.assertEquals(e.getCode(), PresentationCoreErrorCode.CONFIG_UPDATE_ERROR.getCode(),
+                    "Should wrap as CONFIG_UPDATE_ERROR");
+        }
+        verify(mockConfigManager, times(1)).replaceResource(anyString(), any(ResourceAdd.class));
+    }
+
+    @Test(priority = 12, description = "Test setVPConfig does not create the resource type when it already exists")
+    public void testSetVPConfigDoesNotCreateExistingResourceType() throws Exception {
+
+        VPTenantConfig config = new VPTenantConfig();
+        config.setClientIdScheme("x509_san_dns");
+
+        service.setVPConfig(config, TENANT_DOMAIN);
+
+        verify(mockConfigManager, never()).addResourceType(any(ResourceTypeAdd.class));
+    }
+
+    private ConfigurationManagementException resourceTypeNotFoundException() {
+
+        return new ConfigurationManagementException(
+                ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS.getMessage(),
+                ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS.getCode());
     }
 }

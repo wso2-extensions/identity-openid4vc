@@ -25,6 +25,7 @@ import org.wso2.carbon.identity.configuration.mgt.core.exception.ConfigurationMa
 import org.wso2.carbon.identity.configuration.mgt.core.model.Attribute;
 import org.wso2.carbon.identity.configuration.mgt.core.model.Resource;
 import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceAdd;
+import org.wso2.carbon.identity.configuration.mgt.core.model.ResourceTypeAdd;
 import org.wso2.carbon.identity.openid4vc.presentation.core.constant.PresentationCoreConstants;
 import org.wso2.carbon.identity.openid4vc.presentation.core.exception.PresentationCoreErrorCode;
 import org.wso2.carbon.identity.openid4vc.presentation.core.exception.PresentationCoreException;
@@ -40,6 +41,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_DOES_NOT_EXISTS;
+import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_ALREADY_EXISTS;
+import static org.wso2.carbon.identity.configuration.mgt.core.constant.ConfigurationConstants.ErrorMessages.ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS;
 
 /**
  * This class provides the configuration-manager-backed implementation of the VP config service.
@@ -51,6 +54,8 @@ public class PresentationConfigMgtServiceImpl implements PresentationConfigMgtSe
 
     static final String VP_CONFIG_RESOURCE_TYPE_NAME = "OPENID4VP_CONFIG";
     static final String VP_CONFIG_RESOURCE_NAME = "OPENID4VP_CONFIGURATION";
+    static final String VP_CONFIG_RESOURCE_TYPE_DESCRIPTION =
+            "A resource type to keep the tenant OpenID4VP configurations.";
 
     private static final String PROP_CLIENT_ID_SCHEME = "clientIdScheme";
     private static final String PROP_RESPONSE_MODE = "responseMode";
@@ -87,7 +92,7 @@ public class PresentationConfigMgtServiceImpl implements PresentationConfigMgtSe
             ResourceAdd resourceAdd = new ResourceAdd();
             resourceAdd.setName(VP_CONFIG_RESOURCE_NAME);
             resourceAdd.setAttributes(attributes);
-            getConfigurationManager().replaceResource(VP_CONFIG_RESOURCE_TYPE_NAME, resourceAdd);
+            replaceVPConfigResource(resourceAdd);
             AUDIT_LOGGER.logVPConfigUpdated(config, tenantDomain);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Saved VP config for " + tenantDomain
@@ -106,11 +111,48 @@ public class PresentationConfigMgtServiceImpl implements PresentationConfigMgtSe
             return getConfigurationManager().getResource(
                     VP_CONFIG_RESOURCE_TYPE_NAME, VP_CONFIG_RESOURCE_NAME, true);
         } catch (ConfigurationManagementException e) {
-            if (ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
+            if (ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode())
+                    || isResourceTypeNotFound(e)) {
                 return null;
             }
             throw e;
         }
+    }
+
+    private void replaceVPConfigResource(ResourceAdd resourceAdd) throws ConfigurationManagementException {
+
+        try {
+            getConfigurationManager().replaceResource(VP_CONFIG_RESOURCE_TYPE_NAME, resourceAdd);
+        } catch (ConfigurationManagementException e) {
+            if (!isResourceTypeNotFound(e)) {
+                throw e;
+            }
+            createVPConfigResourceType();
+            getConfigurationManager().replaceResource(VP_CONFIG_RESOURCE_TYPE_NAME, resourceAdd);
+        }
+    }
+
+    private void createVPConfigResourceType() throws ConfigurationManagementException {
+
+        try {
+            ResourceTypeAdd resourceTypeAdd = new ResourceTypeAdd();
+            resourceTypeAdd.setName(VP_CONFIG_RESOURCE_TYPE_NAME);
+            resourceTypeAdd.setDescription(VP_CONFIG_RESOURCE_TYPE_DESCRIPTION);
+            getConfigurationManager().addResourceType(resourceTypeAdd);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Created resource type: " + VP_CONFIG_RESOURCE_TYPE_NAME);
+            }
+        } catch (ConfigurationManagementException e) {
+            // Another node or request may have created the type concurrently.
+            if (!ERROR_CODE_RESOURCE_TYPE_ALREADY_EXISTS.getCode().equals(e.getErrorCode())) {
+                throw e;
+            }
+        }
+    }
+
+    private boolean isResourceTypeNotFound(ConfigurationManagementException e) {
+
+        return ERROR_CODE_RESOURCE_TYPE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode());
     }
 
     private void addAttribute(List<Attribute> attributes, String key, String value) {
