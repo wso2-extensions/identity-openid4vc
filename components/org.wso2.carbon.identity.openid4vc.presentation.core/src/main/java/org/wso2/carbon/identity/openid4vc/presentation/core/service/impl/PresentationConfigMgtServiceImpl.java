@@ -49,7 +49,7 @@ public class PresentationConfigMgtServiceImpl implements PresentationConfigMgtSe
     private static final Log LOG = LogFactory.getLog(PresentationConfigMgtServiceImpl.class);
     private static final PresentationCoreAuditLogger AUDIT_LOGGER = PresentationCoreAuditLogger.getInstance();
 
-    static final String VP_CONFIG_RESOURCE_TYPE_NAME = "OPENID4VP_CONFIG";
+    public static final String VP_CONFIG_RESOURCE_TYPE_NAME = "OPENID4VP_CONFIG";
     static final String VP_CONFIG_RESOURCE_NAME = "OPENID4VP_CONFIGURATION";
 
     private static final String PROP_CLIENT_ID_SCHEME = "clientIdScheme";
@@ -106,7 +106,8 @@ public class PresentationConfigMgtServiceImpl implements PresentationConfigMgtSe
             return getConfigurationManager().getResource(
                     VP_CONFIG_RESOURCE_TYPE_NAME, VP_CONFIG_RESOURCE_NAME, true);
         } catch (ConfigurationManagementException e) {
-            if (ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode())) {
+            if (ERROR_CODE_RESOURCE_DOES_NOT_EXISTS.getCode().equals(e.getErrorCode()) ||
+                    "CONFIGM_00008".equals(e.getErrorCode())) {
                 return null;
             }
             throw e;
