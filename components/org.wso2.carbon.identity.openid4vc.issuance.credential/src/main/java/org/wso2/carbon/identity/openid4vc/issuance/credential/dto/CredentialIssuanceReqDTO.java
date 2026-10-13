@@ -30,6 +30,8 @@ public class CredentialIssuanceReqDTO {
     private String token;
     private AuthenticatedUser authenticatedUser;
     private ProofDTO proofDTO;
+    // Object rather than HttpServletRequest, matching TokenBinder#isValidTokenBinding.
+    private Object request;
 
     public String getTenantDomain() {
 
@@ -77,5 +79,15 @@ public class CredentialIssuanceReqDTO {
 
     public void setProofDTO(ProofDTO proofDTO) {
         this.proofDTO = proofDTO;
+    }
+
+    public Object getRequest() {
+
+        return request;
+    }
+
+    public void setRequest(Object request) {
+
+        this.request = request;
     }
 }

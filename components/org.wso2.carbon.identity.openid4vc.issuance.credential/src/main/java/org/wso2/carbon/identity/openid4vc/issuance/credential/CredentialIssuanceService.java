@@ -23,7 +23,10 @@ import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
 import org.wso2.carbon.identity.base.IdentityException;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceReqDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.dto.CredentialIssuanceRespDTO;
 import org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceClientException;
@@ -49,7 +52,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import static org.wso2.carbon.identity.oauth2.OAuth2Constants.TokenBinderType.DPOP_TOKEN_BINDING_TYPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INSUFFICIENT_SCOPE;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INTERNAL_SERVER_ERROR;
 import static org.wso2.carbon.identity.openid4vc.issuance.credential.exception.CredentialIssuanceErrorCode.INVALID_CREDENTIAL_REQUEST;
@@ -167,6 +172,8 @@ public class CredentialIssuanceService {
             throw CredentialIssuanceExceptionHandler.handleClientException(INVALID_TOKEN);
         }
 
+        validateDPoPTokenBinding(accessTokenDO, reqDTO);
+
         String[] scopes  = accessTokenDO.getScope();
         reqDTO.setCredentialConfigurationId(scopes[0]);
         AuthenticatedUser authenticatedUser = accessTokenDO.getAuthzUser();
@@ -174,6 +181,38 @@ public class CredentialIssuanceService {
 
         if (reqDTO.getProofDTO() != null) {
             reqDTO.getProofDTO().setClientId(accessTokenDO.getConsumerKey());
+        }
+    }
+
+    /**
+     * Validate a DPoP bound access token against the request presenting it.
+     *
+     * @param accessTokenDO Access token being presented.
+     * @param reqDTO        Credential issuance request DTO, carrying the originating HTTP request.
+     * @throws CredentialIssuanceClientException If the request does not demonstrate possession of
+     *                                           the bound key.
+     */
+    private void validateDPoPTokenBinding(AccessTokenDO accessTokenDO, CredentialIssuanceReqDTO reqDTO)
+            throws CredentialIssuanceClientException {
+
+        TokenBinding tokenBinding = accessTokenDO.getTokenBinding();
+        if (reqDTO.getRequest() == null || tokenBinding == null
+                || !DPOP_TOKEN_BINDING_TYPE.equals(tokenBinding.getBindingType())) {
+            return;
+        }
+
+        Optional<TokenBinder> tokenBinder = OAuth2ServiceComponentHolder.getInstance()
+                .getTokenBinder(DPOP_TOKEN_BINDING_TYPE);
+        if (!tokenBinder.isPresent()) {
+            LOG.error("DPoP token binder is not available, cannot validate the bound access token.");
+            throw CredentialIssuanceExceptionHandler.handleClientException(INVALID_TOKEN);
+        }
+
+        if (!tokenBinder.get().isValidTokenBinding(reqDTO.getRequest(), tokenBinding)) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("DPoP token binding validation failed for the presented access token.");
+            }
+            throw CredentialIssuanceExceptionHandler.handleClientException(INVALID_TOKEN);
         }
     }
 
