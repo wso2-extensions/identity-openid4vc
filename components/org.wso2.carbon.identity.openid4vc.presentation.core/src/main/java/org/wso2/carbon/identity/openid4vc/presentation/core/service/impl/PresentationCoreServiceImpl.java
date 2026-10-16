@@ -24,6 +24,7 @@ import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JOSEObjectType;
+import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -31,6 +32,7 @@ import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.KeyUse;
 import com.nimbusds.jose.jwk.gen.ECKeyGenerator;
 import com.nimbusds.jwt.JWTClaimsSet;
 import org.apache.commons.collections.CollectionUtils;
@@ -279,7 +281,6 @@ public class PresentationCoreServiceImpl implements PresentationCoreService {
                 .issuer(clientId)
                 .audience(Constants.Protocol.REQUEST_AUDIENCE)
                 .claim(Constants.RequestParams.CLIENT_ID, clientId)
-                .claim(Constants.JWTClaims.CLIENT_ID_SCHEME, session.getClientIdScheme())
                 .claim(Constants.RequestParams.RESPONSE_TYPE, Constants.Protocol.RESPONSE_TYPE_VP_TOKEN)
                 .claim(Constants.RequestParams.RESPONSE_MODE, session.getResponseMode())
                 .claim(Constants.RequestParams.RESPONSE_URI, session.getResponseUri())
@@ -608,7 +609,12 @@ public class PresentationCoreServiceImpl implements PresentationCoreService {
     private String generateEphemeralKey(String requestId) throws PresentationCoreServerException {
 
         try {
-            return new ECKeyGenerator(Curve.P_256).keyID(requestId).generate().toJSONString();
+            return new ECKeyGenerator(Curve.P_256)
+                    .keyID(requestId)
+                    .algorithm(JWEAlgorithm.ECDH_ES)
+                    .keyUse(KeyUse.ENCRYPTION)
+                    .generate()
+                    .toJSONString();
         } catch (JOSEException e) {
             throw PresentationCoreExceptionHandler.handleServerException(
                     PresentationCoreErrorCode.EPHEMERAL_KEY_ERROR, e);
